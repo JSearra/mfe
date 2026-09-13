@@ -47,6 +47,33 @@
         font-size: 11px;
       }
 
+      .resource-bar {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        gap: 18px;
+        align-items: center;
+        padding: 10px 16px;
+        border: 1px solid #3a3226;
+        border-radius: 4px;
+        background: rgba(20, 17, 13, 0.82);
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .resource-bar__season {
+        color: #8a8070;
+      }
+
+      .resource-bar__season.is-severe {
+        color: #d94a3a;
+      }
+
+      .resource-bar__warning {
+        color: #d94a3a;
+      }
+
       .debug-overlay__hint {
         margin-top: 8px;
         padding-top: 8px;

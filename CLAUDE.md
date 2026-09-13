@@ -3,7 +3,9 @@
 Browser 2D isometric RTS (Age of Empires II lineage), set in early-19th-century southern
 Africa. Defining mechanic: cattle herding, flocking and stampedes.
 
-**Current phase: 6 — not yet started.** Phases 0-5 are complete. See `docs/ROADMAP.md`.
+**Current phase: backlog.** Phases 0-6 are complete. The backlog in `docs/ROADMAP.md`
+is ordered by retrofit cost — fog of war first, because it changes the snapshot
+signature; then save/load, then the worker flip.
 Design reasoning lives in `docs/ARCHITECTURE.md`. Reversals of the original brief are
 recorded in `docs/adr/`. Read the ADR before re-opening a settled decision.
 

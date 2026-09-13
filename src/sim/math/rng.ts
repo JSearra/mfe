@@ -20,6 +20,20 @@ function rotl(x: number, k: number): number {
   return ((x << k) | (x >>> (32 - k))) >>> 0;
 }
 
+/**
+ * Pure integer hash of two values.
+ *
+ * For deriving deterministic variation — this year's drought severity, say — WITHOUT
+ * consuming RNG state. Anything that draws from the generator changes the sequence every
+ * later system sees, which makes a pure-looking query a hidden side effect.
+ */
+export function mixSeed(a: number, b: number): number {
+  let value = (a ^ Math.imul(b + 0x9e3779b9, 0x85ebca6b)) >>> 0;
+  value = Math.imul(value ^ (value >>> 16), 0x21f0aaad) >>> 0;
+  value = Math.imul(value ^ (value >>> 15), 0x735a2d97) >>> 0;
+  return (value ^ (value >>> 15)) >>> 0;
+}
+
 /** splitmix32, used only to expand a single seed into a full state. */
 function splitmix32(seed: number): () => number {
   let a = seed >>> 0;

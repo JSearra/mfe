@@ -61,5 +61,17 @@
     "crushRadius": 0.35,
     "crushDamage": 34,
     "knockback": 0.55
+  },
+  "economy": {
+    "upkeepIntervalTicks": 200,
+    "grainPerUnit": 1.0,
+    "grainPerCattle": 0.25,
+    "cattleGrowthPerHundred": 1.5,
+    "ammunitionPerUpkeep": 2.0,
+    "starvationDamage": 6,
+    "seasonTicks": 4800,
+    "droughtThreshold": 0.75,
+    "plotBaseYield": 6.0,
+    "shelteredYieldFactor": 0.45
   }
 }

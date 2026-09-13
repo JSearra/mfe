@@ -1,6 +1,8 @@
 import { hashTypedArray } from '../shared/hash.js';
 import { createLoop, step } from './loop.js';
 import { createCattleSystem } from './cattle.js';
+import { createEconomy } from './economy/ledger.js';
+import { FactionId } from '../shared/factions/index.js';
 import { createMovementSystem } from './movement.js';
 import { createHeightmap } from './terrain/generate.js';
 import { tuningHash } from './tuning.js';
@@ -61,6 +63,8 @@ export function hashWorld(world: World): number {
   h = hashTypedArray(world.posY, h);
   h = hashTypedArray(world.velX, h);
   h = hashTypedArray(world.velY, h);
+  h = hashTypedArray(world.stress, h);
+  h = hashTypedArray(world.herdState, h);
   return h;
 }
 
@@ -74,12 +78,17 @@ export function runReplay(
 ): number[] {
   const world = createWorld(capacity, seed);
   const map = createHeightmap(REPLAY_MAP_SIZE, REPLAY_MAP_SIZE, seed);
-  const loop = createLoop(world, createMovementSystem(map), createCattleSystem(), commands);
+  const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], seed);
+  const loop = createLoop(world, createMovementSystem(map), createCattleSystem(), economy, commands);
   const checkpoints: number[] = [];
 
   for (let i = 0; i < ticks; i++) {
     step(loop);
-    if (world.tick % checkpointInterval === 0) checkpoints.push(hashWorld(world));
+    if (world.tick % checkpointInterval === 0) {
+      // The ledger is simulation state and belongs in the hash: an economy that drifts
+      // would otherwise reproduce silently.
+      checkpoints.push(hashTypedArray(economy.amounts, hashWorld(world)));
+    }
   }
   return checkpoints;
 }

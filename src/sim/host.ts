@@ -5,6 +5,9 @@ import { buildSnapshot } from './snapshot.js';
 import type { SimEvent } from '../shared/events.js';
 import type { Heightmap } from '../shared/heightmap.js';
 import { createCattleSystem, type CattleSystem } from './cattle.js';
+import { createEconomy, Resource, type Economy, type GrainPlot } from './economy/ledger.js';
+import { tuning } from './tuning.js';
+import { FactionId } from '../shared/factions/index.js';
 import { createMovementSystem, type MovementSystem } from './movement.js';
 import type { World } from './world.js';
 
@@ -28,17 +31,38 @@ import type { World } from './world.js';
  * richer than a number, restore the clone along with it.
  */
 
+/**
+ * The viewing player's own economic position.
+ *
+ * Crosses the boundary with the snapshot rather than being read from the ledger,
+ * because the ledger is simulation state and the renderer may not touch it. It is
+ * per-viewer for the same reason entities are: in a real match you see your own
+ * granary, not your enemy's.
+ */
+export interface PlayerState {
+  readonly cattle: number;
+  readonly grain: number;
+  readonly ammunition: number;
+  /** Grain owed but unpaid at the last upkeep. Non-zero means troops are starving. */
+  readonly shortfall: number;
+  /** 0 (wet) to 1 (parched). */
+  readonly drought: number;
+  readonly droughtSevere: boolean;
+}
+
 export interface SimMessage {
   readonly snapshot: ArrayBuffer;
   readonly events: readonly SimEvent[];
   /** Non-zero when the consumer stalled long enough to lose events. */
   readonly droppedEvents: number;
+  readonly player: PlayerState;
 }
 
 export interface SimHost {
   readonly tick: number;
   readonly movement: MovementSystem;
   readonly cattle: CattleSystem;
+  readonly economy: Economy;
   sendCommand(kind: CommandKind, a?: number, b?: number, c?: number, d?: number): void;
   /** Advance by real elapsed time. A worker host will tick itself and ignore this. */
   pump(elapsedMs: number): void;
@@ -51,6 +75,9 @@ export interface DirectSimHostOptions {
   world: World;
   /** Terrain the simulation moves over. Pathing cost layers derive from it. */
   map: Heightmap;
+  factions?: readonly FactionId[];
+  plots?: readonly GrainPlot[];
+  seed?: number;
   viewerId?: number;
   playerId?: number;
   /**
@@ -92,11 +119,15 @@ export function createDirectSimHost(options: DirectSimHostOptions): SimHost {
     commandDelayTicks = 0,
     strict = defaultStrict(),
     maxPendingEvents = DEFAULT_MAX_PENDING_EVENTS,
+    factions = [FactionId.Zulu, FactionId.Sotho],
+    plots = [],
+    seed = 0,
   } = options;
 
   const movement = createMovementSystem(map);
   const cattle = createCattleSystem();
-  const loop: SimLoop = createLoop(world, movement, cattle);
+  const economy = createEconomy(factions, seed, plots);
+  const loop: SimLoop = createLoop(world, movement, cattle, economy);
   let accumulator = 0;
   let sequence = 0;
 
@@ -123,6 +154,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): SimHost {
   const host: SimHost = {
     movement,
     cattle,
+    economy,
 
     get tick(): number {
       return world.tick;
@@ -171,7 +203,17 @@ export function createDirectSimHost(options: DirectSimHostOptions): SimHost {
       pendingEvents = [];
       droppedEvents = 0;
 
-      return { snapshot, events, droppedEvents: dropped };
+      const droughtNow = economy.drought(world.tick);
+      const player: PlayerState = {
+        cattle: economy.balance(viewerId, Resource.Cattle),
+        grain: economy.balance(viewerId, Resource.Grain),
+        ammunition: economy.balance(viewerId, Resource.Ammunition),
+        shortfall: economy.shortfall[viewerId] ?? 0,
+        drought: droughtNow,
+        droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
+      };
+
+      return { snapshot, events, droppedEvents: dropped, player };
     },
 
     dispose(): void {

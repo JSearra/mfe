@@ -15,6 +15,7 @@ export const EventType = {
   OrderIssued: 2,
   StampedeBegan: 3,
   Crushed: 4,
+  Starved: 5,
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];

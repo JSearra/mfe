@@ -22,5 +22,20 @@
     "umuzi": "homestead",
     "impi": "armed body of men",
     "iQhugwane": "beehive grass hut"
+  },
+  "faction": {
+    "zulu": "amaZulu",
+    "sotho": "Basotho",
+    "ndebele": "amaNdebele",
+    "griqua": "Griqua"
+  },
+  "resource": {
+    "cattle": "Cattle",
+    "grain": "Grain",
+    "ammunition": "Ammunition",
+    "bar": "{cattle} cattle · {grain} grain · {ammunition} shot",
+    "drought": "Drought {pct}%",
+    "droughtSevere": "Drought {pct}% — open plots barren",
+    "starving": "Starving: {amount} grain short"
   }
 }

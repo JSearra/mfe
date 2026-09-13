@@ -31,6 +31,7 @@ import {
 } from './render/selection.js';
 import { createRenderStats } from './render/stats.js';
 import { createDebugOverlay } from './ui/debugOverlay.js';
+import { createResourceBar } from './ui/resourceBar.js';
 
 /**
  * Phase 3 entry point: the simulation now runs behind a boundary.
@@ -137,6 +138,7 @@ async function main(): Promise<void> {
   const selection = createSelection();
   const stats = createRenderStats();
   const overlay = createDebugOverlay(root);
+  const resourceBar = createResourceBar(root);
 
   let view: InterpolatedView | null = null;
   const herdScratch: number[] = [];
@@ -284,7 +286,10 @@ async function main(): Promise<void> {
 
     sim.pump(ticker.deltaMS);
     const message = sim.receive();
-    if (message !== null) interpolator.push(message.snapshot);
+    if (message !== null) {
+      interpolator.push(message.snapshot);
+      resourceBar.update(message.player);
+    }
     view = interpolator.sample(ticker.deltaMS);
 
     terrain.container.scale.set(camera.zoom);

@@ -1,6 +1,7 @@
 import { applyCommand, compareCommands, type Command } from './commands.js';
 import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
 import type { CattleSystem } from './cattle.js';
+import type { Economy } from './economy/ledger.js';
 import type { MovementSystem } from './movement.js';
 import { flushDestroys, packHandle, type World } from './world.js';
 
@@ -10,6 +11,7 @@ export interface SimLoop {
   readonly world: World;
   readonly movement: MovementSystem;
   readonly cattle: CattleSystem;
+  readonly economy: Economy;
   /** Sorted by (tick, playerId, seq) from `cursor` onward. */
   readonly pending: Command[];
   cursor: number;
@@ -25,6 +27,7 @@ export function createLoop(
   world: World,
   movement: MovementSystem,
   cattle: CattleSystem,
+  economy: Economy,
   commands: readonly Command[] = [],
 ): SimLoop {
   const pending = [...commands].sort(compareCommands);
@@ -32,6 +35,7 @@ export function createLoop(
     world,
     movement,
     cattle,
+    economy,
     pending,
     cursor: 0,
     dirty: false,
@@ -54,7 +58,7 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
  * survives until the boundary.
  */
 export function step(loop: SimLoop): void {
-  const { world, movement, cattle, pending, events } = loop;
+  const { world, movement, cattle, economy, pending, events } = loop;
 
   if (loop.dirty) {
     // Only the unconsumed tail can be out of order.
@@ -74,6 +78,9 @@ export function step(loop: SimLoop): void {
   movement.update(world);
   // Cattle read the grid movement just built, so they see this tick's unit positions.
   cattle.update(world, movement.grid, events);
+  // Upkeep lands on exact tick multiples. It reads world.tick before the increment
+  // below, so the first cycle is tick 200, not 199.
+  economy.update(world, events);
 
   // Emitted before the flush, while the entities still have positions to report.
   for (let i = 0; i < world.pendingDestroyCount; i++) {

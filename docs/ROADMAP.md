@@ -275,6 +275,14 @@ reason the hysteresis comparator in `ARCHITECTURE.md` §4 exists.
 
 ## Phase 6 — Economy and factions
 
+**Status: complete.** Ledger, tick-driven upkeep, seasonal drought and four faction
+configurations. Two decisions worth carrying forward: drought severity is derived by
+hashing the year index rather than by drawing from the simulation RNG, so a query cannot
+change the sequence every other system sees; and the player's economic position crosses
+the boundary in the snapshot message as `PlayerState` rather than being read from the
+ledger, because the ledger is simulation state and per-viewer is what fog of war will
+need anyway.
+
 **Deliverables**
 
 - `src/sim/economy/ledger.ts` — Cattle, Grain, Ammunition, Drought. Upkeep every 10s
