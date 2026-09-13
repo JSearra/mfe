@@ -177,7 +177,10 @@ measures the display rather than the renderer — it can neither pass nor fail f
 right reason. Interval is used only to count dropped frames. See ADR-0010.
 
 `npm run perf:terrain` enforces this against a real browser, and downgrades the
-GPU-dependent checks to advisory when it detects software rasterisation.
+GPU-dependent checks to advisory when it detects software rasterisation. It runs nightly
+rather than on every push — it needs a browser download and a minute of wall clock, which
+is too much to spend guarding a slow-moving axis on every commit. `perf:pathing` is pure
+Node and stays on every push.
 
 ---
 

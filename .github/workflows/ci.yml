@@ -22,10 +22,8 @@ jobs:
         run: npm run replay
       - run: npm run build
 
+      # perf:pathing is pure Node and takes seconds, so it stays on every push.
+      # perf:terrain needs a ~94MB Chromium download and a minute of wall clock, so it
+      # runs nightly instead — see nightly-perf.yml.
       - name: Pathing performance budget
         run: npm run perf:pathing
-
-      - name: Install Chromium for the performance gate
-        run: npx playwright install --with-deps chromium
-      - name: Terrain performance budget
-        run: npm run perf:terrain -- --duration 30000

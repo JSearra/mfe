@@ -68,7 +68,7 @@ npm run lint       # eslint (boundaries + banned globals)
 npm test           # vitest
 npm run replay     # golden replay hash test (the determinism gate)
 npm run replay:record  # re-record the golden fixture — deliberate, see below
-npm run perf:terrain    # render performance budget, drives a real browser
+npm run perf:terrain    # render performance budget, drives a real browser (nightly in CI)
 npm run perf:pathing    # simulation movement and path-request budgets
 ```
 

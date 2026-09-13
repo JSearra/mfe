@@ -1,0 +1,42 @@
+name: Nightly render performance
+
+# perf:terrain drives a real browser, which means downloading Chromium (~94MB) and
+# sweeping the camera for a minute. That is too much to spend on every push for a gate
+# that guards a slow-moving axis, so it runs once a night against master.
+#
+# The cost of this trade is that a rendering regression can sit unnoticed for up to a
+# day. If that starts to bite, the middle ground is to add a `push` trigger with a
+# `paths:` filter on src/render/** — it runs close to the cause without paying on every
+# commit.
+
+on:
+  schedule:
+    # 03:17 UTC. An odd minute on purpose: the top of the hour is heavily contended on
+    # shared runners, and a job that never starts is not a gate.
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: Sweep length in milliseconds
+        required: false
+        default: '60000'
+
+jobs:
+  terrain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Terrain performance budget
+        # The full 60s sweep the roadmap specifies, since nightly can afford it.
+        run: npm run perf:terrain -- --duration ${{ github.event.inputs.duration || '60000' }}
