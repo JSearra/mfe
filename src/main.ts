@@ -1,6 +1,7 @@
 import { UPDATE_PRIORITY } from 'pixi.js';
 import { t } from './core/i18n/index.js';
 import { heightAt } from './shared/heightmap.js';
+import { worldToScreenX, worldToScreenY } from './shared/iso.js';
 import { NO_TILE, pickTileIndex, tileX, tileY } from './shared/picking.js';
 import { BuildingType } from './shared/buildings/index.js';
 import { CommandKind } from './sim/commands.js';
@@ -39,6 +40,7 @@ import {
 } from './render/selection.js';
 import { createRenderStats } from './render/stats.js';
 import { createDebugOverlay } from './ui/debugOverlay.js';
+import { createMinimap } from './ui/minimap.js';
 import { createOutcomeBanner } from './ui/outcomeBanner.js';
 import { createResourceBar } from './ui/resourceBar.js';
 
@@ -219,6 +221,14 @@ async function main(): Promise<void> {
   const overlay = createDebugOverlay(root);
   const resourceBar = createResourceBar(root);
   const outcomeBanner = createOutcomeBanner(root);
+  const minimap = createMinimap(root, map, {
+    onSeek(worldX, worldY) {
+      // Centre the camera on the clicked point, in isometric space.
+      camera.x = worldToScreenX(worldX, worldY);
+      camera.y = worldToScreenY(worldX, worldY, 0);
+    },
+  });
+  let latestFog: Uint8Array | null = null;
 
   let view: InterpolatedView | null = null;
   const herdScratch: number[] = [];
@@ -342,6 +352,7 @@ async function main(): Promise<void> {
   if (import.meta.env?.DEV) {
     (window as unknown as Record<string, unknown>).__debug = {
       renderTick: () => interpolator.renderTick,
+      camera: () => [Math.round(camera.x), Math.round(camera.y)],
       simTick: () => sim.tick,
       count: () => view?.count ?? 0,
       selected: () => [...selection.handles],
@@ -432,6 +443,7 @@ async function main(): Promise<void> {
       resourceBar.update(message.player);
       outcomeBanner.update(message.player, PLAYER);
       fog.setFog(message.fog);
+      if (message.fog !== null) latestFog = message.fog;
       // Sound comes from events, never from diffing snapshots: a death simply stops
       // appearing, and there is nothing in a state diff that says it happened.
       audio.handle(message.events, camera);
@@ -456,6 +468,8 @@ async function main(): Promise<void> {
     const hoverY = index === NO_TILE ? 0 : tileY(map, index);
     if (index === NO_TILE) cursor.visible = false;
     else placeTileCursor(cursor, map, hoverX, hoverY);
+
+    minimap.update(view, latestFog, camera);
 
     overlay.update({
       cameraX: camera.x,

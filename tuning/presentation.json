@@ -57,5 +57,12 @@
     "maxVoices": 12,
     "audibleRadius": 34.0,
     "minEventGapMs": 45
+  },
+  "minimap": {
+    "size": 176,
+    "unexploredColour": "#0b0906",
+    "exploredDim": 0.45,
+    "viewportColour": "#e8d9a8",
+    "dotSize": 2
   }
 }
