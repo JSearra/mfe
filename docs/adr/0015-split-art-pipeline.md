@@ -47,6 +47,17 @@ unrunnable for anyone who had not personally clicked through a licence, and this
 does not handle tokens. An ungated model of adequate quality is worth more than a
 marginally better gated one.
 
+## A constraint that decides the model, not the quantisation
+
+`-q 4` quantises at load time: the full-precision weights are read into memory before
+being reduced. So the number that matters on a given machine is the *unquantised* size,
+not the quantised one. A 6B model with a large text encoder is over 20GB on disk and
+cannot be loaded to be quantised on 16GB of RAM.
+
+The practical consequence is that model choice is bounded by RAM rather than by taste,
+and the answer to "it will not fit" is a smaller model rather than a smaller
+quantisation. Worth checking before a multi-gigabyte download rather than after.
+
 ## Consequences
 
 - The renderer stays asset-agnostic behind a manifest, so neither half of the pipeline

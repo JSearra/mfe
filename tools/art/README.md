@@ -41,7 +41,17 @@ token; avoiding that keeps the pipeline runnable without credentials. If you wou
 rather use Flux, accept the licence and run `huggingface-cli login` yourself — this
 project does not handle tokens.
 
-Roughly 12GB of model weights land in `~/.cache/huggingface` on first run.
+**Model weights are larger than they look.** The first run pulls well over 20GB into
+`~/.cache/huggingface` — a 6B image model plus a text encoder several times its size.
+Budget disk accordingly.
+
+**And they have to fit in RAM to be quantised.** `-q 4` quantises at load time, which
+means the full-precision weights are read into memory first. On a 16GB machine a model
+this size will swap hard and may not complete at all. If that happens the fix is a
+smaller model rather than a smaller quantisation — mflux lists several, and
+`flux2-klein-4b` is about a third the size. This is the constraint that decides which
+model you can use locally, and it is worth checking before a long download rather than
+after.
 
 ## Terrain and props
 
