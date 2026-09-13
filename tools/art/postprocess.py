@@ -38,23 +38,40 @@ def load_palette(path: pathlib.Path) -> np.ndarray:
     )
 
 
-def snap_to_palette(image: Image.Image, palette: np.ndarray) -> Image.Image:
+def harmonise(image: Image.Image, target: np.ndarray, strength: float) -> Image.Image:
     """
-    Replace every pixel with its nearest palette colour.
+    Recolour a texture toward a height band's colour while keeping its detail.
 
-    Nearest in plain RGB rather than a perceptual space: the palette is a narrow band of
-    ochres, so the fancier distance buys nothing and costs a dependency.
+    NOT a snap to the nearest palette entry. That was the first implementation and it
+    was wrong in a way only visible in the output: the palette is an eight-step ramp for
+    shading height bands, so snapping a texture to it collapses every pixel in a tile to
+    one or two colours and a rich red-dust-and-scrub surface comes out flat khaki. The
+    palette's job is to say which band a tile belongs to; it was never a description of
+    what the ground looks like.
+
+    So: keep each pixel's luminance, which is where all the texture lives, and take the
+    hue from the band. `strength` controls how much of the source's own colour survives,
+    so a generation whose colour is already right is not fought.
     """
-    rgba = np.array(image.convert("RGBA"), dtype=np.int16)
-    rgb = rgba[:, :, :3]
+    rgb = np.array(image.convert("RGB"), dtype=np.float64) / 255.0
 
-    # (pixels, 1, 3) against (1, palette, 3) -> (pixels, palette)
-    flat = rgb.reshape(-1, 1, 3)
-    distances = ((flat - palette.reshape(1, -1, 3)) ** 2).sum(axis=2)
-    nearest = palette[distances.argmin(axis=1)]
+    # Rec. 709 luminance: matches how the eye weights the channels, so detail is
+    # preserved rather than the green channel dominating.
+    luminance = rgb[:, :, 0] * 0.2126 + rgb[:, :, 1] * 0.7152 + rgb[:, :, 2] * 0.0722
 
-    rgba[:, :, :3] = nearest.reshape(rgb.shape)
-    return Image.fromarray(rgba.astype(np.uint8), "RGBA")
+    band = target.astype(np.float64) / 255.0
+    band_luminance = band[0] * 0.2126 + band[1] * 0.7152 + band[2] * 0.0722
+    if band_luminance < 1e-6:
+        band_luminance = 1e-6
+
+    # Scale the band colour by each pixel's luminance relative to the band's own, so a
+    # bright grain stays bright and a shadow stays dark.
+    scaled = band.reshape(1, 1, 3) * (luminance / band_luminance)[:, :, None]
+    blended = rgb * (1.0 - strength) + scaled * strength
+
+    out = np.array(image.convert("RGBA"))
+    out[:, :, :3] = np.clip(blended * 255.0, 0, 255).astype(np.uint8)
+    return Image.fromarray(out, "RGBA")
 
 
 def diamond_mask(width: int, height: int) -> np.ndarray:
@@ -65,12 +82,12 @@ def diamond_mask(width: int, height: int) -> np.ndarray:
     return (nx + ny) <= 1.0
 
 
-def make_tile(source: Image.Image, palette: np.ndarray) -> Image.Image:
-    """Resize to the tile footprint, snap the palette, and mask to the diamond."""
+def make_tile(source: Image.Image, band: np.ndarray, strength: float) -> Image.Image:
+    """Resize to the tile footprint, harmonise to the band, and mask to the diamond."""
     resized = source.convert("RGBA").resize((TILE_W, TILE_H), Image.Resampling.LANCZOS)
-    snapped = snap_to_palette(resized, palette)
+    toned = harmonise(resized, band, strength)
 
-    pixels = np.array(snapped)
+    pixels = np.array(toned)
     pixels[:, :, 3] = np.where(diamond_mask(TILE_W, TILE_H), 255, 0)
     return Image.fromarray(pixels, "RGBA")
 
@@ -110,12 +127,25 @@ def command_tile(args: argparse.Namespace) -> int:
 
     manifest = []
     for path in sorted(source.glob("*.png")):
+        # Which height band a tile belongs to is a naming decision, not something to
+        # infer from its colours. Unprefixed files land in the middle of the ramp.
+        band_index = args.band if args.band >= 0 else len(palette) // 2
+        band = palette[min(band_index, len(palette) - 1)]
+
         with Image.open(path) as image:
             seam = tileability(image)
-            tile = make_tile(image, palette)
+            tile = make_tile(image, band, args.strength)
         out = target / path.name
         tile.save(out)
-        manifest.append({"file": path.name, "width": TILE_W, "height": TILE_H, "seam": round(seam, 4)})
+        manifest.append(
+            {
+                "file": path.name,
+                "width": TILE_W,
+                "height": TILE_H,
+                "band": band_index,
+                "seam": round(seam, 4),
+            }
+        )
         print(f"  {path.name}: seam {seam:.3f}")
 
     (target / "manifest.json").write_text(json.dumps({"tiles": manifest}, indent=2) + "\n")
@@ -185,6 +215,18 @@ def main() -> int:
     tile.add_argument("--in", dest="input", required=True)
     tile.add_argument("--out", dest="output", required=True)
     tile.add_argument("--palette", default="tuning/presentation.json")
+    tile.add_argument(
+        "--band",
+        type=int,
+        default=-1,
+        help="Height band to tone toward (0 lowest). Default is the middle of the ramp.",
+    )
+    tile.add_argument(
+        "--strength",
+        type=float,
+        default=0.55,
+        help="How far to pull colour toward the band. 0 keeps the generation as-is.",
+    )
     tile.set_defaults(func=command_tile)
 
     sprite = sub.add_parser("sprite", help="Rendered frame -> trimmed sprite with offsets")

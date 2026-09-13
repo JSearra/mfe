@@ -68,10 +68,17 @@ python tools/art/postprocess.py tile --in tools/art/raw --out public/assets/terr
 
 `generate_tiles.py` pins light direction, palette and projection in every prompt, and
 derives seeds rather than randomising them, so the same invocation reproduces the same
-set. `postprocess.py tile` then does the work that makes the output usable: snapping
-every pixel to the palette in `tuning/presentation.json`, masking to the exact 64x32
-diamond, and scoring each tile for seam disagreement so the worst of a batch can be
-thrown back.
+set. `postprocess.py tile` then does the work that makes the output usable: toning each
+image toward a height band from the palette in `tuning/presentation.json`, masking to
+the exact 64x32 diamond, and scoring each tile for seam disagreement so the worst of a
+batch can be thrown back.
+
+**Toning, not snapping.** The first version replaced every pixel with the nearest
+palette entry, and it was wrong in a way only the output showed: the palette is an
+eight-step ramp for shading height bands, so snapping a texture to it collapsed a rich
+red-dust-and-scrub surface to flat khaki with no texture at all. Harmonising keeps each
+pixel's luminance — where all the detail lives — and takes the hue from the band.
+`--strength` sets how far to pull, from 0 (keep the generation's own colour) to 1.
 
 **Honest limitation:** diffusion has no notion of edge wrap, so seamless tiling is luck.
 The seam score tells you how lucky. Where seams matter more than richness, procedural
