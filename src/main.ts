@@ -283,6 +283,21 @@ async function main(): Promise<void> {
   };
 
   window.addEventListener('keydown', (event) => {
+    // Control groups. Ctrl (or Cmd) assigns, the bare digit recalls. Entirely client
+    // state — no command is sent and the simulation never learns any of it happened.
+    const digit = Number(event.key);
+    if (Number.isInteger(digit) && digit >= 1 && digit <= 9 && (event.ctrlKey || event.metaKey)) {
+      selection.assignGroup(digit);
+      event.preventDefault();
+      return;
+    }
+    if (Number.isInteger(digit) && digit >= 4 && digit <= 9 && view !== null) {
+      // 1-3 are build hotkeys, so groups start at 4. Colliding with build mode would
+      // make the most-used keys in the game ambiguous.
+      selection.recallGroup(digit, view);
+      return;
+    }
+
     if (event.key === 'a' || event.key === 'A') {
       // Arm, then click — the genre's convention, and the reason it is a mode rather
       // than a modifier is that the click may be a long way from the key press.

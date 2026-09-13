@@ -79,15 +79,54 @@ export interface SelectionModel {
     additive: boolean,
   ): void;
   clear(): void;
+  /**
+   * Remember the current selection under a digit, and recall it later.
+   *
+   * Entirely client state. `CLAUDE.md` is explicit that selection never enters the
+   * simulation, and control groups are selection — so no command, no world field, and
+   * nothing here can move a hash. A group is stored as handles, which carry a
+   * generation, so a member that dies and has its slot recycled is not silently
+   * replaced by whatever now occupies it: recall drops it instead.
+   */
+  assignGroup(digit: number): void;
+  recallGroup(digit: number, view: InterpolatedView): boolean;
 }
+
+/** Digits 1..9. Zero is not a group; it is the digit people press by accident. */
+const GROUPS = 9;
 
 export function createSelection(): SelectionModel {
   const handles = new Set<number>();
+  const groups = new Map<number, number[]>();
 
   return {
     handles,
     clear(): void {
       handles.clear();
+    },
+
+    assignGroup(digit): void {
+      if (digit < 1 || digit > GROUPS) return;
+      groups.set(digit, [...handles]);
+    },
+
+    recallGroup(digit, view): boolean {
+      const group = groups.get(digit);
+      if (group === undefined || group.length === 0) return false;
+
+      // Filter against what is actually in the view. A handle whose generation no
+      // longer matches belongs to a dead unit whose slot has been reused, and recalling
+      // it would hand the player someone else's troops — or the enemy's.
+      const live = new Set<number>();
+      for (let i = 0; i < view.count; i++) live.add(view.handle[i]!);
+
+      const survivors = group.filter((handle) => live.has(handle));
+      if (survivors.length !== group.length) groups.set(digit, survivors);
+      if (survivors.length === 0) return false;
+
+      handles.clear();
+      for (const handle of survivors) handles.add(handle);
+      return true;
     },
 
     selectInRect(view, map, camera, layer, rect, faction, additive): void {

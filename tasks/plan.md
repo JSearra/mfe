@@ -36,7 +36,7 @@ SpawnCattle, Leash, Attack, Build, Research, Train, SetRally.
       all today.
       *Done when:* two queued move orders are executed in sequence, the queue survives the
       unit being re-selected, and an unmodified order clears it.
-- [ ] **A4 — Control groups.** Ctrl+N to assign, N to recall. Pure client state.
+- [x] **A4 — Control groups.** Done. Ctrl+N to assign, N to recall. Pure client state.
       *Done when:* assigning and recalling round-trips, a group drops dead members, and a
       test asserts the world hash is unchanged by any of it.
 - [ ] **A5 — Patrol.** Move between two points until told otherwise, engaging on the way.
