@@ -102,6 +102,20 @@ export interface World {
   /** Where a defensive unit returns to, and what its leash is measured from. */
   readonly postX: Float64Array;
   readonly postY: Float64Array;
+  /**
+   * Queued orders, ORDER_QUEUE_MAX per unit, as a ring starting at queueHead.
+   *
+   * Fixed-size and flat rather than an array of arrays: the world is struct-of-arrays so
+   * that it can be hashed, saved and sent as typed buffers without a bespoke codec per
+   * field, and a per-unit list would need exactly that. Eight waypoints is more than a
+   * player queues in practice, and an order arriving at a full queue drops rather than
+   * growing anything.
+   */
+  readonly queueX: Float64Array;
+  readonly queueY: Float64Array;
+  readonly queueMode: Uint8Array;
+  readonly queueHead: Uint8Array;
+  readonly queueCount: Uint8Array;
   readonly attackTarget: Uint32Array;
   /** Ticks until this unit may strike again. */
   readonly attackCooldown: Uint16Array;
@@ -178,6 +192,11 @@ export function createWorld(capacity: number, seed: number): World {
     stance: new Uint8Array(capacity),
     postX: new Float64Array(capacity),
     postY: new Float64Array(capacity),
+    queueX: new Float64Array(capacity * ORDER_QUEUE_MAX),
+    queueY: new Float64Array(capacity * ORDER_QUEUE_MAX),
+    queueMode: new Uint8Array(capacity * ORDER_QUEUE_MAX),
+    queueHead: new Uint8Array(capacity),
+    queueCount: new Uint8Array(capacity),
     attackTarget: new Uint32Array(capacity),
     attackCooldown: new Uint16Array(capacity),
     stuckTicks: new Uint16Array(capacity),
@@ -225,6 +244,47 @@ export type OrderMode = (typeof OrderMode)[keyof typeof OrderMode];
  * defenders that all chase the first scout they see has abandoned the thing it was
  * defending, which is the oldest complaint in the genre.
  */
+/** Waypoints a single unit may have queued behind its current order. */
+export const ORDER_QUEUE_MAX = 8;
+
+/** Append an order. False if the queue is full, which drops the order rather than growing. */
+export function enqueueOrder(
+  world: World,
+  index: number,
+  x: number,
+  y: number,
+  mode: number,
+): boolean {
+  const count = world.queueCount[index]!;
+  if (count >= ORDER_QUEUE_MAX) return false;
+  const slot = (world.queueHead[index]! + count) % ORDER_QUEUE_MAX;
+  const at = index * ORDER_QUEUE_MAX + slot;
+  world.queueX[at] = x;
+  world.queueY[at] = y;
+  world.queueMode[at] = mode;
+  world.queueCount[index] = count + 1;
+  return true;
+}
+
+/** Take the next queued order, or null. */
+export function dequeueOrder(
+  world: World,
+  index: number,
+): { x: number; y: number; mode: number } | null {
+  const count = world.queueCount[index]!;
+  if (count === 0) return null;
+  const head = world.queueHead[index]!;
+  const at = index * ORDER_QUEUE_MAX + head;
+  world.queueHead[index] = (head + 1) % ORDER_QUEUE_MAX;
+  world.queueCount[index] = count - 1;
+  return { x: world.queueX[at]!, y: world.queueY[at]!, mode: world.queueMode[at]! };
+}
+
+export function clearOrderQueue(world: World, index: number): void {
+  world.queueCount[index] = 0;
+  world.queueHead[index] = 0;
+}
+
 export const Stance = {
   /** Chase what it acquires, as far as the chase range allows. */
   Aggressive: 0,
@@ -318,6 +378,7 @@ export function spawn(
   world.rallyY[index] = y;
   world.orderMode[index] = OrderMode.Move;
   world.stance[index] = Stance.Aggressive;
+  clearOrderQueue(world, index);
   world.postX[index] = x;
   world.postY[index] = y;
   world.attackTarget[index] = NULL_HANDLE;

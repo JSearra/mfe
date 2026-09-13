@@ -32,7 +32,7 @@ SpawnCattle, Leash, Attack, Build, Research, Train, SetRally.
       what it is fighting, and how far.
       *Done when:* an aggressive unit pursues a fleeing target, a defensive one returns to
       where it was ordered, a hold-ground one never leaves its tile.
-- [ ] **A3 — Order queue.** Shift-click to append rather than replace. No queue exists at
+- [x] **A3 — Order queue.** Done. Shift-click to append rather than replace. No queue exists at
       all today.
       *Done when:* two queued move orders are executed in sequence, the queue survives the
       unit being re-selected, and an unmodified order clears it.

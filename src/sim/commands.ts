@@ -9,7 +9,9 @@ import { TECH_IDS } from '../shared/tech/index.js';
 import type { TechState } from './tech.js';
 import type { MovementSystem } from './movement.js';
 import {
+  clearOrderQueue,
   destroy,
+  enqueueOrder,
   EntityKind,
   handleIndex,
   isAlive,
@@ -124,11 +126,32 @@ export function applyCommand(
     case CommandKind.MoveTo:
     case CommandKind.AttackMove: {
       const handle = command.a as Handle;
+      const mode =
+        command.kind === CommandKind.AttackMove ? OrderMode.AttackMove : OrderMode.Move;
+
+      // `d` non-zero appends rather than replaces. It rides on the existing command
+      // rather than doubling the command kinds, because queueing is a property of how an
+      // order was issued and not a different order.
+      if (command.d !== 0) {
+        if (!isAlive(world, handle)) return false;
+        const index = handleIndex(handle);
+        if (world.kind[index] !== EntityKind.Unit) return false;
+        // A unit standing idle has nothing to queue behind, so the first shift-click
+        // starts the march instead of sitting in a queue nothing will ever drain.
+        if (world.hasTarget[index] !== 1) {
+          if (!movement.order(world, handle, command.b, command.c)) return false;
+          world.orderMode[index] = mode;
+          events.push(makeEvent(world.tick, EventType.OrderIssued, handle, command.b, command.c));
+          return true;
+        }
+        return enqueueOrder(world, index, command.b, command.c, mode);
+      }
+
       if (!movement.order(world, handle, command.b, command.c)) return false;
+      clearOrderQueue(world, handleIndex(handle));
       // Set after the order is accepted, so a rejected order cannot leave a unit in a
       // mode it never entered.
-      world.orderMode[handleIndex(handle)] =
-        command.kind === CommandKind.AttackMove ? OrderMode.AttackMove : OrderMode.Move;
+      world.orderMode[handleIndex(handle)] = mode;
       events.push(makeEvent(world.tick, EventType.OrderIssued, handle, command.b, command.c));
       return true;
     }

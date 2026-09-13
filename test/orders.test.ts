@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { step } from '../src/sim/loop.js';
 import { CommandKind } from '../src/sim/commands.js';
-import { NULL_HANDLE, Stance, handleIndex, spawn } from '../src/sim/world.js';
+import { NULL_HANDLE, ORDER_QUEUE_MAX, Stance, handleIndex, spawn } from '../src/sim/world.js';
 import { tuning } from '../src/sim/tuning.js';
 import { makeSim } from './simHarness.js';
 
@@ -76,9 +76,24 @@ function issue(sim: ReturnType<typeof makeSim>, kind: number, a: number, b: numb
   sim.loop.dirty = true;
 }
 
+/** Shift-click: append rather than replace. The `d` field carries that. */
+function queued(sim: ReturnType<typeof makeSim>, kind: number, a: number, b: number, c: number): void {
+  sim.loop.pending.push({
+    kind: kind as never,
+    a,
+    b,
+    c,
+    d: 1,
+    playerId: PLAYER,
+    seq: sim.loop.pending.length,
+    tick: sim.world.tick,
+  });
+  sim.loop.dirty = true;
+}
+
 describe('attack-move', () => {
   it('walks past a fight under a plain move order', () => {
-    const { sim, marcher, defender } = scenario();
+    const { sim, marcher } = scenario();
     issue(sim, CommandKind.MoveTo, marcher, 20, 20);
 
     const index = handleIndex(marcher);
@@ -174,5 +189,70 @@ describe('stances', () => {
     issue(sim, CommandKind.SetStance, unit, Stance.HoldGround, 0);
     run(sim, 2);
     expect(sim.world.stance[handleIndex(unit)]).toBe(Stance.HoldGround);
+  });
+});
+
+describe('order queue', () => {
+  it('runs queued waypoints in order', () => {
+    const sim = makeSim(64, 5);
+    const unit = spawn(sim.world, 4, 4, PLAYER);
+    const index = handleIndex(unit);
+
+    issue(sim, CommandKind.MoveTo, unit, 12, 4);
+    queued(sim, CommandKind.MoveTo, unit, 12, 14);
+
+    // Somewhere along the way it must have been near the first waypoint, and it must
+    // end near the second. Checking only the endpoint would pass for a unit that
+    // ignored the first order entirely and went straight to the last.
+    let touchedFirst = false;
+    for (let t = 0; t < 400; t++) {
+      step(sim.loop);
+      const dx = sim.world.posX[index]! - 12;
+      const dy = sim.world.posY[index]! - 4;
+      if (Math.sqrt(dx * dx + dy * dy) < 1.5) touchedFirst = true;
+    }
+
+    expect(touchedFirst).toBe(true);
+    expect(Math.abs(sim.world.posX[index]! - 12)).toBeLessThan(2);
+    expect(Math.abs(sim.world.posY[index]! - 14)).toBeLessThan(2);
+  });
+
+  it('an unqueued order throws the queue away', () => {
+    const sim = makeSim(64, 5);
+    const unit = spawn(sim.world, 4, 4, PLAYER);
+    const index = handleIndex(unit);
+
+    issue(sim, CommandKind.MoveTo, unit, 20, 4);
+    queued(sim, CommandKind.MoveTo, unit, 20, 20);
+    run(sim, 4);
+    expect(sim.world.queueCount[index]).toBe(1);
+
+    issue(sim, CommandKind.MoveTo, unit, 4, 20);
+    run(sim, 2);
+    expect(sim.world.queueCount[index]).toBe(0);
+  });
+
+  it('starts marching when the first order is queued onto an idle unit', () => {
+    const sim = makeSim(64, 5);
+    const unit = spawn(sim.world, 4, 4, PLAYER);
+    const index = handleIndex(unit);
+
+    // Nothing to queue behind, so it must start rather than sit in a queue that
+    // nothing will ever drain.
+    queued(sim, CommandKind.MoveTo, unit, 14, 4);
+    run(sim, 6);
+    expect(sim.world.hasTarget[index]).toBe(1);
+  });
+
+  it('drops orders past the queue limit rather than growing', () => {
+    const sim = makeSim(64, 5);
+    const unit = spawn(sim.world, 4, 4, PLAYER);
+    const index = handleIndex(unit);
+
+    issue(sim, CommandKind.MoveTo, unit, 20, 4);
+    run(sim, 2);
+    for (let i = 0; i < ORDER_QUEUE_MAX + 5; i++) queued(sim, CommandKind.MoveTo, unit, 20, 6 + i);
+    run(sim, 2);
+    expect(sim.world.queueCount[index]).toBe(ORDER_QUEUE_MAX);
   });
 });

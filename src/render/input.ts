@@ -27,7 +27,8 @@ export interface InputHandlers {
   /** Live marquee rectangle, or null when not dragging. */
   onMarqueeChange(rect: Rect | null): void;
   /** Right-click. */
-  onOrder(viewportX: number, viewportY: number): void;
+  /** `queued` is shift held: append to the unit's orders rather than replacing them. */
+  onOrder(viewportX: number, viewportY: number, queued: boolean): void;
 }
 
 type PanKey = 'panLeft' | 'panRight' | 'panUp' | 'panDown';
@@ -148,7 +149,7 @@ export function bindInput(
 
   const onContextMenu = (event: MouseEvent): void => {
     event.preventDefault();
-    handlers.onOrder(event.offsetX, event.offsetY);
+    handlers.onOrder(event.offsetX, event.offsetY, event.shiftKey);
   };
 
   const onWheel = (event: WheelEvent): void => {

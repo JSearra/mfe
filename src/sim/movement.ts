@@ -13,6 +13,7 @@ import {
   ANIM_WALK,
   EntityKind,
   handleIndex,
+  dequeueOrder,
   isAlive,
   NULL_HANDLE,
   packHandle,
@@ -322,7 +323,10 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
   const direction: [number, number] = [0, 0];
   const step: [number, number] = [0, 0];
 
-  return {
+  // Named rather than returned as a literal, so `update` can issue the next queued
+  // order through the same path a player's order takes — routing, group detection and
+  // all — instead of reaching past it into the world.
+  const system: MovementSystem = {
     pathing,
     grid,
     stats,
@@ -474,6 +478,16 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
           world.hasTarget[index] = 0;
           world.stuckTicks[index] = 0;
           clearRoute(world, index);
+
+          // Arrived. If anything is queued behind this, start it now rather than going
+          // idle for a tick first — a visible stutter at every waypoint is what makes a
+          // queued route look like a series of separate orders instead of one path.
+          const next = dequeueOrder(world, index);
+          if (next !== null && system.order(world, packHandle(index, world.generation[index]!), next.x, next.y)) {
+            world.orderMode[index] = next.mode;
+            continue;
+          }
+
           setAnim(world, index, ANIM_IDLE);
           continue;
         }
@@ -569,6 +583,8 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
       resolveOverlaps(world, grid, pushApart, layers, map.width, map.height);
     },
   };
+
+  return system;
 }
 
 /**

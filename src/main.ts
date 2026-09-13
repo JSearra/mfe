@@ -346,7 +346,7 @@ async function main(): Promise<void> {
     onMarqueeChange(rect: Rect | null) {
       drawMarquee(marquee, rect);
     },
-    onOrder(x, y) {
+    onOrder(x, y, queued) {
       if (selection.handles.size === 0 || view === null) return;
 
       // Right-clicking a cow herds it; right-clicking ground is a move order. Same
@@ -386,7 +386,7 @@ async function main(): Promise<void> {
       const kind = attackMoveArmed ? CommandKind.AttackMove : CommandKind.MoveTo;
       attackMoveArmed = false;
       for (const handle of selection.handles) {
-        sim.sendCommand(kind, handle, target.x, target.y);
+        sim.sendCommand(kind, handle, target.x, target.y, queued ? 1 : 0);
       }
     },
   });
