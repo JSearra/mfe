@@ -143,6 +143,13 @@ Budget asserted by `perf:terrain`: p99 frame < 16.6ms, draw calls <= 60, zero lo
 
 ## Phase 3 — Sim core and the snapshot boundary
 
+**Status: complete.** The renderer now reads snapshots and events, never the world, with
+the rule lint-enforced. Verified in a browser as well as by unit test: marquee selection,
+right-click orders reaching the simulation as commands, and interpolation measured at 59
+moving frames out of 59 — a non-interpolating renderer would leave two thirds of frames
+static. Two refinements, ADR-0011 (blend the bracketing pair, not the two newest
+snapshots) and ADR-0012 (commands cross as primitives, so the command clone is dropped).
+
 **Deliverables**
 
 - Entity kinds with real fields; systems as plain functions over explicit array refs.

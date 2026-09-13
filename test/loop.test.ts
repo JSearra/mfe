@@ -32,7 +32,7 @@ describe('loop', () => {
       makeCommand(1, 1, 0, CommandKind.Spawn),
       makeCommand(1, 0, 0, CommandKind.Spawn),
     ]);
-    expect(loop.log.map((c) => [c.tick, c.playerId])).toEqual([
+    expect(loop.pending.map((c: { tick: number; playerId: number }) => [c.tick, c.playerId])).toEqual([
       [1, 0],
       [1, 1],
       [3, 0],
@@ -71,14 +71,15 @@ describe('loop', () => {
       makeCommand(1, 0, 1, CommandKind.Destroy, packHandle(0, 1)),
       makeCommand(2, 0, 2, CommandKind.Spawn, 5, 5, 0, 0),
       // Stale: index 0 is live again, but at generation 2.
-      makeCommand(3, 0, 3, CommandKind.SetVelocity, packHandle(0, 1), 99, 99),
+      makeCommand(3, 0, 3, CommandKind.MoveTo, packHandle(0, 1), 99, 99),
     ]);
 
     runTicks(loop, 4);
 
     const live = packHandle(0, 2);
     expect(isAlive(world, live)).toBe(true);
-    expect(Math.abs(world.velX[handleIndex(live)]!)).toBeLessThan(10);
+    // The stale order must not have retargeted the recycled slot toward (99, 99).
+    expect(world.hasTarget[handleIndex(live)]).toBe(0);
   });
 
   it('advances the tick counter exactly once per step', () => {

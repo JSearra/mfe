@@ -31,8 +31,7 @@ export function buildScenario(seed: number, ticks: number): Command[] {
           CommandKind.Spawn,
           nextSigned(rng) * 64,
           nextSigned(rng) * 64,
-          nextSigned(rng) * 2,
-          nextSigned(rng) * 2,
+          nextInt(rng, 2),
         ),
       );
     }
@@ -43,10 +42,10 @@ export function buildScenario(seed: number, ticks: number): Command[] {
           tick,
           playerId,
           seq++,
-          CommandKind.SetVelocity,
+          CommandKind.MoveTo,
           packHandle(nextInt(rng, 64), 1),
-          nextSigned(rng) * 3,
-          nextSigned(rng) * 3,
+          nextSigned(rng) * 64,
+          nextSigned(rng) * 64,
         ),
       );
     }

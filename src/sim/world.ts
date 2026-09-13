@@ -1,4 +1,6 @@
-import { createRng, nextSigned, type Rng } from './math/rng.js';
+import { atan2, angleDelta } from './math/trig.js';
+import { createRng, type Rng } from './math/rng.js';
+import { tuning } from './tuning.js';
 
 /**
  * Entity storage: struct-of-arrays, no ECS. See docs/adr/0005-struct-of-arrays-not-ecs.md.
@@ -46,6 +48,23 @@ export interface World {
   readonly velX: Float64Array;
   readonly velY: Float64Array;
 
+  /** Radians. Kept at full precision here; quantised only when it crosses the boundary. */
+  readonly facing: Float64Array;
+  readonly targetX: Float64Array;
+  readonly targetY: Float64Array;
+  readonly hasTarget: Uint8Array;
+
+  readonly faction: Uint8Array;
+  readonly hp: Uint16Array;
+  readonly animState: Uint8Array;
+  /**
+   * Tick the current animation began. Sent across the boundary because a renderer
+   * running at 60fps against 20Hz snapshots has no other way to know a walk cycle's
+   * phase, and without it looping animations visibly restart every tick.
+   */
+  readonly animStartTick: Uint32Array;
+  readonly flags: Uint8Array;
+
   readonly freeStack: Uint32Array;
   freeCount: number;
 
@@ -77,6 +96,15 @@ export function createWorld(capacity: number, seed: number): World {
     posY: new Float64Array(capacity),
     velX: new Float64Array(capacity),
     velY: new Float64Array(capacity),
+    facing: new Float64Array(capacity),
+    targetX: new Float64Array(capacity),
+    targetY: new Float64Array(capacity),
+    hasTarget: new Uint8Array(capacity),
+    faction: new Uint8Array(capacity),
+    hp: new Uint16Array(capacity),
+    animState: new Uint8Array(capacity),
+    animStartTick: new Uint32Array(capacity),
+    flags: new Uint8Array(capacity),
     freeStack,
     freeCount: capacity,
     pendingDestroy: new Uint32Array(capacity),
@@ -93,13 +121,10 @@ export function isAlive(world: World, handle: Handle): boolean {
   return world.alive[index] === 1 && world.generation[index] === handleGeneration(handle);
 }
 
-export function spawn(
-  world: World,
-  x: number,
-  y: number,
-  vx: number,
-  vy: number,
-): Handle {
+export const ANIM_IDLE = 0;
+export const ANIM_WALK = 1;
+
+export function spawn(world: World, x: number, y: number, faction: number): Handle {
   if (world.freeCount === 0) return NULL_HANDLE;
 
   const index = world.freeStack[--world.freeCount]!;
@@ -107,11 +132,29 @@ export function spawn(
   world.destroyPending[index] = 0;
   world.posX[index] = x;
   world.posY[index] = y;
-  world.velX[index] = vx;
-  world.velY[index] = vy;
+  world.velX[index] = 0;
+  world.velY[index] = 0;
+  world.facing[index] = 0;
+  world.targetX[index] = x;
+  world.targetY[index] = y;
+  world.hasTarget[index] = 0;
+  world.faction[index] = faction;
+  world.hp[index] = tuning.unit.maxHp;
+  world.animState[index] = ANIM_IDLE;
+  world.animStartTick[index] = world.tick;
+  world.flags[index] = 0;
   world.liveCount++;
 
   return packHandle(index, world.generation[index]!);
+}
+
+export function orderMove(world: World, handle: Handle, x: number, y: number): boolean {
+  if (!isAlive(world, handle)) return false;
+  const index = handleIndex(handle);
+  world.targetX[index] = x;
+  world.targetY[index] = y;
+  world.hasTarget[index] = 1;
+  return true;
 }
 
 /**
@@ -161,38 +204,70 @@ export function flushDestroys(world: World): number {
 }
 
 /**
- * Phase 0 movement: integrate velocity, apply damping, add a seeded wander.
+ * Move each unit toward its order target.
  *
- * This exists to give the replay harness real dynamics to hash — something that
- * consumes RNG draws and accumulates floating-point state across ticks. Phase 4
- * replaces it with steering.
+ * Not pathfinding — that is Phase 4. A straight approach with arrival deceleration is
+ * enough to exercise the boundary, and it establishes the property the renderer's
+ * extrapolation guard depends on: a unit must never step past its target. Speed is
+ * therefore clamped by distance/dt as well as by maxSpeed, so the final step lands
+ * exactly on the target rather than overshooting and springing back.
  */
-export function integrate(
-  world: World,
-  dt: number,
-  damping: number,
-  maxSpeed: number,
-  wanderStrength: number,
-): void {
-  const { alive, posX, posY, velX, velY, rng, capacity } = world;
-  const maxSpeedSq = maxSpeed * maxSpeed;
+export function moveUnits(world: World): void {
+  const { dt, maxSpeed, arriveRadius, decel, turnRate } = tuning.movement;
+  const { alive, posX, posY, velX, velY, facing, targetX, targetY, hasTarget, capacity } = world;
 
   for (let i = 0; i < capacity; i++) {
     if (alive[i] !== 1) continue;
 
-    let vx = velX[i]! * damping + nextSigned(rng) * wanderStrength;
-    let vy = velY[i]! * damping + nextSigned(rng) * wanderStrength;
-
-    const speedSq = vx * vx + vy * vy;
-    if (speedSq > maxSpeedSq) {
-      const scale = maxSpeed / Math.sqrt(speedSq);
-      vx *= scale;
-      vy *= scale;
+    if (hasTarget[i] !== 1) {
+      velX[i] = 0;
+      velY[i] = 0;
+      setAnim(world, i, ANIM_IDLE);
+      continue;
     }
+
+    const dx = targetX[i]! - posX[i]!;
+    const dy = targetY[i]! - posY[i]!;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance <= arriveRadius) {
+      posX[i] = targetX[i]!;
+      posY[i] = targetY[i]!;
+      velX[i] = 0;
+      velY[i] = 0;
+      hasTarget[i] = 0;
+      setAnim(world, i, ANIM_IDLE);
+      continue;
+    }
+
+    // Decelerate on approach, and never travel further than the target is away.
+    let speed = distance * decel;
+    if (speed > maxSpeed) speed = maxSpeed;
+    const stepLimit = distance / dt;
+    if (speed > stepLimit) speed = stepLimit;
+
+    const inverse = 1 / distance;
+    const vx = dx * inverse * speed;
+    const vy = dy * inverse * speed;
 
     velX[i] = vx;
     velY[i] = vy;
     posX[i] = posX[i]! + vx * dt;
     posY[i] = posY[i]! + vy * dt;
+
+    // Turn toward travel the short way round, at a bounded rate.
+    const desired = atan2(dy, dx);
+    const delta = angleDelta(facing[i]!, desired);
+    const maxTurn = turnRate * dt;
+    facing[i] = facing[i]! + (delta > maxTurn ? maxTurn : delta < -maxTurn ? -maxTurn : delta);
+
+    setAnim(world, i, ANIM_WALK);
   }
+}
+
+/** Stamp the start tick only when the state actually changes, so phase is stable. */
+function setAnim(world: World, index: number, state: number): void {
+  if (world.animState[index] === state) return;
+  world.animState[index] = state;
+  world.animStartTick[index] = world.tick;
 }

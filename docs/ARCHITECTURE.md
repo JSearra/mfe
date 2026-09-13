@@ -244,7 +244,10 @@ interface camera-dependent. The camera culls on the render side.
 
 ### Interpolation
 
-Keep the last two snapshots. Render at `now - 75ms` (1.5 ticks) and lerp between them.
+Keep a short snapshot history (eight, ~400ms at 20Hz) and each frame blend the pair that
+**brackets** the render clock, at `now - 75ms` (1.5 ticks). The two newest snapshots are
+the bracketing pair only while delivery is even; under jitter a two-slot buffer evicts the
+snapshot being blended from and the render position lurches a full tick. See ADR-0011.
 
 - **Never extrapolate.** Extrapolating a unit that stops overshoots and then yanks back —
   that *is* rubber-banding. 75ms of visual latency is imperceptible in an RTS.

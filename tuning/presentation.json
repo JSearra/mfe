@@ -26,5 +26,17 @@
   },
   "debug": {
     "showChunkBounds": false
+  },
+  "entities": {
+    "radius": 9,
+    "factionColours": [
+      "#d98b4a",
+      "#5fa8d3",
+      "#8fbf6a",
+      "#c96a9a"
+    ],
+    "selectedColour": "#e8d9a8",
+    "marqueeColour": "#e8d9a8",
+    "clickThresholdPx": 5
   }
 }

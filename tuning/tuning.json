@@ -1,9 +1,10 @@
 {
   "movement": {
     "dt": 0.05,
-    "damping": 0.98,
-    "maxSpeed": 4.0,
-    "wanderStrength": 0.35
+    "maxSpeed": 3.0,
+    "arriveRadius": 0.06,
+    "decel": 5.0,
+    "turnRate": 10.0
   },
   "world": {
     "defaultCapacity": 512
@@ -15,5 +16,8 @@
     "lacunarity": 2.0,
     "gain": 0.5,
     "flatten": 2
+  },
+  "unit": {
+    "maxHp": 100
   }
 }

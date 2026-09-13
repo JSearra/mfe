@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "moduleDetection": "force",
@@ -10,15 +14,22 @@
     "isolatedModules": true,
     "noEmit": true,
     "skipLibCheck": true,
-
     "strict": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "exactOptionalPropertyTypes": true,
-
-    "types": ["node", "vitest/globals"]
+    "types": [
+      "node",
+      "vitest/globals",
+      "vite/client"
+    ]
   },
-  "include": ["src", "test", "tuning", "*.config.ts"]
+  "include": [
+    "src",
+    "test",
+    "tuning",
+    "*.config.ts"
+  ]
 }

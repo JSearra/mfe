@@ -1,0 +1,152 @@
+import { Graphics } from 'pixi.js';
+import type { Heightmap } from '../shared/heightmap.js';
+import type { Camera } from './camera.js';
+import type { InterpolatedView } from './interpolation.js';
+import { presentation } from './presentation.js';
+import type { EntityLayer } from './scene/entities.js';
+
+/**
+ * Unit selection.
+ *
+ * Selection is client state and never enters the simulation. Every player selects
+ * differently, so a selection in simulation state desyncs on the first frame of
+ * multiplayer — see docs/ARCHITECTURE.md section 1.
+ *
+ * Hit-testing runs against INTERPOLATED screen positions and resolves to a handle. The
+ * player clicks what they can see, which is ~75ms old; testing against current
+ * simulation positions would select whatever has since moved under the cursor. And the
+ * result must be a handle, never a position: by the time the order is applied the
+ * target may have died, and a handle carries the generation that says so.
+ */
+
+const { radius, marqueeColour } = presentation.entities;
+const MARQUEE = Number.parseInt(marqueeColour.slice(1), 16);
+
+export interface Rect {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+export function normaliseRect(rect: Rect): Rect {
+  return {
+    x0: Math.min(rect.x0, rect.x1),
+    y0: Math.min(rect.y0, rect.y1),
+    x1: Math.max(rect.x0, rect.x1),
+    y1: Math.max(rect.y0, rect.y1),
+  };
+}
+
+/** Viewport position of an entity as currently drawn. */
+function viewportPosition(
+  view: InterpolatedView,
+  index: number,
+  map: Heightmap,
+  camera: Camera,
+  layer: EntityLayer,
+): { x: number; y: number } {
+  const world = layer.screenPosition(view, index, map);
+  // screenPosition returns unzoomed isometric space; apply the camera to reach the viewport.
+  return {
+    x: (world.x - camera.x) * camera.zoom + camera.viewportWidth / 2,
+    y: (world.y - camera.y) * camera.zoom + camera.viewportHeight / 2,
+  };
+}
+
+export interface SelectionModel {
+  readonly handles: Set<number>;
+  selectInRect(
+    view: InterpolatedView,
+    map: Heightmap,
+    camera: Camera,
+    layer: EntityLayer,
+    rect: Rect,
+    faction: number,
+    additive: boolean,
+  ): void;
+  selectAt(
+    view: InterpolatedView,
+    map: Heightmap,
+    camera: Camera,
+    layer: EntityLayer,
+    x: number,
+    y: number,
+    faction: number,
+    additive: boolean,
+  ): void;
+  clear(): void;
+}
+
+export function createSelection(): SelectionModel {
+  const handles = new Set<number>();
+
+  return {
+    handles,
+    clear(): void {
+      handles.clear();
+    },
+
+    selectInRect(view, map, camera, layer, rect, faction, additive): void {
+      if (!additive) handles.clear();
+      const bounds = normaliseRect(rect);
+
+      for (let i = 0; i < view.count; i++) {
+        if (view.faction[i] !== faction) continue;
+        const position = viewportPosition(view, i, map, camera, layer);
+        if (
+          position.x >= bounds.x0 &&
+          position.x <= bounds.x1 &&
+          position.y >= bounds.y0 &&
+          position.y <= bounds.y1
+        ) {
+          handles.add(view.handle[i]!);
+        }
+      }
+    },
+
+    selectAt(view, map, camera, layer, x, y, faction, additive): void {
+      if (!additive) handles.clear();
+
+      // Nearest within the marker's own radius, so overlapping units resolve predictably.
+      const reach = (radius * 2.2 + 4) * camera.zoom;
+      let bestHandle = -1;
+      let bestDistance = reach * reach;
+
+      for (let i = 0; i < view.count; i++) {
+        if (view.faction[i] !== faction) continue;
+        const position = viewportPosition(view, i, map, camera, layer);
+        const dx = position.x - x;
+        // Markers stand up from their foot, so bias the test toward the body.
+        const dy = position.y - radius * camera.zoom - y;
+        const distance = dx * dx + dy * dy;
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestHandle = view.handle[i]!;
+        }
+      }
+
+      if (bestHandle !== -1) handles.add(bestHandle);
+    },
+  };
+}
+
+export function createMarqueeGraphics(): Graphics {
+  const graphics = new Graphics();
+  graphics.visible = false;
+  return graphics;
+}
+
+export function drawMarquee(graphics: Graphics, rect: Rect | null): void {
+  if (rect === null) {
+    graphics.visible = false;
+    return;
+  }
+
+  const bounds = normaliseRect(rect);
+  graphics.visible = true;
+  graphics.clear();
+  graphics.rect(bounds.x0, bounds.y0, bounds.x1 - bounds.x0, bounds.y1 - bounds.y0);
+  graphics.fill({ color: MARQUEE, alpha: 0.08 });
+  graphics.stroke({ width: 1, color: MARQUEE, alpha: 0.8 });
+}

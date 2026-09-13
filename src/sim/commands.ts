@@ -1,4 +1,5 @@
-import { destroy, isAlive, spawn, type Handle, type World } from './world.js';
+import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
+import { destroy, orderMove, spawn, type Handle, type World } from './world.js';
 
 /**
  * Commands are the sole path by which simulation state changes.
@@ -13,7 +14,7 @@ import { destroy, isAlive, spawn, type Handle, type World } from './world.js';
 
 export const CommandKind = {
   Spawn: 0,
-  SetVelocity: 1,
+  MoveTo: 1,
   Destroy: 2,
 } as const;
 
@@ -60,17 +61,19 @@ export function compareCommands(x: Command, y: Command): number {
  * applied and not thrown on: by the time a click reaches here its target may have
  * died, and that is ordinary, not exceptional.
  */
-export function applyCommand(world: World, command: Command): boolean {
+export function applyCommand(world: World, command: Command, events: SimEvent[]): boolean {
   switch (command.kind) {
-    case CommandKind.Spawn:
-      return spawn(world, command.a, command.b, command.c, command.d) !== 0;
+    case CommandKind.Spawn: {
+      const handle = spawn(world, command.a, command.b, command.c);
+      if (handle === 0) return false;
+      events.push(makeEvent(world.tick, EventType.Spawned, handle, command.a, command.b));
+      return true;
+    }
 
-    case CommandKind.SetVelocity: {
+    case CommandKind.MoveTo: {
       const handle = command.a as Handle;
-      if (!isAlive(world, handle)) return false;
-      const index = handle & 0xffffff;
-      world.velX[index] = command.b;
-      world.velY[index] = command.c;
+      if (!orderMove(world, handle, command.b, command.c)) return false;
+      events.push(makeEvent(world.tick, EventType.OrderIssued, handle, command.b, command.c));
       return true;
     }
 

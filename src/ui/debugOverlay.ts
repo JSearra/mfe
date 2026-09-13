@@ -21,6 +21,10 @@ export interface DebugReadout {
   tileY: number;
   tileHeight: number;
   pointerOnMap: boolean;
+  entityCount: number;
+  selectedCount: number;
+  simTick: number;
+  renderTick: number;
 }
 
 export interface DebugOverlay {
@@ -30,7 +34,7 @@ export interface DebugOverlay {
 
 /** Text updates are throttled; re-rendering strings at 60Hz is pure waste for a readout. */
 const UPDATE_INTERVAL_MS = 250;
-const LINE_COUNT = 6;
+const LINE_COUNT = 8;
 
 export function createDebugOverlay(parent: HTMLElement): DebugOverlay {
   const element = document.createElement('div');
@@ -71,7 +75,15 @@ export function createDebugOverlay(parent: HTMLElement): DebugOverlay {
         total: readout.totalChunks,
       });
       lines[4]!.textContent = t('debug.zoom', { zoom: readout.zoom.toFixed(2) });
-      lines[5]!.textContent = readout.pointerOnMap
+      lines[5]!.textContent = t('debug.entities', {
+        count: readout.entityCount,
+        selected: readout.selectedCount,
+      });
+      lines[6]!.textContent = t('debug.tickLag', {
+        sim: readout.simTick,
+        render: readout.renderTick.toFixed(1),
+      });
+      lines[7]!.textContent = readout.pointerOnMap
         ? t('debug.cursorTile', { x: readout.tileX, y: readout.tileY, h: readout.tileHeight })
         : t('debug.cursorOffMap');
     },
