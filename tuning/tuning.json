@@ -60,7 +60,9 @@
     "stampedeCalmStress": 35,
     "crushRadius": 0.35,
     "crushDamage": 34,
-    "knockback": 0.55
+    "knockback": 0.55,
+    "panicRadius": 3.4,
+    "panicGain": 95.0
   },
   "economy": {
     "upkeepIntervalTicks": 200,

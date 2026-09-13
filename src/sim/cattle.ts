@@ -130,6 +130,8 @@ export function createCattleSystem(): CattleSystem {
         let threatX = 0;
         let threatY = 0;
         let threatWeight = 0;
+        /** Proximity-weighted count of neighbours already running. */
+        let panicWeight = 0;
 
         let separationX = 0;
         let separationY = 0;
@@ -151,6 +153,23 @@ export function createCattleSystem(): CattleSystem {
           const distance = Math.sqrt(distanceSq);
 
           if (world.kind[other] === EntityKind.Cattle) {
+            // Panic spreads. A beast running past frightens the ones it passes, which
+            // is the entire difference between "a stampede" and "several cattle
+            // independently deciding to bolt" — and until this existed, chasing a herd
+            // saturated exactly one animal at a time however hard it was pressed.
+            //
+            // Linear falloff, deliberately NOT the square law the threat curve uses.
+            // That curve exists to make approach distance a thing the player plays
+            // against; this is a beast noticing that its neighbours are running, which
+            // is closer to binary. Squared it was worth about 0.03 stress a tick at a
+            // realistic neighbour distance — arithmetically incapable of spreading
+            // anything before the bolter, at speed 8, had left the radius.
+            if (
+              world.herdState[other] === HerdState.Stampeding &&
+              distance < c.panicRadius
+            ) {
+              panicWeight += (c.panicRadius - distance) / c.panicRadius;
+            }
             if (distance < c.separationRadius) {
               const strength = (c.separationRadius - distance) / c.separationRadius;
               separationX += (dx / distance) * strength;
@@ -187,10 +206,30 @@ export function createCattleSystem(): CattleSystem {
           }
         }
 
-        const stressed = threatWeight > 0;
+        // How readily this beast catches its neighbours' panic, as a function of how
+        // wound up it already is.
+        //
+        // This curve is doing the same job for contagion that the square law does for
+        // approach distance, and for the same reason. A shallow version of it — a high
+        // floor, so even calm cattle catch easily — makes the cascade turn on herd
+        // GEOMETRY, which the player cannot see or influence: measured over twelve
+        // seeds it gave anywhere from 1 to 23 of 30, on identical input. That is the
+        // coin flip ADR-0014 exists to prevent.
+        //
+        // Steep, with a low floor, the cascade turns on herd STRESS instead: a calm
+        // herd shrugs off a single bolter, a herd that has been pressed hard goes with
+        // it. Stress is the thing the player controls by how closely they work the
+        // herd, and the thing the stress rings already display, so the outcome follows
+        // something visible and chosen rather than something hidden and arbitrary.
+        const wound = world.stress[index]! / c.stressMax;
+        const nerve = 0.06 + 0.94 * wound * wound;
+        const panic = panicWeight * c.panicGain * nerve;
+
+        const stressed = threatWeight > 0 || panic > 0;
         let stress = world.stress[index]!;
-        stress += stressed ? c.stressGain * threatWeight * tuning.movement.dt
-                           : -c.stressDecay * tuning.movement.dt;
+        stress += stressed
+          ? (c.stressGain * threatWeight + panic) * tuning.movement.dt
+          : -c.stressDecay * tuning.movement.dt;
         if (stress < 0) stress = 0;
         else if (stress > c.stressMax) stress = c.stressMax;
         world.stress[index] = stress;

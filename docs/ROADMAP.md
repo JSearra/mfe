@@ -298,8 +298,11 @@ move, not from a still.
 **What Gate 2 turned up that is not about legibility.** Chasing a herd with a single threat
 saturates **one animal at a time** — measured identically at herd spacings from 0.9 to 1.8,
 so it is not a consequence of the separation change. Stress comes only from nearby people;
-a panicking neighbour contributes nothing. There is no contagion, so "stampede" currently
-means "some cattle panic independently" rather than "the herd goes". See ADR-0017.
+a panicking neighbour contributes nothing. There was no contagion, so "stampede" meant
+"some cattle panic independently" rather than "the herd goes". **Fixed** — panic now
+spreads, and spreads on stress rather than on geometry so the cascade follows something
+the player controls and can see. Measured in the browser afterwards: 21 of 30, against 1
+before. See ADR-0017.
 
 **Also found:** the camera does not follow a stampede. Driven from the player's units, the
 herd ran to the edge of the screen and partly behind the minimap panel. A stampede you

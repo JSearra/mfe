@@ -175,6 +175,61 @@ describe('herding', () => {
   });
 });
 
+describe('panic spreads', () => {
+  /**
+   * Contagion is what makes the word "stampede" accurate. Before it existed, chasing a
+   * herd saturated exactly one animal at a time however hard it was pressed — measured
+   * at every herd spacing from 0.9 to 1.8 and identical at all of them, so it was the
+   * stress model rather than the packing. See ADR-0017.
+   */
+  function bolt(world: World, index: number): void {
+    world.herdState[index] = HerdState.Stampeding;
+    world.stress[index] = C.stressMax;
+    world.stampedeTicks[index] = C.stampedeTicks;
+    world.velX[index] = C.stampedeSpeed * 0.7;
+    world.velY[index] = C.stampedeSpeed * 0.7;
+  }
+
+  function stampeding(world: World, handles: readonly number[]): number {
+    let n = 0;
+    for (const handle of handles) {
+      if (world.herdState[handleIndex(handle)] === HerdState.Stampeding) n++;
+    }
+    return n;
+  }
+
+  it('does not cascade through a calm herd', () => {
+    const { world, handles, tick } = makeHerd(20, 20, 20);
+    for (let t = 0; t < 60; t++) tick();
+
+    bolt(world, handleIndex(handles[10]!));
+    for (let t = 0; t < 200; t++) tick();
+
+    // The single most important property here. If a calm herd catches one animal's
+    // panic, there is no state in which a player can work among cattle at all, and the
+    // herd becomes a powder keg rather than a thing to be handled.
+    expect(stampeding(world, handles)).toBeLessThanOrEqual(1);
+  });
+
+  it('cascades through a herd that is already frightened', () => {
+    const { world, handles, tick } = makeHerd(20, 20, 20);
+    for (let t = 0; t < 60; t++) tick();
+
+    // Wound the whole herd up short of bolting, as sustained pressure would.
+    for (const handle of handles) {
+      world.stress[handleIndex(handle)] = C.stressMax * 0.85;
+    }
+    bolt(world, handleIndex(handles[10]!));
+    for (let t = 0; t < 120; t++) tick();
+
+    // The cascade turns on stress, which the player controls by how closely they work
+    // the herd and can see in the stress rings — rather than on herd geometry, which
+    // they can neither see nor influence. An earlier shallower curve turned on geometry
+    // and gave anywhere from 1 to 23 of 30 on identical input.
+    expect(stampeding(world, handles)).toBeGreaterThan(4);
+  });
+});
+
 describe('stampede', () => {
   function panic(world: World, cowIndex: number, headingX: number, headingY: number): void {
     world.herdState[cowIndex] = HerdState.Stampeding;
