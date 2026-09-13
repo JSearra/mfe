@@ -37,6 +37,15 @@ import bpy
 ELEVATION_DEGREES = 30.0
 AZIMUTH_DEGREES = 45.0
 
+# The camera looks at this height, not at the ground.
+#
+# A figure STANDS on the origin and extends upward, so a camera aimed at the origin puts
+# it entirely in the top half of the frame — and once the framing is tight enough to be
+# worth rendering, the head leaves the frame. The first tight render decapitated every
+# sprite, and the frame-occupancy measurement did not catch it because a clipped figure
+# still has a plausible bounding box. Aim at roughly mid-torso.
+TARGET_HEIGHT = 0.85
+
 
 def parse_args() -> argparse.Namespace:
     # Blender passes its own arguments first; everything after `--` is ours.
@@ -82,8 +91,11 @@ def setup_camera(size: int) -> None:
     """An orthographic camera at the isometric angle, framing the origin."""
     camera_data = bpy.data.cameras.new("iso_camera")
     camera_data.type = "ORTHO"
-    # Framed a little loose so a raised weapon does not clip the edge.
-    camera_data.ortho_scale = 3.2
+    # Tight enough that a figure fills most of its tile. The first pass used 3.2 and the
+    # units came out occupying about a third of the frame, which wastes most of an atlas
+    # page on transparent margin and makes them illegible at game size. 2.2 leaves room
+    # for a raised spear and little else.
+    camera_data.ortho_scale = 2.2
 
     camera = bpy.data.objects.new("iso_camera", camera_data)
     bpy.context.scene.collection.objects.link(camera)
@@ -95,7 +107,7 @@ def setup_camera(size: int) -> None:
     camera.location = (
         distance * math.cos(elevation) * math.sin(azimuth),
         -distance * math.cos(elevation) * math.cos(azimuth),
-        distance * math.sin(elevation),
+        distance * math.sin(elevation) + TARGET_HEIGHT,
     )
     camera.rotation_euler = (math.radians(90.0 - ELEVATION_DEGREES), 0.0, azimuth)
     bpy.context.scene.camera = camera
@@ -115,18 +127,34 @@ def setup_render(size: int) -> None:
 
 def ensure_light() -> None:
     """
-    One key light, fixed in WORLD space.
+    A key light fixed in WORLD space, plus ambient fill.
 
     Fixed to the world rather than to the camera, so a soldier facing away is lit from
-    behind exactly as he would be on the field. Locking the light to the camera instead
-    makes every direction identically lit, which reads flat and makes facing hard to
-    judge — the opposite of what a sprite sheet is for.
+    behind exactly as he would be on the field. Locking the light to the camera makes
+    every direction identically lit, which reads flat and makes facing hard to judge —
+    the opposite of what a sprite sheet is for.
+
+    The fill matters more than it sounds. With a key light alone the shadowed side of a
+    figure goes to black, and since half the eight directions are turned away from the
+    key, half the sprite sheet is unreadable. Ambient light from the world lifts those
+    out of the dark without flattening the form the key is providing.
     """
+    world = bpy.context.scene.world
+    if world is None:
+        world = bpy.data.worlds.new("world")
+        bpy.context.scene.world = world
+    world.use_nodes = True
+    background = world.node_tree.nodes.get("Background")
+    if background is not None:
+        # Warm, dim: veld light bounced off dust, not a studio.
+        background.inputs["Color"].default_value = (0.42, 0.38, 0.32, 1.0)
+        background.inputs["Strength"].default_value = 0.9
+
     if any(obj.type == "LIGHT" for obj in bpy.data.objects):
         return
 
     light_data = bpy.data.lights.new("key", type="SUN")
-    light_data.energy = 3.0
+    light_data.energy = 5.5
     light = bpy.data.objects.new("key", light_data)
     bpy.context.scene.collection.objects.link(light)
     light.rotation_euler = (math.radians(50.0), 0.0, math.radians(-35.0))

@@ -73,6 +73,21 @@ noise beats this outright and costs nothing.
 
 ## Unit sprite sheets
 
+The pipeline needs a model. If you do not have one, generate a placeholder:
+
+```bash
+blender -b -noaudio -P tools/art/make_unit.py -- \
+    --kind impi --anim walk --render tools/art/raw/units --mirror
+```
+
+`make_unit.py` builds a low-poly figure from primitives and keyframes a cycle — no
+armature, just parented limbs with keyframed rotations, which is a fraction of the code
+of a rig and indistinguishable at 128 pixels. It is placeholder art and looks it, but it
+has real silhouettes, real facing and a real walk, which is enough to attempt Gate 2
+without commissioning anything.
+
+With a model of your own:
+
 ```bash
 blender -b unit.blend -P tools/art/render_sprites.py -- \
     --out tools/art/raw/units --name impi --anim walk --frames 15 --mirror

@@ -42,6 +42,17 @@ def main() -> None:
     renderer.setup_render(256)
     renderer.ensure_light()
 
+    # Widen the frame for the test only. This measures the camera ANGLE, and framing
+    # must not affect the answer — the first version inherited the shipped ortho_scale,
+    # so tightening the framing for sprites clipped the test plane and the check
+    # reported 1.542:1 for a camera that had not moved. A test whose result depends on
+    # an unrelated setting is worse than no test.
+    camera = bpy.context.scene.camera
+    if camera is not None:
+        camera.data.ortho_scale = 4.0
+        # The subject here is a ground plane, so undo the figure-height aim.
+        camera.location.z -= renderer.TARGET_HEIGHT
+
     bpy.context.scene.render.filepath = OUTPUT
     bpy.ops.render.render(write_still=True)
 
