@@ -365,9 +365,9 @@ remains:
   this setting cattle are wealth, standing and the reason to fight — so a player who
   ignores herding cannot win by being good at everything else. The threshold must be
   *held*, which gives the losing side a window to answer.
-- **A real HUD.** Controls are undiscoverable hotkeys over two debug panels. A selection
-  panel, build menu and minimap; the minimap is cheap because the fog already crosses the
-  boundary.
+- ~~**A real HUD.**~~ **Done.** Command panel (selection, build menu, research, training),
+  minimap, victory track and outcome banner. Hotkeys still work; they are no longer the
+  only way to find an action.
 - **Gate 2 re-run** against real sprites, and the depth-sort hysteresis comparator that
   `ARCHITECTURE.md` section 4 specifies but nothing implements.
 - **Multiplayer.** Every determinism invariant is in place and CI-enforced; none is yet

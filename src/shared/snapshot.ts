@@ -14,7 +14,7 @@
  * See docs/ARCHITECTURE.md section 5.
  */
 
-export const SNAPSHOT_VERSION = 4;
+export const SNAPSHOT_VERSION = 5;
 
 export type FieldType = 'u32' | 'f32' | 'u8';
 
@@ -54,6 +54,14 @@ export const SNAPSHOT_FIELDS = [
    * the next reader a careful think about which meaning applies.
    */
   { name: 'progressPct', type: 'u8' },
+  /**
+   * Kind-dependent subtype: building type for a building, movement class for a unit.
+   *
+   * Named for what it is rather than for one of its meanings, because both consumers
+   * are real — the UI needs to know whether a selected building trains troops, and the
+   * renderer will need movement class to pick a sprite once there are sprites.
+   */
+  { name: 'subtype', type: 'u8' },
 ] as const satisfies readonly FieldSpec[];
 
 type Fields = typeof SNAPSHOT_FIELDS;

@@ -23,6 +23,7 @@ const { radius, marqueeColour } = presentation.entities;
 const MARQUEE = Number.parseInt(marqueeColour.slice(1), 16);
 
 const KIND_UNIT = 0;
+const KIND_BUILDING = 2;
 
 export interface Rect {
   x0: number;
@@ -111,6 +112,14 @@ export function createSelection(): SelectionModel {
 
     selectAt(view, map, camera, layer, x, y, faction, additive): void {
       if (!additive) handles.clear();
+
+      // A click may land on a building. A marquee never selects one — dragging a box
+      // over your base should gather the troops in it, not the walls around them.
+      const building = pickOwnBuilding(view, map, camera, layer, x, y, faction);
+      if (building !== -1) {
+        handles.add(building);
+        return;
+      }
 
       // Nearest within the marker's own radius, so overlapping units resolve predictably.
       const reach = (radius * 2.2 + 4) * camera.zoom;
@@ -214,6 +223,34 @@ export function pickEnemy(
     }
   }
   return bestHandle;
+}
+
+/** Nearest friendly building under the cursor, or -1. */
+function pickOwnBuilding(
+  view: InterpolatedView,
+  map: Heightmap,
+  camera: Camera,
+  layer: EntityLayer,
+  x: number,
+  y: number,
+  faction: number,
+): number {
+  const reach = (radius * 2.4) * camera.zoom;
+  let best = -1;
+  let bestDistance = reach * reach;
+
+  for (let i = 0; i < view.count; i++) {
+    if (view.kind[i] !== KIND_BUILDING || view.faction[i] !== faction) continue;
+    const position = viewportPosition(view, i, map, camera, layer);
+    const dx = position.x - x;
+    const dy = position.y - radius * camera.zoom - y;
+    const distance = dx * dx + dy * dy;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = view.handle[i]!;
+    }
+  }
+  return best;
 }
 
 export function createMarqueeGraphics(): Graphics {

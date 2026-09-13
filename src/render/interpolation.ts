@@ -63,6 +63,7 @@ export interface InterpolatedView {
   kind: Uint8Array;
   stressPct: Uint8Array;
   progressPct: Uint8Array;
+  subtype: Uint8Array;
 }
 
 export interface Interpolator {
@@ -94,6 +95,7 @@ function grow(view: InterpolatedView, capacity: number): void {
   view.kind = new Uint8Array(size);
   view.stressPct = new Uint8Array(size);
   view.progressPct = new Uint8Array(size);
+  view.subtype = new Uint8Array(size);
 }
 
 interface HistoryEntry {
@@ -126,6 +128,7 @@ export function createInterpolator(): Interpolator {
     kind: new Uint8Array(0),
     stressPct: new Uint8Array(0),
     progressPct: new Uint8Array(0),
+    subtype: new Uint8Array(0),
   };
 
   const interpolator: Interpolator = {
@@ -209,6 +212,7 @@ export function createInterpolator(): Interpolator {
         view.kind[i] = latest.kind[i]!;
         view.stressPct[i] = latest.stressPct[i]!;
         view.progressPct[i] = latest.progressPct[i]!;
+        view.subtype[i] = latest.subtype[i]!;
         view.animPhase[i] = renderTick - latest.animStartTick[i]!;
 
         const facing = decodeFacing(latest.facing[i]!);

@@ -83,6 +83,58 @@
         font-weight: 600;
       }
 
+      .panel {
+        position: absolute;
+        left: 12px;
+        bottom: 12px;
+        min-width: 260px;
+        max-width: 340px;
+        padding: 10px 14px;
+        border: 1px solid #3a3226;
+        border-radius: 4px;
+        background: rgba(20, 17, 13, 0.86);
+        user-select: none;
+      }
+
+      .panel__heading {
+        color: #c8a86a;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 11px;
+        margin-bottom: 6px;
+      }
+
+      .panel__detail {
+        color: #8a8070;
+        margin-bottom: 8px;
+        min-height: 1em;
+      }
+
+      .panel__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .panel__button {
+        font: inherit;
+        color: #e8e0d0;
+        background: rgba(58, 50, 38, 0.8);
+        border: 1px solid #4a4029;
+        border-radius: 3px;
+        padding: 5px 9px;
+        cursor: pointer;
+      }
+
+      .panel__button:hover {
+        background: #4a4029;
+        border-color: #c8a86a;
+      }
+
+      .panel__button:active {
+        background: #5a4f33;
+      }
+
       .minimap {
         position: absolute;
         right: 12px;

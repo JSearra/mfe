@@ -106,6 +106,15 @@ describe('i18n rule in src/ui', () => {
     expect(rulesIn(messages)).toContain('no-restricted-syntax');
   });
 
+  it('exempts the empty string, which clears an element rather than saying anything', async () => {
+    const messages = await lint(
+      'src/ui/probe.ts',
+      "declare const el: HTMLElement;\nel.textContent = '';",
+    );
+    // Flagging this pushes people toward workarounds instead of translations.
+    expect(messages).toEqual([]);
+  });
+
   it('accepts text that comes from t()', async () => {
     const messages = await lint(
       'src/ui/probe.ts',

@@ -161,8 +161,10 @@ export default tseslint.config(
       'no-restricted-syntax': [
         'error',
         {
+          // The empty string is exempt: clearing an element is not user-facing text,
+          // and flagging it pushes people toward workarounds rather than translations.
           selector:
-            "AssignmentExpression[left.property.name=/^(textContent|innerText|innerHTML|title|placeholder|alt|ariaLabel)$/][right.type='Literal']",
+            "AssignmentExpression[left.property.name=/^(textContent|innerText|innerHTML|title|placeholder|alt|ariaLabel)$/][right.type='Literal'][right.value!='']",
           message: 'User-facing text must come from t(). See CLAUDE.md.',
         },
         {

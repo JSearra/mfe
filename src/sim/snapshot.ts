@@ -58,6 +58,8 @@ export function buildSnapshot(
     writer.hpPct[slot] = encodeHpPct(world.hp[i]!, maxHp);
     writer.kind[slot] = world.kind[i]!;
     writer.stressPct[slot] = encodeHpPct(world.stress[i]!, tuning.cattle.stressMax);
+    writer.subtype[slot] =
+      world.kind[i] === EntityKind.Building ? world.buildingType[i]! : world.movementClass[i]!;
     writer.progressPct[slot] =
       world.kind[i] === EntityKind.Building
         ? encodeHpPct(world.buildProgress[i]!, buildingSpec(world.buildingType[i]!).work)

@@ -60,5 +60,17 @@
     "won": "Victory — the herd is yours",
     "lost": "Defeat",
     "eliminated": "You have nothing left"
+  },
+  "panel": {
+    "nothing": "Nothing selected",
+    "units": "{count} selected",
+    "building": "{name}",
+    "buildingSite": "{name} — {pct}% built",
+    "queue": "Queue {count}/{limit}",
+    "trainInfantry": "Raise spearman",
+    "trainMounted": "Raise horseman",
+    "buildHeading": "Build",
+    "researchHeading": "Research",
+    "costs": "{grain} grain · {cattle} cattle"
   }
 }

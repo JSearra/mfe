@@ -40,6 +40,7 @@ import {
 } from './render/selection.js';
 import { createRenderStats } from './render/stats.js';
 import { createDebugOverlay } from './ui/debugOverlay.js';
+import { createCommandPanel } from './ui/commandPanel.js';
 import { createMinimap } from './ui/minimap.js';
 import { createOutcomeBanner } from './ui/outcomeBanner.js';
 import { createResourceBar } from './ui/resourceBar.js';
@@ -229,6 +230,19 @@ async function main(): Promise<void> {
     },
   });
   let latestFog: Uint8Array | null = null;
+  let armed: BuildingType | null = null;
+
+  const panel = createCommandPanel(root, {
+    onTrain(buildingHandle, movementClass) {
+      sim.sendCommand(CommandKind.Train, buildingHandle, movementClass);
+    },
+    onArmBuild(type) {
+      armed = type;
+    },
+    onResearch(techIndex) {
+      sim.sendCommand(CommandKind.Research, techIndex, PLAYER);
+    },
+  });
 
   let view: InterpolatedView | null = null;
   const herdScratch: number[] = [];
@@ -245,7 +259,6 @@ async function main(): Promise<void> {
   // Build mode: a number key arms a type, the next left-click sites it. Kept in the
   // composition root rather than in input.ts because it is a game rule about what a
   // click means, not a fact about the pointer.
-  let armed: BuildingType | null = null;
   let researchCursor = 0;
   const buildKeys: Readonly<Record<string, BuildingType>> = {
     '1': BuildingType.Isibaya,
@@ -470,6 +483,7 @@ async function main(): Promise<void> {
     else placeTileCursor(cursor, map, hoverX, hoverY);
 
     minimap.update(view, latestFog, camera);
+    panel.update(view, selection.handles);
 
     overlay.update({
       cameraX: camera.x,
