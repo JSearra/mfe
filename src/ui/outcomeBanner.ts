@@ -13,15 +13,43 @@ export interface OutcomeBanner {
   update(player: PlayerState, viewerId: number): void;
 }
 
+export interface OutcomeBannerOptions {
+  /** Offered once the match is decided. Without it the banner is a dead end. */
+  onRestart?: () => void;
+}
+
 const ONGOING = 0;
 
-export function createOutcomeBanner(parent: HTMLElement): OutcomeBanner {
+export function createOutcomeBanner(
+  parent: HTMLElement,
+  options: OutcomeBannerOptions = {},
+): OutcomeBanner {
   const element = document.createElement('div');
   element.className = 'outcome-banner';
   element.hidden = true;
   parent.appendChild(element);
 
+  const message = document.createElement('div');
+  element.appendChild(message);
+
   let shown = false;
+
+  function show(text: string, defeat: boolean): void {
+    message.textContent = text;
+    element.classList.toggle('is-defeat', defeat);
+    element.hidden = false;
+    shown = true;
+
+    if (options.onRestart === undefined) return;
+    const again = document.createElement('button');
+    again.className = 'outcome-again';
+    again.textContent = t('victory.again');
+    again.addEventListener('click', () => options.onRestart?.());
+    element.appendChild(again);
+    // The banner is pointer-events:none so it never eats clicks on the map behind it;
+    // the button has to opt back in or it cannot be pressed.
+    again.style.pointerEvents = 'auto';
+  }
 
   return {
     element,
@@ -30,18 +58,12 @@ export function createOutcomeBanner(parent: HTMLElement): OutcomeBanner {
 
       if (player.outcome !== ONGOING) {
         const won = player.winner === viewerId;
-        element.textContent = won ? t('victory.won') : t('victory.lost');
-        element.classList.toggle('is-defeat', !won);
-        element.hidden = false;
-        shown = true;
+        show(won ? t('victory.won') : t('victory.lost'), !won);
         return;
       }
 
       if (player.eliminated) {
-        element.textContent = t('victory.eliminated');
-        element.classList.add('is-defeat');
-        element.hidden = false;
-        shown = true;
+        show(t('victory.eliminated'), true);
       }
     },
   };

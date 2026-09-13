@@ -47,7 +47,7 @@ SpawnCattle, Leash, Attack, Build, Research, Train, SetRally.
 It is a scenario, not a game: the map is a URL parameter, two players are hardcoded, and
 the outcome banner is the end of the road.
 
-- [ ] **B1 — Restart.** Play again without reloading the tab.
+- [x] **B1 — Restart.** Done. Play again without reloading the tab.
 - [ ] **B2 — Setup screen.** Choose map, faction and seed before starting, instead of
       editing the query string.
 - [x] **B3 — Pause and speed.** Done. Pause, and at least one faster setting. Must not touch

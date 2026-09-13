@@ -99,6 +99,39 @@ function herdCounts(view: InterpolatedView | null): {
   return { cattleCount, leashedCount, stampedingCount };
 }
 
+/**
+ * Everything the current game owns that must be released before another can start.
+ *
+ * Collected as the game is built rather than reconstructed at teardown, so a listener
+ * added without a matching release is a visible omission at the point it is added. The
+ * failure this prevents is quiet: window listeners survive a restart, so a second game
+ * fires every hotkey twice and a third three times, and nothing about that looks like a
+ * lifecycle bug when you meet it.
+ */
+type Teardown = (() => void)[];
+
+let teardown: Teardown = [];
+
+declare global {
+  interface Window {
+    /**
+     * Restart, for tooling. Same hook shape as `window.__perf`.
+     *
+     * Exposed because the only in-game route to a restart is winning or losing, and
+     * "play a match to completion" is not a way to test that the teardown releases what
+     * it claims to. The hazard being tested for is quiet: window listeners outlive a
+     * restart, so a second game fires every hotkey twice.
+     */
+    __restart?: () => Promise<void>;
+  }
+}
+
+async function restart(): Promise<void> {
+  for (const release of teardown.reverse()) release();
+  teardown = [];
+  await main();
+}
+
 async function main(): Promise<void> {
   document.title = t('app.title');
 
@@ -230,13 +263,15 @@ async function main(): Promise<void> {
   const audio = createAudioEngine();
   // Browsers refuse to start audio without a gesture, so the first click starts it.
   const startAudio = (): void => audio.resume();
-  app.canvas.addEventListener('pointerdown', startAudio, { once: true });
-  window.addEventListener('keydown', startAudio, { once: true });
+  const lifetime = new AbortController();
+  const { signal } = lifetime;
+  app.canvas.addEventListener('pointerdown', startAudio, { once: true, signal });
+  window.addEventListener('keydown', startAudio, { once: true, signal });
 
   const stats = createRenderStats();
   const overlay = createDebugOverlay(root);
   const resourceBar = createResourceBar(root);
-  const outcomeBanner = createOutcomeBanner(root);
+  const outcomeBanner = createOutcomeBanner(root, { onRestart: () => void restart() });
   const alerts = createAlerts();
   root.appendChild(alerts.element);
   const minimap = createMinimap(root, map, {
@@ -368,9 +403,9 @@ async function main(): Promise<void> {
 
     const type = buildKeys[event.key];
     if (type !== undefined) armed = type;
-  });
+  }, { signal });
 
-  bindInput(app.canvas, camera, input, {
+  const boundInput = bindInput(app.canvas, camera, input, {
     onClickSelect(x, y, additive) {
       if (armed !== null) {
         const isoX = (x - camera.viewportWidth / 2) / camera.zoom + camera.x;
@@ -597,6 +632,19 @@ async function main(): Promise<void> {
     (ticker) => stats.endFrame(ticker.deltaMS, performance.now() - frameStart),
     undefined,
     UPDATE_PRIORITY.UTILITY,
+  );
+
+  // Order matters on the way out: stop input and the clock before destroying what they
+  // read, or a ticker callback runs against a destroyed renderer.
+  window.__restart = () => restart();
+
+  teardown.push(
+    () => lifetime.abort(),
+    () => boundInput.dispose(),
+    () => minimap.dispose(),
+    () => sim.dispose(),
+    () => app.destroy(true, { children: true }),
+    () => root.replaceChildren(),
   );
 }
 
