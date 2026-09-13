@@ -338,7 +338,11 @@ npm run lint                            # no hardcoded strings
    reads through its own fog, so it plays the same game the player does. The free dividend
    arrived as promised — a headless AI-vs-AI soak that exercises movement, pathing,
    combat, construction and the economy together, and reproduces exactly.
-7. **Audio** — consumes the Phase 3 event stream.
+7. ~~**Audio**~~ — **done**, and it is the consumer the event stream was designed for: a
+   death cannot be heard by diffing snapshots, because the entity simply stops appearing.
+   Sounds are synthesised rather than sampled, since the audio pipeline is deferred — an
+   oscillator and a noise burst prove the routing, spatialisation and voice limiting, and
+   are replaced by swapping one function.
 8. ~~**Map generators**~~ — **done.** All four, and expressing them as heightmaps was
    ADR-0006 paying off: mesas, koppies, poorts and dongas are shapes in one array rather
    than bespoke tile placement with its own passability rules. The tests assert tactical

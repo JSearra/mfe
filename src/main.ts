@@ -11,6 +11,7 @@ import { MAP_SCRIPTS, generateMap, type MapScript } from './sim/terrain/maps.js'
 import { FactionId } from './shared/factions/index.js';
 import { createWorld } from './sim/world.js';
 import { createRenderer } from './render/app.js';
+import { createAudioEngine } from './render/audio.js';
 import {
   createCamera,
   createCameraInput,
@@ -195,6 +196,12 @@ async function main(): Promise<void> {
 
   const interpolator = createInterpolator();
   const selection = createSelection();
+  const audio = createAudioEngine();
+  // Browsers refuse to start audio without a gesture, so the first click starts it.
+  const startAudio = (): void => audio.resume();
+  app.canvas.addEventListener('pointerdown', startAudio, { once: true });
+  window.addEventListener('keydown', startAudio, { once: true });
+
   const stats = createRenderStats();
   const overlay = createDebugOverlay(root);
   const resourceBar = createResourceBar(root);
@@ -304,6 +311,7 @@ async function main(): Promise<void> {
       count: () => view?.count ?? 0,
       selected: () => [...selection.handles],
       handles: () => (view === null ? [] : Array.from(view.handle.subarray(0, view.count))),
+      audio: () => ({ running: audio.running, voices: audio.voicesPlayed }),
       herd: () => {
         const counts = herdCounts(view);
         let maxStress = 0;
@@ -388,6 +396,9 @@ async function main(): Promise<void> {
       interpolator.push(message.snapshot);
       resourceBar.update(message.player);
       fog.setFog(message.fog);
+      // Sound comes from events, never from diffing snapshots: a death simply stops
+      // appearing, and there is nothing in a state diff that says it happened.
+      audio.handle(message.events, camera);
     }
     view = interpolator.sample(ticker.deltaMS);
 

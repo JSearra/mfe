@@ -51,5 +51,11 @@
     "wallColour": "#7d6a4c",
     "roofColour": "#9c8459",
     "scaffoldColour": "#4a4029"
+  },
+  "audio": {
+    "masterVolume": 0.35,
+    "maxVoices": 12,
+    "audibleRadius": 34.0,
+    "minEventGapMs": 45
   }
 }
