@@ -264,12 +264,47 @@ which is directionally controllable but not yet precise — steering a stampede 
 specific target has not been demonstrated. Counterplay is untested because there is no
 opponent yet; it becomes answerable when the AI lands.
 
-**Gate 2 — legibility (with real sprites, separate risk)**
+**Gate 2 — legibility (with real sprites) — PASSED**
+
 Is a 40-cattle stampede readable as 2:1 isometric sprites? Does the depth sort flicker under
 a dense herd? Can a player tell at a glance which way the herd is turning?
 Passing Gate 1 does not imply Gate 2 — a mechanic that works as circles can be illegible as
 overlapping sprites. This is a rendering and art risk, not a design one, and it is the
 reason the hysteresis comparator in `ARCHITECTURE.md` §4 exists.
+
+*Flicker — measured, `test/gate2.test.ts`.* Forty cattle, real flocking, positions
+interpolated at the render rate as the renderer interpolates them, counting how often each
+PAIR reverses its draw order. A stampede produced **zero reversals in 210 frames**; a
+grazing herd, which turns out to be the harder case, produced a worst pair of **two in
+600**. The stampede is easy for the sort because the whole herd moves one way and the
+motion preserves relative depth; the mill of a grazing herd is what the dead band is
+actually earning its keep against.
+
+The first version of that test asserted on the comparator's own swap counter and failed at
+135. That counter reports insertion-sort shifts, so one beast genuinely overtaking the herd
+scores about forty of them — indistinguishable from forty animals shimmering. Shimmer is a
+pair that keeps changing its mind, so pairs are what is counted.
+
+*Legibility — assessed by looking, in a browser.* Individual animals are distinguishable in
+a packed herd. This passes **because of** the separation widened from 0.9 to 1.5 in the same
+session; at 0.9 the herd read as a single mass and this gate would have failed. Two hide
+colourings and the pale belly do most of the rest.
+
+*Direction — assessed by looking.* Each beast carries its facing in eight directions with a
+clear head-and-horns end, and a stampeding animal is ringed in the panic colour. Which way
+the herd is going is readable; which way it is *turning* is readable only from watching it
+move, not from a still.
+
+**What Gate 2 turned up that is not about legibility.** Chasing a herd with a single threat
+saturates **one animal at a time** — measured identically at herd spacings from 0.9 to 1.8,
+so it is not a consequence of the separation change. Stress comes only from nearby people;
+a panicking neighbour contributes nothing. There is no contagion, so "stampede" currently
+means "some cattle panic independently" rather than "the herd goes". See ADR-0017.
+
+**Also found:** the camera does not follow a stampede. Driven from the player's units, the
+herd ran to the edge of the screen and partly behind the minimap panel. A stampede you
+cannot see is not one you can aim, which bears directly on Gate 1's open question about
+precise aiming.
 
 ---
 
