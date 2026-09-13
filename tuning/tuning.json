@@ -1,0 +1,11 @@
+{
+  "movement": {
+    "dt": 0.05,
+    "damping": 0.98,
+    "maxSpeed": 4.0,
+    "wanderStrength": 0.35
+  },
+  "world": {
+    "defaultCapacity": 512
+  }
+}
