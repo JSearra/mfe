@@ -203,7 +203,7 @@ npm run replay
 
 ```
 npm test -- pathfinding
-npm run perf:pathing                    # asserts <= 3ms/tick, p99 request latency < 200ms
+npm run perf:pathing                    # asserts mean tick cost and request latency, scaled to the machine (ADR-0016)
 npm run replay                          # paths are deterministic across runs
 ```
 

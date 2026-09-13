@@ -318,6 +318,14 @@ toward JPS in the first place. Instead: pathing subsystem <= 3ms per tick, p99 p
 latency < 200ms, requests queued and amortized. Both are testable and match what players
 notice.
 
+Those two numbers are the design target. What `perf:pathing` *asserts* is not quite them:
+wall-clock budgets that tight are extreme-value statistics on sub-millisecond samples, and
+they measure the runner rather than the code — they failed every CI run from the first
+push. The gate enforces central statistics scaled to the machine, with catastrophe
+ceilings on the extremes, and prints these targets beside the measurements. See ADR-0016.
+The latency budget needs none of that: it is derived from tick counts, so it means the
+same thing on any hardware.
+
 **No RVO.** Beyond being fiddly, RVO is *reciprocal by definition* and a stampede is
 definitionally non-reciprocal — cattle must plough through infantry while infantry fail to
 avoid them. Building a system whose axioms contradict the headline feature, then
