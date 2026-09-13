@@ -55,7 +55,7 @@ the outcome banner is the end of the road.
 
 ## C. Known gaps
 
-- [ ] **C1 — The herd is invisible at start.** Units spawn at the centre with vision 8;
+- [x] **C1 — The herd is invisible at start.** Done. Units spawn at the centre with vision 8;
       the herd sits ~16 tiles away. A cattle game that opens with no cattle on screen.
 - [ ] **C2 — Buildings have no sprites.** Units and cattle are textured; buildings are
       still `Graphics` primitives.

@@ -184,13 +184,18 @@ async function main(): Promise<void> {
   // centre to click on or drive into. The radius follows the separation distance — at
   // 1.5 units apart thirty beasts need about four units of room, and spawning them
   // tighter than they will stand just makes them shove each other apart on tick one.
+  //
+  // Close enough to the starting force to be IN SIGHT. The herd used to sit sixteen
+  // tiles out against a vision radius of eight, so a game about cattle opened with no
+  // cattle on screen and the player had to go looking for the mechanic. Far enough that
+  // the troops do not frighten it: nothing stampedes in the opening minute.
   for (let i = 0; i < STARTING_CATTLE; i++) {
     const angle = i * 2.399963; // golden angle, so the blob fills evenly
     const spread = 5.0 * Math.sqrt((i + 0.5) / STARTING_CATTLE);
     sim.sendCommand(
       CommandKind.SpawnCattle,
-      centre + 14 + Math.cos(angle) * spread,
-      centre + 8 + Math.sin(angle) * spread,
+      centre + 9 + Math.cos(angle) * spread,
+      centre + 6 + Math.sin(angle) * spread,
     );
   }
 
