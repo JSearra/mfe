@@ -307,8 +307,11 @@ npm run lint                            # no hardcoded strings
 
 ## Backlog, ordered by retrofit cost
 
-1. **Fog of war** — highest. Changes the snapshot signature; propagates into minimap,
-   hit-testing and AI. The `viewerId` argument from Phase 3 is what keeps this affordable.
+1. ~~**Fog of war**~~ — **done.** The `viewerId` argument carried since Phase 3 made it a
+   change to `buildSnapshot`'s body rather than to the boundary. Three states per tile so
+   ground stays remembered once seen; line of sight is height-aware, so a ridge blocks and
+   high ground sees further. Recomputed on a vision interval rather than per tick, and the
+   fog crosses to the renderer only when it changes.
 2. **Save/load** — same problem as determinism. Cheap if all mutable state is in typed
    arrays plus RNG state; a rewrite if state has leaked into closures or object maps.
 3. **Worker flip** — 1-2 days if Phases 0 and 3 stayed disciplined. See ADR-0004.

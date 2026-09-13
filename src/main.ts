@@ -20,6 +20,7 @@ import { createInterpolator, type InterpolatedView } from './render/interpolatio
 import { installPerfHarness } from './render/perfHarness.js';
 import { createEntityLayer } from './render/scene/entities.js';
 import { createTileCursor, placeTileCursor } from './render/scene/cursor.js';
+import { createFogRenderer } from './render/scene/fog.js';
 import { createTerrain } from './render/scene/terrain.js';
 import {
   createMarqueeGraphics,
@@ -127,8 +128,12 @@ async function main(): Promise<void> {
   const terrain = createTerrain(map);
   const cursor = createTileCursor();
   const entities = createEntityLayer();
+  const fog = createFogRenderer(map);
   terrain.container.addChild(cursor);
   terrain.container.addChild(entities.container);
+  // Fog goes on top of everything in the world layer: it hides terrain as well as what
+  // stands on it.
+  terrain.container.addChild(fog.container);
   app.stage.addChild(terrain.container);
 
   const marquee = createMarqueeGraphics();
@@ -289,6 +294,7 @@ async function main(): Promise<void> {
     if (message !== null) {
       interpolator.push(message.snapshot);
       resourceBar.update(message.player);
+      fog.setFog(message.fog);
     }
     view = interpolator.sample(ticker.deltaMS);
 
@@ -298,6 +304,7 @@ async function main(): Promise<void> {
       -camera.y * camera.zoom + camera.viewportHeight / 2,
     );
     terrain.update(camera);
+    fog.update(camera);
 
     if (view !== null) entities.update(view, map, selection.handles);
 

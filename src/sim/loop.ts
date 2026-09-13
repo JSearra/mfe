@@ -2,6 +2,8 @@ import { applyCommand, compareCommands, type Command } from './commands.js';
 import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
 import type { CattleSystem } from './cattle.js';
 import type { Economy } from './economy/ledger.js';
+import { updateFog, type FogState } from './vision/fog.js';
+import type { Heightmap } from '../shared/heightmap.js';
 import type { MovementSystem } from './movement.js';
 import { flushDestroys, packHandle, type World } from './world.js';
 
@@ -12,6 +14,8 @@ export interface SimLoop {
   readonly movement: MovementSystem;
   readonly cattle: CattleSystem;
   readonly economy: Economy;
+  readonly fog: FogState;
+  readonly map: Heightmap;
   /** Sorted by (tick, playerId, seq) from `cursor` onward. */
   readonly pending: Command[];
   cursor: number;
@@ -28,6 +32,8 @@ export function createLoop(
   movement: MovementSystem,
   cattle: CattleSystem,
   economy: Economy,
+  fog: FogState,
+  map: Heightmap,
   commands: readonly Command[] = [],
 ): SimLoop {
   const pending = [...commands].sort(compareCommands);
@@ -36,6 +42,8 @@ export function createLoop(
     movement,
     cattle,
     economy,
+    fog,
+    map,
     pending,
     cursor: 0,
     dirty: false,
@@ -58,7 +66,7 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
  * survives until the boundary.
  */
 export function step(loop: SimLoop): void {
-  const { world, movement, cattle, economy, pending, events } = loop;
+  const { world, movement, cattle, economy, fog, map, pending, events } = loop;
 
   if (loop.dirty) {
     // Only the unconsumed tail can be out of order.
@@ -81,6 +89,7 @@ export function step(loop: SimLoop): void {
   // Upkeep lands on exact tick multiples. It reads world.tick before the increment
   // below, so the first cycle is tick 200, not 199.
   economy.update(world, events);
+  updateFog(world, map, fog);
 
   // Emitted before the flush, while the entities still have positions to report.
   for (let i = 0; i < world.pendingDestroyCount; i++) {

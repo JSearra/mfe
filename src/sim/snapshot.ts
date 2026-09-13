@@ -4,34 +4,46 @@ import {
   encodeHpPct,
   type SnapshotWriter,
 } from '../shared/snapshot.js';
+import { isVisible, type FogState } from './vision/fog.js';
 import { tuning } from './tuning.js';
 import { packHandle, type World } from './world.js';
 
 /**
  * Build the snapshot one viewer sees.
  *
- * `viewerId` is taken from the very first version, with an identity filter, because
- * fog of war changes this signature — from "every entity" to "entities visible to
- * player P, plus remembered ghosts of buildings in explored tiles" — and that change
- * propagates into the minimap, hit-testing and the AI's information model. The
- * argument costs nothing today and saves a boundary rewrite later.
+ * `viewerId` was taken from the very first version with an identity filter, precisely so
+ * that adding fog of war would be a change to this function's body rather than to the
+ * boundary, the minimap, hit-testing and the AI's information model. The filter is real
+ * now: a viewer sees their own entities always, and everyone else's only while the tile
+ * they stand on is visible.
  *
  * Filtering is by player visibility, never by camera frustum: letting the renderer
  * tell the simulation what to send based on the viewport breaks the minimap and fog
  * memory, and makes the boundary camera-dependent. The camera culls on the far side.
  */
-export function buildSnapshot(world: World, viewerId: number): ArrayBuffer {
+export function buildSnapshot(
+  world: World,
+  viewerId: number,
+  fog: FogState | null = null,
+): ArrayBuffer {
   const { capacity, alive } = world;
 
+  const seen = (i: number): boolean => {
+    if (alive[i] !== 1) return false;
+    if (fog === null) return true;
+    if (world.faction[i] === viewerId) return true;
+    return isVisible(fog, viewerId, Math.floor(world.posX[i]!), Math.floor(world.posY[i]!));
+  };
+
   let count = 0;
-  for (let i = 0; i < capacity; i++) if (alive[i] === 1) count++;
+  for (let i = 0; i < capacity; i++) if (seen(i)) count++;
 
   const writer: SnapshotWriter = createSnapshotWriter(count, world.tick, viewerId);
   const maxHp = tuning.unit.maxHp;
 
   let slot = 0;
   for (let i = 0; i < capacity; i++) {
-    if (alive[i] !== 1) continue;
+    if (!seen(i)) continue;
 
     writer.handle[slot] = packHandle(i, world.generation[i]!);
     writer.animStartTick[slot] = world.animStartTick[i]!;

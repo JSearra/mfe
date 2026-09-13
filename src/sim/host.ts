@@ -8,6 +8,7 @@ import { createCattleSystem, type CattleSystem } from './cattle.js';
 import { createEconomy, Resource, type Economy, type GrainPlot } from './economy/ledger.js';
 import { tuning } from './tuning.js';
 import { FactionId } from '../shared/factions/index.js';
+import { createFog, type FogState } from './vision/fog.js';
 import { createMovementSystem, type MovementSystem } from './movement.js';
 import type { World } from './world.js';
 
@@ -56,6 +57,14 @@ export interface SimMessage {
   /** Non-zero when the consumer stalled long enough to lose events. */
   readonly droppedEvents: number;
   readonly player: PlayerState;
+  /**
+   * The viewer's fog, or null when it has not changed since the last message.
+   *
+   * Sent as a copy rather than a view for the same reason snapshots are: the renderer
+   * must not hold a window into simulation memory. It changes at the vision interval,
+   * not every tick, so most messages carry nothing here.
+   */
+  readonly fog: Uint8Array | null;
 }
 
 export interface SimHost {
@@ -63,6 +72,7 @@ export interface SimHost {
   readonly movement: MovementSystem;
   readonly cattle: CattleSystem;
   readonly economy: Economy;
+  readonly fog: FogState;
   sendCommand(kind: CommandKind, a?: number, b?: number, c?: number, d?: number): void;
   /** Advance by real elapsed time. A worker host will tick itself and ignore this. */
   pump(elapsedMs: number): void;
@@ -127,7 +137,8 @@ export function createDirectSimHost(options: DirectSimHostOptions): SimHost {
   const movement = createMovementSystem(map);
   const cattle = createCattleSystem();
   const economy = createEconomy(factions, seed, plots);
-  const loop: SimLoop = createLoop(world, movement, cattle, economy);
+  const fog = createFog(Math.max(factions.length, viewerId + 1), map);
+  const loop: SimLoop = createLoop(world, movement, cattle, economy, fog, map);
   let accumulator = 0;
   let sequence = 0;
 
@@ -135,6 +146,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): SimHost {
   // consuming while the simulation keeps running, and an uncoalesced queue would grow
   // until the tab died.
   let pendingSnapshot: ArrayBuffer | null = null;
+  let sentFogVersion = -1;
   let pendingEvents: SimEvent[] = [];
   let droppedEvents = 0;
 
@@ -155,6 +167,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): SimHost {
     movement,
     cattle,
     economy,
+    fog,
 
     get tick(): number {
       return world.tick;
@@ -189,7 +202,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): SimHost {
 
       drainLoopEvents();
       compactLoop(loop);
-      pendingSnapshot = buildSnapshot(world, viewerId);
+      pendingSnapshot = buildSnapshot(world, viewerId, fog);
     },
 
     receive(): SimMessage | null {
@@ -213,7 +226,14 @@ export function createDirectSimHost(options: DirectSimHostOptions): SimHost {
         droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
       };
 
-      return { snapshot, events, droppedEvents: dropped, player };
+      let fogSlice: Uint8Array | null = null;
+      if (fog.version !== sentFogVersion) {
+        const tiles = fog.width * fog.height;
+        fogSlice = fog.tiles.slice(viewerId * tiles, (viewerId + 1) * tiles);
+        sentFogVersion = fog.version;
+      }
+
+      return { snapshot, events, droppedEvents: dropped, player, fog: fogSlice };
     },
 
     dispose(): void {

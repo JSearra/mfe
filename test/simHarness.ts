@@ -2,6 +2,7 @@ import { heightmapFrom, type Heightmap } from '../src/shared/heightmap.js';
 import { createLoop, type SimLoop } from '../src/sim/loop.js';
 import { createCattleSystem, type CattleSystem } from '../src/sim/cattle.js';
 import { createEconomy, type Economy } from '../src/sim/economy/ledger.js';
+import { createFog, type FogState } from '../src/sim/vision/fog.js';
 import { FactionId } from '../src/shared/factions/index.js';
 import { createMovementSystem, type MovementSystem } from '../src/sim/movement.js';
 import { createWorld, type World } from '../src/sim/world.js';
@@ -20,6 +21,7 @@ export interface Harness {
   movement: MovementSystem;
   cattle: CattleSystem;
   economy: Economy;
+  fog: FogState;
   loop: SimLoop;
   map: Heightmap;
 }
@@ -34,12 +36,14 @@ export function makeSim(
   const movement = createMovementSystem(map);
   const cattle = createCattleSystem();
   const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], seed);
+  const fog = createFog(2, map);
   return {
     world,
     movement,
     cattle,
     economy,
-    loop: createLoop(world, movement, cattle, economy, commands),
+    fog,
+    loop: createLoop(world, movement, cattle, economy, fog, map, commands),
     map,
   };
 }

@@ -73,5 +73,11 @@
     "droughtThreshold": 0.75,
     "plotBaseYield": 6.0,
     "shelteredYieldFactor": 0.45
+  },
+  "vision": {
+    "unitRadius": 8.0,
+    "cattleRadius": 4.0,
+    "eyeHeight": 1.5,
+    "intervalTicks": 4
   }
 }

@@ -2,6 +2,7 @@ import { hashTypedArray } from '../shared/hash.js';
 import { createLoop, step } from './loop.js';
 import { createCattleSystem } from './cattle.js';
 import { createEconomy } from './economy/ledger.js';
+import { createFog } from './vision/fog.js';
 import { FactionId } from '../shared/factions/index.js';
 import { createMovementSystem } from './movement.js';
 import { createHeightmap } from './terrain/generate.js';
@@ -79,7 +80,16 @@ export function runReplay(
   const world = createWorld(capacity, seed);
   const map = createHeightmap(REPLAY_MAP_SIZE, REPLAY_MAP_SIZE, seed);
   const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], seed);
-  const loop = createLoop(world, createMovementSystem(map), createCattleSystem(), economy, commands);
+  const fog = createFog(2, map);
+  const loop = createLoop(
+    world,
+    createMovementSystem(map),
+    createCattleSystem(),
+    economy,
+    fog,
+    map,
+    commands,
+  );
   const checkpoints: number[] = [];
 
   for (let i = 0; i < ticks; i++) {
@@ -87,7 +97,7 @@ export function runReplay(
     if (world.tick % checkpointInterval === 0) {
       // The ledger is simulation state and belongs in the hash: an economy that drifts
       // would otherwise reproduce silently.
-      checkpoints.push(hashTypedArray(economy.amounts, hashWorld(world)));
+      checkpoints.push(hashTypedArray(fog.tiles, hashTypedArray(economy.amounts, hashWorld(world))));
     }
   }
   return checkpoints;
