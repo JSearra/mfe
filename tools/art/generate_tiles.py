@@ -33,17 +33,43 @@ STYLE = (
     "flat overhead texture, orthographic, no perspective, no horizon, no sky, "
     "single light source from the upper left, soft even lighting, no cast shadows, "
     "muted ochre and olive palette, hand-painted 2D game texture, seamless, "
+    # An allover pattern, emphatically. The first batch produced a picture OF a bush,
+    # centred in frame, rather than a texture OF scrub — which tiles into a grid of
+    # identical centred bushes. A texture has no subject, and the model has to be told.
+    "allover repeating pattern, evenly distributed detail across the whole frame, "
+    "no focal point, no single subject, no centred composition, "
     "no text, no border, no vignette"
 )
 
 SUBJECTS = {
-    "savanna-low": "dry red-brown dust and gravel with sparse tufts of grass",
+    # The plainest texture in the set and the most trouble. Left bare it drew a large
+    # gravel ellipse in the middle of the frame; told "no rings, no arcs, no curved
+    # lines" it drew a squiggle instead. Naming unwanted geometry worked for the
+    # sandstone stripes and does not work here, so this describes density instead:
+    # ground covered edge to edge leaves nowhere to put a subject.
+    "savanna-low": (
+        "dense fine red-brown gravel and grit covering the ground completely, small "
+        "stones of even size packed across the whole surface, occasional dry grass tuft"
+    ),
     "savanna-mid": "sun-bleached tall grass over dry earth, scattered stones",
     "savanna-high": "pale yellow sourveld grass, thin and wind-combed",
     "rock": "weathered ironstone and broken shale, grey-brown",
-    "sandstone": "warm banded sandstone, horizontal strata, dry",
+    # "banded strata" came back as flat horizontal stripes — plywood, not rock. Broken
+    # and mottled gets weathered stone; the word "bands" does not.
+    "sandstone": (
+        "weathered sandstone surface seen from directly above, mottled cream and rust "
+        "patches, irregular pitting and fine cracks, broken uneven tone, no stripes, "
+        "no straight lines, no grain direction"
+    ),
     "donga-floor": "cracked dry clay with fine erosion channels, deep shadow in cracks",
-    "thornveld": "low thorny acacia scrub over dry ground, small dark leaves",
+    # Three attempts. "a thorn bush" gave a portrait of one bush, centred. Correcting that
+    # with "tiny and dark", "speckling" and "seen from far above" gave literally that:
+    # black specks on a blank tan plane, no ground at all. The subjects that work describe
+    # the substrate first and the vegetation second, so this one now does too.
+    "thornveld": (
+        "dry red-brown earth and fine gravel, low grey-green thorn scrub and dry grass "
+        "tufts growing across it, bare ground visible between the bushes"
+    ),
     "riverbed": "damp sand and rounded pebbles, darker where wet",
 }
 
@@ -108,19 +134,36 @@ def main() -> int:
         print(f"unknown subject {args.only!r}; known: {', '.join(SUBJECTS)}", file=sys.stderr)
         return 1
 
+    # A subject's seed is derived from its position in the FULL list, not in whatever
+    # subset is being generated. Deriving it from the filtered list meant `--only
+    # thornveld` reused the seeds of whichever subject sorts first, so a regenerated
+    # subject came back under different filenames and sat alongside the originals
+    # instead of replacing them. Reproducibility that depends on which flags you passed
+    # is not reproducibility.
+    order = {name: index for index, name in enumerate(sorted(SUBJECTS))}
+
     written = []
-    for index, (name, subject) in enumerate(sorted(subjects.items())):
+    for name, subject in sorted(subjects.items()):
         print(f"{name}:")
+        # Stale outputs for this subject go, so a regenerated prompt replaces rather
+        # than accumulates.
+        for old in pathlib.Path(args.out).glob(f"{name}_*.png"):
+            old.unlink()
+
         for variant in range(args.variants):
             # Derived, not random: the same invocation reproduces the same tiles, which
             # is what lets a set be regenerated after a prompt tweak without churning
             # every unrelated image.
-            seed = args.seed + index * 100 + variant
+            seed = args.seed + order[name] * 100 + variant
             written.append(str(generate(name, subject, seed, args)))
 
+    # The manifest describes the directory, not this invocation. Listing only what this
+    # run wrote meant `--only thornveld` left a manifest claiming the set was three
+    # images, so anything reading it to find out what exists got a truncated answer.
     manifest = pathlib.Path(args.out) / "generated.json"
-    manifest.write_text(json.dumps({"style": STYLE, "images": written}, indent=2) + "\n")
-    print(f"\n[generate_tiles] {len(written)} images -> {args.out}")
+    present = sorted(str(path) for path in pathlib.Path(args.out).glob("*.png"))
+    manifest.write_text(json.dumps({"style": STYLE, "images": present}, indent=2) + "\n")
+    print(f"\n[generate_tiles] {len(written)} images written, {len(present)} in {args.out}")
     print("next: python tools/art/postprocess.py tile --in %s --out public/assets/terrain" % args.out)
     return 0
 
