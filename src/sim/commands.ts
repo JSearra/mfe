@@ -12,7 +12,9 @@ import {
   destroy,
   EntityKind,
   handleIndex,
+  isAlive,
   OrderMode,
+  Stance,
   spawn,
   type Handle,
   type World,
@@ -46,6 +48,8 @@ export const CommandKind = {
   SetRally: 9,
   /** Move, but engage what you meet on the way. */
   AttackMove: 10,
+  /** Set how far a unit will go to fight. */
+  SetStance: 11,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -134,6 +138,23 @@ export function applyCommand(
       const handle = spawn(world, command.a, command.b, NEUTRAL_FACTION, 1, EntityKind.Cattle);
       if (handle === 0) return false;
       events.push(makeEvent(world.tick, EventType.Spawned, handle, command.a, command.b));
+      return true;
+    }
+
+    case CommandKind.SetStance: {
+      const handle = command.a as Handle;
+      if (!isAlive(world, handle)) return false;
+      const stance = command.b;
+      if (stance !== Stance.Aggressive && stance !== Stance.Defensive && stance !== Stance.HoldGround) {
+        return false;
+      }
+      const index = handleIndex(handle);
+      if (world.kind[index] !== EntityKind.Unit) return false;
+      world.stance[index] = stance;
+      // The post moves with the order to hold here, not to wherever the unit was last
+      // told to go: a unit set to hold ground holds THIS ground.
+      world.postX[index] = world.posX[index]!;
+      world.postY[index] = world.posY[index]!;
       return true;
     }
 

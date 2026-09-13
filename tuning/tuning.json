@@ -94,7 +94,8 @@
     "rangedDamage": 20,
     "rangedCooldownTicks": 34,
     "ammunitionPerShot": 1.0,
-    "chaseRange": 9.0
+    "chaseRange": 9.0,
+    "defendRadius": 5.0
   },
   "buildings": {
     "buildRadius": 2.2,

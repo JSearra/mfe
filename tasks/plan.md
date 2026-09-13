@@ -28,7 +28,7 @@ SpawnCattle, Leash, Attack, Build, Research, Train, SetRally.
       past it. The most-used order in the genre and the one whose absence is felt first.
       *Done when:* a unit given attack-move toward a point past an enemy stops and fights;
       the same unit given a plain move walks past. Both asserted headlessly.
-- [ ] **A2 — Stances.** Aggressive, defensive, hold ground. Decides whether a unit chases
+- [x] **A2 — Stances.** Done, and pursuit with it — it did not exist. Aggressive, defensive, hold ground. Decides whether a unit chases
       what it is fighting, and how far.
       *Done when:* an aggressive unit pursues a fleeing target, a defensive one returns to
       where it was ordered, a hold-ground one never leaves its tile.

@@ -15,8 +15,8 @@ import {
   handleIndex,
   isAlive,
   NULL_HANDLE,
-  OrderMode,
   packHandle,
+  Stance,
   type Handle,
   type World,
 } from './world.js';
@@ -412,18 +412,42 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
         const posX = world.posX[index]!;
         const posY = world.posY[index]!;
 
-        // A unit that has stopped to fight holds its ground until the fight is over,
-        // and then resumes — the order is kept rather than cleared, which is what makes
-        // an attack-move an advance across a map rather than a single engagement.
-        const engaged =
-          world.orderMode[index] === OrderMode.AttackMove &&
-          world.attackTarget[index] !== NULL_HANDLE &&
-          isAlive(world, world.attackTarget[index]! as Handle);
+        const targetHandle = world.attackTarget[index]! as Handle;
+        const fighting = targetHandle !== NULL_HANDLE && isAlive(world, targetHandle);
 
-        if (world.hasTarget[index] !== 1 || engaged) {
+        if (fighting) {
+          const foe = handleIndex(targetHandle);
+          const dx = world.posX[foe]! - posX;
+          const dy = world.posY[foe]! - posY;
+          const range = Math.sqrt(dx * dx + dy * dy);
+          const reach =
+            world.movementClass[index] === MovementClass.Mounted
+              ? tuning.combat.rangedRange
+              : tuning.combat.meleeRange;
+
+          if (range <= reach) {
+            // In reach: stand and fight. An attack-move keeps its order, so killing
+            // what is in the way resumes the march on its own.
+            world.velX[index] = 0;
+            world.velY[index] = 0;
+            continue;
+          }
+
+          // Out of reach. Only a unit with no standing move order gives chase, and the
+          // reason is mechanical as much as tactical: pursuit works by writing the
+          // quarry's position into the move goal, so letting a marching unit pursue
+          // would overwrite the destination it was sent to and it could never resume.
+          // A column told to advance therefore engages what it meets and keeps its
+          // heading; chasing is for troops that are not already going somewhere.
+          if (world.hasTarget[index] !== 1 && mayPursue(world, index, foe)) {
+            pursue(world, index, foe);
+          }
+        }
+
+        if (world.hasTarget[index] !== 1) {
           world.velX[index] = 0;
           world.velY[index] = 0;
-          if (!engaged) setAnim(world, index, ANIM_IDLE);
+          setAnim(world, index, ANIM_IDLE);
           continue;
         }
 
@@ -623,6 +647,50 @@ function resolveOverlaps(
       world.posY[other] = step[1];
     }
   }
+}
+
+/**
+ * May this unit leave where it is to close with `foe`?
+ *
+ * Aggressive troops chase as far as the chase range allows. Defensive ones are leashed
+ * to their post — measured from the POST and not from the unit, because measuring from
+ * the unit lets a defender be walked off its position a tile at a time by anything
+ * willing to retreat slowly. Hold-ground never moves at all.
+ */
+function mayPursue(world: World, index: number, foe: number): boolean {
+  const stance = world.stance[index]!;
+  if (stance === Stance.HoldGround) return false;
+
+  const c = tuning.combat;
+  if (stance === Stance.Aggressive) {
+    const dx = world.posX[foe]! - world.posX[index]!;
+    const dy = world.posY[foe]! - world.posY[index]!;
+    return Math.sqrt(dx * dx + dy * dy) <= c.chaseRange;
+  }
+
+  const dx = world.posX[foe]! - world.postX[index]!;
+  const dy = world.posY[foe]! - world.postY[index]!;
+  return Math.sqrt(dx * dx + dy * dy) <= c.defendRadius;
+}
+
+/**
+ * Point a pursuer at its quarry, re-routing only when the quarry has actually moved.
+ *
+ * Re-pathing every tick for every pursuer is the shape of the 81.9ms disaster in
+ * ADR-0013 — a full route solve per unit per tick. A target that has shifted less than a
+ * tile does not change the route worth having, so the existing goal stands.
+ */
+function pursue(world: World, index: number, foe: number): void {
+  const goalX = world.posX[foe]!;
+  const goalY = world.posY[foe]!;
+  if (world.hasTarget[index] === 1) {
+    const dx = world.targetX[index]! - goalX;
+    const dy = world.targetY[index]! - goalY;
+    if (dx * dx + dy * dy < 1) return;
+  }
+  world.targetX[index] = goalX;
+  world.targetY[index] = goalY;
+  world.hasTarget[index] = 1;
 }
 
 function setAnim(world: World, index: number, state: number): void {

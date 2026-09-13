@@ -97,6 +97,11 @@ export interface World {
   /** Handle of the current target, or NULL_HANDLE. */
   /** One of OrderMode. Plain move unless the order said otherwise. */
   readonly orderMode: Uint8Array;
+  /** One of Stance. */
+  readonly stance: Uint8Array;
+  /** Where a defensive unit returns to, and what its leash is measured from. */
+  readonly postX: Float64Array;
+  readonly postY: Float64Array;
   readonly attackTarget: Uint32Array;
   /** Ticks until this unit may strike again. */
   readonly attackCooldown: Uint16Array;
@@ -170,6 +175,9 @@ export function createWorld(capacity: number, seed: number): World {
     rallyX: new Float64Array(capacity),
     rallyY: new Float64Array(capacity),
     orderMode: new Uint8Array(capacity),
+    stance: new Uint8Array(capacity),
+    postX: new Float64Array(capacity),
+    postY: new Float64Array(capacity),
     attackTarget: new Uint32Array(capacity),
     attackCooldown: new Uint16Array(capacity),
     stuckTicks: new Uint16Array(capacity),
@@ -207,6 +215,26 @@ export const OrderMode = {
 } as const;
 
 export type OrderMode = (typeof OrderMode)[keyof typeof OrderMode];
+
+/**
+ * How far a unit will go to fight.
+ *
+ * Pursuit did not exist before this: `attack` set a target and nothing ever closed with
+ * it, so a unit ordered onto an enemy stood still unless the enemy happened to walk into
+ * reach. Adding pursuit without a policy would be worse than not having it — a line of
+ * defenders that all chase the first scout they see has abandoned the thing it was
+ * defending, which is the oldest complaint in the genre.
+ */
+export const Stance = {
+  /** Chase what it acquires, as far as the chase range allows. */
+  Aggressive: 0,
+  /** Fight what comes near, then return to where it was posted. */
+  Defensive: 1,
+  /** Never leave the spot. Fights only what comes into reach. */
+  HoldGround: 2,
+} as const;
+
+export type Stance = (typeof Stance)[keyof typeof Stance];
 
 export const ANIM_IDLE = 0;
 export const ANIM_WALK = 1;
@@ -289,6 +317,9 @@ export function spawn(
   world.rallyX[index] = x;
   world.rallyY[index] = y;
   world.orderMode[index] = OrderMode.Move;
+  world.stance[index] = Stance.Aggressive;
+  world.postX[index] = x;
+  world.postY[index] = y;
   world.attackTarget[index] = NULL_HANDLE;
   world.attackCooldown[index] = 0;
   world.stuckTicks[index] = 0;
