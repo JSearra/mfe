@@ -6,6 +6,7 @@ import type { SimEvent } from '../shared/events.js';
 import type { Heightmap } from '../shared/heightmap.js';
 import { createCattleSystem, type CattleSystem } from '../sim/cattle.js';
 import { createCombatSystem, type CombatSystem } from '../sim/combat.js';
+import { createAi } from '../sim/ai/opponent.js';
 import { createConstructionSystem, type ConstructionSystem } from '../sim/construction.js';
 import { createEconomy, Resource, type Economy, type GrainPlot } from '../sim/economy/ledger.js';
 import { tuning } from '../sim/tuning.js';
@@ -97,6 +98,8 @@ export interface DirectSimHostOptions {
   /** Terrain the simulation moves over. Pathing cost layers derive from it. */
   map: Heightmap;
   factions?: readonly FactionId[];
+  /** Players driven by the computer. Each is simply another command source. */
+  aiPlayers?: readonly number[];
   plots?: readonly GrainPlot[];
   seed?: number;
   viewerId?: number;
@@ -151,6 +154,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     strict = defaultStrict(),
     maxPendingEvents = DEFAULT_MAX_PENDING_EVENTS,
     factions = [FactionId.Zulu, FactionId.Sotho],
+    aiPlayers = [],
     plots = [],
     seed = 0,
   } = options;
@@ -162,6 +166,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
   const economy = createEconomy(factions, seed, plots);
   const fog = createFog(Math.max(factions.length, viewerId + 1), map);
   const loop: SimLoop = createLoop(world, movement, cattle, combat, construction, economy, fog, map);
+  for (const player of aiPlayers) loop.ai.push({ player, controller: createAi(player) });
   let accumulator = 0;
   let sequence = 0;
 

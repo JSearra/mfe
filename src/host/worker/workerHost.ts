@@ -35,6 +35,7 @@ export interface WorkerSimHostOptions {
   viewerId?: number;
   playerId?: number;
   factions: readonly FactionId[];
+  aiPlayers?: readonly number[];
 }
 
 export function createWorkerSimHost(options: WorkerSimHostOptions): SimHost {
@@ -75,6 +76,7 @@ export function createWorkerSimHost(options: WorkerSimHostOptions): SimHost {
     viewerId: options.viewerId ?? 0,
     playerId: options.playerId ?? 0,
     factions: options.factions,
+    aiPlayers: options.aiPlayers ?? [],
   });
 
   return {

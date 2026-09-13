@@ -94,5 +94,13 @@
   "buildings": {
     "buildRadius": 2.2,
     "progressPerBuilder": 1.0
+  },
+  "ai": {
+    "decideEveryTicks": 20,
+    "grainFloor": 150,
+    "attackStrengthRatio": 1.2,
+    "herdRadius": 14.0,
+    "regroupRadius": 6.0,
+    "buildSpacing": 4
   }
 }

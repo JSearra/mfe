@@ -111,12 +111,14 @@ async function main(): Promise<void> {
         viewerId: PLAYER,
         playerId: PLAYER,
         factions: [FactionId.Zulu, FactionId.Sotho],
+        aiPlayers: [ENEMY],
       })
     : createDirectSimHost({
         world: createWorld(512, WORLD_SEED),
         map,
         viewerId: PLAYER,
         playerId: PLAYER,
+        aiPlayers: [ENEMY],
       });
 
   // Seed a small force near the centre. Spawning through commands rather than touching

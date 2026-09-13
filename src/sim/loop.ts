@@ -3,6 +3,7 @@ import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
 import type { CattleSystem } from './cattle.js';
 import type { CombatSystem } from './combat.js';
 import type { ConstructionSystem } from './construction.js';
+import type { AiController } from './ai/opponent.js';
 import type { Economy } from './economy/ledger.js';
 import { updateFog, type FogState } from './vision/fog.js';
 import type { Heightmap } from '../shared/heightmap.js';
@@ -17,6 +18,8 @@ export interface SimLoop {
   readonly cattle: CattleSystem;
   readonly combat: CombatSystem;
   readonly construction: ConstructionSystem;
+  /** Computer players, each simply another source of commands. */
+  readonly ai: { player: number; controller: AiController }[];
   readonly economy: Economy;
   readonly fog: FogState;
   readonly map: Heightmap;
@@ -27,6 +30,8 @@ export interface SimLoop {
   dirty: boolean;
   /** Commands naming a tick already simulated. Non-zero means a bug upstream. */
   lateCommands: number;
+  /** Sequence numbers for AI-issued commands, keeping their ordering total. */
+  aiSequence: number;
   /** Drained by the host each pump. */
   readonly events: SimEvent[];
 }
@@ -49,6 +54,7 @@ export function createLoop(
     cattle,
     combat,
     construction,
+    ai: [],
     economy,
     fog,
     map,
@@ -56,6 +62,7 @@ export function createLoop(
     cursor: 0,
     dirty: false,
     lateCommands: 0,
+    aiSequence: 0,
     events: [],
   };
 }
@@ -76,6 +83,24 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
 export function step(loop: SimLoop): void {
   const { world, movement, cattle, combat, construction, economy, fog, map, pending, events } =
     loop;
+
+  // Computer players act first, through exactly the same queue a human's clicks use.
+  // Nothing here reaches into world state — that invariant is what made an AI a day's
+  // work rather than a second mutation path to keep in step.
+  for (const { player, controller } of loop.ai) {
+    controller.decide(world, fog, economy, (command) => {
+      enqueueCommand(loop, {
+        tick: world.tick,
+        playerId: player,
+        seq: loop.aiSequence++,
+        kind: command.kind as Command['kind'],
+        a: command.a,
+        b: command.b,
+        c: command.c,
+        d: command.d,
+      });
+    });
+  }
 
   if (loop.dirty) {
     // Only the unconsumed tail can be out of order.

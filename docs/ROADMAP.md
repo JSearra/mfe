@@ -333,8 +333,11 @@ npm run lint                            # no hardcoded strings
    updates the derived tables ADR-0013 warned about) and then invalidates cached fields.
    Cost layers are *not* discarded on invalidation — they now carry the buildings written
    into them, so they are state rather than a derived cache.
-6. **AI opponent** — cheap *if* commands remained the sole mutation path, because the AI is
-   then just another command source, and it gives headless AI-vs-AI soak tests for free.
+6. ~~**AI opponent**~~ — **done**, and the prediction held: it is a command source and
+   nothing else, which a test pins by hashing the world either side of a decision. It also
+   reads through its own fog, so it plays the same game the player does. The free dividend
+   arrived as promised — a headless AI-vs-AI soak that exercises movement, pathing,
+   combat, construction and the economy together, and reproduces exactly.
 7. **Audio** — consumes the Phase 3 event stream.
 8. **Map generators** — the four scripts from the brief, expressed as heightmaps.
 9. **Tech progression**

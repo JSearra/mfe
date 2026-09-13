@@ -21,6 +21,7 @@ export interface InitMessage {
   readonly viewerId: number;
   readonly playerId: number;
   readonly factions: readonly FactionId[];
+  readonly aiPlayers: readonly number[];
 }
 
 export interface CommandMessage {
