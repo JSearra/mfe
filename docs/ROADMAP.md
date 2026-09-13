@@ -349,4 +349,14 @@ npm run lint                            # no hardcoded strings
    character rather than mere output — that Thaba Bosiu's summits are reachable by their
    ramps, that Karoo koppies are not reachable at all, and that the Magaliesberg connects
    north to south only through its poorts.
-9. **Tech progression**
+9. ~~**Tech progression**~~ — **done.** Per-player research with prerequisites, costs and
+   multiplicative effects read by combat, vision, movement, the herd and the economy.
+   `modifier()` returns 1 for anything unresearched, so a system that forgets to consult
+   it behaves exactly as before — the failure mode is "the upgrade does nothing", not "the
+   simulation breaks".
+
+**The backlog is clear.** What remains is content and polish rather than architecture:
+directional unit art (`ARCHITECTURE.md` section 9, still the likeliest thing to stall the
+project), Gate 2 re-run against real sprites, the depth-sort hysteresis comparator that is
+specified but not implemented, and multiplayer itself — for which every determinism
+invariant is in place and none is yet proven across two machines.

@@ -4,6 +4,8 @@ import type { CombatSystem } from './combat.js';
 import type { ConstructionSystem } from './construction.js';
 import type { Economy } from './economy/ledger.js';
 import type { BuildingType } from '../shared/buildings/index.js';
+import { TECH_IDS } from '../shared/tech/index.js';
+import type { TechState } from './tech.js';
 import type { MovementSystem } from './movement.js';
 import { destroy, EntityKind, spawn, type Handle, type World } from './world.js';
 
@@ -30,6 +32,7 @@ export const CommandKind = {
   Leash: 4,
   Attack: 5,
   Build: 6,
+  Research: 7,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -84,6 +87,7 @@ export function applyCommand(
   combat: CombatSystem,
   construction: ConstructionSystem,
   economy: Economy,
+  tech: TechState,
 ): boolean {
   switch (command.kind) {
     case CommandKind.Spawn: {
@@ -123,6 +127,12 @@ export function applyCommand(
           events,
         ) === 0
       );
+
+    case CommandKind.Research: {
+      const id = TECH_IDS[command.a];
+      if (id === undefined) return false;
+      return tech.begin(command.b, id, economy);
+    }
 
     case CommandKind.Attack:
       return combat.attack(world, command.a as Handle, command.b as Handle);

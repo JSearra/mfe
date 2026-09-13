@@ -4,6 +4,7 @@ import { createCattleSystem } from '../../sim/cattle.js';
 import { createCombatSystem } from '../../sim/combat.js';
 import { createAi } from '../../sim/ai/opponent.js';
 import { createConstructionSystem } from '../../sim/construction.js';
+import { createTechState } from '../../sim/tech.js';
 import { createEconomy, Resource, type Economy } from '../../sim/economy/ledger.js';
 import { createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../../sim/loop.js';
 import { createMovementSystem } from '../../sim/movement.js';
@@ -70,6 +71,7 @@ function start(message: InitMessage): void {
     createCombatSystem(),
     createConstructionSystem(map, movement.pathing),
     economy,
+    createTechState(Math.max(message.factions.length, message.viewerId + 1)),
     fog,
     map,
   );

@@ -9,6 +9,7 @@ import {
 } from '../src/sim/persistence/save.js';
 import { hashWorld } from '../src/sim/replay.js';
 import { Resource } from '../src/sim/economy/ledger.js';
+import { Modifier, TechId, TECHS } from '../src/shared/tech/index.js';
 import { createHeightmap } from '../src/sim/terrain/generate.js';
 import { makeSim } from './simHarness.js';
 
@@ -86,6 +87,31 @@ describe('save and load', () => {
     );
     expect(restored.economy.upkeepCount).toBe(original.economy.upkeepCount);
     expect(Array.from(restored.fog.tiles)).toEqual(Array.from(original.fog.tiles));
+  });
+
+  it('carries research, including the multipliers derived from it', () => {
+    const original = busyScenario(0x66);
+    original.economy.add(0, Resource.Grain, 5000);
+    original.economy.add(0, Resource.Cattle, 200);
+    original.tech.begin(0, TechId.Amabutho, original.economy);
+    runTicks(original.loop, TECHS[TechId.Amabutho].researchTicks + 10);
+    expect(original.tech.isComplete(0, TechId.Amabutho)).toBe(true);
+
+    // And one still in progress, which is the case a status-only save would lose.
+    original.tech.begin(0, TechId.Umkhosi, original.economy);
+    runTicks(original.loop, 40);
+
+    const restored = busyScenario(0x66);
+    restoreState(restored.loop, captureState(original.loop));
+
+    expect(restored.tech.isComplete(0, TechId.Amabutho)).toBe(true);
+    // Multipliers are derived, so this proves the rebuild happened rather than the
+    // save carrying a second copy free to disagree with the first.
+    expect(restored.tech.modifier(0, Modifier.CombatDamage)).toBeCloseTo(
+      original.tech.modifier(0, Modifier.CombatDamage),
+      9,
+    );
+    expect(Array.from(restored.tech.progress)).toEqual(Array.from(original.tech.progress));
   });
 
   it('carries unfinished orders so they still execute after loading', () => {

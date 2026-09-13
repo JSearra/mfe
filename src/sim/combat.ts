@@ -3,6 +3,8 @@ import { EventType, makeEvent } from '../shared/events.js';
 import type { Economy } from './economy/ledger.js';
 import { Resource } from './economy/ledger.js';
 import type { SpatialGrid } from './spatial/grid.js';
+import { Modifier } from '../shared/tech/index.js';
+import type { TechState } from './tech.js';
 import { tuning } from './tuning.js';
 import {
   EntityKind,
@@ -40,7 +42,13 @@ export interface CombatSystem {
   readonly stats: CombatStats;
   /** Order a unit onto a specific target. */
   attack(world: World, attacker: Handle, target: Handle): boolean;
-  update(world: World, grid: SpatialGrid, economy: Economy, events: SimEvent[]): void;
+  update(
+    world: World,
+    grid: SpatialGrid,
+    economy: Economy,
+    tech: TechState,
+    events: SimEvent[],
+  ): void;
 }
 
 /**
@@ -108,7 +116,7 @@ export function createCombatSystem(): CombatSystem {
       return true;
     },
 
-    update(world, grid, economy, events): void {
+    update(world, grid, economy, tech, events): void {
       const c = tuning.combat;
 
       for (let index = 0; index < world.capacity; index++) {
@@ -156,7 +164,8 @@ export function createCombatSystem(): CombatSystem {
           }
         }
 
-        const damage = ranged ? c.rangedDamage : c.meleeDamage;
+        const base = ranged ? c.rangedDamage : c.meleeDamage;
+        const damage = Math.round(base * tech.modifier(owner, Modifier.CombatDamage));
         const hp = world.hp[targetIndex]!;
         world.hp[targetIndex] = hp > damage ? hp - damage : 0;
         world.attackCooldown[index] = ranged ? c.rangedCooldownTicks : c.meleeCooldownTicks;

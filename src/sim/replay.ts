@@ -2,6 +2,7 @@ import { hashTypedArray } from '../shared/hash.js';
 import { createLoop, step } from './loop.js';
 import { createCattleSystem } from './cattle.js';
 import { createCombatSystem } from './combat.js';
+import { createTechState } from './tech.js';
 import { createConstructionSystem } from './construction.js';
 import { createEconomy } from './economy/ledger.js';
 import { createFog } from './vision/fog.js';
@@ -82,6 +83,7 @@ export function runReplay(
   const world = createWorld(capacity, seed);
   const map = createHeightmap(REPLAY_MAP_SIZE, REPLAY_MAP_SIZE, seed);
   const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], seed);
+  const tech = createTechState(2);
   const fog = createFog(2, map);
   const movement = createMovementSystem(map);
   const loop = createLoop(
@@ -91,6 +93,7 @@ export function runReplay(
     createCombatSystem(),
     createConstructionSystem(map, movement.pathing),
     economy,
+    tech,
     fog,
     map,
     commands,
@@ -102,7 +105,11 @@ export function runReplay(
     if (world.tick % checkpointInterval === 0) {
       // The ledger is simulation state and belongs in the hash: an economy that drifts
       // would otherwise reproduce silently.
-      checkpoints.push(hashTypedArray(fog.tiles, hashTypedArray(economy.amounts, hashWorld(world))));
+      let h = hashWorld(world);
+      h = hashTypedArray(economy.amounts, h);
+      h = hashTypedArray(fog.tiles, h);
+      h = hashTypedArray(loop.tech.status, h);
+      checkpoints.push(hashTypedArray(loop.tech.progress, h));
     }
   }
   return checkpoints;

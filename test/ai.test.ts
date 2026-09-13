@@ -31,7 +31,7 @@ describe('ai as a command source', () => {
     const before = hashWorld(sim.world);
 
     const emitted: unknown[] = [];
-    ai.decide(sim.world, sim.fog, sim.economy, (command) => emitted.push(command));
+    ai.decide(sim.world, sim.fog, sim.economy, sim.tech, (command) => emitted.push(command));
 
     expect(hashWorld(sim.world)).toBe(before);
     expect(emitted.length).toBeGreaterThan(0);
@@ -42,11 +42,11 @@ describe('ai as a command source', () => {
     const ai = createAi(0);
 
     sim.world.tick = AI.decideEveryTicks + 1;
-    ai.decide(sim.world, sim.fog, sim.economy, () => {});
+    ai.decide(sim.world, sim.fog, sim.economy, sim.tech, () => {});
     expect(ai.stats.decisions).toBe(0);
 
     sim.world.tick = AI.decideEveryTicks * 2;
-    ai.decide(sim.world, sim.fog, sim.economy, () => {});
+    ai.decide(sim.world, sim.fog, sim.economy, sim.tech, () => {});
     expect(ai.stats.decisions).toBe(1);
   });
 
@@ -60,7 +60,7 @@ describe('ai as a command source', () => {
 
     const ai = createAi(0);
     const kinds: number[] = [];
-    ai.decide(sim.world, sim.fog, sim.economy, (c) => kinds.push(c.kind));
+    ai.decide(sim.world, sim.fog, sim.economy, sim.tech, (c) => kinds.push(c.kind));
 
     // An enemy it cannot see draws no attack order — it scouts or builds instead.
     expect(kinds).not.toContain(CommandKind.Attack);
@@ -77,7 +77,7 @@ describe('ai as a command source', () => {
     sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
 
     const attacks: number[] = [];
-    createAi(0).decide(sim.world, sim.fog, sim.economy, (c) => {
+    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.tech, (c) => {
       if (c.kind === CommandKind.Attack) attacks.push(c.b);
     });
 
@@ -95,7 +95,7 @@ describe('ai as a command source', () => {
     sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
 
     const kinds: number[] = [];
-    createAi(0).decide(sim.world, sim.fog, sim.economy, (c) => kinds.push(c.kind));
+    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.tech, (c) => kinds.push(c.kind));
     expect(kinds).toContain(CommandKind.MoveTo);
     expect(kinds).not.toContain(CommandKind.Attack);
   });
@@ -110,7 +110,7 @@ describe('ai as a command source', () => {
     sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
 
     const kinds: number[] = [];
-    createAi(0).decide(sim.world, sim.fog, sim.economy, (c) => kinds.push(c.kind));
+    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.tech, (c) => kinds.push(c.kind));
     // Cattle are what the war is about.
     expect(kinds.some((k) => k === CommandKind.Leash || k === CommandKind.MoveTo)).toBe(true);
   });

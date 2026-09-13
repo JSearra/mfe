@@ -27,6 +27,8 @@ export interface SaveGame {
   readonly economyShortfall: string;
   readonly fog: string;
   readonly fogVersion: number;
+  readonly techStatus: string;
+  readonly techProgress: string;
   /** Per-unit routes, keyed by packed handle. */
   readonly paths: readonly (readonly [number, readonly number[]])[];
   readonly commands: readonly Command[];
@@ -117,6 +119,8 @@ export function captureState(loop: SimLoop): SaveGame {
     economyShortfall: toBase64(economy.shortfall),
     fog: toBase64(fog.tiles),
     fogVersion: fog.version,
+    techStatus: toBase64(loop.tech.status),
+    techProgress: toBase64(loop.tech.progress),
     paths: movement.exportPaths(),
     commands: loop.pending.slice(loop.cursor),
     commandCursor: 0,
@@ -153,6 +157,12 @@ export function restoreState(loop: SimLoop, save: SaveGame): void {
 
   fromBase64(save.fog, fog.tiles);
   fog.version = save.fogVersion;
+
+  fromBase64(save.techStatus, loop.tech.status);
+  fromBase64(save.techProgress, loop.tech.progress);
+  // Multipliers are derived from status, so they are recomputed rather than stored —
+  // one source of truth survives the round trip, two would be free to disagree.
+  loop.tech.rebuild();
 
   movement.importPaths(save.paths);
 

@@ -1,4 +1,6 @@
 import { BuildingType } from '../../shared/buildings/index.js';
+import { TECH_IDS } from '../../shared/tech/index.js';
+import type { TechState } from '../tech.js';
 import { CommandKind } from '../commands.js';
 import { Resource, type Economy } from '../economy/ledger.js';
 import { cos, sin, TWO_PI } from '../math/trig.js';
@@ -36,6 +38,7 @@ export interface AiStats {
   ordersIssued: number;
   attacksOrdered: number;
   buildsOrdered: number;
+  techsOrdered: number;
   herdsOrdered: number;
 }
 
@@ -46,6 +49,7 @@ export interface AiController {
     world: World,
     fog: FogState,
     economy: Economy,
+    tech: TechState,
     emit: (command: AiCommand) => void,
   ): void;
 }
@@ -62,6 +66,7 @@ export function createAi(player: number): AiController {
     ordersIssued: 0,
     attacksOrdered: 0,
     buildsOrdered: 0,
+    techsOrdered: 0,
     herdsOrdered: 0,
   };
 
@@ -71,7 +76,7 @@ export function createAi(player: number): AiController {
   return {
     stats,
 
-    decide(world, fog, economy, emit): void {
+    decide(world, fog, economy, tech, emit): void {
       const ai = tuning.ai;
       if (world.tick % ai.decideEveryTicks !== 0) return;
       stats.decisions++;
@@ -129,6 +134,18 @@ export function createAi(player: number): AiController {
         });
         buildSlot = (buildSlot + 1) % 16;
         stats.buildsOrdered++;
+      }
+
+      // --- research -------------------------------------------------------
+      // One advance at a time, in a fixed order, and only from surplus. An AI that
+      // researches itself into starvation loses to one that never researches at all.
+      if (economy.balance(player, Resource.Grain) > ai.grainFloor * 2) {
+        for (let i = 0; i < TECH_IDS.length; i++) {
+          if (!tech.canResearch(player, TECH_IDS[i]!)) continue;
+          emit({ kind: CommandKind.Research, a: i, b: player, c: 0, d: 0 });
+          stats.techsOrdered++;
+          break;
+        }
       }
 
       // --- fight ----------------------------------------------------------

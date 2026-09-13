@@ -4,6 +4,8 @@ import type { CattleSystem } from './cattle.js';
 import type { CombatSystem } from './combat.js';
 import type { ConstructionSystem } from './construction.js';
 import type { AiController } from './ai/opponent.js';
+import { Modifier } from '../shared/tech/index.js';
+import type { TechState } from './tech.js';
 import type { Economy } from './economy/ledger.js';
 import { updateFog, type FogState } from './vision/fog.js';
 import type { Heightmap } from '../shared/heightmap.js';
@@ -21,6 +23,7 @@ export interface SimLoop {
   /** Computer players, each simply another source of commands. */
   readonly ai: { player: number; controller: AiController }[];
   readonly economy: Economy;
+  readonly tech: TechState;
   readonly fog: FogState;
   readonly map: Heightmap;
   /** Sorted by (tick, playerId, seq) from `cursor` onward. */
@@ -43,6 +46,7 @@ export function createLoop(
   combat: CombatSystem,
   construction: ConstructionSystem,
   economy: Economy,
+  tech: TechState,
   fog: FogState,
   map: Heightmap,
   commands: readonly Command[] = [],
@@ -56,6 +60,7 @@ export function createLoop(
     construction,
     ai: [],
     economy,
+    tech,
     fog,
     map,
     pending,
@@ -81,14 +86,14 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
  * survives until the boundary.
  */
 export function step(loop: SimLoop): void {
-  const { world, movement, cattle, combat, construction, economy, fog, map, pending, events } =
+  const { world, movement, cattle, combat, construction, economy, tech, fog, map, pending, events } =
     loop;
 
   // Computer players act first, through exactly the same queue a human's clicks use.
   // Nothing here reaches into world state — that invariant is what made an AI a day's
   // work rather than a second mutation path to keep in step.
   for (const { player, controller } of loop.ai) {
-    controller.decide(world, fog, economy, (command) => {
+    controller.decide(world, fog, economy, tech, (command) => {
       enqueueCommand(loop, {
         tick: world.tick,
         playerId: player,
@@ -113,21 +118,27 @@ export function step(loop: SimLoop): void {
     const command = pending[loop.cursor]!;
     if (command.tick > world.tick) break;
     if (command.tick < world.tick) loop.lateCommands++;
-    applyCommand(world, command, events, movement, cattle, combat, construction, economy);
+    applyCommand(world, command, events, movement, cattle, combat, construction, economy, tech);
     loop.cursor++;
   }
 
-  movement.update(world);
+  movement.update(world, tech);
   // Cattle read the grid movement just built, so they see this tick's unit positions.
-  cattle.update(world, movement.grid, events);
+  cattle.update(world, movement.grid, events, tech);
   // Upkeep lands on exact tick multiples. It reads world.tick before the increment
   // below, so the first cycle is tick 200, not 199.
   // Combat after movement and cattle, so a strike lands on where things ended up
   // this tick rather than where they started.
   construction.update(world, movement.grid, events);
-  combat.update(world, movement.grid, economy, events);
-  economy.update(world, events, (owner) => construction.yieldFor(world, owner));
-  updateFog(world, map, fog);
+  combat.update(world, movement.grid, economy, tech, events);
+  economy.update(
+    world,
+    events,
+    (owner) => construction.yieldFor(world, owner),
+    (player) => tech.modifier(player, Modifier.GrainYield),
+  );
+  tech.update(world.tick, events);
+  updateFog(world, map, fog, tech);
 
   // Emitted before the flush, while the entities still have positions to report.
   for (let i = 0; i < world.pendingDestroyCount; i++) {

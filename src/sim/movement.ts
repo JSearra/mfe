@@ -5,6 +5,8 @@ import { flowAt, isReachable } from './pathing/flowField.js';
 import { PathStatus, createPathingService, type PathingService } from './pathing/service.js';
 import { createSpatialGrid, type SpatialGrid } from './spatial/grid.js';
 import { angleDelta, atan2 } from './math/trig.js';
+import { Modifier } from '../shared/tech/index.js';
+import type { TechState } from './tech.js';
 import { tuning } from './tuning.js';
 import {
   ANIM_IDLE,
@@ -114,7 +116,7 @@ export interface MovementSystem {
   readonly stats: MovementStats;
   /** Record an order. Routing is resolved once per tick, so groups can be detected. */
   order(world: World, handle: Handle, goalX: number, goalY: number): boolean;
-  update(world: World): void;
+  update(world: World, tech?: TechState): void;
   forget(index: number): void;
   /** Per-unit routes for saving, keyed by packed handle. */
   exportPaths(): [number, number[]][];
@@ -367,7 +369,7 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
       }
     },
 
-    update(world: World): void {
+    update(world: World, tech?: TechState): void {
       resolveOrders(world);
       pathing.process();
       collectPaths(world);
@@ -484,8 +486,9 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
         }
 
         // Decelerate on approach, and never travel further than the target is away.
+        const topSpeed = maxSpeed * (tech?.modifier(world.faction[index]!, Modifier.MoveSpeed) ?? 1);
         let speed = goalDistance * decel;
-        if (speed > maxSpeed) speed = maxSpeed;
+        if (speed > topSpeed) speed = topSpeed;
         const stepLimit = goalDistance / dt;
         if (speed > stepLimit) speed = stepLimit;
 

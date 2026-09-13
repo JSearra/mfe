@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { EventType, type SimEvent } from '../src/shared/events.js';
 import { createCombatSystem, weaponOf, Weapon } from '../src/sim/combat.js';
 import { createEconomy, Resource } from '../src/sim/economy/ledger.js';
+import { createTechState } from '../src/sim/tech.js';
 import { FactionId } from '../src/shared/factions/index.js';
 import { createSpatialGrid, type SpatialGrid } from '../src/sim/spatial/grid.js';
 import { tuning } from '../src/sim/tuning.js';
@@ -29,14 +30,15 @@ function arena() {
   const grid = createSpatialGrid(64, 64, 2);
   const combat = createCombatSystem();
   const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], 1);
+  const tech = createTechState(2);
   const events: SimEvent[] = [];
   const tick = () => {
     rebuild(world, grid);
-    combat.update(world, grid, economy, events);
+    combat.update(world, grid, economy, tech, events);
     flushDestroys(world);
     world.tick++;
   };
-  return { world, grid, combat, economy, events, tick };
+  return { world, grid, combat, economy, tech, events, tick };
 }
 
 describe('weapons', () => {
@@ -48,23 +50,23 @@ describe('weapons', () => {
 
 describe('target acquisition', () => {
   it('engages the nearest enemy and ignores its own side', () => {
-    const { world, combat, grid, economy, events } = arena();
+    const { world, combat, grid, economy, tech, events } = arena();
     const attacker = spawn(world, 10, 10, 0);
     spawn(world, 10.5, 10, 0); // a friend, closer than the enemy
     const enemy = spawn(world, 10.8, 10, 1);
 
     rebuild(world, grid);
-    combat.update(world, grid, economy, events);
+    combat.update(world, grid, economy, tech, events);
     expect(world.attackTarget[handleIndex(attacker)]).toBe(enemy);
   });
 
   it('never targets cattle', () => {
-    const { world, combat, grid, economy, events } = arena();
+    const { world, combat, grid, economy, tech, events } = arena();
     const attacker = spawn(world, 10, 10, 0);
     spawn(world, 10.4, 10, 1, 1, EntityKind.Cattle);
 
     rebuild(world, grid);
-    combat.update(world, grid, economy, events);
+    combat.update(world, grid, economy, tech, events);
     // A herd is taken by herding it away, not by shooting it.
     expect(world.attackTarget[handleIndex(attacker)]).toBe(0);
   });
@@ -76,6 +78,7 @@ describe('target acquisition', () => {
       const grid = createSpatialGrid(64, 64, 2);
       const combat = createCombatSystem();
       const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], 1);
+      const tech = createTechState(2);
 
       const attacker = spawn(world, 10, 10, 0);
       // Two enemies at exactly equal distance, spawned in the given order.
@@ -86,7 +89,7 @@ describe('target acquisition', () => {
       for (const which of spawnOrder) spawn(world, slots[which]!.x, slots[which]!.y, 1);
 
       rebuild(world, grid);
-      combat.update(world, grid, economy, []);
+      combat.update(world, grid, economy, tech, []);
       return world.attackTarget[handleIndex(attacker)]!;
     };
 
@@ -95,12 +98,12 @@ describe('target acquisition', () => {
   });
 
   it('drops a target that dies', () => {
-    const { world, combat, grid, economy, events, tick } = arena();
+    const { world, combat, grid, economy, tech, events, tick } = arena();
     const attacker = spawn(world, 10, 10, 0);
     const enemy = spawn(world, 10.5, 10, 1);
 
     rebuild(world, grid);
-    combat.update(world, grid, economy, events);
+    combat.update(world, grid, economy, tech, events);
     expect(world.attackTarget[handleIndex(attacker)]).toBe(enemy);
 
     world.hp[handleIndex(enemy)] = 0;
@@ -110,13 +113,13 @@ describe('target acquisition', () => {
   });
 
   it('lets a unit under orders march past a fight', () => {
-    const { world, combat, grid, economy, events } = arena();
+    const { world, combat, grid, economy, tech, events } = arena();
     const marcher = spawn(world, 10, 10, 0);
     spawn(world, 10.5, 10, 1);
     world.hasTarget[handleIndex(marcher)] = 1;
 
     rebuild(world, grid);
-    combat.update(world, grid, economy, events);
+    combat.update(world, grid, economy, tech, events);
     expect(world.attackTarget[handleIndex(marcher)]).toBe(0);
   });
 });

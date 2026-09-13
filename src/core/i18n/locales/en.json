@@ -21,7 +21,9 @@
     "isibaya": "cattle enclosure",
     "umuzi": "homestead",
     "impi": "armed body of men",
-    "iQhugwane": "beehive grass hut"
+    "iQhugwane": "beehive grass hut",
+    "amabutho": "age-set regiments",
+    "umkhosi": "first-fruits ceremony"
   },
   "faction": {
     "zulu": "amaZulu",
@@ -44,5 +46,12 @@
     "grainStore": "Grain store",
     "armed": "Placing {name} — click to site it, Esc to cancel",
     "refused": "Cannot build there"
+  },
+  "tech": {
+    "amabutho": "amabutho",
+    "umkhosi": "umkhosi",
+    "scoutingParties": "Scouting parties",
+    "cattleLore": "Cattle lore",
+    "mountedCommando": "Mounted commando"
   }
 }

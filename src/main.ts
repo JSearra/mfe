@@ -4,6 +4,7 @@ import { heightAt } from './shared/heightmap.js';
 import { NO_TILE, pickTileIndex, tileX, tileY } from './shared/picking.js';
 import { BuildingType } from './shared/buildings/index.js';
 import { CommandKind } from './sim/commands.js';
+import { TECH_IDS } from './shared/tech/index.js';
 import { createDirectSimHost, type SimHost } from './host/directHost.js';
 import { createWorkerSimHost } from './host/worker/workerHost.js';
 import { createHeightmap } from './sim/terrain/generate.js';
@@ -222,6 +223,7 @@ async function main(): Promise<void> {
   // composition root rather than in input.ts because it is a game rule about what a
   // click means, not a fact about the pointer.
   let armed: BuildingType | null = null;
+  let researchCursor = 0;
   const buildKeys: Readonly<Record<string, BuildingType>> = {
     '1': BuildingType.Isibaya,
     '2': BuildingType.Umuzi,
@@ -233,6 +235,15 @@ async function main(): Promise<void> {
       armed = null;
       return;
     }
+    // R cycles through the tree, starting whatever is next available. A proper
+    // research panel is UI work the game does not have yet; this is enough to reach
+    // the mechanic.
+    if (event.key === 'r' || event.key === 'R') {
+      sim.sendCommand(CommandKind.Research, researchCursor % TECH_IDS.length, PLAYER);
+      researchCursor++;
+      return;
+    }
+
     const type = buildKeys[event.key];
     if (type !== undefined) armed = type;
   });

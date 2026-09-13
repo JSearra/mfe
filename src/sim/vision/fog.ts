@@ -1,4 +1,6 @@
 import type { Heightmap } from '../../shared/heightmap.js';
+import { Modifier } from '../../shared/tech/index.js';
+import type { TechState } from '../tech.js';
 import { tuning } from '../tuning.js';
 import { EntityKind, type World } from '../world.js';
 
@@ -95,7 +97,12 @@ function hasLineOfSight(
  * O(units x radius^2 x ray length), which is the sort of thing that quietly eats a tick
  * budget if left unbounded.
  */
-export function updateFog(world: World, map: Heightmap, fog: FogState): void {
+export function updateFog(
+  world: World,
+  map: Heightmap,
+  fog: FogState,
+  tech?: TechState,
+): void {
   const v = tuning.vision;
   if (world.tick % v.intervalTicks !== 0) return;
 
@@ -120,7 +127,7 @@ export function updateFog(world: World, map: Heightmap, fog: FogState): void {
 
     // High ground sees further, which is most of why a plateau is worth holding.
     const elevationBonus = map.data[originY * map.width + originX]! * 0.35;
-    const reach = radius + elevationBonus;
+    const reach = (radius + elevationBonus) * (tech?.modifier(player, Modifier.VisionRadius) ?? 1);
     const reachSq = reach * reach;
     const span = Math.ceil(reach);
     const base = player * tiles;

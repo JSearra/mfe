@@ -46,7 +46,12 @@ export interface Economy {
    * construction. The dependency runs one way: buildings know they produce grain; the
    * granary does not need to know what a granary is.
    */
-  update(world: World, events: SimEvent[], buildingYield?: BuildingYield): void;
+  update(
+    world: World,
+    events: SimEvent[],
+    buildingYield?: BuildingYield,
+    grainMultiplier?: (player: number) => number,
+  ): void;
 }
 
 export type BuildingYield = (owner: number) => { grain: number; cattle: number };
@@ -125,7 +130,7 @@ export function createEconomy(
       return value < 0 ? 0 : value > 1 ? 1 : value;
     },
 
-    update(world, events, buildingYield) {
+    update(world, events, buildingYield, grainMultiplier) {
       const tick = world.tick;
       if (tick === 0 || tick % e.upkeepIntervalTicks !== 0) return;
 
@@ -152,7 +157,7 @@ export function createEconomy(
           const produced = buildingYield(player);
           // A granary full of nothing is still empty: buildings share the drought.
           const factor = parched ? e.shelteredYieldFactor : 1;
-          economy.add(player, Resource.Grain, produced.grain * factor);
+          economy.add(player, Resource.Grain, produced.grain * factor * (grainMultiplier?.(player) ?? 1));
           economy.add(player, Resource.Cattle, produced.cattle);
         }
       }

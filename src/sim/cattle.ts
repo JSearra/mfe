@@ -3,6 +3,8 @@ import { EventType, makeEvent } from '../shared/events.js';
 import { angleDelta, atan2 } from './math/trig.js';
 import { nextSigned } from './math/rng.js';
 import type { SpatialGrid } from './spatial/grid.js';
+import { Modifier } from '../shared/tech/index.js';
+import type { TechState } from './tech.js';
 import { tuning } from './tuning.js';
 import {
   ANIM_IDLE,
@@ -51,7 +53,7 @@ export interface CattleSystem {
   /** Tether a cow to a herder. Right-clicking a neutral herd is what issues this. */
   leash(world: World, herder: Handle, cow: Handle): boolean;
   release(world: World, cow: Handle): void;
-  update(world: World, grid: SpatialGrid, events: SimEvent[]): void;
+  update(world: World, grid: SpatialGrid, events: SimEvent[], tech?: TechState): void;
 }
 
 /** Squared distance from a point to the segment a->b. The swept crush test. */
@@ -106,7 +108,7 @@ export function createCattleSystem(): CattleSystem {
       }
     },
 
-    update(world, grid, events): void {
+    update(world, grid, events, tech): void {
       const c = tuning.cattle;
       const dt = tuning.movement.dt / c.substeps;
 
@@ -177,7 +179,11 @@ export function createCattleSystem(): CattleSystem {
             // steers cattle and calms faster than it frightens, while crowding them
             // panics the herd. A linear curve makes every approach equally dangerous
             // and there is nothing to play.
-            threatWeight += strength * strength;
+            // Cattle-lore widens the band a herder can work in, by making the same
+            // proximity frighten the beast less. The modifier belongs to the herder,
+            // not the cow: the herd is neutral and has no research of its own.
+            const lore = tech?.modifier(world.faction[other]!, Modifier.HerdStress) ?? 1;
+            threatWeight += strength * strength * lore;
           }
         }
 

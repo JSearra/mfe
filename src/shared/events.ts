@@ -20,6 +20,7 @@ export const EventType = {
   Died: 7,
   BuildingPlaced: 8,
   BuildingCompleted: 9,
+  TechCompleted: 10,
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];

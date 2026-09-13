@@ -7,6 +7,7 @@ import type { Heightmap } from '../shared/heightmap.js';
 import { createCattleSystem, type CattleSystem } from '../sim/cattle.js';
 import { createCombatSystem, type CombatSystem } from '../sim/combat.js';
 import { createAi } from '../sim/ai/opponent.js';
+import { createTechState, type TechState } from '../sim/tech.js';
 import { createConstructionSystem, type ConstructionSystem } from '../sim/construction.js';
 import { createEconomy, Resource, type Economy, type GrainPlot } from '../sim/economy/ledger.js';
 import { tuning } from '../sim/tuning.js';
@@ -141,6 +142,7 @@ export interface DirectSimHost extends SimHost {
   readonly combat: CombatSystem;
   readonly construction: ConstructionSystem;
   readonly economy: Economy;
+  readonly tech: TechState;
   readonly fog: FogState;
 }
 
@@ -164,8 +166,9 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
   const combat = createCombatSystem();
   const construction = createConstructionSystem(map, movement.pathing);
   const economy = createEconomy(factions, seed, plots);
+  const tech = createTechState(Math.max(factions.length, viewerId + 1));
   const fog = createFog(Math.max(factions.length, viewerId + 1), map);
-  const loop: SimLoop = createLoop(world, movement, cattle, combat, construction, economy, fog, map);
+  const loop: SimLoop = createLoop(world, movement, cattle, combat, construction, economy, tech, fog, map);
   for (const player of aiPlayers) loop.ai.push({ player, controller: createAi(player) });
   let accumulator = 0;
   let sequence = 0;
@@ -197,6 +200,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     combat,
     construction,
     economy,
+    tech,
     fog,
 
     get tick(): number {
