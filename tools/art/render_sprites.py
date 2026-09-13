@@ -46,6 +46,11 @@ AZIMUTH_DEGREES = 45.0
 # still has a plausible bounding box. Aim at roughly mid-torso.
 TARGET_HEIGHT = 0.85
 
+# Tight enough that a figure fills most of its tile. The first pass used 3.2 and units
+# occupied about a third of the frame, which wastes most of an atlas page on transparent
+# margin and makes them illegible at game size. 2.2 leaves room for a raised spear.
+ORTHO_SCALE = 2.2
+
 
 def parse_args() -> argparse.Namespace:
     # Blender passes its own arguments first; everything after `--` is ours.
@@ -87,15 +92,16 @@ def find_subject(name: str):
     raise SystemExit("no mesh, armature or empty to render")
 
 
-def setup_camera(size: int) -> None:
-    """An orthographic camera at the isometric angle, framing the origin."""
+def setup_camera(size: int, scale: float = ORTHO_SCALE, target: float = TARGET_HEIGHT) -> None:
+    """An orthographic camera at the isometric angle, framing the origin.
+
+    `scale` and `target` are overridable because not every subject is a standing man.
+    A cow is two thirds his height and nearly twice his length, so framing tuned to a
+    figure clips its nose off at some rotations.
+    """
     camera_data = bpy.data.cameras.new("iso_camera")
     camera_data.type = "ORTHO"
-    # Tight enough that a figure fills most of its tile. The first pass used 3.2 and the
-    # units came out occupying about a third of the frame, which wastes most of an atlas
-    # page on transparent margin and makes them illegible at game size. 2.2 leaves room
-    # for a raised spear and little else.
-    camera_data.ortho_scale = 2.2
+    camera_data.ortho_scale = scale
 
     camera = bpy.data.objects.new("iso_camera", camera_data)
     bpy.context.scene.collection.objects.link(camera)
@@ -107,7 +113,7 @@ def setup_camera(size: int) -> None:
     camera.location = (
         distance * math.cos(elevation) * math.sin(azimuth),
         -distance * math.cos(elevation) * math.cos(azimuth),
-        distance * math.sin(elevation) + TARGET_HEIGHT,
+        distance * math.sin(elevation) + target,
     )
     camera.rotation_euler = (math.radians(90.0 - ELEVATION_DEGREES), 0.0, azimuth)
     bpy.context.scene.camera = camera
