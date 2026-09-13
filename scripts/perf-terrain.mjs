@@ -42,6 +42,16 @@ const flag = (name, fallback) => {
 const duration = Number(flag('duration', 60000));
 const port = Number(flag('port', 5199));
 const headed = args.includes('--headed');
+/**
+ * Force software rendering, to reproduce what a CI runner actually does.
+ *
+ * The nightly job runs on hardware with no GPU, so it takes the SwiftShader path and
+ * the frame-time checks downgrade themselves to advisory. The checks that stay hard —
+ * draw calls, long tasks, heap growth — are the ones worth rehearsing before a change
+ * lands, and there is no way to rehearse them without being able to ask for the same
+ * renderer locally.
+ */
+const software = args.includes('--software');
 
 function run(command, commandArgs) {
   return new Promise((resolve, reject) => {
@@ -81,7 +91,9 @@ try {
 
   browser = await chromium.launch({
     headless: !headed,
-    args: ['--use-gl=angle', '--enable-gpu', '--js-flags=--expose-gc'],
+    args: software
+      ? ['--use-gl=swiftshader', '--disable-gpu', '--js-flags=--expose-gc']
+      : ['--use-gl=angle', '--enable-gpu', '--js-flags=--expose-gc'],
   });
   const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
 
@@ -103,9 +115,9 @@ try {
       debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
     );
   });
-  const software = /swiftshader|llvmpipe|software|angle \(google/i.test(renderer);
+  const softwareRenderer = /swiftshader|llvmpipe|software|angle \(google/i.test(renderer);
 
-  console.log(`renderer: ${renderer}${software ? '  (software — frame times advisory)' : ''}`);
+  console.log(`renderer: ${renderer}${softwareRenderer ? '  (software — frame times advisory)' : ''}`);
   console.log(`sweeping for ${duration / 1000}s...`);
 
   const result = await page.evaluate((ms) => window.__perf.run(ms), duration);
@@ -146,7 +158,10 @@ try {
   }
   if (result.longTasks > BUDGET.longTasks) frameChecks.push(`${result.longTasks} long tasks over 50ms`);
 
-  if (software) warn.push(...frameChecks);
+  // Keyed on the renderer actually in use, never on the flag that asked for it: CI
+  // passes no flag and still needs these downgraded, and a run that asked for software
+  // but somehow got a GPU should be held to the real budget.
+  if (softwareRenderer) warn.push(...frameChecks);
   else fail.push(...frameChecks);
 } finally {
   await browser?.close();
