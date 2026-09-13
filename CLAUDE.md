@@ -3,7 +3,7 @@
 Browser 2D isometric RTS (Age of Empires II lineage), set in early-19th-century southern
 Africa. Defining mechanic: cattle herding, flocking and stampedes.
 
-**Current phase: 1 — not yet started.** Phase 0 is complete. See `docs/ROADMAP.md`.
+**Current phase: 2 — not yet started.** Phases 0 and 1 are complete. See `docs/ROADMAP.md`.
 Design reasoning lives in `docs/ARCHITECTURE.md`. Reversals of the original brief are
 recorded in `docs/adr/`. Read the ADR before re-opening a settled decision.
 
@@ -47,7 +47,10 @@ recorded in `docs/adr/`. Read the ADR before re-opening a settled decision.
 - No hardcoded user-facing strings. `t()` only. `en` is the only locale until the UI settles.
 - Proper nouns and material-culture terms are **not** translated, only glossed.
   See `docs/CONTENT.md` before naming anything.
-- Tuning constants live in one data file, never inline in systems.
+- Tuning constants live in a data file, never inline in systems. Two files, and the split
+  matters: `tuning/tuning.json` is simulation state and is hashed into every replay;
+  `tuning/presentation.json` is camera feel and anything the simulation never reads, and is
+  not hashed. The test is "can changing it alter a simulation outcome". See ADR-0009.
 
 ## Commands
 

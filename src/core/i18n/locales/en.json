@@ -1,0 +1,20 @@
+{
+  "app": {
+    "title": "Mfecane RTS"
+  },
+  "debug": {
+    "heading": "Debug",
+    "camera": "Camera {x}, {y}",
+    "zoom": "Zoom {zoom}x",
+    "cursorTile": "Tile {x}, {y}",
+    "cursorOffMap": "Tile —",
+    "fps": "{fps} fps",
+    "hint": "Drag or use arrow keys to pan. Scroll to zoom."
+  },
+  "glossary": {
+    "isibaya": "cattle enclosure",
+    "umuzi": "homestead",
+    "impi": "armed body of men",
+    "iQhugwane": "beehive grass hut"
+  }
+}

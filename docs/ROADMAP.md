@@ -71,6 +71,12 @@ Plus tests that must exist and pass:
 
 ## Phase 1 — Pixi bootstrap, isometric camera, i18n
 
+**Status: complete.** Verified in a real browser as well as by unit test: 60fps, correct
+retina backing store, zoom clamping at both ends, grab-style drag panning exact to
+`-delta/zoom`, edge panning, keyboard panning, the focus-loss stuck-key guard, and a clean
+console. The key-union codegen step was replaced by a type-level derivation (ADR-0008), and
+presentation constants were split out of the hashed tuning file (ADR-0009).
+
 **Deliverables**
 
 - Pixi 8 application, resize handling, a fixed render loop separate from the tick.

@@ -1,0 +1,13 @@
+{
+  "camera": {
+    "minZoom": 0.5,
+    "maxZoom": 2.0,
+    "zoomStep": 1.1,
+    "keyboardPanSpeed": 900,
+    "edgePanSpeed": 900,
+    "edgePanMargin": 24
+  },
+  "debug": {
+    "gridRadius": 12
+  }
+}

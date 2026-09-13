@@ -5,12 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mfecane RTS</title>
     <style>
-      html, body { margin: 0; height: 100%; background: #14110d; color: #e8e0d0; }
-      body { font: 14px/1.5 system-ui, sans-serif; display: grid; place-items: center; }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #14110d;
+        color: #e8e0d0;
+        font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+
+      #app {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+
+      #app canvas {
+        display: block;
+      }
+
+      .debug-overlay {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        padding: 10px 14px;
+        border: 1px solid #3a3226;
+        border-radius: 4px;
+        background: rgba(20, 17, 13, 0.82);
+        pointer-events: none;
+        user-select: none;
+        min-width: 168px;
+      }
+
+      .debug-overlay strong {
+        display: block;
+        margin-bottom: 6px;
+        color: #c8a86a;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-size: 11px;
+      }
+
+      .debug-overlay__hint {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #3a3226;
+        color: #8a8070;
+        max-width: 220px;
+        white-space: normal;
+      }
     </style>
   </head>
   <body>
-    <main id="app">Phase 0 — simulation core only. No renderer yet.</main>
+    <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
