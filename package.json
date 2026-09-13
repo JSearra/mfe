@@ -12,12 +12,14 @@
     "test": "vitest run",
     "replay": "vitest run test/replay.test.ts",
     "verify": "npm run typecheck && npm run lint && npm test",
-    "replay:record": "RECORD_GOLDEN=1 vitest run test/record-replay.test.ts"
+    "replay:record": "RECORD_GOLDEN=1 vitest run test/record-replay.test.ts",
+    "perf:terrain": "node scripts/perf-terrain.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.0.0",
     "eslint": "^10.10.0",
+    "playwright": "^1.63.0",
     "typescript": "6.0.3",
     "typescript-eslint": "^8.70.0",
     "vite": "^8.3.0",

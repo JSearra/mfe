@@ -165,10 +165,19 @@ calls.
 
 Measured over a 60s scripted soak at 300 units + 200 cattle:
 
-- p99 frame time < 16.6ms
+- p99 **main-thread cost** per frame < 8ms — half the frame, leaving room for the GPU
+- dropped frames (interval past a vsync slot) under 1% of frames
 - draw calls <= 60
-- zero `PerformanceObserver` longtask entries > 50ms
-- bounded heap delta across 600 frames (forced GC, sample, run, forced GC, sample)
+- zero long tasks > 50ms
+- bounded heap delta across 600 frames
+
+Frame *cost* and frame *interval* are deliberately separate. Under vsync the interval is
+pinned near 16.67ms however little work the frame did, so an interval-based budget
+measures the display rather than the renderer — it can neither pass nor fail for the
+right reason. Interval is used only to count dropped frames. See ADR-0010.
+
+`npm run perf:terrain` enforces this against a real browser, and downgrades the
+GPU-dependent checks to advisory when it detects software rasterisation.
 
 ---
 

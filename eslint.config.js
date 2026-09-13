@@ -148,6 +148,26 @@ export default tseslint.config(
     },
   },
 
+  // Build and tooling scripts are plain JS, so no-undef applies where it does not for
+  // TypeScript. They legitimately mix Node globals with browser ones, because the bodies
+  // passed to page.evaluate() are serialised and run inside the browser.
+  {
+    files: ['scripts/**/*.mjs', 'scripts/**/*.js'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        fetch: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        URL: 'readonly',
+        document: 'readonly',
+        performance: 'readonly',
+        window: 'readonly',
+      },
+    },
+  },
+
   // Tests compare owned implementations against the native ones they replace,
   // so the determinism bans do not apply here.
   {

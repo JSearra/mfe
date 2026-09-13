@@ -6,10 +6,13 @@
     "heading": "Debug",
     "camera": "Camera {x}, {y}",
     "zoom": "Zoom {zoom}x",
-    "cursorTile": "Tile {x}, {y}",
-    "cursorOffMap": "Tile —",
+    "cursorTile": "Tile {x}, {y} (h{h})",
+    "cursorOffMap": "Tile \u2014",
     "fps": "{fps} fps",
-    "hint": "Drag or use arrow keys to pan. Scroll to zoom."
+    "hint": "Drag or use arrow keys to pan. Scroll to zoom.",
+    "frameP99": "p99 {ms} ms",
+    "drawCalls": "{calls} draw calls",
+    "chunks": "{visible}/{total} chunks"
   },
   "glossary": {
     "isibaya": "cattle enclosure",

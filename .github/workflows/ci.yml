@@ -21,3 +21,8 @@ jobs:
       - name: Golden replay (determinism gate)
         run: npm run replay
       - run: npm run build
+
+      - name: Install Chromium for the performance gate
+        run: npx playwright install --with-deps chromium
+      - name: Terrain performance budget
+        run: npm run perf:terrain -- --duration 30000

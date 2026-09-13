@@ -106,6 +106,12 @@ npm run build                           # production build succeeds
 
 ## Phase 2 — Tilemap with elevation
 
+**Status: complete.** Terrain, cliff derivation, elevation-aware picking, chunk culling
+and the performance gate all land. Two deviations, both in ADR-0010: chunks hold retained
+`Graphics` geometry rather than `RenderTexture` bakes (the bakes cost ~595MB of VRAM at
+devicePixelRatio 2), and the frame budget was re-expressed as main-thread cost plus
+dropped frames, because an interval-based budget measures vsync rather than the renderer.
+
 **Deliverables**
 
 - 128x128 `Uint8Array` heightmap, deterministic generation from a seed.

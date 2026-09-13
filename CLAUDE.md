@@ -3,7 +3,7 @@
 Browser 2D isometric RTS (Age of Empires II lineage), set in early-19th-century southern
 Africa. Defining mechanic: cattle herding, flocking and stampedes.
 
-**Current phase: 2 — not yet started.** Phases 0 and 1 are complete. See `docs/ROADMAP.md`.
+**Current phase: 3 — not yet started.** Phases 0-2 are complete. See `docs/ROADMAP.md`.
 Design reasoning lives in `docs/ARCHITECTURE.md`. Reversals of the original brief are
 recorded in `docs/adr/`. Read the ADR before re-opening a settled decision.
 
@@ -62,6 +62,7 @@ npm run lint       # eslint (boundaries + banned globals)
 npm test           # vitest
 npm run replay     # golden replay hash test (the determinism gate)
 npm run replay:record  # re-record the golden fixture — deliberate, see below
+npm run perf:terrain    # render performance budget, drives a real browser
 ```
 
 ## Definition of done

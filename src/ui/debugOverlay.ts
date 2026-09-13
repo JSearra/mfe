@@ -13,8 +13,13 @@ export interface DebugReadout {
   cameraY: number;
   zoom: number;
   fps: number;
+  frameP99: number;
+  drawCalls: number;
+  visibleChunks: number;
+  totalChunks: number;
   tileX: number;
   tileY: number;
+  tileHeight: number;
   pointerOnMap: boolean;
 }
 
@@ -25,6 +30,7 @@ export interface DebugOverlay {
 
 /** Text updates are throttled; re-rendering strings at 60Hz is pure waste for a readout. */
 const UPDATE_INTERVAL_MS = 250;
+const LINE_COUNT = 6;
 
 export function createDebugOverlay(parent: HTMLElement): DebugOverlay {
   const element = document.createElement('div');
@@ -34,13 +40,12 @@ export function createDebugOverlay(parent: HTMLElement): DebugOverlay {
   heading.textContent = t('debug.heading');
   element.appendChild(heading);
 
-  const lines = [
-    document.createElement('div'),
-    document.createElement('div'),
-    document.createElement('div'),
-    document.createElement('div'),
-  ];
-  for (const line of lines) element.appendChild(line);
+  const lines: HTMLElement[] = [];
+  for (let i = 0; i < LINE_COUNT; i++) {
+    const line = document.createElement('div');
+    lines.push(line);
+    element.appendChild(line);
+  }
 
   const hint = document.createElement('div');
   hint.className = 'debug-overlay__hint';
@@ -59,13 +64,15 @@ export function createDebugOverlay(parent: HTMLElement): DebugOverlay {
       lastUpdate = now;
 
       lines[0]!.textContent = t('debug.fps', { fps: Math.round(readout.fps) });
-      lines[1]!.textContent = t('debug.camera', {
-        x: Math.round(readout.cameraX),
-        y: Math.round(readout.cameraY),
+      lines[1]!.textContent = t('debug.frameP99', { ms: readout.frameP99.toFixed(1) });
+      lines[2]!.textContent = t('debug.drawCalls', { calls: readout.drawCalls });
+      lines[3]!.textContent = t('debug.chunks', {
+        visible: readout.visibleChunks,
+        total: readout.totalChunks,
       });
-      lines[2]!.textContent = t('debug.zoom', { zoom: readout.zoom.toFixed(2) });
-      lines[3]!.textContent = readout.pointerOnMap
-        ? t('debug.cursorTile', { x: readout.tileX, y: readout.tileY })
+      lines[4]!.textContent = t('debug.zoom', { zoom: readout.zoom.toFixed(2) });
+      lines[5]!.textContent = readout.pointerOnMap
+        ? t('debug.cursorTile', { x: readout.tileX, y: readout.tileY, h: readout.tileHeight })
         : t('debug.cursorOffMap');
     },
   };
