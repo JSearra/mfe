@@ -16,6 +16,7 @@ import {
   dequeueOrder,
   isAlive,
   NULL_HANDLE,
+  OrderMode,
   packHandle,
   Stance,
   type Handle,
@@ -478,6 +479,18 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
           world.hasTarget[index] = 0;
           world.stuckTicks[index] = 0;
           clearRoute(world, index);
+
+          // A patrol never actually arrives: it swaps the two ends and sets off back.
+          if (world.orderMode[index] === OrderMode.Patrol) {
+            const backX = world.patrolX[index]!;
+            const backY = world.patrolY[index]!;
+            world.patrolX[index] = world.targetX[index]!;
+            world.patrolY[index] = world.targetY[index]!;
+            if (system.order(world, packHandle(index, world.generation[index]!), backX, backY)) {
+              world.orderMode[index] = OrderMode.Patrol;
+              continue;
+            }
+          }
 
           // Arrived. If anything is queued behind this, start it now rather than going
           // idle for a tick first — a visible stutter at every waypoint is what makes a

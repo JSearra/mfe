@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { step } from '../src/sim/loop.js';
 import { CommandKind } from '../src/sim/commands.js';
-import { NULL_HANDLE, ORDER_QUEUE_MAX, Stance, handleIndex, spawn } from '../src/sim/world.js';
+import {
+  NULL_HANDLE,
+  ORDER_QUEUE_MAX,
+  OrderMode,
+  Stance,
+  handleIndex,
+  spawn,
+} from '../src/sim/world.js';
 import { tuning } from '../src/sim/tuning.js';
 import { makeSim } from './simHarness.js';
 
@@ -254,5 +261,44 @@ describe('order queue', () => {
     for (let i = 0; i < ORDER_QUEUE_MAX + 5; i++) queued(sim, CommandKind.MoveTo, unit, 20, 6 + i);
     run(sim, 2);
     expect(sim.world.queueCount[index]).toBe(ORDER_QUEUE_MAX);
+  });
+});
+
+describe('patrol', () => {
+  it('turns round at each end and keeps going', () => {
+    const sim = makeSim(64, 13);
+    const unit = spawn(sim.world, 6, 6, PLAYER);
+    const index = handleIndex(unit);
+
+    issue(sim, CommandKind.Patrol, unit, 16, 6);
+
+    // Count the reversals rather than sampling the position: a unit that stopped at one
+    // end, or that oscillated inside a tile, would pass a looser check.
+    let legs = 0;
+    let heading = Math.sign(sim.world.targetX[index]! - sim.world.posX[index]!);
+    for (let t = 0; t < 1200; t++) {
+      step(sim.loop);
+      const now = Math.sign(sim.world.targetX[index]! - sim.world.posX[index]!);
+      if (now !== 0 && heading !== 0 && now !== heading) legs++;
+      if (now !== 0) heading = now;
+    }
+
+    expect(legs).toBeGreaterThanOrEqual(2);
+    // And it is still patrolling at the end, not parked.
+    expect(sim.world.orderMode[index]).toBe(OrderMode.Patrol);
+  });
+
+  it('gives up the patrol when given a plain order', () => {
+    const sim = makeSim(64, 13);
+    const unit = spawn(sim.world, 6, 6, PLAYER);
+    const index = handleIndex(unit);
+
+    issue(sim, CommandKind.Patrol, unit, 16, 6);
+    run(sim, 20);
+    expect(sim.world.orderMode[index]).toBe(OrderMode.Patrol);
+
+    issue(sim, CommandKind.MoveTo, unit, 6, 16);
+    run(sim, 10);
+    expect(sim.world.orderMode[index]).toBe(OrderMode.Move);
   });
 });

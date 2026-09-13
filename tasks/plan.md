@@ -39,7 +39,7 @@ SpawnCattle, Leash, Attack, Build, Research, Train, SetRally.
 - [x] **A4 — Control groups.** Done. Ctrl+N to assign, N to recall. Pure client state.
       *Done when:* assigning and recalling round-trips, a group drops dead members, and a
       test asserts the world hash is unchanged by any of it.
-- [ ] **A5 — Patrol.** Move between two points until told otherwise, engaging on the way.
+- [x] **A5 — Patrol.** Done. Section A complete. Move between two points until told otherwise, engaging on the way.
       *Done when:* a patrolling unit reverses at each end and keeps going.
 
 ## B. Game lifecycle

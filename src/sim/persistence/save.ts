@@ -56,6 +56,8 @@ const WORLD_FIELDS = [
   'movementClass',
   'orderMode',
   'stance',
+  'patrolX',
+  'patrolY',
   'postX',
   'postY',
   'queueX',

@@ -99,6 +99,9 @@ export interface World {
   readonly orderMode: Uint8Array;
   /** One of Stance. */
   readonly stance: Uint8Array;
+  /** The far end of a patrol: the point a patrolling unit turns back toward. */
+  readonly patrolX: Float64Array;
+  readonly patrolY: Float64Array;
   /** Where a defensive unit returns to, and what its leash is measured from. */
   readonly postX: Float64Array;
   readonly postY: Float64Array;
@@ -190,6 +193,8 @@ export function createWorld(capacity: number, seed: number): World {
     rallyY: new Float64Array(capacity),
     orderMode: new Uint8Array(capacity),
     stance: new Uint8Array(capacity),
+    patrolX: new Float64Array(capacity),
+    patrolY: new Float64Array(capacity),
     postX: new Float64Array(capacity),
     postY: new Float64Array(capacity),
     queueX: new Float64Array(capacity * ORDER_QUEUE_MAX),
@@ -231,6 +236,14 @@ export function isAlive(world: World, handle: Handle): boolean {
 export const OrderMode = {
   Move: 0,
   AttackMove: 1,
+  /**
+   * Walk between two points until told otherwise, engaging on the way.
+   *
+   * Implemented as an attack-move that refuses to finish: on arrival the unit swaps its
+   * goal with the point it set out from, which it keeps in patrolX/patrolY. That reuses
+   * the whole of attack-move rather than growing a second kind of standing order.
+   */
+  Patrol: 2,
 } as const;
 
 export type OrderMode = (typeof OrderMode)[keyof typeof OrderMode];

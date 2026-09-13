@@ -275,6 +275,7 @@ async function main(): Promise<void> {
   // Armed by A, spent on the next order click. Client state: which ORDER a click will
   // issue is not something the simulation has any business knowing.
   let attackMoveArmed = false;
+  let patrolArmed = false;
 
   const buildKeys: Readonly<Record<string, BuildingType>> = {
     '1': BuildingType.Isibaya,
@@ -298,6 +299,11 @@ async function main(): Promise<void> {
       return;
     }
 
+    if (event.key === 'p' || event.key === 'P') {
+      patrolArmed = true;
+      attackMoveArmed = false;
+      return;
+    }
     if (event.key === 'a' || event.key === 'A') {
       // Arm, then click — the genre's convention, and the reason it is a mode rather
       // than a modifier is that the click may be a long way from the key press.
@@ -313,6 +319,7 @@ async function main(): Promise<void> {
     }
     if (event.key === 'Escape') {
       attackMoveArmed = false;
+      patrolArmed = false;
       armed = null;
       return;
     }
@@ -398,8 +405,13 @@ async function main(): Promise<void> {
       if (target === null) return;
       // Orders carry a handle, never a position: by the time this executes the target
       // may be dead, and the handle's generation is what says so.
-      const kind = attackMoveArmed ? CommandKind.AttackMove : CommandKind.MoveTo;
+      const kind = patrolArmed
+        ? CommandKind.Patrol
+        : attackMoveArmed
+          ? CommandKind.AttackMove
+          : CommandKind.MoveTo;
       attackMoveArmed = false;
+      patrolArmed = false;
       for (const handle of selection.handles) {
         sim.sendCommand(kind, handle, target.x, target.y, queued ? 1 : 0);
       }

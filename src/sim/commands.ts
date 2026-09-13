@@ -52,6 +52,8 @@ export const CommandKind = {
   AttackMove: 10,
   /** Set how far a unit will go to fight. */
   SetStance: 11,
+  /** Walk between here and there until told otherwise. */
+  Patrol: 12,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -161,6 +163,23 @@ export function applyCommand(
       const handle = spawn(world, command.a, command.b, NEUTRAL_FACTION, 1, EntityKind.Cattle);
       if (handle === 0) return false;
       events.push(makeEvent(world.tick, EventType.Spawned, handle, command.a, command.b));
+      return true;
+    }
+
+    case CommandKind.Patrol: {
+      const handle = command.a as Handle;
+      if (!isAlive(world, handle)) return false;
+      const index = handleIndex(handle);
+      if (world.kind[index] !== EntityKind.Unit) return false;
+
+      // The near end is wherever the unit is standing when the order arrives, so a
+      // patrol is set with one click like every other order rather than two.
+      world.patrolX[index] = world.posX[index]!;
+      world.patrolY[index] = world.posY[index]!;
+      if (!movement.order(world, handle, command.b, command.c)) return false;
+      clearOrderQueue(world, index);
+      world.orderMode[index] = OrderMode.Patrol;
+      events.push(makeEvent(world.tick, EventType.OrderIssued, handle, command.b, command.c));
       return true;
     }
 
