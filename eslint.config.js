@@ -53,7 +53,13 @@ const DETERMINISM_SYNTAX = [
 ];
 
 export default tseslint.config(
-  { ignores: ['dist/**', 'node_modules/**', 'coverage/**'] },
+  {
+    // tools/ is the Python art pipeline. Its virtualenv contains third-party JavaScript
+    // (urllib3 ships an Emscripten worker), and ESLint's flat config does not read
+    // .gitignore, so it has to be excluded here or `npm run lint` reports 174 errors
+    // from somebody else's vendored code.
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'tools/**'],
+  },
 
   js.configs.recommended,
   ...tseslint.configs.recommended,

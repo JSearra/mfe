@@ -3,3 +3,7 @@ dist/
 coverage/
 *.local
 .DS_Store
+
+# Art pipeline: local model weights and Python env
+tools/art/.venv/
+tools/art/raw/

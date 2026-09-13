@@ -355,8 +355,17 @@ npm run lint                            # no hardcoded strings
    it behaves exactly as before — the failure mode is "the upgrade does nothing", not "the
    simulation breaks".
 
-**The backlog is clear.** What remains is content and polish rather than architecture:
-directional unit art (`ARCHITECTURE.md` section 9, still the likeliest thing to stall the
-project), Gate 2 re-run against real sprites, the depth-sort hysteresis comparator that is
-specified but not implemented, and multiplayer itself — for which every determinism
-invariant is in place and none is yet proven across two machines.
+**The backlog is clear**, and unit production has since closed the core loop. What
+remains:
+
+- **Art.** The pipeline exists (ADR-0015, `tools/art/`): generation for surfaces, Blender
+  headless for unit sheets. What is not done is the art itself, nor the two remaining
+  atlas-budget mitigations — shader palette-swap for player colour, and shared silhouettes.
+- **A victory condition.** There is none. A match cannot currently be won or lost.
+- **A real HUD.** Controls are undiscoverable hotkeys over two debug panels. A selection
+  panel, build menu and minimap; the minimap is cheap because the fog already crosses the
+  boundary.
+- **Gate 2 re-run** against real sprites, and the depth-sort hysteresis comparator that
+  `ARCHITECTURE.md` section 4 specifies but nothing implements.
+- **Multiplayer.** Every determinism invariant is in place and CI-enforced; none is yet
+  proven across two machines.
