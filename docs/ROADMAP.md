@@ -339,5 +339,10 @@ npm run lint                            # no hardcoded strings
    arrived as promised — a headless AI-vs-AI soak that exercises movement, pathing,
    combat, construction and the economy together, and reproduces exactly.
 7. **Audio** — consumes the Phase 3 event stream.
-8. **Map generators** — the four scripts from the brief, expressed as heightmaps.
+8. ~~**Map generators**~~ — **done.** All four, and expressing them as heightmaps was
+   ADR-0006 paying off: mesas, koppies, poorts and dongas are shapes in one array rather
+   than bespoke tile placement with its own passability rules. The tests assert tactical
+   character rather than mere output — that Thaba Bosiu's summits are reachable by their
+   ramps, that Karoo koppies are not reachable at all, and that the Magaliesberg connects
+   north to south only through its poorts.
 9. **Tech progression**

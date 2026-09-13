@@ -1,6 +1,7 @@
 import type { CommandKind } from '../../sim/commands.js';
 import type { SimEvent } from '../../shared/events.js';
 import type { FactionId } from '../../shared/factions/index.js';
+import type { MapScript } from '../../sim/terrain/maps.js';
 import type { PlayerState } from '../directHost.js';
 import type { SimHost, SimMessage } from '../directHost.js';
 import type { FromWorker, ToWorker } from './protocol.js';
@@ -30,6 +31,7 @@ const IDLE_PLAYER: PlayerState = {
 export interface WorkerSimHostOptions {
   mapSize: number;
   mapSeed: number;
+  mapScript: MapScript | null;
   worldSeed: number;
   capacity: number;
   viewerId?: number;
@@ -71,6 +73,7 @@ export function createWorkerSimHost(options: WorkerSimHostOptions): SimHost {
     type: 'init',
     mapSize: options.mapSize,
     mapSeed: options.mapSeed,
+    mapScript: options.mapScript,
     worldSeed: options.worldSeed,
     capacity: options.capacity,
     viewerId: options.viewerId ?? 0,

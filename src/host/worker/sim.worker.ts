@@ -9,6 +9,7 @@ import { createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../../s
 import { createMovementSystem } from '../../sim/movement.js';
 import { buildSnapshot } from '../../sim/snapshot.js';
 import { createHeightmap } from '../../sim/terrain/generate.js';
+import { generateMap } from '../../sim/terrain/maps.js';
 import { tuning } from '../../sim/tuning.js';
 import { createFog, type FogState } from '../../sim/vision/fog.js';
 import { createWorld, type World } from '../../sim/world.js';
@@ -51,7 +52,10 @@ let lastTime = 0;
 let accumulator = 0;
 
 function start(message: InitMessage): void {
-  const map = createHeightmap(message.mapSize, message.mapSize, message.mapSeed);
+  const map =
+    message.mapScript === null
+      ? createHeightmap(message.mapSize, message.mapSize, message.mapSeed)
+      : generateMap(message.mapScript, message.mapSize, message.mapSize, message.mapSeed);
   world = createWorld(message.capacity, message.worldSeed);
   economy = createEconomy(message.factions, message.worldSeed);
   fog = createFog(Math.max(message.factions.length, message.viewerId + 1), map);

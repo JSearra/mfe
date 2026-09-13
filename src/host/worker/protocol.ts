@@ -1,6 +1,7 @@
 import type { CommandKind } from '../../sim/commands.js';
 import type { SimEvent } from '../../shared/events.js';
 import type { FactionId } from '../../shared/factions/index.js';
+import type { MapScript } from '../../sim/terrain/maps.js';
 import type { PlayerState } from '../directHost.js';
 
 /**
@@ -16,6 +17,8 @@ export interface InitMessage {
   readonly type: 'init';
   readonly mapSize: number;
   readonly mapSeed: number;
+  /** Named landscape, or null for generic savanna. */
+  readonly mapScript: MapScript | null;
   readonly worldSeed: number;
   readonly capacity: number;
   readonly viewerId: number;

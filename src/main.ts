@@ -7,6 +7,7 @@ import { CommandKind } from './sim/commands.js';
 import { createDirectSimHost, type SimHost } from './host/directHost.js';
 import { createWorkerSimHost } from './host/worker/workerHost.js';
 import { createHeightmap } from './sim/terrain/generate.js';
+import { MAP_SCRIPTS, generateMap, type MapScript } from './sim/terrain/maps.js';
 import { FactionId } from './shared/factions/index.js';
 import { createWorld } from './sim/world.js';
 import { createRenderer } from './render/app.js';
@@ -96,7 +97,17 @@ async function main(): Promise<void> {
   // The renderer needs the heightmap for terrain, picking and the fog overlay. It
   // generates its own from the seed rather than receiving one: terrain generation is
   // deterministic, so both sides arrive at the same map without transferring it.
-  const map = createHeightmap(MAP_SIZE, MAP_SIZE, MAP_SEED);
+  // ?map=karoo and friends pick one of the four scripted landscapes. Both sides build
+  // it from the same seed, so nothing has to be transferred.
+  const requested = new URLSearchParams(location.search).get('map');
+  const mapScript: MapScript | null = MAP_SCRIPTS.includes(requested as MapScript)
+    ? (requested as MapScript)
+    : null;
+
+  const map =
+    mapScript === null
+      ? createHeightmap(MAP_SIZE, MAP_SIZE, MAP_SEED)
+      : generateMap(mapScript, MAP_SIZE, MAP_SIZE, MAP_SEED);
 
   // Worker by default now that the boundary discipline has held. ?sim=direct keeps the
   // main-thread host one query parameter away, because stepping through a simulation in
@@ -106,6 +117,7 @@ async function main(): Promise<void> {
     ? createWorkerSimHost({
         mapSize: MAP_SIZE,
         mapSeed: MAP_SEED,
+        mapScript,
         worldSeed: WORLD_SEED,
         capacity: 512,
         viewerId: PLAYER,

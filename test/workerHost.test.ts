@@ -71,6 +71,7 @@ function makeHost() {
   const host = createWorkerSimHost({
     mapSize: 32,
     mapSeed: 1,
+    mapScript: null,
     worldSeed: 2,
     capacity: 64,
     factions: [FactionId.Zulu],
