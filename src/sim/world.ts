@@ -80,6 +80,12 @@ export interface World {
   readonly pathCursor: Int32Array;
 
   /** Chokepoint deadlock detection: ticks without meaningful progress. */
+  // --- combat ---------------------------------------------------------------
+  /** Handle of the current target, or NULL_HANDLE. */
+  readonly attackTarget: Uint32Array;
+  /** Ticks until this unit may strike again. */
+  readonly attackCooldown: Uint16Array;
+
   readonly stuckTicks: Uint16Array;
   readonly lastProgressX: Float64Array;
   readonly lastProgressY: Float64Array;
@@ -141,6 +147,8 @@ export function createWorld(capacity: number, seed: number): World {
     useFlowField: new Uint8Array(capacity),
     pathRequest: new Int32Array(capacity).fill(-1),
     pathCursor: new Int32Array(capacity).fill(-1),
+    attackTarget: new Uint32Array(capacity),
+    attackCooldown: new Uint16Array(capacity),
     stuckTicks: new Uint16Array(capacity),
     lastProgressX: new Float64Array(capacity),
     lastProgressY: new Float64Array(capacity),
@@ -235,6 +243,8 @@ export function spawn(
   world.useFlowField[index] = 0;
   world.pathRequest[index] = -1;
   world.pathCursor[index] = -1;
+  world.attackTarget[index] = NULL_HANDLE;
+  world.attackCooldown[index] = 0;
   world.stuckTicks[index] = 0;
   world.lastProgressX[index] = x;
   world.lastProgressY[index] = y;

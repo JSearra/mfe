@@ -322,7 +322,12 @@ npm run lint                            # no hardcoded strings
    simulation logic and should not need an exception carved out of the determinism ban.
    Verified against a production build, which is the specific divergence ADR-0004 warned
    about.
-4. **Combat resolution**
+4. ~~**Combat resolution**~~ — **done.** Target acquisition, cooldowns, melee versus
+   firearms, and death. The care went into "nearest enemy": every argmin ends on an
+   explicit entity-index tie-break, because that query is the single most common source of
+   lockstep desync in shipped RTS games. Reaping is deliberately separate from whatever
+   did the damage, since crushing, starvation and combat all reduce health and none should
+   carry its own copy of the rules for dying.
 5. **Buildings and construction** — note construction invalidates path fields.
 6. **AI opponent** — cheap *if* commands remained the sole mutation path, because the AI is
    then just another command source, and it gives headless AI-vs-AI soak tests for free.

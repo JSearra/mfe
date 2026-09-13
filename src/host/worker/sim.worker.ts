@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 import { makeCommand } from '../../sim/commands.js';
 import { createCattleSystem } from '../../sim/cattle.js';
+import { createCombatSystem } from '../../sim/combat.js';
 import { createEconomy, Resource, type Economy } from '../../sim/economy/ledger.js';
 import { createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../../sim/loop.js';
 import { createMovementSystem } from '../../sim/movement.js';
@@ -55,7 +56,15 @@ function start(message: InitMessage): void {
   viewerId = message.viewerId;
   playerId = message.playerId;
 
-  loop = createLoop(world, createMovementSystem(map), createCattleSystem(), economy, fog, map);
+  loop = createLoop(
+    world,
+    createMovementSystem(map),
+    createCattleSystem(),
+    createCombatSystem(),
+    economy,
+    fog,
+    map,
+  );
 
   lastTime = performance.now();
   timer = setInterval(tick, TICK_MS / 2);

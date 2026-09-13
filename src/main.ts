@@ -29,6 +29,7 @@ import {
   createSelection,
   drawMarquee,
   entitiesNear,
+  pickEnemy,
   pickEntity,
   type Rect,
 } from './render/selection.js';
@@ -52,6 +53,8 @@ const WORLD_SEED = 0x5eedcafe;
 const PLAYER = 0;
 const STARTING_UNITS = 24;
 const STARTING_CATTLE = 30;
+const ENEMY = 1;
+const ENEMY_UNITS = 16;
 
 const KIND_UNIT = 0;
 const KIND_CATTLE = 1;
@@ -130,6 +133,18 @@ async function main(): Promise<void> {
     );
   }
 
+  // An opposing force, far enough off that first contact is something the player walks
+  // into rather than something that happens to them at load.
+  for (let i = 0; i < ENEMY_UNITS; i++) {
+    sim.sendCommand(
+      CommandKind.Spawn,
+      centre + 34 + (i % 4) * 1.3,
+      centre + 26 + Math.floor(i / 4) * 1.3,
+      ENEMY,
+      KIND_UNIT,
+    );
+  }
+
   // A clustered herd, not a ring: cattle graze together, and a hollow ring has no
   // centre to click on or drive into.
   for (let i = 0; i < STARTING_CATTLE; i++) {
@@ -197,6 +212,16 @@ async function main(): Promise<void> {
 
       // Right-clicking a cow herds it; right-clicking ground is a move order. Same
       // button, read from what is under it, as the genre expects.
+      // Right-click reads what is under it: an enemy is attacked, a cow is herded,
+      // bare ground is a move order. One button, three meanings, as the genre expects.
+      const foe = pickEnemy(view, map, camera, entities, x, y, PLAYER);
+      if (foe !== -1) {
+        for (const handle of selection.handles) {
+          sim.sendCommand(CommandKind.Attack, handle, foe);
+        }
+        return;
+      }
+
       const cow = pickEntity(view, map, camera, entities, x, y, KIND_CATTLE);
       if (cow !== -1) {
         const slot = view.handle.indexOf(cow);

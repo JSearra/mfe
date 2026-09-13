@@ -5,6 +5,7 @@ import { buildSnapshot } from '../sim/snapshot.js';
 import type { SimEvent } from '../shared/events.js';
 import type { Heightmap } from '../shared/heightmap.js';
 import { createCattleSystem, type CattleSystem } from '../sim/cattle.js';
+import { createCombatSystem, type CombatSystem } from '../sim/combat.js';
 import { createEconomy, Resource, type Economy, type GrainPlot } from '../sim/economy/ledger.js';
 import { tuning } from '../sim/tuning.js';
 import { FactionId } from '../shared/factions/index.js';
@@ -133,6 +134,7 @@ function defaultStrict(): boolean {
 export interface DirectSimHost extends SimHost {
   readonly movement: MovementSystem;
   readonly cattle: CattleSystem;
+  readonly combat: CombatSystem;
   readonly economy: Economy;
   readonly fog: FogState;
 }
@@ -153,9 +155,10 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
 
   const movement = createMovementSystem(map);
   const cattle = createCattleSystem();
+  const combat = createCombatSystem();
   const economy = createEconomy(factions, seed, plots);
   const fog = createFog(Math.max(factions.length, viewerId + 1), map);
-  const loop: SimLoop = createLoop(world, movement, cattle, economy, fog, map);
+  const loop: SimLoop = createLoop(world, movement, cattle, combat, economy, fog, map);
   let accumulator = 0;
   let sequence = 0;
 
@@ -183,6 +186,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
   const host: DirectSimHost = {
     movement,
     cattle,
+    combat,
     economy,
     fog,
 

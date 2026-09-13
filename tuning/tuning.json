@@ -79,5 +79,16 @@
     "cattleRadius": 4.0,
     "eyeHeight": 1.5,
     "intervalTicks": 4
+  },
+  "combat": {
+    "acquireRadius": 7.0,
+    "meleeRange": 0.95,
+    "meleeDamage": 12,
+    "meleeCooldownTicks": 16,
+    "rangedRange": 6.0,
+    "rangedDamage": 20,
+    "rangedCooldownTicks": 34,
+    "ammunitionPerShot": 1.0,
+    "chaseRange": 9.0
   }
 }

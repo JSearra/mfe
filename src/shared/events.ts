@@ -16,6 +16,8 @@ export const EventType = {
   StampedeBegan: 3,
   Crushed: 4,
   Starved: 5,
+  Hit: 6,
+  Died: 7,
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];

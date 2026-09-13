@@ -188,6 +188,34 @@ export function entitiesNear(
   return out;
 }
 
+/** Nearest hostile unit under the cursor, as a handle, or -1. */
+export function pickEnemy(
+  view: InterpolatedView,
+  map: Heightmap,
+  camera: Camera,
+  layer: EntityLayer,
+  x: number,
+  y: number,
+  ownFaction: number,
+): number {
+  const reach = (radius * 2.2 + 6) * camera.zoom;
+  let bestHandle = -1;
+  let bestDistance = reach * reach;
+
+  for (let i = 0; i < view.count; i++) {
+    if (view.kind[i] !== KIND_UNIT || view.faction[i] === ownFaction) continue;
+    const position = viewportPosition(view, i, map, camera, layer);
+    const dx = position.x - x;
+    const dy = position.y - radius * camera.zoom - y;
+    const distance = dx * dx + dy * dy;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestHandle = view.handle[i]!;
+    }
+  }
+  return bestHandle;
+}
+
 export function createMarqueeGraphics(): Graphics {
   const graphics = new Graphics();
   graphics.visible = false;

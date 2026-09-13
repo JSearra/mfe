@@ -1,6 +1,7 @@
 import { applyCommand, compareCommands, type Command } from './commands.js';
 import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
 import type { CattleSystem } from './cattle.js';
+import type { CombatSystem } from './combat.js';
 import type { Economy } from './economy/ledger.js';
 import { updateFog, type FogState } from './vision/fog.js';
 import type { Heightmap } from '../shared/heightmap.js';
@@ -13,6 +14,7 @@ export interface SimLoop {
   readonly world: World;
   readonly movement: MovementSystem;
   readonly cattle: CattleSystem;
+  readonly combat: CombatSystem;
   readonly economy: Economy;
   readonly fog: FogState;
   readonly map: Heightmap;
@@ -31,6 +33,7 @@ export function createLoop(
   world: World,
   movement: MovementSystem,
   cattle: CattleSystem,
+  combat: CombatSystem,
   economy: Economy,
   fog: FogState,
   map: Heightmap,
@@ -41,6 +44,7 @@ export function createLoop(
     world,
     movement,
     cattle,
+    combat,
     economy,
     fog,
     map,
@@ -66,7 +70,7 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
  * survives until the boundary.
  */
 export function step(loop: SimLoop): void {
-  const { world, movement, cattle, economy, fog, map, pending, events } = loop;
+  const { world, movement, cattle, combat, economy, fog, map, pending, events } = loop;
 
   if (loop.dirty) {
     // Only the unconsumed tail can be out of order.
@@ -79,7 +83,7 @@ export function step(loop: SimLoop): void {
     const command = pending[loop.cursor]!;
     if (command.tick > world.tick) break;
     if (command.tick < world.tick) loop.lateCommands++;
-    applyCommand(world, command, events, movement, cattle);
+    applyCommand(world, command, events, movement, cattle, combat);
     loop.cursor++;
   }
 
@@ -88,6 +92,9 @@ export function step(loop: SimLoop): void {
   cattle.update(world, movement.grid, events);
   // Upkeep lands on exact tick multiples. It reads world.tick before the increment
   // below, so the first cycle is tick 200, not 199.
+  // Combat after movement and cattle, so a strike lands on where things ended up
+  // this tick rather than where they started.
+  combat.update(world, movement.grid, economy, events);
   economy.update(world, events);
   updateFog(world, map, fog);
 
