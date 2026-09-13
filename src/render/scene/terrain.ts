@@ -1,4 +1,4 @@
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, Sprite } from 'pixi.js';
 import { heightAt, type Heightmap } from '../../shared/heightmap.js';
 import {
   ELEV_STEP,
@@ -9,6 +9,7 @@ import {
 } from '../../shared/iso.js';
 import type { Camera } from '../camera.js';
 import { presentation } from '../presentation.js';
+import type { TerrainTile, TerrainTiles } from '../assets.js';
 
 /**
  * Chunked terrain renderer.
@@ -19,14 +20,22 @@ import { presentation } from '../presentation.js';
  * Graphics geometry gets the same "build once, draw cheap" property for kilobytes.
  * See docs/adr/0010-terrain-chunking-strategy.md.
  *
- * Culling is per chunk, not per tile — 64 bounding-box tests per frame instead of
- * 16,384.
+ * Culling is per chunk, not per tile — at the configured chunk size that is 16
+ * bounding-box tests per frame instead of 16,384.
+ *
+ * Tile tops are sprites off a single page and cost about 5ms of p99 frame time at a
+ * dozen visible chunks, against an 8ms budget: the traversal of ~12,000 sprites, not
+ * the drawing of them. Smaller chunks do not help — measured, they cull no meaningful
+ * extra work and cost a face draw call each, which took 38 visible chunks to 77 draw
+ * calls. If this needs to come down, the lever is a ParticleContainer for the tops
+ * rather than finer culling.
  */
 
 const { chunkSize, palette, eastFaceShade, southFaceShade, gridAlpha } = presentation.terrain;
 
 interface Chunk {
   readonly graphics: Graphics;
+  readonly tops: Container;
   /** Isometric-space bounding box, computed once. */
   readonly minX: number;
   readonly maxX: number;
@@ -61,7 +70,27 @@ function colourForLevel(level: number): number {
  * this projection, so those are the two sides turned toward the viewer; the north and
  * west faces are always hidden behind the tile's own top.
  */
-function drawTile(graphics: Graphics, map: Heightmap, tileX: number, tileY: number): void {
+/**
+ * Pick a variant for a tile, from its coordinates.
+ *
+ * Deterministic so the ground does not crawl between frames or differ between two
+ * players looking at the same map, and hashed rather than taken from (x+y) so the
+ * variants do not band into diagonal stripes along the isometric axis.
+ */
+function variantFor(tiles: readonly TerrainTile[], tileX: number, tileY: number): TerrainTile {
+  let hash = (tileX * 0x1f1f1f1f) ^ (tileY * 0x85ebca6b);
+  hash = Math.imul(hash ^ (hash >>> 15), 0x2c1b3c6d);
+  hash = (hash ^ (hash >>> 13)) >>> 0;
+  return tiles[hash % tiles.length]!;
+}
+
+function drawTile(
+  graphics: Graphics,
+  map: Heightmap,
+  tileX: number,
+  tileY: number,
+  tiles: TerrainTiles | null,
+): Sprite | null {
   const level = map.data[tileY * map.width + tileX]!;
   const centreX = worldToScreenX(tileX + 0.5, tileY + 0.5);
   const centreY = worldToScreenY(tileX + 0.5, tileY + 0.5, level);
@@ -72,7 +101,10 @@ function drawTile(graphics: Graphics, map: Heightmap, tileX: number, tileY: numb
   const eastX = centreX + HALF_TILE_W;
   const westX = centreX - HALF_TILE_W;
 
-  const base = colourForLevel(level);
+  const tile = tiles === null ? null : (variantFor(tiles.variants(level), tileX, tileY) ?? null);
+  // The faces take the tile's own average colour rather than the palette's, so a flat
+  // shaded cliff matches the textured surface it drops away from.
+  const base = tile === null ? colourForLevel(level) : tile.colour;
 
   // East face: shared edge with (tileX+1, tileY), which is the lower-right edge.
   const eastNeighbour = heightAt(map, tileX + 1, tileY);
@@ -105,12 +137,30 @@ function drawTile(graphics: Graphics, map: Heightmap, tileX: number, tileY: numb
   graphics.lineTo(centreX, southY);
   graphics.lineTo(westX, centreY);
   graphics.closePath();
-  graphics.fill({ color: base });
-  graphics.stroke({ width: 1, color: 0x000000, alpha: gridAlpha });
+  if (tile === null) {
+    graphics.fill({ color: base });
+    graphics.stroke({ width: 1, color: 0x000000, alpha: gridAlpha });
+    return null;
+  }
+
+  // Untextured, the diamond is only needed to close the path the faces were drawn with;
+  // the sprite covers it. Filling it anyway would show through the tile's own alpha at
+  // the diamond edge, which is what the grid stroke used to hide.
+  graphics.fill({ color: base, alpha: 0 });
+
+  const sprite = new Sprite(tile.texture);
+  sprite.position.set(westX, northY);
+  return sprite;
 }
 
-function buildChunk(map: Heightmap, chunkX: number, chunkY: number): Chunk {
+function buildChunk(
+  map: Heightmap,
+  chunkX: number,
+  chunkY: number,
+  tiles: TerrainTiles | null,
+): Chunk {
   const graphics = new Graphics();
+  const tops = new Container();
   const startX = chunkX * chunkSize;
   const startY = chunkY * chunkSize;
   const endX = Math.min(startX + chunkSize, map.width);
@@ -122,13 +172,15 @@ function buildChunk(map: Heightmap, chunkX: number, chunkY: number): Chunk {
     for (let tileX = startX; tileX < endX; tileX++) {
       const tileY = sum - tileX;
       if (tileY < startY || tileY >= endY) continue;
-      drawTile(graphics, map, tileX, tileY);
+      const sprite = drawTile(graphics, map, tileX, tileY, tiles);
+      if (sprite !== null) tops.addChild(sprite);
     }
   }
 
   const maxLift = (map.levels - 1) * ELEV_STEP;
   return {
     graphics,
+    tops,
     minX: worldToScreenX(startX, endY) - HALF_TILE_W,
     maxX: worldToScreenX(endX, startY) + HALF_TILE_W,
     minY: worldToScreenY(startX, startY, 0) - HALF_TILE_H - maxLift,
@@ -136,20 +188,35 @@ function buildChunk(map: Heightmap, chunkX: number, chunkY: number): Chunk {
   };
 }
 
-export function createTerrain(map: Heightmap): TerrainRenderer {
+export function createTerrain(map: Heightmap, tiles: TerrainTiles | null = null): TerrainRenderer {
   const container = new Container();
   const chunksX = Math.ceil(map.width / chunkSize);
   const chunksY = Math.ceil(map.height / chunkSize);
   const chunks: Chunk[] = [];
+
+  // Two layers spanning every chunk, not two layers inside each chunk.
+  //
+  // Every face belongs under every top. A face drops down-screen, into the ground of
+  // the tiles in FRONT of it, and those are exactly the tops that must cover it;
+  // nothing behind a face is ever occluded by it. So the split can be global, and it
+  // has to be: interleaving a Graphics with sprites chunk by chunk breaks the sprite
+  // batch at every chunk boundary, which took 38 visible chunks to 114 draw calls
+  // against a budget of 60. Split globally, the faces batch among themselves and the
+  // tops batch among themselves however many chunks are on screen.
+  const faceLayer = new Container();
+  const topLayer = new Container();
+  container.addChild(faceLayer);
+  container.addChild(topLayer);
 
   // Chunks are added back to front for the same reason tiles are.
   for (let sum = 0; sum <= chunksX + chunksY - 2; sum++) {
     for (let chunkX = 0; chunkX < chunksX; chunkX++) {
       const chunkY = sum - chunkX;
       if (chunkY < 0 || chunkY >= chunksY) continue;
-      const chunk = buildChunk(map, chunkX, chunkY);
+      const chunk = buildChunk(map, chunkX, chunkY, tiles);
       chunks.push(chunk);
-      container.addChild(chunk.graphics);
+      faceLayer.addChild(chunk.graphics);
+      topLayer.addChild(chunk.tops);
     }
   }
 
@@ -170,6 +237,7 @@ export function createTerrain(map: Heightmap): TerrainRenderer {
         const onScreen =
           chunk.maxX >= left && chunk.minX <= right && chunk.maxY >= top && chunk.minY <= bottom;
         chunk.graphics.visible = onScreen;
+        chunk.tops.visible = onScreen;
         if (onScreen) visible++;
       }
       renderer.visibleChunks = visible;

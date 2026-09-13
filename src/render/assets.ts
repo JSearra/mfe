@@ -143,3 +143,83 @@ export async function loadSpriteAtlas(
     return null;
   }
 }
+
+interface TerrainTileEntry {
+  readonly file: string;
+  readonly subject: string;
+  readonly band: number;
+  readonly averageColour: string;
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+interface TerrainManifest {
+  readonly page: string;
+  readonly padding: number;
+  readonly tiles: readonly TerrainTileEntry[];
+}
+
+export interface TerrainTile {
+  readonly texture: Texture;
+  /** Mean colour of the tile, for the flat-shaded cliff faces beneath it. */
+  readonly colour: number;
+}
+
+export interface TerrainTiles {
+  /** Variants available for a height level, nearest band if that level has none. */
+  variants(level: number): readonly TerrainTile[];
+}
+
+/**
+ * Load the terrain tile page.
+ *
+ * One page, so filling tile tops never switches texture: a texture per subject would
+ * break the batch every time the ground changed underfoot, which at a dozen visible
+ * chunks is hundreds of draw calls against a budget of sixty.
+ */
+export async function loadTerrainTiles(base = 'assets/terrain'): Promise<TerrainTiles | null> {
+  try {
+    const response = await fetch(`${base}/manifest.json`);
+    if (!response.ok) return null;
+    const manifest = (await response.json()) as TerrainManifest;
+    if (!manifest.page || !manifest.tiles?.length) return null;
+
+    const page = await Assets.load<Texture>(`${base}/${manifest.page}`);
+    // Nearest sampling: these are pixel art at exactly their drawn size, and linear
+    // filtering on a diamond's edge fringes it against the transparent padding.
+    page.source.scaleMode = 'nearest';
+
+    const byBand: TerrainTile[][] = [];
+    for (const entry of manifest.tiles) {
+      const tile: TerrainTile = {
+        texture: new Texture({
+          source: page.source,
+          frame: new Rectangle(entry.x, entry.y, entry.width, entry.height),
+        }),
+        colour: Number.parseInt(entry.averageColour.slice(1), 16),
+      };
+      (byBand[entry.band] ??= []).push(tile);
+    }
+    if (byBand.length === 0) return null;
+
+    return {
+      variants(level: number) {
+        const exact = byBand[level];
+        if (exact && exact.length > 0) return exact;
+        // A band with no art falls back to the nearest one that has some, rather than
+        // leaving a hole in the map.
+        for (let distance = 1; distance < byBand.length; distance++) {
+          const below = byBand[level - distance];
+          if (below && below.length > 0) return below;
+          const above = byBand[level + distance];
+          if (above && above.length > 0) return above;
+        }
+        return [];
+      },
+    };
+  } catch {
+    return null;
+  }
+}

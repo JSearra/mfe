@@ -26,7 +26,7 @@ import { bindInput } from './render/input.js';
 import { createInterpolator, type InterpolatedView } from './render/interpolation.js';
 import { installPerfHarness } from './render/perfHarness.js';
 import { createEntityLayer } from './render/scene/entities.js';
-import { loadSpriteAtlas } from './render/assets.js';
+import { loadSpriteAtlas, loadTerrainTiles } from './render/assets.js';
 import { presentation } from './render/presentation.js';
 import { createTileCursor, placeTileCursor } from './render/scene/cursor.js';
 import { createFogRenderer } from './render/scene/fog.js';
@@ -198,7 +198,8 @@ async function main(): Promise<void> {
   camera.x = 0;
   camera.y = MAP_SIZE * 16;
 
-  const terrain = createTerrain(map);
+  const terrainTiles = await loadTerrainTiles();
+  const terrain = createTerrain(map, terrainTiles);
   const cursor = createTileCursor();
   // Null if the atlas is missing or malformed, and the entity layer then falls back to
   // drawing shapes. Art is not worth failing to start over, and the build runs without

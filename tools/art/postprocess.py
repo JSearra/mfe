@@ -119,6 +119,73 @@ def tileability(image: Image.Image) -> float:
     return float((horizontal + vertical) / 2)
 
 
+# Which height band each subject belongs to, low ground to high. This is the "naming
+# decision" the band lookup below refers to, and it has to live somewhere: a single
+# --band flag applied to a whole directory meant every tile was toned to the middle of
+# the ramp, so the whole set came out the same value and a donga floor read like a
+# koppie. The ordering is an elevation gradient — river channel, erosion gully, dry
+# plain, scrub, grass, sourveld, plateau rim, ironstone cap — and it is what makes the
+# height ramp legible as terrain rather than as shading.
+TERRAIN_BANDS = {
+    "riverbed": 0,
+    "donga-floor": 1,
+    "savanna-low": 2,
+    "thornveld": 3,
+    "savanna-mid": 4,
+    "savanna-high": 5,
+    "sandstone": 6,
+    "rock": 7,
+}
+
+TILE_PAD = 2
+
+
+def average_colour(tile: Image.Image) -> str:
+    """Mean colour of a tile's opaque pixels, as #rrggbb.
+
+    The cliff faces under a tile are flat shaded rather than textured, and they used to
+    take their colour from the palette while the top took its colour from the art. That
+    disagrees visibly wherever the two meet. Carrying the tile's own average through the
+    manifest keeps a face matched to the surface it drops away from, and costs the
+    renderer nothing at runtime.
+    """
+    pixels = np.asarray(tile.convert("RGBA")).astype(np.float64)
+    opaque = pixels[..., 3] > 8
+    if not opaque.any():
+        return "#000000"
+    mean = pixels[..., :3][opaque].mean(axis=0)
+    return "#%02x%02x%02x" % tuple(int(round(c)) for c in mean)
+
+
+def pack_tiles(tiles: list[tuple[str, Image.Image]], target: pathlib.Path) -> dict[str, tuple[int, int]]:
+    """
+    Lay every tile out on one page, in a fixed grid.
+
+    One page because the renderer fills tile tops from it: a separate texture per
+    subject would break the sprite batch every time the ground changed underfoot, and at
+    a dozen visible chunks that is hundreds of draw calls against a budget of sixty.
+
+    A grid rather than a packer, because every tile is exactly the same size and a
+    packer would earn nothing. Padded, so linear sampling at a tile edge cannot reach
+    into its neighbour.
+    """
+    columns = 8
+    rows = (len(tiles) + columns - 1) // columns
+    cell_w = TILE_W + TILE_PAD * 2
+    cell_h = TILE_H + TILE_PAD * 2
+    page = Image.new("RGBA", (columns * cell_w, rows * cell_h), (0, 0, 0, 0))
+
+    placement = {}
+    for index, (name, tile) in enumerate(tiles):
+        x = (index % columns) * cell_w + TILE_PAD
+        y = (index // columns) * cell_h + TILE_PAD
+        page.paste(tile, (x, y))
+        placement[name] = (x, y)
+
+    page.save(target / "tiles.png")
+    return placement
+
+
 def command_tile(args: argparse.Namespace) -> int:
     palette = load_palette(pathlib.Path(args.palette))
     source = pathlib.Path(args.input)
@@ -126,10 +193,15 @@ def command_tile(args: argparse.Namespace) -> int:
     target.mkdir(parents=True, exist_ok=True)
 
     manifest = []
+    packed: list[tuple[str, Image.Image]] = []
     for path in sorted(source.glob("*.png")):
         # Which height band a tile belongs to is a naming decision, not something to
-        # infer from its colours. Unprefixed files land in the middle of the ramp.
-        band_index = args.band if args.band >= 0 else len(palette) // 2
+        # infer from its colours, so it comes from the subject name. An explicit --band
+        # still overrides. Unknown subjects land in the middle of the ramp.
+        subject = path.stem.rsplit("_", 1)[0]
+        band_index = (
+            args.band if args.band >= 0 else TERRAIN_BANDS.get(subject, len(palette) // 2)
+        )
         band = palette[min(band_index, len(palette) - 1)]
 
         with Image.open(path) as image:
@@ -137,18 +209,27 @@ def command_tile(args: argparse.Namespace) -> int:
             tile = make_tile(image, band, args.strength)
         out = target / path.name
         tile.save(out)
+        packed.append((path.name, tile))
         manifest.append(
             {
                 "file": path.name,
+                "subject": subject,
                 "width": TILE_W,
                 "height": TILE_H,
                 "band": band_index,
+                "averageColour": average_colour(tile),
                 "seam": round(seam, 4),
             }
         )
         print(f"  {path.name}: seam {seam:.3f}")
 
-    (target / "manifest.json").write_text(json.dumps({"tiles": manifest}, indent=2) + "\n")
+    placement = pack_tiles(packed, target)
+    for entry in manifest:
+        entry["x"], entry["y"] = placement[entry["file"]]
+
+    (target / "manifest.json").write_text(
+        json.dumps({"page": "tiles.png", "padding": TILE_PAD, "tiles": manifest}, indent=2) + "\n"
+    )
     print(f"[postprocess] {len(manifest)} tiles -> {target}")
     return 0
 
@@ -159,6 +240,7 @@ def command_sprite(args: argparse.Namespace) -> int:
     target.mkdir(parents=True, exist_ok=True)
 
     manifest = []
+    packed: list[tuple[str, Image.Image]] = []
     for path in sorted(source.glob("*.png")):
         with Image.open(path) as image:
             cropped, offset_x, offset_y = trim(image.convert("RGBA"))
