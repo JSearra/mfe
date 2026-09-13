@@ -33,17 +33,31 @@ import sys
 import bpy
 import mathutils
 
-# Rough human proportions in Blender units, where 1.0 is about a metre.
-HEIGHT = 1.75
-HEAD = 0.22
-TORSO = 0.62
-LIMB = 0.52
+# Human proportions in Blender units, where 1.0 is about a metre.
+#
+# The first set had the hip at 0.52m on a 1.75m figure and gave arms and legs the same
+# length, which is a toddler's proportions, not an adult's — and no amount of detail
+# rescues a figure whose skeleton is wrong. A standing adult is about seven and a half
+# heads tall, the hip sits a little over half the total height, and the arm is
+# appreciably shorter than the leg.
+HEIGHT = 1.78
+HEAD = 0.235
+NECK = 0.07
+HIP_HEIGHT = 0.92
+TORSO = 0.56
+ARM = 0.70
+LEG = HIP_HEIGHT
+SHOULDER_WIDTH = 0.40
 
 BIPEDS = {
     # name:        (skin,                  cloth,               shield,  has_spear)
-    "impi": ((0.38, 0.24, 0.16), (0.52, 0.44, 0.30), True, True),
-    "herder": ((0.38, 0.24, 0.16), (0.62, 0.56, 0.40), False, True),
-    "musketeer": ((0.42, 0.30, 0.22), (0.34, 0.32, 0.28), False, True),
+    #
+    # Skin was a mid-tan that, under a warm fill, came out the same value as the hide,
+    # the cloth and the ground — everything beige. These are darker and more saturated so
+    # the key light does the describing rather than the fill.
+    "impi": ((0.21, 0.115, 0.070), (0.40, 0.27, 0.15), True, True),
+    "herder": ((0.21, 0.115, 0.070), (0.55, 0.47, 0.33), False, True),
+    "musketeer": ((0.26, 0.16, 0.11), (0.28, 0.26, 0.23), False, True),
 }
 
 # Dress and kit, and the silhouette is most of the point.
@@ -353,67 +367,113 @@ def build(kind: str):
     skin_colour, cloth_colour, has_shield, has_spear = BIPEDS[kind]
     skin = material("skin", skin_colour)
     cloth = material("cloth", cloth_colour)
+    # Warm cream, deliberately. A neutral pale under the cool sky fill came out
+    # grey-blue, which reads as a steel shield — wrong century, wrong continent.
+    hide_pale = material("hide_pale", (0.92, 0.82, 0.62))
+    blade_metal = material("blade", (0.70, 0.71, 0.70))
     # Player colour lives on its own material so a shader swap can find it later —
     # ARCHITECTURE section 9 wants player colour swapped, not pre-tinted per faction.
-    player = material("player_colour", (0.85, 0.55, 0.28))
-
-    hide_pale = material("hide_pale", (0.88, 0.84, 0.76))
-    blade_metal = material("blade", (0.72, 0.72, 0.70))
+    player = material("player_colour", (0.78, 0.42, 0.20))
 
     root = bpy.data.objects.new("unit", None)
     bpy.context.scene.collection.objects.link(root)
 
-    hip_height = LIMB
-    # A bare torso, with the umutsha at the waist rather than a tunic over the chest.
-    # The first version dressed everyone in a cloth block, which read as a jerkin.
-    torso = box("torso", (0.30, 0.20, TORSO), (0, 0, hip_height + TORSO / 2))
-    torso.data.materials.append(skin if has_shield else cloth)
-    torso.parent = root
+    shoulder_z = HIP_HEIGHT + TORSO
 
-    if has_shield:
-        waist = box("umutsha", (0.32, 0.23, 0.16), (0, 0, hip_height + 0.06))
-        waist.data.materials.append(cloth)
-        waist.parent = root
+    # Torso as three masses rather than one box: a chest that carries the shoulders, a
+    # narrower waist, and the pelvis. A single block has no waist, and a figure with no
+    # waist reads as a crate however good the kit on it is.
+    chest = blob("chest", (0.34, SHOULDER_WIDTH, 0.34), (0, 0, shoulder_z - 0.12))
+    chest.data.materials.append(skin)
+    chest.parent = root
 
-    head = box("head", (HEAD, HEAD, HEAD), (0, 0, hip_height + TORSO + HEAD / 2))
+    waist = blob("waist", (0.27, 0.28, 0.26), (0, 0, HIP_HEIGHT + TORSO * 0.34))
+    waist.data.materials.append(skin)
+    waist.parent = root
+
+    pelvis = blob("pelvis", (0.29, 0.32, 0.24), (0, 0, HIP_HEIGHT + 0.05))
+    pelvis.data.materials.append(skin)
+    pelvis.parent = root
+
+    neck = taper("neck", 0.055, 0.048, NECK * 1.6, (0, 0, shoulder_z + NECK * 0.35))
+    neck.data.materials.append(skin)
+    neck.parent = root
+
+    head = blob("head", (HEAD * 0.82, HEAD * 0.80, HEAD), (0, 0, shoulder_z + NECK + HEAD / 2))
     head.data.materials.append(skin)
     head.parent = root
 
     if has_shield:
-        # Headband. At tile size it is two pixels, but it is two pixels that stop the
-        # head reading as a bare cube.
-        band = box("headband", (HEAD * 1.06, HEAD * 1.06, 0.05), (0, 0, hip_height + TORSO + HEAD * 0.22))
+        # The umutsha: a hide belt with a front apron and the ibheshu behind it, rather
+        # than a tunic. The earlier cloth block over the chest read as a European jerkin,
+        # which is the one thing this figure must not look like.
+        belt = blob("belt", (0.30, 0.33, 0.09), (0, 0, HIP_HEIGHT + 0.02))
+        belt.data.materials.append(cloth)
+        belt.parent = root
+
+        front = blob("umutsha_front", (0.10, 0.24, 0.30), (0.11, 0, HIP_HEIGHT - 0.09))
+        front.data.materials.append(cloth)
+        front.parent = root
+
+        rear = blob("ibheshu", (0.13, 0.30, 0.34), (-0.11, 0, HIP_HEIGHT - 0.10))
+        rear.data.materials.append(cloth)
+        rear.parent = root
+
+        # Headband, sitting on the brow rather than around the crown.
+        band = blob("headband", (HEAD * 0.86, HEAD * 0.84, 0.055),
+                    (0, 0, shoulder_z + NECK + HEAD * 0.72))
         band.data.materials.append(hide_pale)
         band.parent = root
 
     limbs = {}
-    for side, y in (("l", 0.13), ("r", -0.13)):
-        # Limbs are modelled hanging DOWN from their joint and offset so the joint sits
-        # at the object origin; rotating the object then swings the limb about the hip
-        # or shoulder, which is the whole trick that avoids needing an armature.
-        leg = box(f"leg_{side}", (0.11, 0.11, LIMB), (0, y, -LIMB / 2))
-        leg.data.materials.append(skin)
+    for side, y in (("l", 1.0), ("r", -1.0)):
+        hip_y = y * 0.095
+        shoulder_y = y * (SHOULDER_WIDTH / 2 - 0.03)
+
+        # Limbs hang DOWN from their joint with the joint at the pivot's origin, so
+        # rotating the pivot swings the limb about the hip or shoulder. That is the trick
+        # that avoids needing an armature; the segments below are rigid within it.
         leg_pivot = bpy.data.objects.new(f"hip_{side}", None)
         bpy.context.scene.collection.objects.link(leg_pivot)
-        leg_pivot.location = (0, y, hip_height)
+        leg_pivot.location = (0, hip_y, HIP_HEIGHT)
         leg_pivot.parent = root
-        leg.parent = leg_pivot
-        leg.location = (0, 0, -LIMB / 2)
         limbs[f"hip_{side}"] = leg_pivot
 
-        arm = box(f"arm_{side}", (0.09, 0.09, LIMB * 0.9), (0, 0, -LIMB * 0.45))
-        arm.data.materials.append(skin)
+        thigh = taper(f"thigh_{side}", 0.075, 0.055, LEG * 0.52, (0, 0, -LEG * 0.26))
+        thigh.data.materials.append(skin)
+        thigh.parent = leg_pivot
+
+        calf = taper(f"calf_{side}", 0.058, 0.032, LEG * 0.50, (0, 0, -LEG * 0.76))
+        calf.data.materials.append(skin)
+        calf.parent = leg_pivot
+
+        foot = blob(f"foot_{side}", (0.19, 0.09, 0.07), (0.035, 0, -LEG + 0.035))
+        foot.data.materials.append(skin)
+        foot.parent = leg_pivot
+
         arm_pivot = bpy.data.objects.new(f"shoulder_{side}", None)
         bpy.context.scene.collection.objects.link(arm_pivot)
-        arm_pivot.location = (0, y * 1.5, hip_height + TORSO * 0.9)
+        arm_pivot.location = (0, shoulder_y, shoulder_z - 0.03)
         arm_pivot.parent = root
-        arm.parent = arm_pivot
         limbs[f"shoulder_{side}"] = arm_pivot
 
+        shoulder = blob(f"deltoid_{side}", (0.13, 0.13, 0.14), (0, 0, -0.02))
+        shoulder.data.materials.append(skin)
+        shoulder.parent = arm_pivot
+
+        upper = taper(f"upper_arm_{side}", 0.055, 0.042, ARM * 0.48, (0, 0, -ARM * 0.26))
+        upper.data.materials.append(skin)
+        upper.parent = arm_pivot
+
+        fore = taper(f"forearm_{side}", 0.045, 0.032, ARM * 0.46, (0, 0, -ARM * 0.72))
+        fore.data.materials.append(skin)
+        fore.parent = arm_pivot
+
+        hand = blob(f"hand_{side}", (0.09, 0.06, 0.10), (0, 0, -ARM * 0.98))
+        hand.data.materials.append(skin)
+        hand.parent = arm_pivot
+
         if side == "l" and has_shield:
-            # An oval rather than a slab: scaled spheres cost nothing and the rounded
-            # top is what stops it reading as a door. Carried slightly forward of the
-            # body and tilted, which is how it covers the torso without hiding the arm.
             # Through blob() like everything else, which takes diameters. Setting .scale
             # directly here meant this one object was sized in half-extents while its
             # neighbours were sized in full ones, and the marking below — written to the
@@ -423,49 +483,36 @@ def build(kind: str):
             # sank into the terrain, while the cattle beside them read clearly — and the
             # reason is contrast, not size: the cattle carry big pale patches. A war
             # shield was oxhide in strong two-tone anyway, so the legible choice and the
-            # accurate one are the same. Faction colour goes on the lower field below,
-            # where it still identifies an army without costing the silhouette.
+            # accurate one are the same.
             shield.data.materials.append(hide_pale)
             shield.parent = arm_pivot
-            shield.location = (0.08, 0.04, -LIMB * 0.15)
+            shield.location = (0.11, 0.05, -ARM * 0.34)
             shield.rotation_euler = (0, math.radians(-8), 0)
 
-            # The pale stripe down the hide. Shields were sorted by colour and marking
-            # into regiments, so this is also where a faction or unit marking belongs.
-            #
-            # Parented to the shoulder rather than to the shield: the shield is a scaled
-            # sphere, and a child of it inherits that scale, so sizing the stripe means
-            # dividing by the parent's scale on every axis. The first attempt did that
-            # and put the stripe somewhere outside the shield entirely. A sibling in the
-            # same place needs no arithmetic at all.
             # Thicker than the shield, so it actually breaks the surface on both faces.
             field = blob(
                 "shield_field",
                 (0.13, SHIELD_WIDTH * 0.80, SHIELD_HEIGHT * 0.40),
-                (0.08, 0.04, -LIMB * 0.15 - SHIELD_HEIGHT * 0.15),
+                (0.11, 0.05, -ARM * 0.34 - SHIELD_HEIGHT * 0.15),
             )
             field.data.materials.append(player)
             field.parent = arm_pivot
 
-            stripe = box("shield_stripe", (0.012, 0.06, SHIELD_HEIGHT * 0.52), (0, 0, 0))
-            stripe.data.materials.append(cloth)
-            stripe.parent = arm_pivot
-            stripe.location = (0.052, 0.04, -LIMB * 0.15)
-
-            # The staff behind the shield, projecting past it top and bottom.
-            staff = cylinder("shield_staff", 0.012, SHIELD_HEIGHT * 1.18, (0.065, 0.04, -LIMB * 0.15))
+            staff = cylinder("shield_staff", 0.012, SHIELD_HEIGHT * 1.18,
+                             (0.09, 0.05, -ARM * 0.34))
             staff.data.materials.append(cloth)
             staff.parent = arm_pivot
 
         if side == "r" and has_spear:
             # Short. The whole tactical point of the weapon is that it is not thrown, so
             # a long shaft reads as the wrong army.
-            spear = cylinder("spear", 0.016, SPEAR_LENGTH, (0.04, 0, -LIMB * 0.30))
+            spear = cylinder("spear", 0.015, SPEAR_LENGTH, (0.05, 0, -ARM * 0.62))
             spear.data.materials.append(cloth)
             spear.parent = arm_pivot
             spear.rotation_euler = (math.radians(12), 0, 0)
 
-            blade = box("spear_blade", (0.035, 0.012, 0.20), (0.04, 0, -LIMB * 0.30 + SPEAR_LENGTH * 0.56))
+            blade = taper("spear_blade", 0.030, 0.004, 0.22,
+                          (0.05, 0, -ARM * 0.62 + SPEAR_LENGTH * 0.55))
             blade.data.materials.append(blade_metal)
             blade.parent = arm_pivot
             blade.rotation_euler = (math.radians(12), 0, 0)
@@ -473,11 +520,11 @@ def build(kind: str):
         # Amashoba: cow-tail tufts at the upper arm and below the knee. Small, but they
         # break the limb outline and are one of the few details that survive the
         # downscale as anything other than a smudge.
-        tuft_arm = box(f"tuft_arm_{side}", (0.10, 0.10, 0.13), (0, 0, -LIMB * 0.62))
+        tuft_arm = blob(f"tuft_arm_{side}", (0.13, 0.13, 0.15), (0, 0, -ARM * 0.44))
         tuft_arm.data.materials.append(hide_pale)
         tuft_arm.parent = arm_pivot
 
-        tuft_leg = box(f"tuft_leg_{side}", (0.11, 0.11, 0.12), (0, 0, -LIMB * 0.74))
+        tuft_leg = blob(f"tuft_leg_{side}", (0.14, 0.14, 0.14), (0, 0, -LEG * 0.60))
         tuft_leg.data.materials.append(hide_pale)
         tuft_leg.parent = leg_pivot
 
@@ -500,7 +547,10 @@ def animate(limbs: dict, anim: str) -> int:
         scene.frame_set(frame)
 
         if anim in ("walk", "run"):
-            swing = math.radians(34 if anim == "walk" else 52) * math.sin(phase)
+            # Tuned down from 34/52. Those angles were set against legs half this
+            # length, where a wide swing was the only way to read as motion at all; on a
+            # correctly proportioned figure the same angle is a splay.
+            swing = math.radians(24 if anim == "walk" else 40) * math.sin(phase)
             limbs["hip_l"].rotation_euler = (swing, 0, 0)
             limbs["hip_r"].rotation_euler = (-swing, 0, 0)
             limbs["shoulder_l"].rotation_euler = (-swing * 0.7, 0, 0)

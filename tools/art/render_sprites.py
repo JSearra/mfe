@@ -152,15 +152,19 @@ def ensure_light() -> None:
     world.use_nodes = True
     background = world.node_tree.nodes.get("Background")
     if background is not None:
-        # Warm, dim: veld light bounced off dust, not a studio.
-        background.inputs["Color"].default_value = (0.42, 0.38, 0.32, 1.0)
-        background.inputs["Strength"].default_value = 0.9
+        # Sky bounce, not dust bounce. A warm grey fill at this strength was washing
+        # every surface toward the same beige — skin, hide, cloth and shield all landed
+        # within a few percent of each other, which is most of why the figures read as
+        # one material. A cooler, dimmer fill leaves the warm key doing the describing
+        # and puts real separation between a lit face and a shaded one.
+        background.inputs["Color"].default_value = (0.30, 0.33, 0.40, 1.0)
+        background.inputs["Strength"].default_value = 0.55
 
     if any(obj.type == "LIGHT" for obj in bpy.data.objects):
         return
 
     light_data = bpy.data.lights.new("key", type="SUN")
-    light_data.energy = 5.5
+    light_data.energy = 6.5
     light = bpy.data.objects.new("key", light_data)
     bpy.context.scene.collection.objects.link(light)
     light.rotation_euler = (math.radians(50.0), 0.0, math.radians(-35.0))
