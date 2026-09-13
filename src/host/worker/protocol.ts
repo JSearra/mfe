@@ -46,7 +46,19 @@ export interface StopMessage {
   readonly type: 'stop';
 }
 
-export type ToWorker = InitMessage | CommandMessage | AckMessage | StopMessage;
+/**
+ * How fast real time is fed to the simulation. 0 pauses, 1 is real time.
+ *
+ * Crosses the boundary because the worker owns its own clock. The tick stays a fixed
+ * 50ms on both sides of the wire — this changes how many ticks a second buys, never
+ * what a tick computes.
+ */
+export interface SpeedMessage {
+  readonly type: 'speed';
+  readonly speed: number;
+}
+
+export type ToWorker = InitMessage | CommandMessage | AckMessage | StopMessage | SpeedMessage;
 
 export interface SnapshotMessage {
   readonly type: 'snapshot';

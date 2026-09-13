@@ -103,6 +103,16 @@ export interface SimHost {
   sendCommand(kind: CommandKind, a?: number, b?: number, c?: number, d?: number): void;
   /** Advance by real elapsed time. A worker host will tick itself and ignore this. */
   pump(elapsedMs: number): void;
+  /**
+   * How fast wall-clock time is fed to the simulation. 0 pauses, 1 is real time.
+   *
+   * A host concern and nothing else. The tick is a fixed 50ms and stays one: changing
+   * the tick rate would change what the simulation computes, and every determinism
+   * guarantee in the project rests on it not doing that. This only changes how many of
+   * those identical ticks a second of real time buys, so a paused or doubled game
+   * produces exactly the state a normal one would, reached sooner or later.
+   */
+  speed: number;
   /** Take the newest snapshot and the events since the last take, or null if unchanged. */
   receive(): SimMessage | null;
   dispose(): void;
@@ -258,8 +268,16 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
       enqueueCommand(loop, command);
     },
 
+    speed: 1,
+
     pump(elapsedMs: number): void {
-      accumulator += elapsedMs;
+      if (host.speed <= 0) {
+        // Drop the time rather than banking it, or unpausing fast-forwards by however
+        // long the player stood still.
+        accumulator = 0;
+        return;
+      }
+      accumulator += elapsedMs * host.speed;
 
       let ticks = 0;
       while (accumulator >= TICK_MS && ticks < MAX_CATCHUP_TICKS) {

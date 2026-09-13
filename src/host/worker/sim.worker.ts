@@ -55,6 +55,7 @@ let sentFogVersion = -1;
 let timer: ReturnType<typeof setInterval> | null = null;
 let lastTime = 0;
 let accumulator = 0;
+let speed = 1;
 
 function start(message: InitMessage): void {
   const map =
@@ -98,8 +99,16 @@ function tick(): void {
     return;
 
   const now = performance.now();
-  accumulator += now - lastTime;
+  const elapsed = now - lastTime;
   lastTime = now;
+
+  if (speed <= 0) {
+    // Drop the time rather than banking it, or unpausing fast-forwards by however long
+    // the game sat paused.
+    accumulator = 0;
+    return;
+  }
+  accumulator += elapsed * speed;
 
   let ticks = 0;
   while (accumulator >= TICK_MS && ticks < MAX_CATCHUP_TICKS) {
@@ -198,6 +207,10 @@ self.onmessage = (event: MessageEvent<ToWorker>): void => {
 
     case 'ack':
       unacked = Math.max(0, unacked - 1);
+      return;
+
+    case 'speed':
+      speed = message.speed;
       return;
 
     case 'stop':

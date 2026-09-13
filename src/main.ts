@@ -304,6 +304,24 @@ async function main(): Promise<void> {
       return;
     }
 
+    if (event.key === 'Escape' && sim.speed === 0) {
+      sim.speed = 1;
+      return;
+    }
+    if (event.key === '`' || event.key === 'Pause') {
+      sim.speed = sim.speed === 0 ? 1 : 0;
+      return;
+    }
+    if (event.key === '+' || event.key === '=') {
+      // Capped. Past a point the simulation cannot keep up and the catch-up limiter
+      // silently eats the difference, which looks like the game ignoring the key.
+      sim.speed = Math.min(4, (sim.speed === 0 ? 1 : sim.speed) * 2);
+      return;
+    }
+    if (event.key === '-' || event.key === '_') {
+      sim.speed = Math.max(0.5, (sim.speed === 0 ? 1 : sim.speed) / 2);
+      return;
+    }
     if (event.key === 'p' || event.key === 'P') {
       patrolArmed = true;
       attackMoveArmed = false;

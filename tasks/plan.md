@@ -50,7 +50,7 @@ the outcome banner is the end of the road.
 - [ ] **B1 — Restart.** Play again without reloading the tab.
 - [ ] **B2 — Setup screen.** Choose map, faction and seed before starting, instead of
       editing the query string.
-- [ ] **B3 — Pause and speed.** Pause, and at least one faster setting. Must not touch
+- [x] **B3 — Pause and speed.** Done. Pause, and at least one faster setting. Must not touch
       determinism: the tick rate is fixed, so this is a host concern, not a sim one.
 
 ## C. Known gaps

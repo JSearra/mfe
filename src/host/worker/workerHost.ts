@@ -75,6 +75,7 @@ export function createWorkerSimHost(options: WorkerSimHostOptions): SimHost {
   };
 
   const send = (message: ToWorker): void => worker.postMessage(message);
+  let currentSpeed = 1;
 
   send({
     type: 'init',
@@ -97,6 +98,16 @@ export function createWorkerSimHost(options: WorkerSimHostOptions): SimHost {
 
     sendCommand(kind: CommandKind, a = 0, b = 0, c = 0, d = 0): void {
       send({ type: 'command', kind, a, b, c, d });
+    },
+
+    // Forwarded rather than stored and applied locally: the worker owns its own clock,
+    // so it is the only side that can act on this.
+    get speed(): number {
+      return currentSpeed;
+    },
+    set speed(value: number) {
+      currentSpeed = value;
+      send({ type: 'speed', speed: value });
     },
 
     pump(): void {
