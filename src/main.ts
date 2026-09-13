@@ -7,7 +7,14 @@ import { createDirectSimHost } from './sim/host.js';
 import { createHeightmap } from './sim/terrain/generate.js';
 import { createWorld } from './sim/world.js';
 import { createRenderer } from './render/app.js';
-import { createCamera, createCameraInput, setViewport, updateCamera } from './render/camera.js';
+import {
+  createCamera,
+  createCameraInput,
+  setViewport,
+  updateCamera,
+  worldToViewportX,
+  worldToViewportY,
+} from './render/camera.js';
 import { bindInput } from './render/input.js';
 import { createInterpolator, type InterpolatedView } from './render/interpolation.js';
 import { installPerfHarness } from './render/perfHarness.js';
@@ -18,6 +25,8 @@ import {
   createMarqueeGraphics,
   createSelection,
   drawMarquee,
+  entitiesNear,
+  pickEntity,
   type Rect,
 } from './render/selection.js';
 import { createRenderStats } from './render/stats.js';
@@ -38,6 +47,37 @@ const MAP_SEED = 0x4d666563;
 const WORLD_SEED = 0x5eedcafe;
 const PLAYER = 0;
 const STARTING_UNITS = 24;
+const STARTING_CATTLE = 30;
+
+const KIND_UNIT = 0;
+const KIND_CATTLE = 1;
+const HERD_LEASHED = 1;
+const HERD_STAMPEDING = 3;
+
+/** Right-clicking one cow leashes the beasts around it, not just that one. */
+const HERD_GRAB_RADIUS = 3.5;
+
+/** Herd readout for the debug overlay, counted from what is actually on screen. */
+function herdCounts(view: InterpolatedView | null): {
+  cattleCount: number;
+  leashedCount: number;
+  stampedingCount: number;
+} {
+  let cattleCount = 0;
+  let leashedCount = 0;
+  let stampedingCount = 0;
+
+  if (view !== null) {
+    for (let i = 0; i < view.count; i++) {
+      if (view.kind[i] !== KIND_CATTLE) continue;
+      cattleCount++;
+      const state = view.flags[i]! & 0x0f;
+      if (state === HERD_LEASHED) leashedCount++;
+      else if (state === HERD_STAMPEDING) stampedingCount++;
+    }
+  }
+  return { cattleCount, leashedCount, stampedingCount };
+}
 
 async function main(): Promise<void> {
   document.title = t('app.title');
@@ -55,7 +95,25 @@ async function main(): Promise<void> {
   for (let i = 0; i < STARTING_UNITS; i++) {
     const column = i % 6;
     const row = Math.floor(i / 6);
-    sim.sendCommand(CommandKind.Spawn, centre + column * 1.4 - 4, centre + row * 1.4 - 2, PLAYER);
+    sim.sendCommand(
+      CommandKind.Spawn,
+      centre + column * 1.4 - 4,
+      centre + row * 1.4 - 2,
+      PLAYER,
+      KIND_UNIT,
+    );
+  }
+
+  // A clustered herd, not a ring: cattle graze together, and a hollow ring has no
+  // centre to click on or drive into.
+  for (let i = 0; i < STARTING_CATTLE; i++) {
+    const angle = i * 2.399963; // golden angle, so the blob fills evenly
+    const spread = 3.2 * Math.sqrt((i + 0.5) / STARTING_CATTLE);
+    sim.sendCommand(
+      CommandKind.SpawnCattle,
+      centre + 14 + Math.cos(angle) * spread,
+      centre + 8 + Math.sin(angle) * spread,
+    );
   }
 
   const { app } = await createRenderer(root, BACKGROUND);
@@ -81,6 +139,7 @@ async function main(): Promise<void> {
   const overlay = createDebugOverlay(root);
 
   let view: InterpolatedView | null = null;
+  const herdScratch: number[] = [];
 
   /** Viewport point -> the world position of the tile under it. */
   function worldPointAt(viewportX: number, viewportY: number): { x: number; y: number } | null {
@@ -103,8 +162,30 @@ async function main(): Promise<void> {
       drawMarquee(marquee, rect);
     },
     onOrder(x, y) {
+      if (selection.handles.size === 0 || view === null) return;
+
+      // Right-clicking a cow herds it; right-clicking ground is a move order. Same
+      // button, read from what is under it, as the genre expects.
+      const cow = pickEntity(view, map, camera, entities, x, y, KIND_CATTLE);
+      if (cow !== -1) {
+        const slot = view.handle.indexOf(cow);
+        const herd = entitiesNear(
+          view,
+          view.x[slot]!,
+          view.y[slot]!,
+          HERD_GRAB_RADIUS,
+          KIND_CATTLE,
+          herdScratch,
+        );
+        const herders = [...selection.handles];
+        for (let i = 0; i < herd.length; i++) {
+          sim.sendCommand(CommandKind.Leash, herders[i % herders.length]!, herd[i]!);
+        }
+        return;
+      }
+
       const target = worldPointAt(x, y);
-      if (target === null || selection.handles.size === 0) return;
+      if (target === null) return;
       // Orders carry a handle, never a position: by the time this executes the target
       // may be dead, and the handle's generation is what says so.
       for (const handle of selection.handles) {
@@ -123,6 +204,52 @@ async function main(): Promise<void> {
       count: () => view?.count ?? 0,
       selected: () => [...selection.handles],
       handles: () => (view === null ? [] : Array.from(view.handle.subarray(0, view.count))),
+      herd: () => {
+        const counts = herdCounts(view);
+        let maxStress = 0;
+        if (view !== null) {
+          for (let i = 0; i < view.count; i++) {
+            if (view.kind[i] === KIND_CATTLE) maxStress = Math.max(maxStress, view.stressPct[i]!);
+          }
+        }
+        return { ...counts, maxStress };
+      },
+      /** Viewport position of one cow, for driving clicks at something that exists. */
+      cowViewport: (n = 0) => {
+        if (view === null) return null;
+        let seen = 0;
+        for (let i = 0; i < view.count; i++) {
+          if (view.kind[i] !== KIND_CATTLE) continue;
+          if (seen++ < n) continue;
+          const height = heightAt(map, Math.floor(view.x[i]!), Math.floor(view.y[i]!));
+          return [
+            worldToViewportX(camera, view.x[i]!, view.y[i]!),
+            worldToViewportY(camera, view.x[i]!, view.y[i]!, height < 0 ? 0 : height),
+          ];
+        }
+        return null;
+      },
+      /** Viewport position of the herd's centre of mass, for driving the camera at it. */
+      herdCentre: () => {
+        if (view === null) return null;
+        let sumX = 0;
+        let sumY = 0;
+        let n = 0;
+        for (let i = 0; i < view.count; i++) {
+          if (view.kind[i] !== KIND_CATTLE) continue;
+          sumX += view.x[i]!;
+          sumY += view.y[i]!;
+          n++;
+        }
+        if (n === 0) return null;
+        const worldX = sumX / n;
+        const worldY = sumY / n;
+        const height = heightAt(map, Math.floor(worldX), Math.floor(worldY));
+        return [
+          worldToViewportX(camera, worldX, worldY),
+          worldToViewportY(camera, worldX, worldY, height < 0 ? 0 : height),
+        ];
+      },
       positions: () =>
         view === null
           ? []
@@ -193,6 +320,7 @@ async function main(): Promise<void> {
       pointerOnMap: index !== NO_TILE,
       entityCount: view?.count ?? 0,
       selectedCount: selection.handles.size,
+      ...herdCounts(view),
       simTick: sim.tick,
       renderTick: interpolator.renderTick,
     });

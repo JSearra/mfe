@@ -59,6 +59,9 @@ export interface InterpolatedView {
   animPhase: Float32Array;
   faction: Uint8Array;
   hpPct: Uint8Array;
+  flags: Uint8Array;
+  kind: Uint8Array;
+  stressPct: Uint8Array;
 }
 
 export interface Interpolator {
@@ -86,6 +89,9 @@ function grow(view: InterpolatedView, capacity: number): void {
   view.animPhase = new Float32Array(size);
   view.faction = new Uint8Array(size);
   view.hpPct = new Uint8Array(size);
+  view.flags = new Uint8Array(size);
+  view.kind = new Uint8Array(size);
+  view.stressPct = new Uint8Array(size);
 }
 
 interface HistoryEntry {
@@ -114,6 +120,9 @@ export function createInterpolator(): Interpolator {
     animPhase: new Float32Array(0),
     faction: new Uint8Array(0),
     hpPct: new Uint8Array(0),
+    flags: new Uint8Array(0),
+    kind: new Uint8Array(0),
+    stressPct: new Uint8Array(0),
   };
 
   const interpolator: Interpolator = {
@@ -193,6 +202,9 @@ export function createInterpolator(): Interpolator {
         view.animState[i] = latest.animState[i]!;
         view.faction[i] = latest.faction[i]!;
         view.hpPct[i] = latest.hpPct[i]!;
+        view.flags[i] = latest.flags[i]!;
+        view.kind[i] = latest.kind[i]!;
+        view.stressPct[i] = latest.stressPct[i]!;
         view.animPhase[i] = renderTick - latest.animStartTick[i]!;
 
         const facing = decodeFacing(latest.facing[i]!);

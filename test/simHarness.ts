@@ -1,5 +1,6 @@
 import { heightmapFrom, type Heightmap } from '../src/shared/heightmap.js';
 import { createLoop, type SimLoop } from '../src/sim/loop.js';
+import { createCattleSystem, type CattleSystem } from '../src/sim/cattle.js';
 import { createMovementSystem, type MovementSystem } from '../src/sim/movement.js';
 import { createWorld, type World } from '../src/sim/world.js';
 import type { Command } from '../src/sim/commands.js';
@@ -15,6 +16,7 @@ export function flatMap(size: number, level = 0): Heightmap {
 export interface Harness {
   world: World;
   movement: MovementSystem;
+  cattle: CattleSystem;
   loop: SimLoop;
   map: Heightmap;
 }
@@ -27,5 +29,6 @@ export function makeSim(
 ): Harness {
   const world = createWorld(capacity, seed);
   const movement = createMovementSystem(map);
-  return { world, movement, loop: createLoop(world, movement, commands), map };
+  const cattle = createCattleSystem();
+  return { world, movement, cattle, loop: createLoop(world, movement, cattle, commands), map };
 }

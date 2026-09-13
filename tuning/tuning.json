@@ -35,5 +35,31 @@
   },
   "spatial": {
     "cellSize": 2
+  },
+  "cattle": {
+    "substeps": 3,
+    "maxSpeed": 2.0,
+    "accelClamp": 6.0,
+    "separationRadius": 0.9,
+    "separationWeight": 2.0,
+    "cohesionRadius": 3.2,
+    "cohesionWeight": 0.55,
+    "alignmentRadius": 2.6,
+    "alignmentWeight": 0.7,
+    "wanderWeight": 0.25,
+    "herderRadius": 3.2,
+    "herderWeight": 2.4,
+    "leashRadius": 3.5,
+    "leashWeight": 1.6,
+    "stressRadius": 2.6,
+    "stressGain": 30.0,
+    "stressDecay": 6.0,
+    "stressMax": 100,
+    "stampedeSpeed": 8.0,
+    "stampedeTicks": 70,
+    "stampedeCalmStress": 35,
+    "crushRadius": 0.35,
+    "crushDamage": 34,
+    "knockback": 0.55
   }
 }

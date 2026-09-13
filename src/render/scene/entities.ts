@@ -20,9 +20,47 @@ import { presentation } from '../presentation.js';
  */
 
 const { radius, factionColours, selectedColour } = presentation.entities;
+const cattleStyle = presentation.cattle;
 
-const FACTION = factionColours.map((hex) => Number.parseInt(hex.slice(1), 16));
-const SELECTED = Number.parseInt(selectedColour.slice(1), 16);
+const hex = (value: string): number => Number.parseInt(value.slice(1), 16);
+
+const FACTION = factionColours.map(hex);
+const SELECTED = hex(selectedColour);
+const CATTLE_BODY = hex(cattleStyle.bodyColour);
+const CALM = hex(cattleStyle.calmColour);
+const ALARM = hex(cattleStyle.alarmColour);
+const PANIC = hex(cattleStyle.panicColour);
+
+const KIND_CATTLE = 1;
+const HERD_STAMPEDING = 3;
+
+/** Blend two packed RGB colours. */
+function mix(a: number, b: number, t: number): number {
+  const ar = (a >> 16) & 0xff;
+  const ag = (a >> 8) & 0xff;
+  const ab = a & 0xff;
+  const br = (b >> 16) & 0xff;
+  const bg = (b >> 8) & 0xff;
+  const bb = b & 0xff;
+  return (
+    (Math.round(ar + (br - ar) * t) << 16) |
+    (Math.round(ag + (bg - ag) * t) << 8) |
+    Math.round(ab + (bb - ab) * t)
+  );
+}
+
+/**
+ * Stress colour: green through amber to red.
+ *
+ * Gate 2 is a legibility question, and this is the answer to most of it. A player who
+ * cannot see a herd approaching its limit cannot aim a stampede or avoid triggering one,
+ * and the mechanic collapses into luck. The ring reads at a glance without needing a
+ * number on screen.
+ */
+function stressColour(stressPct: number): number {
+  const t = stressPct / 255;
+  return t < 0.5 ? mix(CALM, ALARM, t * 2) : mix(ALARM, PANIC, (t - 0.5) * 2);
+}
 
 export interface EntityLayer {
   readonly container: Container;
@@ -33,13 +71,11 @@ export interface EntityLayer {
 
 interface Marker {
   readonly graphics: Graphics;
-  faction: number;
-  selected: boolean;
+  /** Everything the drawn shape depends on, so it is only redrawn when it changes. */
+  signature: number;
 }
 
-function drawMarker(graphics: Graphics, faction: number, selected: boolean): void {
-  graphics.clear();
-
+function drawUnit(graphics: Graphics, faction: number, selected: boolean): void {
   if (selected) {
     graphics.ellipse(0, 0, radius + 5, (radius + 5) / 2);
     graphics.stroke({ width: 2, color: SELECTED, alpha: 0.9 });
@@ -56,6 +92,43 @@ function drawMarker(graphics: Graphics, faction: number, selected: boolean): voi
   graphics.closePath();
   graphics.fill({ color: FACTION[faction % FACTION.length] ?? FACTION[0]! });
   graphics.stroke({ width: 1, color: 0x1a1610, alpha: 0.8 });
+}
+
+function drawCow(graphics: Graphics, stressPct: number, stampeding: boolean, selected: boolean): void {
+  const r = cattleStyle.radius;
+  const colour = stressColour(stressPct);
+
+  if (selected) {
+    graphics.ellipse(0, 0, r + 5, (r + 5) / 2);
+    graphics.stroke({ width: 2, color: SELECTED, alpha: 0.9 });
+  }
+
+  graphics.ellipse(0, 0, r * 0.9, r * 0.45);
+  graphics.fill({ color: 0x000000, alpha: 0.3 });
+
+  // A stampeding beast is tinted and trailed, not just ringed. The first browser pass
+  // showed the ring alone reading as "stressed" but not as "this one is running you
+  // down" — the state that matters most is the one that must be unmistakable.
+  if (stampeding) {
+    graphics.ellipse(r * 0.9, -r * 0.6, r * 1.2, r * 0.42);
+    graphics.fill({ color: PANIC, alpha: 0.22 });
+    graphics.ellipse(r * 1.7, -r * 0.5, r * 0.9, r * 0.3);
+    graphics.fill({ color: PANIC, alpha: 0.12 });
+  }
+
+  // Low and broad, so a herd reads as a different thing from a formation of men even
+  // when both are small on screen.
+  graphics.ellipse(0, -r * 0.75, r * 1.05, r * 0.62);
+  graphics.fill({ color: stampeding ? mix(CATTLE_BODY, PANIC, 0.45) : CATTLE_BODY });
+  graphics.stroke({ width: stampeding ? 1.5 : 1, color: 0x1a1610, alpha: 0.85 });
+
+  // Stress ring. Thickens as it rises so it is readable even when colour-blind.
+  graphics.ellipse(0, -r * 0.75, r * 1.35, r * 0.9);
+  graphics.stroke({
+    width: stampeding ? 3.5 : 1 + (stressPct / 255) * 2,
+    color: colour,
+    alpha: stampeding ? 1 : 0.35 + (stressPct / 255) * 0.6,
+  });
 }
 
 function groundHeight(map: Heightmap, worldX: number, worldY: number): number {
@@ -88,7 +161,7 @@ export function createEntityLayer(): EntityLayer {
       while (markers.length < count) {
         const graphics = new Graphics();
         container.addChild(graphics);
-        markers.push({ graphics, faction: -1, selected: false });
+        markers.push({ graphics, signature: -1 });
       }
       for (let i = count; i < markers.length; i++) markers[i]!.graphics.visible = false;
 
@@ -109,11 +182,24 @@ export function createEntityLayer(): EntityLayer {
         const marker = markers[slot]!;
         const faction = view.faction[index]!;
         const isSelected = selected.has(view.handle[index]!);
+        const isCattle = view.kind[index] === KIND_CATTLE;
+        const stampeding = (view.flags[index]! & 0x0f) === HERD_STAMPEDING;
 
-        if (marker.faction !== faction || marker.selected !== isSelected) {
-          drawMarker(marker.graphics, faction, isSelected);
-          marker.faction = faction;
-          marker.selected = isSelected;
+        // Stress is quantised into bands: redrawing on every one-part-in-255 change
+        // would rebuild geometry for the whole herd every frame for no visible gain.
+        const stressBand = isCattle ? view.stressPct[index]! >> 4 : 0;
+        const signature =
+          (isCattle ? 1 : 0) |
+          (isSelected ? 2 : 0) |
+          (stampeding ? 4 : 0) |
+          (faction << 3) |
+          (stressBand << 8);
+
+        if (marker.signature !== signature) {
+          marker.graphics.clear();
+          if (isCattle) drawCow(marker.graphics, stressBand << 4, stampeding, isSelected);
+          else drawUnit(marker.graphics, faction, isSelected);
+          marker.signature = signature;
         }
 
         const position = this.screenPosition(view, index, map);

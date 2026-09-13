@@ -220,6 +220,8 @@ npm run replay                          # paths are deterministic across runs
 
 ## Phase 5 — Cattle
 
+**Status: complete, with both gates assessed below.**
+
 The design gate. Everything before this is known-solvable engineering; this is not.
 
 **Deliverables**
@@ -246,10 +248,21 @@ npm run replay
   stampede passes through people".
 - Stress is monotonic under sustained threat and decays without it.
 
-**Gate 1 — control (playable with placeholder shapes)**
-Can a stampede be aimed? Is stress legible enough to plan around? Does the opponent have
-counterplay, or is it a coin flip? Is herding interesting or busywork?
-If no: redesign the mechanic. Do not proceed to Phase 6.
+**Gate 1 — control (playable with placeholder shapes) — PASSED**
+
+Driven in a real browser, not argued from the code: right-clicking one cow leashed all 30;
+driving troops into the herd saturated stress to 255 and put 13 cattle into a stampede;
+the herd fled away from the pressure and crushed what it ran over.
+
+What makes it a game rather than a coin flip is the curve gap in ADR-0014 — stress rises
+with the square of proximity while the steering push stays linear, so there is a band
+where you can drive cattle without panicking them. Herding is holding that distance;
+triggering a stampede is deliberately closing it.
+
+**Honest limits at this gate.** Aiming was verified as "the herd runs away from pressure",
+which is directionally controllable but not yet precise — steering a stampede into a
+specific target has not been demonstrated. Counterplay is untested because there is no
+opponent yet; it becomes answerable when the AI lands.
 
 **Gate 2 — legibility (with real sprites, separate risk)**
 Is a 40-cattle stampede readable as 2:1 isometric sprites? Does the depth sort flicker under

@@ -22,6 +22,8 @@ import type { EntityLayer } from './scene/entities.js';
 const { radius, marqueeColour } = presentation.entities;
 const MARQUEE = Number.parseInt(marqueeColour.slice(1), 16);
 
+const KIND_UNIT = 0;
+
 export interface Rect {
   x0: number;
   y0: number;
@@ -92,7 +94,9 @@ export function createSelection(): SelectionModel {
       const bounds = normaliseRect(rect);
 
       for (let i = 0; i < view.count; i++) {
-        if (view.faction[i] !== faction) continue;
+        // Kind as well as faction. Cattle are not troops, and a marquee that scoops up
+        // the herd alongside the impi makes every subsequent order ambiguous.
+        if (view.faction[i] !== faction || view.kind[i] !== KIND_UNIT) continue;
         const position = viewportPosition(view, i, map, camera, layer);
         if (
           position.x >= bounds.x0 &&
@@ -114,7 +118,7 @@ export function createSelection(): SelectionModel {
       let bestDistance = reach * reach;
 
       for (let i = 0; i < view.count; i++) {
-        if (view.faction[i] !== faction) continue;
+        if (view.faction[i] !== faction || view.kind[i] !== KIND_UNIT) continue;
         const position = viewportPosition(view, i, map, camera, layer);
         const dx = position.x - x;
         // Markers stand up from their foot, so bias the test toward the body.
@@ -129,6 +133,59 @@ export function createSelection(): SelectionModel {
       if (bestHandle !== -1) handles.add(bestHandle);
     },
   };
+}
+
+/**
+ * Nearest entity of a given kind under the cursor, as a handle, or -1.
+ *
+ * Same rules as selection: hit-test the interpolated positions the player can actually
+ * see, and resolve to a handle rather than a position.
+ */
+export function pickEntity(
+  view: InterpolatedView,
+  map: Heightmap,
+  camera: Camera,
+  layer: EntityLayer,
+  x: number,
+  y: number,
+  kind: number,
+): number {
+  const reach = (radius * 2.2 + 6) * camera.zoom;
+  let bestHandle = -1;
+  let bestDistance = reach * reach;
+
+  for (let i = 0; i < view.count; i++) {
+    if (view.kind[i] !== kind) continue;
+    const position = viewportPosition(view, i, map, camera, layer);
+    const dx = position.x - x;
+    const dy = position.y - radius * camera.zoom - y;
+    const distance = dx * dx + dy * dy;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestHandle = view.handle[i]!;
+    }
+  }
+  return bestHandle;
+}
+
+/** Handles of every entity of `kind` within `worldRadius` of a world point. */
+export function entitiesNear(
+  view: InterpolatedView,
+  worldX: number,
+  worldY: number,
+  worldRadius: number,
+  kind: number,
+  out: number[],
+): number[] {
+  out.length = 0;
+  const radiusSq = worldRadius * worldRadius;
+  for (let i = 0; i < view.count; i++) {
+    if (view.kind[i] !== kind) continue;
+    const dx = view.x[i]! - worldX;
+    const dy = view.y[i]! - worldY;
+    if (dx * dx + dy * dy <= radiusSq) out.push(view.handle[i]!);
+  }
+  return out;
 }
 
 export function createMarqueeGraphics(): Graphics {

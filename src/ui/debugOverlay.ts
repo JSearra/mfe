@@ -23,6 +23,9 @@ export interface DebugReadout {
   pointerOnMap: boolean;
   entityCount: number;
   selectedCount: number;
+  cattleCount: number;
+  leashedCount: number;
+  stampedingCount: number;
   simTick: number;
   renderTick: number;
 }
@@ -34,7 +37,7 @@ export interface DebugOverlay {
 
 /** Text updates are throttled; re-rendering strings at 60Hz is pure waste for a readout. */
 const UPDATE_INTERVAL_MS = 250;
-const LINE_COUNT = 8;
+const LINE_COUNT = 9;
 
 export function createDebugOverlay(parent: HTMLElement): DebugOverlay {
   const element = document.createElement('div');
@@ -83,7 +86,12 @@ export function createDebugOverlay(parent: HTMLElement): DebugOverlay {
         sim: readout.simTick,
         render: readout.renderTick.toFixed(1),
       });
-      lines[7]!.textContent = readout.pointerOnMap
+      lines[7]!.textContent = t('debug.herd', {
+        cattle: readout.cattleCount,
+        leashed: readout.leashedCount,
+        stampeding: readout.stampedingCount,
+      });
+      lines[8]!.textContent = readout.pointerOnMap
         ? t('debug.cursorTile', { x: readout.tileX, y: readout.tileY, h: readout.tileHeight })
         : t('debug.cursorOffMap');
     },

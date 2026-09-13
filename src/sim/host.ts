@@ -4,6 +4,7 @@ import { compactLoop, createLoop, enqueueCommand, step, TICK_MS, type SimLoop } 
 import { buildSnapshot } from './snapshot.js';
 import type { SimEvent } from '../shared/events.js';
 import type { Heightmap } from '../shared/heightmap.js';
+import { createCattleSystem, type CattleSystem } from './cattle.js';
 import { createMovementSystem, type MovementSystem } from './movement.js';
 import type { World } from './world.js';
 
@@ -37,6 +38,7 @@ export interface SimMessage {
 export interface SimHost {
   readonly tick: number;
   readonly movement: MovementSystem;
+  readonly cattle: CattleSystem;
   sendCommand(kind: CommandKind, a?: number, b?: number, c?: number, d?: number): void;
   /** Advance by real elapsed time. A worker host will tick itself and ignore this. */
   pump(elapsedMs: number): void;
@@ -93,7 +95,8 @@ export function createDirectSimHost(options: DirectSimHostOptions): SimHost {
   } = options;
 
   const movement = createMovementSystem(map);
-  const loop: SimLoop = createLoop(world, movement);
+  const cattle = createCattleSystem();
+  const loop: SimLoop = createLoop(world, movement, cattle);
   let accumulator = 0;
   let sequence = 0;
 
@@ -119,6 +122,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): SimHost {
 
   const host: SimHost = {
     movement,
+    cattle,
 
     get tick(): number {
       return world.tick;

@@ -42,6 +42,10 @@ export function buildSnapshot(world: World, viewerId: number): ArrayBuffer {
     writer.faction[slot] = world.faction[i]!;
     writer.flags[slot] = world.flags[i]!;
     writer.hpPct[slot] = encodeHpPct(world.hp[i]!, maxHp);
+    writer.kind[slot] = world.kind[i]!;
+    writer.stressPct[slot] = encodeHpPct(world.stress[i]!, tuning.cattle.stressMax);
+    // Herd state rides in the flags byte; it is four values, not a field's worth.
+    writer.flags[slot] = (world.flags[i]! & 0xf0) | (world.herdState[i]! & 0x0f);
     slot++;
   }
 

@@ -9,6 +9,7 @@ import { tuning } from './tuning.js';
 import {
   ANIM_IDLE,
   ANIM_WALK,
+  EntityKind,
   handleIndex,
   isAlive,
   packHandle,
@@ -324,6 +325,7 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
       // queued before the target died must not retarget whoever now occupies the slot.
       if (!isAlive(world, handle)) return false;
       const index = handleIndex(handle);
+      if (world.kind[index] !== EntityKind.Unit) return false;
 
       world.targetX[index] = goalX;
       world.targetY[index] = goalY;
@@ -364,6 +366,9 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
         stuckDistance,
       } = tuning.movement;
 
+      // Everything goes in the grid — cattle need to see units and vice versa — but
+      // only units are steered here. Cattle are driven by the cattle system, which runs
+      // after this and reads the same grid.
       grid.clear();
       for (let index = 0; index < world.capacity; index++) {
         if (world.alive[index] === 1) grid.insert(index, world.posX[index]!, world.posY[index]!);
@@ -378,7 +383,7 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
       ];
 
       for (let index = 0; index < world.capacity; index++) {
-        if (world.alive[index] !== 1) continue;
+        if (world.alive[index] !== 1 || world.kind[index] !== EntityKind.Unit) continue;
 
         const posX = world.posX[index]!;
         const posY = world.posY[index]!;
@@ -528,7 +533,7 @@ function resolveOverlaps(
   const neighbours: number[] = [];
   const step: [number, number] = [0, 0];
   for (let index = 0; index < world.capacity; index++) {
-    if (world.alive[index] !== 1) continue;
+    if (world.alive[index] !== 1 || world.kind[index] !== EntityKind.Unit) continue;
 
     const posX = world.posX[index]!;
     const posY = world.posY[index]!;
@@ -537,8 +542,9 @@ function resolveOverlaps(
     for (let n = 0; n < count; n++) {
       const other = neighbours[n]!;
       // Each pair is handled once, by the lower index, so the result cannot depend on
-      // traversal order.
-      if (other <= index) continue;
+      // traversal order. Cattle are not pushed by infantry — that is the stampede's
+      // whole point.
+      if (other <= index || world.kind[other] !== EntityKind.Unit) continue;
 
       const dx = world.posX[other]! - posX;
       const dy = world.posY[other]! - posY;

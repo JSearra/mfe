@@ -14,7 +14,7 @@
  * See docs/ARCHITECTURE.md section 5.
  */
 
-export const SNAPSHOT_VERSION = 2;
+export const SNAPSHOT_VERSION = 3;
 
 export type FieldType = 'u32' | 'f32' | 'u8';
 
@@ -41,6 +41,13 @@ export const SNAPSHOT_FIELDS = [
   { name: 'faction', type: 'u8' },
   { name: 'flags', type: 'u8' },
   { name: 'hpPct', type: 'u8' },
+  { name: 'kind', type: 'u8' },
+  /**
+   * Stress, 0-255. Carried explicitly rather than packed into `flags` because the
+   * renderer has to make it legible — a player who cannot read how close a herd is to
+   * bolting cannot plan around it, which is half of what the mechanic is for.
+   */
+  { name: 'stressPct', type: 'u8' },
 ] as const satisfies readonly FieldSpec[];
 
 type Fields = typeof SNAPSHOT_FIELDS;

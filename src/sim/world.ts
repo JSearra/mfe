@@ -56,6 +56,19 @@ export interface World {
   readonly faction: Uint8Array;
   readonly hp: Uint16Array;
   readonly movementClass: Uint8Array;
+  readonly kind: Uint8Array;
+
+  // --- cattle ---------------------------------------------------------------
+  readonly herdState: Uint8Array;
+  /** 0..stressMax. Saturation triggers a stampede. */
+  readonly stress: Float64Array;
+  /** Handle of the herder holding the tether, or NULL_HANDLE. */
+  readonly tetheredTo: Uint32Array;
+  /** Ticks remaining in the current stampede. */
+  readonly stampedeTicks: Uint16Array;
+  /** Position at the start of the tick, for swept collision. */
+  readonly prevX: Float64Array;
+  readonly prevY: Float64Array;
 
   /** Destination tile index, or -1. */
   readonly goalIndex: Int32Array;
@@ -117,6 +130,13 @@ export function createWorld(capacity: number, seed: number): World {
     faction: new Uint8Array(capacity),
     hp: new Uint16Array(capacity),
     movementClass: new Uint8Array(capacity),
+    kind: new Uint8Array(capacity),
+    herdState: new Uint8Array(capacity),
+    stress: new Float64Array(capacity),
+    tetheredTo: new Uint32Array(capacity),
+    stampedeTicks: new Uint16Array(capacity),
+    prevX: new Float64Array(capacity),
+    prevY: new Float64Array(capacity),
     goalIndex: new Int32Array(capacity).fill(-1),
     useFlowField: new Uint8Array(capacity),
     pathRequest: new Int32Array(capacity).fill(-1),
@@ -145,6 +165,37 @@ export function isAlive(world: World, handle: Handle): boolean {
 
 export const ANIM_IDLE = 0;
 export const ANIM_WALK = 1;
+export const ANIM_STAMPEDE = 2;
+
+/**
+ * Entity kinds share one store.
+ *
+ * ARCHITECTURE section 2 anticipates a store per kind. Cattle turned out to share almost
+ * every field a unit has — position, velocity, facing, health, animation — so a separate
+ * store would have duplicated all of them to add four. One discriminator plus four cattle
+ * columns is less code and less to keep in step. Split them when the shapes genuinely
+ * diverge, not before.
+ */
+export const EntityKind = {
+  Unit: 0,
+  Cattle: 1,
+} as const;
+
+export type EntityKind = (typeof EntityKind)[keyof typeof EntityKind];
+
+/** Cattle behaviour state. */
+export const HerdState = {
+  /** Free-roaming: flocking with a slow wander. */
+  Grazing: 0,
+  /** Tethered to a herder, following it. */
+  Leashed: 1,
+  /** Stressed but still controllable. */
+  Alarmed: 2,
+  /** Stress saturated: running from the threat and crushing what it meets. */
+  Stampeding: 3,
+} as const;
+
+export type HerdState = (typeof HerdState)[keyof typeof HerdState];
 
 export function spawn(
   world: World,
@@ -152,6 +203,7 @@ export function spawn(
   y: number,
   faction: number,
   movementClass = 0,
+  kind: EntityKind = EntityKind.Unit,
 ): Handle {
   if (world.freeCount === 0) return NULL_HANDLE;
 
@@ -172,6 +224,13 @@ export function spawn(
   world.animStartTick[index] = world.tick;
   world.flags[index] = 0;
   world.movementClass[index] = movementClass;
+  world.kind[index] = kind;
+  world.herdState[index] = HerdState.Grazing;
+  world.stress[index] = 0;
+  world.tetheredTo[index] = NULL_HANDLE;
+  world.stampedeTicks[index] = 0;
+  world.prevX[index] = x;
+  world.prevY[index] = y;
   world.goalIndex[index] = -1;
   world.useFlowField[index] = 0;
   world.pathRequest[index] = -1;

@@ -1,6 +1,7 @@
 import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
+import type { CattleSystem } from './cattle.js';
 import type { MovementSystem } from './movement.js';
-import { destroy, spawn, type Handle, type World } from './world.js';
+import { destroy, EntityKind, spawn, type Handle, type World } from './world.js';
 
 /**
  * Commands are the sole path by which simulation state changes.
@@ -13,10 +14,16 @@ import { destroy, spawn, type Handle, type World } from './world.js';
  * per-command object graph when the worker boundary lands.
  */
 
+/** Cattle answer to nobody until somebody leashes them. */
+export const NEUTRAL_FACTION = 2;
+
 export const CommandKind = {
   Spawn: 0,
   MoveTo: 1,
   Destroy: 2,
+  SpawnCattle: 3,
+  /** Tether a cow to a herder — what right-clicking a neutral herd issues. */
+  Leash: 4,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -67,6 +74,7 @@ export function applyCommand(
   command: Command,
   events: SimEvent[],
   movement: MovementSystem,
+  cattle: CattleSystem,
 ): boolean {
   switch (command.kind) {
     case CommandKind.Spawn: {
@@ -82,6 +90,17 @@ export function applyCommand(
       events.push(makeEvent(world.tick, EventType.OrderIssued, handle, command.b, command.c));
       return true;
     }
+
+    case CommandKind.SpawnCattle: {
+      // Neutral faction: cattle belong to whoever can hold them, which is the point.
+      const handle = spawn(world, command.a, command.b, NEUTRAL_FACTION, 1, EntityKind.Cattle);
+      if (handle === 0) return false;
+      events.push(makeEvent(world.tick, EventType.Spawned, handle, command.a, command.b));
+      return true;
+    }
+
+    case CommandKind.Leash:
+      return cattle.leash(world, command.a as Handle, command.b as Handle);
 
     case CommandKind.Destroy:
       return destroy(world, command.a as Handle);

@@ -8,7 +8,7 @@
     "edgePanMargin": 24
   },
   "terrain": {
-    "chunkSize": 16,
+    "chunkSize": 32,
     "palette": [
       "#3d3524",
       "#4a4029",
@@ -38,5 +38,13 @@
     "selectedColour": "#e8d9a8",
     "marqueeColour": "#e8d9a8",
     "clickThresholdPx": 5
+  },
+  "cattle": {
+    "bodyColour": "#b8a184",
+    "calmColour": "#8fbf6a",
+    "alarmColour": "#e0b040",
+    "panicColour": "#d94a3a",
+    "leashColour": "#e8d9a8",
+    "radius": 11
   }
 }

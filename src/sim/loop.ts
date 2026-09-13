@@ -1,5 +1,6 @@
 import { applyCommand, compareCommands, type Command } from './commands.js';
 import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
+import type { CattleSystem } from './cattle.js';
 import type { MovementSystem } from './movement.js';
 import { flushDestroys, packHandle, type World } from './world.js';
 
@@ -8,6 +9,7 @@ export { TICK_HZ, TICK_MS } from '../shared/timing.js';
 export interface SimLoop {
   readonly world: World;
   readonly movement: MovementSystem;
+  readonly cattle: CattleSystem;
   /** Sorted by (tick, playerId, seq) from `cursor` onward. */
   readonly pending: Command[];
   cursor: number;
@@ -22,10 +24,20 @@ export interface SimLoop {
 export function createLoop(
   world: World,
   movement: MovementSystem,
+  cattle: CattleSystem,
   commands: readonly Command[] = [],
 ): SimLoop {
   const pending = [...commands].sort(compareCommands);
-  return { world, movement, pending, cursor: 0, dirty: false, lateCommands: 0, events: [] };
+  return {
+    world,
+    movement,
+    cattle,
+    pending,
+    cursor: 0,
+    dirty: false,
+    lateCommands: 0,
+    events: [],
+  };
 }
 
 /** Queue a command issued during play. */
@@ -42,7 +54,7 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
  * survives until the boundary.
  */
 export function step(loop: SimLoop): void {
-  const { world, movement, pending, events } = loop;
+  const { world, movement, cattle, pending, events } = loop;
 
   if (loop.dirty) {
     // Only the unconsumed tail can be out of order.
@@ -55,11 +67,13 @@ export function step(loop: SimLoop): void {
     const command = pending[loop.cursor]!;
     if (command.tick > world.tick) break;
     if (command.tick < world.tick) loop.lateCommands++;
-    applyCommand(world, command, events, movement);
+    applyCommand(world, command, events, movement, cattle);
     loop.cursor++;
   }
 
   movement.update(world);
+  // Cattle read the grid movement just built, so they see this tick's unit positions.
+  cattle.update(world, movement.grid, events);
 
   // Emitted before the flush, while the entities still have positions to report.
   for (let i = 0; i < world.pendingDestroyCount; i++) {

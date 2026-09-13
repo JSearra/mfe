@@ -1,5 +1,6 @@
 import { hashTypedArray } from '../shared/hash.js';
 import { createLoop, step } from './loop.js';
+import { createCattleSystem } from './cattle.js';
 import { createMovementSystem } from './movement.js';
 import { createHeightmap } from './terrain/generate.js';
 import { tuningHash } from './tuning.js';
@@ -73,7 +74,7 @@ export function runReplay(
 ): number[] {
   const world = createWorld(capacity, seed);
   const map = createHeightmap(REPLAY_MAP_SIZE, REPLAY_MAP_SIZE, seed);
-  const loop = createLoop(world, createMovementSystem(map), commands);
+  const loop = createLoop(world, createMovementSystem(map), createCattleSystem(), commands);
   const checkpoints: number[] = [];
 
   for (let i = 0; i < ticks; i++) {
