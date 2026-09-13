@@ -7,6 +7,9 @@ import {
   validateFaction,
 } from '../src/shared/factions/index.js';
 import { createEconomy, Resource, type GrainPlot } from '../src/sim/economy/ledger.js';
+import { createStartingPlots } from '../src/sim/economy/plots.js';
+import { heightmapFrom } from '../src/shared/heightmap.js';
+import { flatMap } from './simHarness.js';
 import { tuning } from '../src/sim/tuning.js';
 import { createWorld, spawn, type World } from '../src/sim/world.js';
 
@@ -249,5 +252,64 @@ describe('starvation', () => {
     const before = fed.balance(0, Resource.Cattle);
     fed.update(world, []);
     expect(fed.balance(0, Resource.Cattle)).toBeGreaterThan(before);
+  });
+});
+
+describe('arable land', () => {
+  // Nothing created plots until this existed, and the consequence only showed up in a
+  // long AI-vs-AI match: grain income was zero, every player starved by tick 1000, and
+  // the drought withered a harvest that was not there.
+  it('lays plots around each start, some sheltered', () => {
+    const map = flatMap(48);
+    const plots = createStartingPlots(map, [{ x: 10, y: 10 }, { x: 38, y: 38 }], 7);
+
+    expect(plots.filter((p) => p.owner === 0)).toHaveLength(E.plotsPerPlayer);
+    expect(plots.filter((p) => p.owner === 1)).toHaveLength(E.plotsPerPlayer);
+    expect(plots.filter((p) => p.owner === 0 && p.sheltered)).toHaveLength(E.shelteredPerPlayer);
+  });
+
+  it('keeps them near their owner and clear of the start itself', () => {
+    const map = flatMap(48);
+    for (const plot of createStartingPlots(map, [{ x: 10, y: 10 }], 7)) {
+      const dx = plot.tileX - 10;
+      const dy = plot.tileY - 10;
+      expect(Math.abs(dx)).toBeLessThanOrEqual(E.plotSearchRadius);
+      expect(Math.abs(dy)).toBeLessThanOrEqual(E.plotSearchRadius);
+      // Ground is left clear around the start for the force to stand on.
+      expect(dx * dx + dy * dy).toBeGreaterThanOrEqual(9);
+    }
+  });
+
+  it('is deterministic, and does not consume simulation RNG state', () => {
+    const map = flatMap(48);
+    const a = createStartingPlots(map, [{ x: 10, y: 10 }], 3);
+    const b = createStartingPlots(map, [{ x: 10, y: 10 }], 3);
+    expect(b).toEqual(a);
+    expect(createStartingPlots(map, [{ x: 10, y: 10 }], 4)).not.toEqual(a);
+  });
+
+  it('prefers low ground, which is where a field belongs', () => {
+    const rows = Array.from({ length: 24 }, (_, y) =>
+      Array.from({ length: 24 }, () => (y < 12 ? 5 : 0)),
+    );
+    const map = heightmapFrom(rows, 8);
+    const plots = createStartingPlots(map, [{ x: 12, y: 12 }], 1);
+    for (const plot of plots) expect(map.data[plot.tileY * 24 + plot.tileX]).toBe(0);
+  });
+
+  it('turns a harvest into an income that can carry an army', () => {
+    const map = flatMap(48);
+    const plots = createStartingPlots(map, [{ x: 10, y: 10 }], 1);
+    const withPlots = createEconomy(PLAYERS, 1, plots);
+    const barren = createEconomy(PLAYERS, 1, []);
+    const world = worldWithTroops(10);
+    world.tick = E.upkeepIntervalTicks;
+
+    withPlots.update(world, []);
+    barren.update(world, []);
+
+    expect(withPlots.balance(0, Resource.Grain)).toBeGreaterThan(
+      barren.balance(0, Resource.Grain),
+    );
   });
 });

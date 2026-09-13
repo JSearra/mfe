@@ -84,6 +84,14 @@ export interface World {
   readonly buildingType: Uint8Array;
   /** Builder-ticks accumulated. Complete when it reaches the type's work value. */
   readonly buildProgress: Float64Array;
+  /** Troops queued at this building. */
+  readonly trainQueue: Uint8Array;
+  /** Movement class of each queued troop, packed two bits per slot. */
+  readonly trainKinds: Uint16Array;
+  readonly trainProgress: Float64Array;
+  /** Where finished troops are sent. Defaults to just outside the footprint. */
+  readonly rallyX: Float64Array;
+  readonly rallyY: Float64Array;
 
   // --- combat ---------------------------------------------------------------
   /** Handle of the current target, or NULL_HANDLE. */
@@ -154,6 +162,11 @@ export function createWorld(capacity: number, seed: number): World {
     pathCursor: new Int32Array(capacity).fill(-1),
     buildingType: new Uint8Array(capacity),
     buildProgress: new Float64Array(capacity),
+    trainQueue: new Uint8Array(capacity),
+    trainKinds: new Uint16Array(capacity),
+    trainProgress: new Float64Array(capacity),
+    rallyX: new Float64Array(capacity),
+    rallyY: new Float64Array(capacity),
     attackTarget: new Uint32Array(capacity),
     attackCooldown: new Uint16Array(capacity),
     stuckTicks: new Uint16Array(capacity),
@@ -253,6 +266,11 @@ export function spawn(
   world.pathCursor[index] = -1;
   world.buildingType[index] = 0;
   world.buildProgress[index] = 0;
+  world.trainQueue[index] = 0;
+  world.trainKinds[index] = 0;
+  world.trainProgress[index] = 0;
+  world.rallyX[index] = x;
+  world.rallyY[index] = y;
   world.attackTarget[index] = NULL_HANDLE;
   world.attackCooldown[index] = 0;
   world.stuckTicks[index] = 0;

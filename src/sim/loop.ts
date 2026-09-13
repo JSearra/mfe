@@ -3,6 +3,7 @@ import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
 import type { CattleSystem } from './cattle.js';
 import type { CombatSystem } from './combat.js';
 import type { ConstructionSystem } from './construction.js';
+import type { ProductionSystem } from './production.js';
 import type { AiController } from './ai/opponent.js';
 import { Modifier } from '../shared/tech/index.js';
 import type { TechState } from './tech.js';
@@ -20,6 +21,7 @@ export interface SimLoop {
   readonly cattle: CattleSystem;
   readonly combat: CombatSystem;
   readonly construction: ConstructionSystem;
+  readonly production: ProductionSystem;
   /** Computer players, each simply another source of commands. */
   readonly ai: { player: number; controller: AiController }[];
   readonly economy: Economy;
@@ -39,30 +41,32 @@ export interface SimLoop {
   readonly events: SimEvent[];
 }
 
-export function createLoop(
-  world: World,
-  movement: MovementSystem,
-  cattle: CattleSystem,
-  combat: CombatSystem,
-  construction: ConstructionSystem,
-  economy: Economy,
-  tech: TechState,
-  fog: FogState,
-  map: Heightmap,
-  commands: readonly Command[] = [],
-): SimLoop {
+/**
+ * Everything the loop drives.
+ *
+ * Named rather than positional. This was ten positional parameters of near-identical
+ * shape, which is a transposition waiting to happen — swap two systems and the code
+ * still compiles, still runs, and is quietly wrong. Adding one more was the point at
+ * which that stopped being tolerable.
+ */
+export interface SimSystems {
+  world: World;
+  movement: MovementSystem;
+  cattle: CattleSystem;
+  combat: CombatSystem;
+  construction: ConstructionSystem;
+  production: ProductionSystem;
+  economy: Economy;
+  tech: TechState;
+  fog: FogState;
+  map: Heightmap;
+}
+
+export function createLoop(systems: SimSystems, commands: readonly Command[] = []): SimLoop {
   const pending = [...commands].sort(compareCommands);
   return {
-    world,
-    movement,
-    cattle,
-    combat,
-    construction,
+    ...systems,
     ai: [],
-    economy,
-    tech,
-    fog,
-    map,
     pending,
     cursor: 0,
     dirty: false,
@@ -86,7 +90,7 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
  * survives until the boundary.
  */
 export function step(loop: SimLoop): void {
-  const { world, movement, cattle, combat, construction, economy, tech, fog, map, pending, events } =
+  const { world, movement, cattle, combat, construction, production, economy, tech, fog, map, pending, events } =
     loop;
 
   // Computer players act first, through exactly the same queue a human's clicks use.
@@ -118,7 +122,15 @@ export function step(loop: SimLoop): void {
     const command = pending[loop.cursor]!;
     if (command.tick > world.tick) break;
     if (command.tick < world.tick) loop.lateCommands++;
-    applyCommand(world, command, events, movement, cattle, combat, construction, economy, tech);
+    applyCommand(world, command, events, {
+      movement,
+      cattle,
+      combat,
+      construction,
+      production,
+      economy,
+      tech,
+    });
     loop.cursor++;
   }
 
@@ -130,6 +142,7 @@ export function step(loop: SimLoop): void {
   // Combat after movement and cattle, so a strike lands on where things ended up
   // this tick rather than where they started.
   construction.update(world, movement.grid, events);
+  production.update(world, events);
   combat.update(world, movement.grid, economy, tech, events);
   economy.update(
     world,

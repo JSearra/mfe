@@ -33,6 +33,8 @@ export interface BuildingSpec {
   readonly cattleYield: number;
   /** Terrain must be this flat across the footprint. */
   readonly maxHeightVariation: number;
+  /** Whether troops can be raised here. */
+  readonly trains: boolean;
 }
 
 export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
@@ -46,6 +48,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     grainYield: 0,
     cattleYield: 1.5,
     maxHeightVariation: 0,
+    trains: false,
   },
   [BuildingType.Umuzi]: {
     type: BuildingType.Umuzi,
@@ -57,6 +60,8 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     grainYield: 4,
     cattleYield: 0,
     maxHeightVariation: 0,
+    // A homestead is where people come from, so this is where troops are raised.
+    trains: true,
   },
   [BuildingType.GrainStore]: {
     type: BuildingType.GrainStore,
@@ -68,6 +73,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     grainYield: 9,
     cattleYield: 0,
     maxHeightVariation: 0,
+    trains: false,
   },
 };
 

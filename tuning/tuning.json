@@ -72,7 +72,10 @@
     "seasonTicks": 4800,
     "droughtThreshold": 0.75,
     "plotBaseYield": 6.0,
-    "shelteredYieldFactor": 0.45
+    "shelteredYieldFactor": 0.45,
+    "plotsPerPlayer": 10,
+    "shelteredPerPlayer": 3,
+    "plotSearchRadius": 9
   },
   "vision": {
     "unitRadius": 8.0,
@@ -101,6 +104,18 @@
     "attackStrengthRatio": 1.2,
     "herdRadius": 14.0,
     "regroupRadius": 6.0,
-    "buildSpacing": 4
+    "buildSpacing": 4,
+    "trainFloor": 120,
+    "wantedHomesteads": 2
+  },
+  "production": {
+    "queueLimit": 5,
+    "spawnRadius": 1.6,
+    "infantryGrain": 40,
+    "infantryCattle": 1,
+    "infantryTicks": 150,
+    "mountedGrain": 70,
+    "mountedCattle": 3,
+    "mountedTicks": 260
   }
 }

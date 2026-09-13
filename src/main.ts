@@ -62,6 +62,8 @@ const ENEMY_UNITS = 16;
 
 const KIND_UNIT = 0;
 const KIND_CATTLE = 1;
+const KIND_BUILDING = 2;
+const MOVEMENT_INFANTRY = 0;
 const HERD_LEASHED = 1;
 const HERD_STAMPEDING = 3;
 
@@ -111,6 +113,14 @@ async function main(): Promise<void> {
       ? createHeightmap(MAP_SIZE, MAP_SIZE, MAP_SEED)
       : generateMap(mapScript, MAP_SIZE, MAP_SIZE, MAP_SEED);
 
+  // Where each side begins. The hosts lay arable land out around these, and the unit
+  // seeding below uses the same numbers, so the fields are where the people are.
+  const centre = MAP_SIZE / 2;
+  const starts = [
+    { x: centre, y: centre },
+    { x: centre + 34, y: centre + 26 },
+  ];
+
   // Worker by default now that the boundary discipline has held. ?sim=direct keeps the
   // main-thread host one query parameter away, because stepping through a simulation in
   // a debugger is worth a great deal when something is wrong.
@@ -126,6 +136,7 @@ async function main(): Promise<void> {
         playerId: PLAYER,
         factions: [FactionId.Zulu, FactionId.Sotho],
         aiPlayers: [ENEMY],
+        starts,
       })
     : createDirectSimHost({
         world: createWorld(512, WORLD_SEED),
@@ -133,11 +144,11 @@ async function main(): Promise<void> {
         viewerId: PLAYER,
         playerId: PLAYER,
         aiPlayers: [ENEMY],
+        starts,
       });
 
   // Seed a small force near the centre. Spawning through commands rather than touching
   // the world directly keeps the invariant that commands are the only mutation path.
-  const centre = MAP_SIZE / 2;
   for (let i = 0; i < STARTING_UNITS; i++) {
     const column = i % 6;
     const row = Math.floor(i / 6);
@@ -241,6 +252,17 @@ async function main(): Promise<void> {
     if (event.key === 'r' || event.key === 'R') {
       sim.sendCommand(CommandKind.Research, researchCursor % TECH_IDS.length, PLAYER);
       researchCursor++;
+      return;
+    }
+
+    // T raises a spearman at every homestead we own. Buildings are not selectable yet
+    // — that needs the selection panel — so this broadcasts, and anything that is not a
+    // trainer refuses harmlessly.
+    if ((event.key === 't' || event.key === 'T') && view !== null) {
+      for (let i = 0; i < view.count; i++) {
+        if (view.kind[i] !== KIND_BUILDING || view.faction[i] !== PLAYER) continue;
+        sim.sendCommand(CommandKind.Train, view.handle[i]!, MOVEMENT_INFANTRY);
+      }
       return;
     }
 

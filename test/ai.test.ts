@@ -134,6 +134,18 @@ describe('ai soak', () => {
     expect(fought || built).toBe(true);
   });
 
+  // Before production existed, an AI-vs-AI match was a one-way ratchet to zero units.
+  it('raises homesteads and replaces its losses over a long match', () => {
+    const sim = contest(0xf00d);
+    runTicks(sim.loop, 12_000);
+
+    const [a] = sim.loop.ai;
+    expect(a!.controller.stats.buildsOrdered).toBeGreaterThan(0);
+    expect(a!.controller.stats.troopsOrdered).toBeGreaterThan(0);
+    // Orders are one thing; soldiers on the field are another.
+    expect(sim.production.stats.trained).toBeGreaterThan(0);
+  });
+
   it('reproduces exactly, so a match can be replayed', () => {
     const first = contest(0xbeef);
     const second = contest(0xbeef);

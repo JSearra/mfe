@@ -2,6 +2,7 @@ import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
 import type { CattleSystem } from './cattle.js';
 import type { CombatSystem } from './combat.js';
 import type { ConstructionSystem } from './construction.js';
+import type { ProductionSystem } from './production.js';
 import type { Economy } from './economy/ledger.js';
 import type { BuildingType } from '../shared/buildings/index.js';
 import { TECH_IDS } from '../shared/tech/index.js';
@@ -33,6 +34,8 @@ export const CommandKind = {
   Attack: 5,
   Build: 6,
   Research: 7,
+  Train: 8,
+  SetRally: 9,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -78,17 +81,24 @@ export function compareCommands(x: Command, y: Command): number {
  * applied and not thrown on: by the time a click reaches here its target may have
  * died, and that is ordinary, not exceptional.
  */
+/** The systems a command may act on. Named for the same reason SimSystems is. */
+export interface CommandContext {
+  readonly movement: MovementSystem;
+  readonly cattle: CattleSystem;
+  readonly combat: CombatSystem;
+  readonly construction: ConstructionSystem;
+  readonly production: ProductionSystem;
+  readonly economy: Economy;
+  readonly tech: TechState;
+}
+
 export function applyCommand(
   world: World,
   command: Command,
   events: SimEvent[],
-  movement: MovementSystem,
-  cattle: CattleSystem,
-  combat: CombatSystem,
-  construction: ConstructionSystem,
-  economy: Economy,
-  tech: TechState,
+  context: CommandContext,
 ): boolean {
+  const { movement, cattle, combat, construction, production, economy, tech } = context;
   switch (command.kind) {
     case CommandKind.Spawn: {
       const handle = spawn(world, command.a, command.b, command.c, command.d);
@@ -133,6 +143,12 @@ export function applyCommand(
       if (id === undefined) return false;
       return tech.begin(command.b, id, economy);
     }
+
+    case CommandKind.Train:
+      return production.train(world, economy, command.a as Handle, command.b) === 0;
+
+    case CommandKind.SetRally:
+      return production.setRally(world, command.a as Handle, command.b, command.c);
 
     case CommandKind.Attack:
       return combat.attack(world, command.a as Handle, command.b as Handle);

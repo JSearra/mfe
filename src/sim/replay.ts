@@ -3,6 +3,7 @@ import { createLoop, step } from './loop.js';
 import { createCattleSystem } from './cattle.js';
 import { createCombatSystem } from './combat.js';
 import { createTechState } from './tech.js';
+import { createProductionSystem } from './production.js';
 import { createConstructionSystem } from './construction.js';
 import { createEconomy } from './economy/ledger.js';
 import { createFog } from './vision/fog.js';
@@ -87,15 +88,18 @@ export function runReplay(
   const fog = createFog(2, map);
   const movement = createMovementSystem(map);
   const loop = createLoop(
-    world,
-    movement,
-    createCattleSystem(),
-    createCombatSystem(),
-    createConstructionSystem(map, movement.pathing),
-    economy,
-    tech,
-    fog,
-    map,
+    {
+      world,
+      movement,
+      cattle: createCattleSystem(),
+      combat: createCombatSystem(),
+      construction: createConstructionSystem(map, movement.pathing),
+      production: createProductionSystem(movement),
+      economy,
+      tech,
+      fog,
+      map,
+    },
     commands,
   );
   const checkpoints: number[] = [];

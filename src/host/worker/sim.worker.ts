@@ -5,7 +5,9 @@ import { createCombatSystem } from '../../sim/combat.js';
 import { createAi } from '../../sim/ai/opponent.js';
 import { createConstructionSystem } from '../../sim/construction.js';
 import { createTechState } from '../../sim/tech.js';
+import { createProductionSystem } from '../../sim/production.js';
 import { createEconomy, Resource, type Economy } from '../../sim/economy/ledger.js';
+import { createStartingPlots } from '../../sim/economy/plots.js';
 import { createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../../sim/loop.js';
 import { createMovementSystem } from '../../sim/movement.js';
 import { buildSnapshot } from '../../sim/snapshot.js';
@@ -58,23 +60,28 @@ function start(message: InitMessage): void {
       ? createHeightmap(message.mapSize, message.mapSize, message.mapSeed)
       : generateMap(message.mapScript, message.mapSize, message.mapSize, message.mapSeed);
   world = createWorld(message.capacity, message.worldSeed);
-  economy = createEconomy(message.factions, message.worldSeed);
+  economy = createEconomy(
+    message.factions,
+    message.worldSeed,
+    createStartingPlots(map, message.starts, message.worldSeed),
+  );
   fog = createFog(Math.max(message.factions.length, message.viewerId + 1), map);
   viewerId = message.viewerId;
   playerId = message.playerId;
 
   const movement = createMovementSystem(map);
-  loop = createLoop(
+  loop = createLoop({
     world,
     movement,
-    createCattleSystem(),
-    createCombatSystem(),
-    createConstructionSystem(map, movement.pathing),
+    cattle: createCattleSystem(),
+    combat: createCombatSystem(),
+    construction: createConstructionSystem(map, movement.pathing),
+    production: createProductionSystem(movement),
     economy,
-    createTechState(Math.max(message.factions.length, message.viewerId + 1)),
+    tech: createTechState(Math.max(message.factions.length, message.viewerId + 1)),
     fog,
     map,
-  );
+  });
   for (const player of message.aiPlayers) loop.ai.push({ player, controller: createAi(player) });
 
   lastTime = performance.now();

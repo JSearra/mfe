@@ -21,6 +21,7 @@ export const EventType = {
   BuildingPlaced: 8,
   BuildingCompleted: 9,
   TechCompleted: 10,
+  UnitTrained: 11,
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];

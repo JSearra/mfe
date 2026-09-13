@@ -1,4 +1,4 @@
-import { BuildingType } from '../../shared/buildings/index.js';
+import { BuildingType, buildingSpec } from '../../shared/buildings/index.js';
 import { TECH_IDS } from '../../shared/tech/index.js';
 import type { TechState } from '../tech.js';
 import { CommandKind } from '../commands.js';
@@ -6,6 +6,8 @@ import { Resource, type Economy } from '../economy/ledger.js';
 import { cos, sin, TWO_PI } from '../math/trig.js';
 import { isVisible, type FogState } from '../vision/fog.js';
 import { tuning } from '../tuning.js';
+import { MovementClass } from '../pathing/costs.js';
+import { trainingCost } from '../production.js';
 import { EntityKind, HerdState, packHandle, type World } from '../world.js';
 
 /**
@@ -40,6 +42,7 @@ export interface AiStats {
   buildsOrdered: number;
   techsOrdered: number;
   herdsOrdered: number;
+  troopsOrdered: number;
 }
 
 export interface AiController {
@@ -68,6 +71,7 @@ export function createAi(player: number): AiController {
     buildsOrdered: 0,
     techsOrdered: 0,
     herdsOrdered: 0,
+    troopsOrdered: 0,
   };
 
   /** Where the next building goes. Walked outward so sites do not pile up. */
@@ -84,6 +88,9 @@ export function createAi(player: number): AiController {
       const own: Sighting[] = [];
       const foes: Sighting[] = [];
       const cattle: Sighting[] = [];
+      /** Our finished homesteads — where replacements come from. */
+      const trainers: number[] = [];
+      let homesteads = 0;
       let homeX = 0;
       let homeY = 0;
 
@@ -100,7 +107,14 @@ export function createAi(player: number): AiController {
           homeY += y;
           continue;
         }
-        if (mine) continue;
+        if (mine) {
+          if (world.kind[index] !== EntityKind.Building) continue;
+          const spec = buildingSpec(world.buildingType[index]!);
+          if (!spec.trains) continue;
+          homesteads++;
+          if (world.buildProgress[index]! >= spec.work) trainers.push(index);
+          continue;
+        }
 
         // Everything else has to be seen to be acted on.
         if (!isVisible(fog, player, Math.floor(x), Math.floor(y))) continue;
@@ -116,9 +130,43 @@ export function createAi(player: number): AiController {
       homeX /= own.length;
       homeY /= own.length;
 
+      // --- raise troops ----------------------------------------------------
+      // Replacements before anything else discretionary. An army that cannot replace
+      // losses is on a one-way path to zero however well it fights.
+      if (trainers.length > 0) {
+        const cost = trainingCost(MovementClass.Infantry);
+        if (
+          economy.balance(player, Resource.Grain) > ai.trainFloor + cost.grain &&
+          economy.balance(player, Resource.Cattle) > cost.cattle
+        ) {
+          const trainer = trainers[stats.decisions % trainers.length]!;
+          emit({
+            kind: CommandKind.Train,
+            a: packHandle(trainer, world.generation[trainer]!),
+            b: MovementClass.Infantry,
+            c: 0,
+            d: 0,
+          });
+          stats.troopsOrdered++;
+        }
+      }
+
       // --- build ----------------------------------------------------------
-      // Grain first. An army that starves loses without anyone fighting it.
-      if (economy.balance(player, Resource.Grain) > ai.grainFloor) {
+      // A homestead before granaries: grain with nowhere to spend it wins nothing.
+      if (
+        homesteads < ai.wantedHomesteads &&
+        economy.balance(player, Resource.Grain) > ai.grainFloor
+      ) {
+        emit({
+          kind: CommandKind.Build,
+          a: Math.floor(homeX + (buildSlot % 2 === 0 ? -3 : 3)),
+          b: Math.floor(homeY + (buildSlot % 4 < 2 ? -3 : 3)),
+          c: BuildingType.Umuzi,
+          d: player,
+        });
+        buildSlot = (buildSlot + 1) % 16;
+        stats.buildsOrdered++;
+      } else if (economy.balance(player, Resource.Grain) > ai.grainFloor) {
         const spacing = ai.buildSpacing;
         const ring = 1 + Math.floor(buildSlot / 4);
         const corner = buildSlot % 4;

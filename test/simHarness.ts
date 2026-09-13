@@ -3,8 +3,10 @@ import { createLoop, type SimLoop } from '../src/sim/loop.js';
 import { createCattleSystem, type CattleSystem } from '../src/sim/cattle.js';
 import { createCombatSystem, type CombatSystem } from '../src/sim/combat.js';
 import { createTechState, type TechState } from '../src/sim/tech.js';
+import { createProductionSystem, type ProductionSystem } from '../src/sim/production.js';
 import { createConstructionSystem, type ConstructionSystem } from '../src/sim/construction.js';
 import { createEconomy, type Economy } from '../src/sim/economy/ledger.js';
+import { createStartingPlots } from '../src/sim/economy/plots.js';
 import { createFog, type FogState } from '../src/sim/vision/fog.js';
 import { FactionId } from '../src/shared/factions/index.js';
 import { createMovementSystem, type MovementSystem } from '../src/sim/movement.js';
@@ -25,6 +27,7 @@ export interface Harness {
   cattle: CattleSystem;
   combat: CombatSystem;
   construction: ConstructionSystem;
+  production: ProductionSystem;
   economy: Economy;
   tech: TechState;
   fog: FogState;
@@ -43,7 +46,12 @@ export function makeSim(
   const cattle = createCattleSystem();
   const combat = createCombatSystem();
   const construction = createConstructionSystem(map, movement.pathing);
-  const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], seed);
+  const production = createProductionSystem(movement);
+  const economy = createEconomy(
+    [FactionId.Zulu, FactionId.Sotho],
+    seed,
+    createStartingPlots(map, [{ x: 8, y: 8 }, { x: 24, y: 24 }], seed),
+  );
   const tech = createTechState(2);
   const fog = createFog(2, map);
   return {
@@ -52,10 +60,14 @@ export function makeSim(
     cattle,
     combat,
     construction,
+    production,
     economy,
     tech,
     fog,
-    loop: createLoop(world, movement, cattle, combat, construction, economy, tech, fog, map, commands),
+    loop: createLoop(
+      { world, movement, cattle, combat, construction, production, economy, tech, fog, map },
+      commands,
+    ),
     map,
   };
 }

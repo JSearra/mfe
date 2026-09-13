@@ -8,8 +8,10 @@ import { createCattleSystem, type CattleSystem } from '../sim/cattle.js';
 import { createCombatSystem, type CombatSystem } from '../sim/combat.js';
 import { createAi } from '../sim/ai/opponent.js';
 import { createTechState, type TechState } from '../sim/tech.js';
+import { createProductionSystem, type ProductionSystem } from '../sim/production.js';
 import { createConstructionSystem, type ConstructionSystem } from '../sim/construction.js';
 import { createEconomy, Resource, type Economy, type GrainPlot } from '../sim/economy/ledger.js';
+import { createStartingPlots } from '../sim/economy/plots.js';
 import { tuning } from '../sim/tuning.js';
 import { FactionId } from '../shared/factions/index.js';
 import { createFog, type FogState } from '../sim/vision/fog.js';
@@ -102,6 +104,8 @@ export interface DirectSimHostOptions {
   /** Players driven by the computer. Each is simply another command source. */
   aiPlayers?: readonly number[];
   plots?: readonly GrainPlot[];
+  /** Where each player begins. Arable land is laid out around these. */
+  starts?: readonly { readonly x: number; readonly y: number }[];
   seed?: number;
   viewerId?: number;
   playerId?: number;
@@ -141,6 +145,7 @@ export interface DirectSimHost extends SimHost {
   readonly cattle: CattleSystem;
   readonly combat: CombatSystem;
   readonly construction: ConstructionSystem;
+  readonly production: ProductionSystem;
   readonly economy: Economy;
   readonly tech: TechState;
   readonly fog: FogState;
@@ -157,7 +162,8 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     maxPendingEvents = DEFAULT_MAX_PENDING_EVENTS,
     factions = [FactionId.Zulu, FactionId.Sotho],
     aiPlayers = [],
-    plots = [],
+    plots,
+    starts = [],
     seed = 0,
   } = options;
 
@@ -165,10 +171,24 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
   const cattle = createCattleSystem();
   const combat = createCombatSystem();
   const construction = createConstructionSystem(map, movement.pathing);
-  const economy = createEconomy(factions, seed, plots);
+  const production = createProductionSystem(movement);
+  // Explicit plots win; otherwise lay them out around the starts. Without either,
+  // grain income is zero and every player starves — see sim/economy/plots.ts.
+  const economy = createEconomy(factions, seed, plots ?? createStartingPlots(map, starts, seed));
   const tech = createTechState(Math.max(factions.length, viewerId + 1));
   const fog = createFog(Math.max(factions.length, viewerId + 1), map);
-  const loop: SimLoop = createLoop(world, movement, cattle, combat, construction, economy, tech, fog, map);
+  const loop: SimLoop = createLoop({
+    world,
+    movement,
+    cattle,
+    combat,
+    construction,
+    production,
+    economy,
+    tech,
+    fog,
+    map,
+  });
   for (const player of aiPlayers) loop.ai.push({ player, controller: createAi(player) });
   let accumulator = 0;
   let sequence = 0;
@@ -199,6 +219,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     cattle,
     combat,
     construction,
+    production,
     economy,
     tech,
     fog,
