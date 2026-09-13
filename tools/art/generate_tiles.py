@@ -58,7 +58,7 @@ def generate(name: str, subject: str, seed: int, args: argparse.Namespace) -> pa
     command = [
         str(MFLUX),
         "--model", args.model,
-        "-q", str(args.quantize),
+        "--base-model", args.base_model,
         "--steps", str(args.steps),
         "--width", str(args.size),
         "--height", str(args.size),
@@ -66,6 +66,10 @@ def generate(name: str, subject: str, seed: int, args: argparse.Namespace) -> pa
         "--prompt", f"{subject}, {STYLE}",
         "--output", str(out),
     ]
+    # Only quantise when pointed at a full-precision repo. The default model is already
+    # 4-bit, and asking mflux to quantise it again is both wasteful and wrong.
+    if args.quantize:
+        command[3:3] = ["-q", str(args.quantize)]
     subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
     print(f"  {out.name}")
     return out
@@ -75,9 +79,20 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[1])
     parser.add_argument("--out", default="tools/art/raw")
     parser.add_argument("--variants", type=int, default=3, help="Variants per subject")
-    parser.add_argument("--model", default="z-image-turbo")
-    parser.add_argument("--quantize", type=int, default=4)
-    parser.add_argument("--steps", type=int, default=8)
+    # A PRE-QUANTISED repo, and that is the whole point. Asking mflux to quantise a
+    # full-precision model reads the full weights into memory first, so a 22GB model
+    # needs 22GB of RAM to become a 6GB one — which fails on any ordinary machine. A
+    # repo that is already 4-bit loads at its own size. Ungated too: FLUX.1-schnell is
+    # Apache-2.0, so this redistribution needs no licence acceptance and no token.
+    parser.add_argument("--model", default="mflux-community/flux-1-schnell-mflux-q4")
+    parser.add_argument("--base-model", default="schnell", help="Architecture the repo is based on")
+    parser.add_argument(
+        "--quantize",
+        type=int,
+        default=0,
+        help="Quantise at load time. Leave at 0 for an already-quantised repo.",
+    )
+    parser.add_argument("--steps", type=int, default=4, help="schnell is a 4-step model")
     parser.add_argument("--size", type=int, default=512)
     parser.add_argument("--seed", type=int, default=1000, help="Base seed")
     parser.add_argument("--only", default="", help="Generate a single subject by name")

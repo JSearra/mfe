@@ -35,23 +35,29 @@ python3 -m venv tools/art/.venv
 tools/art/.venv/bin/pip install mflux       # pulls MLX, Apple Silicon native
 ```
 
-The default model is `z-image-turbo`, chosen because it is **ungated**. FLUX.1-schnell
-is the better-known choice and needs a HuggingFace licence click-through and an auth
-token; avoiding that keeps the pipeline runnable without credentials. If you would
-rather use Flux, accept the licence and run `huggingface-cli login` yourself — this
-project does not handle tokens.
+The default model is `mflux-community/flux-1-schnell-mflux-q4`, and both halves of that
+name matter.
 
-**Model weights are larger than they look.** The first run pulls well over 20GB into
-`~/.cache/huggingface` — a 6B image model plus a text encoder several times its size.
-Budget disk accordingly.
+**Pre-quantised.** `-q 4` on a full-precision repo quantises at LOAD time, so the full
+weights are read into memory first — a 22GB model needs 22GB of RAM to become a 6GB one,
+which fails on any ordinary machine. A repo that is already 4-bit loads at its own size.
+This is the constraint that decides which models are usable locally, and it is not
+obvious from the flag.
 
-**And they have to fit in RAM to be quantised.** `-q 4` quantises at load time, which
-means the full-precision weights are read into memory first. On a 16GB machine a model
-this size will swap hard and may not complete at all. If that happens the fix is a
-smaller model rather than a smaller quantisation — mflux lists several, and
-`flux2-klein-4b` is about a third the size. This is the constraint that decides which
-model you can use locally, and it is worth checking before a long download rather than
-after.
+**Ungated.** `black-forest-labs/FLUX.1-schnell` returns `GatedRepoError` without a
+licence acceptance and an auth token. FLUX.1-schnell is Apache-2.0, so this community
+redistribution is legal and needs neither — the pipeline runs without credentials, and
+this project does not handle tokens.
+
+Two attempts failed before this one, and both failures are worth knowing about.
+`black-forest-labs/FLUX.1-schnell` is gated. `z-image-turbo` is ungated but pulled 31GB
+and then raised `FileNotFoundError: No safetensors files found in .../text_encoder_2` —
+a repo layout mflux could not load. Check `?blobs=true` on the HuggingFace API for size
+and `gated` before starting a large download.
+
+The default model is about 9GB in `~/.cache/huggingface`. Smaller pre-quantised repos
+exist if that is too much — `Runpod/FLUX.2-klein-4B-mflux-4bit` is 4.3GB — and every
+mflux built-in name that is *not* pre-quantised is 22GB or more.
 
 ## Terrain and props
 
