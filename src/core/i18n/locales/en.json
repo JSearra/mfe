@@ -72,5 +72,11 @@
     "buildHeading": "Build",
     "researchHeading": "Research",
     "costs": "{grain} grain · {cattle} cattle"
+  },
+  "alert": {
+    "stampede": "The herd has broken",
+    "buildingComplete": "Building complete",
+    "research": "Research complete",
+    "jump": "press Space to look"
   }
 }

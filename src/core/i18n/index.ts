@@ -47,6 +47,13 @@ function lookup(key: string): string | undefined {
  * A missing key returns the key itself. That is the least-bad runtime behaviour: it
  * is obvious on screen, it cannot throw mid-render, and the type system has already
  * made it unreachable for the English dictionary.
+ *
+ * One hole in that last claim, found the hard way. `LeafPaths` cannot tell a nested
+ * path from a flat key that happens to contain dots, so adding `"alert.stampede": "..."`
+ * at the TOP level of the dictionary typechecks perfectly and then fails at runtime,
+ * because lookup splits on the dot and goes looking for an `alert` object that is not
+ * there. The symptom is the raw key rendered on screen. Nest new strings; do not write
+ * their paths out flat.
  */
 export function t(key: MessageKey, params?: MessageParams): string {
   const template = lookup(key);

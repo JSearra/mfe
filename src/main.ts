@@ -44,6 +44,7 @@ import { createRenderStats } from './render/stats.js';
 import { createDebugOverlay } from './ui/debugOverlay.js';
 import { createCommandPanel } from './ui/commandPanel.js';
 import { createMinimap } from './ui/minimap.js';
+import { createAlerts } from './ui/alerts.js';
 import { createOutcomeBanner } from './ui/outcomeBanner.js';
 import { createResourceBar } from './ui/resourceBar.js';
 
@@ -231,6 +232,8 @@ async function main(): Promise<void> {
   const overlay = createDebugOverlay(root);
   const resourceBar = createResourceBar(root);
   const outcomeBanner = createOutcomeBanner(root);
+  const alerts = createAlerts();
+  root.appendChild(alerts.element);
   const minimap = createMinimap(root, map, {
     onSeek(worldX, worldY) {
       // Centre the camera on the clicked point, in isometric space.
@@ -276,6 +279,13 @@ async function main(): Promise<void> {
   };
 
   window.addEventListener('keydown', (event) => {
+    if (event.key === ' ') {
+      // Go to the last thing that happened out of view. Deliberately a key rather than
+      // the camera moving itself: having the view yanked away mid-order is worse than
+      // missing the event, and a stampede fires precisely when you are busy elsewhere.
+      if (alerts.jump(camera, performance.now())) event.preventDefault();
+      return;
+    }
     if (event.key === 'Escape') {
       armed = null;
       return;
@@ -469,6 +479,10 @@ async function main(): Promise<void> {
       // Sound comes from events, never from diffing snapshots: a death simply stops
       // appearing, and there is nothing in a state diff that says it happened.
       audio.handle(message.events, camera);
+      // Same event stream, different consumer: a stampede that starts off-screen is
+      // exactly the thing a player needs told about, and it cannot be seen in a snapshot
+      // diff any more than a death can.
+      alerts.handle(message.events, performance.now());
     }
     view = interpolator.sample(ticker.deltaMS);
 
@@ -478,6 +492,7 @@ async function main(): Promise<void> {
       -camera.y * camera.zoom + camera.viewportHeight / 2,
     );
     terrain.update(camera);
+    alerts.update(performance.now());
     fog.update(camera);
 
     if (view !== null) entities.update(view, map, selection.handles);
