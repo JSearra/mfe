@@ -12,6 +12,7 @@ import {
   destroy,
   handleIndex,
   isAlive,
+  OrderMode,
   packHandle,
   type Handle,
   type World,
@@ -131,8 +132,13 @@ export function createCombatSystem(): CombatSystem {
         }
 
         if (target === NULL_HANDLE) {
-          // Units under orders keep marching; idle ones look for a fight.
-          if (world.hasTarget[index] === 1) continue;
+          // Units under a plain move order keep marching; idle ones, and ones told to
+          // attack-move, look for a fight. That distinction is the whole of attack-move:
+          // without it an army ordered across a map walks past everything on the way,
+          // which is why "move" and "advance" are two orders in every game in the genre.
+          if (world.hasTarget[index] === 1 && world.orderMode[index] !== OrderMode.AttackMove) {
+            continue;
+          }
           const found = acquire(world, grid, index);
           if (found === -1) continue;
           target = packHandle(found, world.generation[found]!);

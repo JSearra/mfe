@@ -95,6 +95,8 @@ export interface World {
 
   // --- combat ---------------------------------------------------------------
   /** Handle of the current target, or NULL_HANDLE. */
+  /** One of OrderMode. Plain move unless the order said otherwise. */
+  readonly orderMode: Uint8Array;
   readonly attackTarget: Uint32Array;
   /** Ticks until this unit may strike again. */
   readonly attackCooldown: Uint16Array;
@@ -167,6 +169,7 @@ export function createWorld(capacity: number, seed: number): World {
     trainProgress: new Float64Array(capacity),
     rallyX: new Float64Array(capacity),
     rallyY: new Float64Array(capacity),
+    orderMode: new Uint8Array(capacity),
     attackTarget: new Uint32Array(capacity),
     attackCooldown: new Uint16Array(capacity),
     stuckTicks: new Uint16Array(capacity),
@@ -190,6 +193,20 @@ export function isAlive(world: World, handle: Handle): boolean {
   if (index >= world.capacity) return false;
   return world.alive[index] === 1 && world.generation[index] === handleGeneration(handle);
 }
+
+/**
+ * How a unit treats what it meets on the way to its destination.
+ *
+ * A plain move walks past a fight; an attack-move stops and takes it. The distinction
+ * lives on the unit rather than on the order because the order is consumed by the
+ * pathing service, which has no business knowing about combat.
+ */
+export const OrderMode = {
+  Move: 0,
+  AttackMove: 1,
+} as const;
+
+export type OrderMode = (typeof OrderMode)[keyof typeof OrderMode];
 
 export const ANIM_IDLE = 0;
 export const ANIM_WALK = 1;
@@ -271,6 +288,7 @@ export function spawn(
   world.trainProgress[index] = 0;
   world.rallyX[index] = x;
   world.rallyY[index] = y;
+  world.orderMode[index] = OrderMode.Move;
   world.attackTarget[index] = NULL_HANDLE;
   world.attackCooldown[index] = 0;
   world.stuckTicks[index] = 0;

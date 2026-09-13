@@ -8,7 +8,15 @@ import type { BuildingType } from '../shared/buildings/index.js';
 import { TECH_IDS } from '../shared/tech/index.js';
 import type { TechState } from './tech.js';
 import type { MovementSystem } from './movement.js';
-import { destroy, EntityKind, spawn, type Handle, type World } from './world.js';
+import {
+  destroy,
+  EntityKind,
+  handleIndex,
+  OrderMode,
+  spawn,
+  type Handle,
+  type World,
+} from './world.js';
 
 /**
  * Commands are the sole path by which simulation state changes.
@@ -36,6 +44,8 @@ export const CommandKind = {
   Research: 7,
   Train: 8,
   SetRally: 9,
+  /** Move, but engage what you meet on the way. */
+  AttackMove: 10,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -107,9 +117,14 @@ export function applyCommand(
       return true;
     }
 
-    case CommandKind.MoveTo: {
+    case CommandKind.MoveTo:
+    case CommandKind.AttackMove: {
       const handle = command.a as Handle;
       if (!movement.order(world, handle, command.b, command.c)) return false;
+      // Set after the order is accepted, so a rejected order cannot leave a unit in a
+      // mode it never entered.
+      world.orderMode[handleIndex(handle)] =
+        command.kind === CommandKind.AttackMove ? OrderMode.AttackMove : OrderMode.Move;
       events.push(makeEvent(world.tick, EventType.OrderIssued, handle, command.b, command.c));
       return true;
     }

@@ -24,7 +24,7 @@ Rules that apply to every task below, from `CLAUDE.md`:
 The army is currently hard to command: the whole set is Spawn, MoveTo, Destroy,
 SpawnCattle, Leash, Attack, Build, Research, Train, SetRally.
 
-- [ ] **A1 — Attack-move.** A move order that engages what it meets instead of walking
+- [x] **A1 — Attack-move.** Done. A move order that engages what it meets instead of walking
       past it. The most-used order in the genre and the one whose absence is felt first.
       *Done when:* a unit given attack-move toward a point past an enemy stops and fights;
       the same unit given a plain move walks past. Both asserted headlessly.

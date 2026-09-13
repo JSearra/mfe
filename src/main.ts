@@ -272,6 +272,10 @@ async function main(): Promise<void> {
   // composition root rather than in input.ts because it is a game rule about what a
   // click means, not a fact about the pointer.
   let researchCursor = 0;
+  // Armed by A, spent on the next order click. Client state: which ORDER a click will
+  // issue is not something the simulation has any business knowing.
+  let attackMoveArmed = false;
+
   const buildKeys: Readonly<Record<string, BuildingType>> = {
     '1': BuildingType.Isibaya,
     '2': BuildingType.Umuzi,
@@ -279,6 +283,12 @@ async function main(): Promise<void> {
   };
 
   window.addEventListener('keydown', (event) => {
+    if (event.key === 'a' || event.key === 'A') {
+      // Arm, then click — the genre's convention, and the reason it is a mode rather
+      // than a modifier is that the click may be a long way from the key press.
+      attackMoveArmed = true;
+      return;
+    }
     if (event.key === ' ') {
       // Go to the last thing that happened out of view. Deliberately a key rather than
       // the camera moving itself: having the view yanked away mid-order is worse than
@@ -287,6 +297,7 @@ async function main(): Promise<void> {
       return;
     }
     if (event.key === 'Escape') {
+      attackMoveArmed = false;
       armed = null;
       return;
     }
@@ -372,8 +383,10 @@ async function main(): Promise<void> {
       if (target === null) return;
       // Orders carry a handle, never a position: by the time this executes the target
       // may be dead, and the handle's generation is what says so.
+      const kind = attackMoveArmed ? CommandKind.AttackMove : CommandKind.MoveTo;
+      attackMoveArmed = false;
       for (const handle of selection.handles) {
-        sim.sendCommand(CommandKind.MoveTo, handle, target.x, target.y);
+        sim.sendCommand(kind, handle, target.x, target.y);
       }
     },
   });

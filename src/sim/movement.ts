@@ -14,6 +14,8 @@ import {
   EntityKind,
   handleIndex,
   isAlive,
+  NULL_HANDLE,
+  OrderMode,
   packHandle,
   type Handle,
   type World,
@@ -410,10 +412,18 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
         const posX = world.posX[index]!;
         const posY = world.posY[index]!;
 
-        if (world.hasTarget[index] !== 1) {
+        // A unit that has stopped to fight holds its ground until the fight is over,
+        // and then resumes — the order is kept rather than cleared, which is what makes
+        // an attack-move an advance across a map rather than a single engagement.
+        const engaged =
+          world.orderMode[index] === OrderMode.AttackMove &&
+          world.attackTarget[index] !== NULL_HANDLE &&
+          isAlive(world, world.attackTarget[index]! as Handle);
+
+        if (world.hasTarget[index] !== 1 || engaged) {
           world.velX[index] = 0;
           world.velY[index] = 0;
-          setAnim(world, index, ANIM_IDLE);
+          if (!engaged) setAnim(world, index, ANIM_IDLE);
           continue;
         }
 

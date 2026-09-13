@@ -54,6 +54,7 @@ const WORLD_FIELDS = [
   'animStartTick',
   'flags',
   'movementClass',
+  'orderMode',
   'kind',
   'herdState',
   'stress',
