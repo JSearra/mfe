@@ -65,5 +65,9 @@
     "exploredDim": 0.45,
     "viewportColour": "#e8d9a8",
     "dotSize": 2
+  },
+  "sprites": {
+    "pixelsPerWorldUnit": 29,
+    "ticksPerFrame": 1.25
   }
 }

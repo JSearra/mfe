@@ -26,6 +26,8 @@ import { bindInput } from './render/input.js';
 import { createInterpolator, type InterpolatedView } from './render/interpolation.js';
 import { installPerfHarness } from './render/perfHarness.js';
 import { createEntityLayer } from './render/scene/entities.js';
+import { loadSpriteAtlas } from './render/assets.js';
+import { presentation } from './render/presentation.js';
 import { createTileCursor, placeTileCursor } from './render/scene/cursor.js';
 import { createFogRenderer } from './render/scene/fog.js';
 import { createTerrain } from './render/scene/terrain.js';
@@ -198,7 +200,11 @@ async function main(): Promise<void> {
 
   const terrain = createTerrain(map);
   const cursor = createTileCursor();
-  const entities = createEntityLayer();
+  // Null if the atlas is missing or malformed, and the entity layer then falls back to
+  // drawing shapes. Art is not worth failing to start over, and the build runs without
+  // the pipeline ever having been run.
+  const atlas = await loadSpriteAtlas(presentation.sprites.pixelsPerWorldUnit);
+  const entities = createEntityLayer(atlas);
   const fog = createFogRenderer(map);
   terrain.container.addChild(cursor);
   terrain.container.addChild(entities.container);

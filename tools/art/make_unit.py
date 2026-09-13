@@ -25,11 +25,13 @@ the code of a rig and indistinguishable at 128 pixels.
 """
 
 import argparse
+import json
 import math
 import os
 import sys
 
 import bpy
+import mathutils
 
 # Rough human proportions in Blender units, where 1.0 is about a metre.
 HEIGHT = 1.75
@@ -403,13 +405,38 @@ def render_kind(renderer, kind: str, anim: str, args: argparse.Namespace) -> int
     # Cattle need their own framing: longer than a man is tall and lower at the
     # shoulder, so the figure camera clips a nose or a rump depending on rotation.
     if kind in CATTLE:
-        renderer.setup_camera(args.size, scale=2.9, target=0.62)
+        ortho, target = 2.9, 0.62
     else:
-        renderer.setup_camera(args.size)
+        ortho, target = renderer.ORTHO_SCALE, renderer.TARGET_HEIGHT
+    renderer.setup_camera(args.size, scale=ortho, target=target)
     renderer.setup_render(args.size)
     renderer.ensure_light()
 
+    # Where the world origin — the point the figure stands on — lands in the rendered
+    # frame. The renderer positions a unit by its foot, and that pixel is NOT the centre
+    # of the frame: the camera aims above ground so the figure is not cut in half, which
+    # puts the origin low. Measured through Blender's own projection rather than derived
+    # from the elevation angle, because a derivation that is subtly wrong produces
+    # sprites that look fine and sit a few pixels into the ground.
+    from bpy_extras.object_utils import world_to_camera_view
+
     scene = bpy.context.scene
+    # Blender evaluates matrix_world lazily. Without this the projection runs against a
+    # camera transform that has not been applied yet and reports the origin at dead
+    # centre of the frame — a clean, plausible, wrong answer.
+    bpy.context.view_layer.update()
+    normalised = world_to_camera_view(scene, scene.camera, mathutils.Vector((0.0, 0.0, 0.0)))
+    origin = {
+        "x": normalised.x * args.size,
+        # Blender's Y runs up from the bottom of the frame; image rows run down.
+        "y": (1.0 - normalised.y) * args.size,
+        # How many pixels one world metre occupies in this render. Kinds are framed
+        # differently — a cow needs a wider camera than a man — so without this the
+        # renderer has no way to draw them at a consistent scale, and how tightly a
+        # camera happened to be framed silently decides how big the thing is in game.
+        "pixelsPerUnit": args.size / ortho,
+    }
+
     directions = 5 if args.mirror else 8
     step = math.tau / 8
     written = 0
@@ -425,6 +452,17 @@ def render_kind(renderer, kind: str, anim: str, args: argparse.Namespace) -> int
             written += 1
 
     print(f"[make_unit] {kind}/{anim}: {written} frames")
+
+    # One origin per kind: the camera does not move between animations.
+    origins_path = os.path.join(args.render, "origins.json")
+    origins = {}
+    if os.path.exists(origins_path):
+        with open(origins_path) as handle:
+            origins = json.load(handle)
+    origins[kind] = origin
+    with open(origins_path, "w") as handle:
+        json.dump(origins, handle, indent=1)
+
     return written
 
 
