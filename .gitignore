@@ -7,3 +7,7 @@ coverage/
 # Art pipeline: local model weights and Python env
 tools/art/.venv/
 tools/art/raw/
+
+# Art pipeline: generated review artifacts and bytecode
+tools/art/out/
+__pycache__/
