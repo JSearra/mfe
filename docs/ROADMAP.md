@@ -368,7 +368,9 @@ remains:
 - ~~**A real HUD.**~~ **Done.** Command panel (selection, build menu, research, training),
   minimap, victory track and outcome banner. Hotkeys still work; they are no longer the
   only way to find an action.
-- **Gate 2 re-run** against real sprites, and the depth-sort hysteresis comparator that
-  `ARCHITECTURE.md` section 4 specifies but nothing implements.
+- **Gate 2 re-run** against real sprites. The depth-sort hysteresis comparator that
+  `ARCHITECTURE.md` section 4 specified is now implemented and tested — a dense herd holds
+  its draw order through 50 frames of sub-threshold jitter — but its real test is 40
+  overlapping sprites, which needs sprites.
 - **Multiplayer.** Every determinism invariant is in place and CI-enforced; none is yet
   proven across two machines.

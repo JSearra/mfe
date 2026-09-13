@@ -3,6 +3,7 @@ import { heightAt, type Heightmap } from '../../shared/heightmap.js';
 import { worldToScreenX, worldToScreenY } from '../../shared/iso.js';
 import type { InterpolatedView } from '../interpolation.js';
 import { presentation } from '../presentation.js';
+import { createDepthOrder } from './depthOrder.js';
 
 /**
  * Draws entities from the interpolated view.
@@ -191,8 +192,9 @@ function groundHeight(map: Heightmap, worldX: number, worldY: number): number {
 export function createEntityLayer(): EntityLayer {
   const container = new Container();
   const markers: Marker[] = [];
-  // Reused across frames so sorting allocates nothing in the render loop.
-  let order: number[] = [];
+  // Persistent, hysteresis-damped order. See depthOrder.ts: a plain sort by depth is
+  // correct and makes a dense herd shimmer.
+  const depthOrder = createDepthOrder();
 
   return {
     container,
@@ -217,17 +219,14 @@ export function createEntityLayer(): EntityLayer {
       }
       for (let i = count; i < markers.length; i++) markers[i]!.graphics.visible = false;
 
-      if (order.length < count) order = new Array<number>(count);
-      for (let i = 0; i < count; i++) order[i] = i;
-
-      // Depth order: back to front along the isometric axis, entity id breaking ties.
-      order.length = count;
-      order.sort((a, b) => {
-        const depthA = view.x[a]! + view.y[a]!;
-        const depthB = view.x[b]! + view.y[b]!;
-        if (depthA !== depthB) return depthA - depthB;
-        return view.handle[a]! - view.handle[b]!;
-      });
+      // Back to front along the isometric axis, computed from the INTERPOLATED
+      // positions these markers are actually drawn at.
+      const order = depthOrder.order(
+        count,
+        view.handle,
+        (slot) => view.x[slot]! + view.y[slot]!,
+        presentation.entities.depthHysteresis,
+      );
 
       for (let slot = 0; slot < count; slot++) {
         const index = order[slot]!;

@@ -37,7 +37,8 @@
     ],
     "selectedColour": "#e8d9a8",
     "marqueeColour": "#e8d9a8",
-    "clickThresholdPx": 5
+    "clickThresholdPx": 5,
+    "depthHysteresis": 0.12
   },
   "cattle": {
     "bodyColour": "#b8a184",
