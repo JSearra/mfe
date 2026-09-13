@@ -1,5 +1,5 @@
 import { t } from '../core/i18n/index.js';
-import type { PlayerState } from '../sim/host.js';
+import type { PlayerState } from '../host/directHost.js';
 
 /**
  * The player's standing: herd, granary, powder, and what the season is doing.

@@ -3,8 +3,10 @@ import { t } from './core/i18n/index.js';
 import { heightAt } from './shared/heightmap.js';
 import { NO_TILE, pickTileIndex, tileX, tileY } from './shared/picking.js';
 import { CommandKind } from './sim/commands.js';
-import { createDirectSimHost } from './sim/host.js';
+import { createDirectSimHost, type SimHost } from './host/directHost.js';
+import { createWorkerSimHost } from './host/worker/workerHost.js';
 import { createHeightmap } from './sim/terrain/generate.js';
+import { FactionId } from './shared/factions/index.js';
 import { createWorld } from './sim/world.js';
 import { createRenderer } from './render/app.js';
 import {
@@ -87,9 +89,31 @@ async function main(): Promise<void> {
   const root = document.getElementById('app') ?? document.body;
   root.textContent = '';
 
+  // The renderer needs the heightmap for terrain, picking and the fog overlay. It
+  // generates its own from the seed rather than receiving one: terrain generation is
+  // deterministic, so both sides arrive at the same map without transferring it.
   const map = createHeightmap(MAP_SIZE, MAP_SIZE, MAP_SEED);
-  const world = createWorld(512, WORLD_SEED);
-  const sim = createDirectSimHost({ world, map, viewerId: PLAYER, playerId: PLAYER });
+
+  // Worker by default now that the boundary discipline has held. ?sim=direct keeps the
+  // main-thread host one query parameter away, because stepping through a simulation in
+  // a debugger is worth a great deal when something is wrong.
+  const useWorker = new URLSearchParams(location.search).get('sim') !== 'direct';
+  const sim: SimHost = useWorker
+    ? createWorkerSimHost({
+        mapSize: MAP_SIZE,
+        mapSeed: MAP_SEED,
+        worldSeed: WORLD_SEED,
+        capacity: 512,
+        viewerId: PLAYER,
+        playerId: PLAYER,
+        factions: [FactionId.Zulu, FactionId.Sotho],
+      })
+    : createDirectSimHost({
+        world: createWorld(512, WORLD_SEED),
+        map,
+        viewerId: PLAYER,
+        playerId: PLAYER,
+      });
 
   // Seed a small force near the centre. Spawning through commands rather than touching
   // the world directly keeps the invariant that commands are the only mutation path.

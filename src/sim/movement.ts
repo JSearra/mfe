@@ -116,6 +116,9 @@ export interface MovementSystem {
   order(world: World, handle: Handle, goalX: number, goalY: number): boolean;
   update(world: World): void;
   forget(index: number): void;
+  /** Per-unit routes for saving, keyed by packed handle. */
+  exportPaths(): [number, number[]][];
+  importPaths(entries: readonly (readonly [number, readonly number[]])[]): void;
 }
 
 interface PendingOrder {
@@ -339,6 +342,23 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
         movementClass: world.movementClass[index]! as MovementClass,
       });
       return true;
+    },
+
+    exportPaths(): [number, number[]][] {
+      // Sorted by handle so a save file is byte-identical for identical state, which is
+      // what lets two saves be compared directly.
+      return [...paths.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([handle, tiles]) => [handle, Array.from(tiles)] as [number, number[]]);
+    },
+
+    importPaths(entries): void {
+      paths.clear();
+      for (const [handle, tiles] of entries) paths.set(handle, Int32Array.from(tiles));
+      // Outstanding path requests do not survive a save: their tickets referenced a
+      // queue that no longer exists. Units holding one re-request on their next order
+      // or stuck timer rather than waiting forever for a reply that cannot come.
+      pending = [];
     },
 
     forget(index: number): void {

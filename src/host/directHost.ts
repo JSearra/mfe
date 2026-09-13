@@ -1,16 +1,16 @@
-import type { Command, CommandKind } from './commands.js';
-import { makeCommand } from './commands.js';
-import { compactLoop, createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from './loop.js';
-import { buildSnapshot } from './snapshot.js';
+import type { Command, CommandKind } from '../sim/commands.js';
+import { makeCommand } from '../sim/commands.js';
+import { compactLoop, createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../sim/loop.js';
+import { buildSnapshot } from '../sim/snapshot.js';
 import type { SimEvent } from '../shared/events.js';
 import type { Heightmap } from '../shared/heightmap.js';
-import { createCattleSystem, type CattleSystem } from './cattle.js';
-import { createEconomy, Resource, type Economy, type GrainPlot } from './economy/ledger.js';
-import { tuning } from './tuning.js';
+import { createCattleSystem, type CattleSystem } from '../sim/cattle.js';
+import { createEconomy, Resource, type Economy, type GrainPlot } from '../sim/economy/ledger.js';
+import { tuning } from '../sim/tuning.js';
 import { FactionId } from '../shared/factions/index.js';
-import { createFog, type FogState } from './vision/fog.js';
-import { createMovementSystem, type MovementSystem } from './movement.js';
-import type { World } from './world.js';
+import { createFog, type FogState } from '../sim/vision/fog.js';
+import { createMovementSystem, type MovementSystem } from '../sim/movement.js';
+import type { World } from '../sim/world.js';
 
 /**
  * The boundary the renderer talks to.
@@ -21,9 +21,15 @@ import type { World } from './world.js';
  * expensive is never the message plumbing. It is the UI quietly accreting synchronous
  * reads of simulation state for hover, minimap, hit-testing and debug overlays.
  *
- * Two mechanisms exist to stop that. The import boundary is enforced by ESLint, and in
- * strict mode this host structuredClones every snapshot that crosses it, so a shared
- * reference into simulation memory fails here and now rather than at flip time.
+ * Hosts live outside src/sim deliberately. They are adapters: they translate real
+ * elapsed time into ticks and marshal state across a transport, and neither of those is
+ * simulation logic. Keeping them here means src/sim can stay under the determinism ban
+ * without the worker's own clock needing an exception carved out of it.
+ *
+ * Two mechanisms stop the renderer reaching past the boundary. The import rule is
+ * enforced by ESLint, and in strict mode this host structuredClones every snapshot that
+ * crosses it, so a shared reference into simulation memory fails here and now rather
+ * than at flip time.
  *
  * ADR-0004 also called for cloning commands. That turned out to be ceremony: sendCommand
  * accepts only numbers, so a command cannot carry a reference into simulation state in
@@ -67,12 +73,15 @@ export interface SimMessage {
   readonly fog: Uint8Array | null;
 }
 
+/**
+ * The contract both hosts meet.
+ *
+ * Deliberately narrow: no simulation systems are exposed, because anything the renderer
+ * could reach for here is something that cannot cross a thread boundary. DirectSimHost
+ * returns a wider type for tests, which run on the same thread by definition.
+ */
 export interface SimHost {
   readonly tick: number;
-  readonly movement: MovementSystem;
-  readonly cattle: CattleSystem;
-  readonly economy: Economy;
-  readonly fog: FogState;
   sendCommand(kind: CommandKind, a?: number, b?: number, c?: number, d?: number): void;
   /** Advance by real elapsed time. A worker host will tick itself and ignore this. */
   pump(elapsedMs: number): void;
@@ -120,7 +129,15 @@ function defaultStrict(): boolean {
   }
 }
 
-export function createDirectSimHost(options: DirectSimHostOptions): SimHost {
+/** DirectSimHost, with the systems exposed for tests and tooling. */
+export interface DirectSimHost extends SimHost {
+  readonly movement: MovementSystem;
+  readonly cattle: CattleSystem;
+  readonly economy: Economy;
+  readonly fog: FogState;
+}
+
+export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHost {
   const {
     world,
     map,
@@ -163,7 +180,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): SimHost {
     loop.events.length = 0;
   }
 
-  const host: SimHost = {
+  const host: DirectSimHost = {
     movement,
     cattle,
     economy,

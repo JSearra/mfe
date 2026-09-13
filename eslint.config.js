@@ -99,6 +99,30 @@ export default tseslint.config(
   },
 
   // ---------------------------------------------------------------------------
+  // Hosts adapt the simulation to real time and to a transport. They sit outside
+  // src/sim precisely so the determinism ban does not have to make an exception for
+  // the worker's own clock — but the dependency still points one way.
+  // ---------------------------------------------------------------------------
+  {
+    files: ['src/sim/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/host/**', '**/host'],
+              allowTypeImports: true,
+              message:
+                'The simulation must not depend on its host. Hosts adapt the simulation, not the reverse.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // ---------------------------------------------------------------------------
   // Boundary: render and ui read snapshots and events, never the world.
   // Types may cross, values may not.
   // ---------------------------------------------------------------------------

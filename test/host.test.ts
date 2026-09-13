@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CommandKind } from '../src/sim/commands.js';
-import { createDirectSimHost } from '../src/sim/host.js';
+import { createDirectSimHost } from '../src/host/directHost.js';
 import { decodeSnapshot } from '../src/shared/snapshot.js';
 import { EventType } from '../src/shared/events.js';
 import { TICK_MS } from '../src/shared/timing.js';

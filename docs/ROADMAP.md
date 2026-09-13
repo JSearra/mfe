@@ -312,9 +312,16 @@ npm run lint                            # no hardcoded strings
    ground stays remembered once seen; line of sight is height-aware, so a ridge blocks and
    high ground sees further. Recomputed on a vision interval rather than per tick, and the
    fog crosses to the renderer only when it changes.
-2. **Save/load** — same problem as determinism. Cheap if all mutable state is in typed
-   arrays plus RNG state; a rewrite if state has leaked into closures or object maps.
-3. **Worker flip** — 1-2 days if Phases 0 and 3 stayed disciplined. See ADR-0004.
+2. ~~**Save/load**~~ — **done.** It was cheap, as predicted. The decisive test saves a
+   busy game, restores it into a *fresh* simulation already at a different state, and runs
+   both forward for 400 ticks comparing hashes — so anything the save left behind shows up
+   as divergence rather than as a subtle wrongness later.
+3. ~~**Worker flip**~~ — **done**, and it was the file it was supposed to be: one host
+   implementation, nothing in `src/render` touched. Hosts moved out of `src/sim` to
+   `src/host` in the process, because a host translating wall-clock time into ticks is not
+   simulation logic and should not need an exception carved out of the determinism ban.
+   Verified against a production build, which is the specific divergence ADR-0004 warned
+   about.
 4. **Combat resolution**
 5. **Buildings and construction** — note construction invalidates path fields.
 6. **AI opponent** — cheap *if* commands remained the sole mutation path, because the AI is

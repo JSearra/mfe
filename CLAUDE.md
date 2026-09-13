@@ -26,7 +26,11 @@ recorded in `docs/adr/`. Read the ADR before re-opening a settled decision.
 
 ## Boundaries
 
-- `src/sim/**` may not import `pixi.js`, nor anything from `src/render/**` or `src/ui/**`.
+- `src/sim/**` may not import `pixi.js`, nor anything from `src/render/**` or `src/ui/**`,
+  nor from `src/host/**` — hosts adapt the simulation, not the reverse.
+- `src/host/**` adapts the simulation to real time and to a transport. It sits outside
+  `src/sim` so the worker's own clock does not need an exception carved out of the
+  determinism ban.
 - `src/render/**` and `src/ui/**` may import **types only** from `src/sim/**`.
 - Render and UI read the snapshot and the event list. They never read the world.
   No synchronous sim reads for hover, minimap, hit-testing or debug overlays — that is
