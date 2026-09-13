@@ -22,6 +22,8 @@ export const EventType = {
   BuildingCompleted: 9,
   TechCompleted: 10,
   UnitTrained: 11,
+  VictoryDeclared: 12,
+  PlayerEliminated: 13,
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];

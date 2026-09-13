@@ -53,5 +53,12 @@
     "scoutingParties": "Scouting parties",
     "cattleLore": "Cattle lore",
     "mountedCommando": "Mounted commando"
+  },
+  "victory": {
+    "progress": "Herd {held}/{needed}",
+    "holding": "Herd {held}/{needed} — holding {pct}%",
+    "won": "Victory — the herd is yours",
+    "lost": "Defeat",
+    "eliminated": "You have nothing left"
   }
 }

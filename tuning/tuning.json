@@ -117,5 +117,10 @@
     "mountedGrain": 70,
     "mountedCattle": 3,
     "mountedTicks": 260
+  },
+  "victory": {
+    "cattleToWin": 200,
+    "holdTicks": 1200,
+    "eliminationGraceTicks": 400
   }
 }

@@ -5,6 +5,7 @@ import { createCombatSystem } from '../../sim/combat.js';
 import { createAi } from '../../sim/ai/opponent.js';
 import { createConstructionSystem } from '../../sim/construction.js';
 import { createTechState } from '../../sim/tech.js';
+import { createVictoryState, type VictoryState } from '../../sim/victory.js';
 import { createProductionSystem } from '../../sim/production.js';
 import { createEconomy, Resource, type Economy } from '../../sim/economy/ledger.js';
 import { createStartingPlots } from '../../sim/economy/plots.js';
@@ -42,6 +43,7 @@ let loop: SimLoop | null = null;
 let world: World | null = null;
 let economy: Economy | null = null;
 let fog: FogState | null = null;
+let victory: VictoryState | null = null;
 let viewerId = 0;
 let playerId = 0;
 let sequence = 0;
@@ -79,6 +81,9 @@ function start(message: InitMessage): void {
     production: createProductionSystem(movement),
     economy,
     tech: createTechState(Math.max(message.factions.length, message.viewerId + 1)),
+    victory: (victory = createVictoryState(
+      Math.max(message.factions.length, message.viewerId + 1),
+    )),
     fog,
     map,
   });
@@ -89,7 +94,8 @@ function start(message: InitMessage): void {
 }
 
 function tick(): void {
-  if (loop === null || world === null || economy === null || fog === null) return;
+  if (loop === null || world === null || economy === null || fog === null || victory === null)
+    return;
 
   const now = performance.now();
   accumulator += now - lastTime;
@@ -126,6 +132,12 @@ function tick(): void {
     shortfall: economy.shortfall[viewerId] ?? 0,
     drought: droughtNow,
     droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
+    cattleHeld: victory.cattleHeld[viewerId] ?? 0,
+    cattleToWin: tuning.victory.cattleToWin,
+    holdProgress: Math.min(1, (victory.holdTicks[viewerId] ?? 0) / tuning.victory.holdTicks),
+    outcome: victory.outcome,
+    winner: victory.winner,
+    eliminated: victory.eliminated[viewerId] === 1,
   };
 
   let fogSlice: Uint8Array | null = null;

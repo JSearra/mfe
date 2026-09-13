@@ -26,6 +26,12 @@ const IDLE_PLAYER: PlayerState = {
   shortfall: 0,
   drought: 0,
   droughtSevere: false,
+  cattleHeld: 0,
+  cattleToWin: 0,
+  holdProgress: 0,
+  outcome: 0,
+  winner: -1,
+  eliminated: false,
 };
 
 export interface WorkerSimHostOptions {

@@ -39,6 +39,7 @@ import {
 } from './render/selection.js';
 import { createRenderStats } from './render/stats.js';
 import { createDebugOverlay } from './ui/debugOverlay.js';
+import { createOutcomeBanner } from './ui/outcomeBanner.js';
 import { createResourceBar } from './ui/resourceBar.js';
 
 /**
@@ -217,6 +218,7 @@ async function main(): Promise<void> {
   const stats = createRenderStats();
   const overlay = createDebugOverlay(root);
   const resourceBar = createResourceBar(root);
+  const outcomeBanner = createOutcomeBanner(root);
 
   let view: InterpolatedView | null = null;
   const herdScratch: number[] = [];
@@ -428,6 +430,7 @@ async function main(): Promise<void> {
     if (message !== null) {
       interpolator.push(message.snapshot);
       resourceBar.update(message.player);
+      outcomeBanner.update(message.player, PLAYER);
       fog.setFog(message.fog);
       // Sound comes from events, never from diffing snapshots: a death simply stops
       // appearing, and there is nothing in a state diff that says it happened.

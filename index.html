@@ -74,6 +74,36 @@
         color: #d94a3a;
       }
 
+      .resource-bar__herd {
+        color: #c8a86a;
+      }
+
+      .resource-bar__herd.is-holding {
+        color: #8fbf6a;
+        font-weight: 600;
+      }
+
+      .outcome-banner {
+        position: absolute;
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 22px 44px;
+        border: 1px solid #c8a86a;
+        border-radius: 6px;
+        background: rgba(20, 17, 13, 0.94);
+        color: #e8d9a8;
+        font-size: 26px;
+        letter-spacing: 0.04em;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .outcome-banner.is-defeat {
+        border-color: #d94a3a;
+        color: #d94a3a;
+      }
+
       .debug-overlay__hint {
         margin-top: 8px;
         padding-top: 8px;

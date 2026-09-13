@@ -4,6 +4,7 @@ import type { CattleSystem } from './cattle.js';
 import type { CombatSystem } from './combat.js';
 import type { ConstructionSystem } from './construction.js';
 import type { ProductionSystem } from './production.js';
+import type { VictoryState } from './victory.js';
 import type { AiController } from './ai/opponent.js';
 import { Modifier } from '../shared/tech/index.js';
 import type { TechState } from './tech.js';
@@ -26,6 +27,7 @@ export interface SimLoop {
   readonly ai: { player: number; controller: AiController }[];
   readonly economy: Economy;
   readonly tech: TechState;
+  readonly victory: VictoryState;
   readonly fog: FogState;
   readonly map: Heightmap;
   /** Sorted by (tick, playerId, seq) from `cursor` onward. */
@@ -58,6 +60,7 @@ export interface SimSystems {
   production: ProductionSystem;
   economy: Economy;
   tech: TechState;
+  victory: VictoryState;
   fog: FogState;
   map: Heightmap;
 }
@@ -90,7 +93,7 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
  * survives until the boundary.
  */
 export function step(loop: SimLoop): void {
-  const { world, movement, cattle, combat, construction, production, economy, tech, fog, map, pending, events } =
+  const { world, movement, cattle, combat, construction, production, economy, tech, victory, fog, map, pending, events } =
     loop;
 
   // Computer players act first, through exactly the same queue a human's clicks use.
@@ -151,6 +154,7 @@ export function step(loop: SimLoop): void {
     (player) => tech.modifier(player, Modifier.GrainYield),
   );
   tech.update(world.tick, events);
+  victory.update(world, economy, events);
   updateFog(world, map, fog, tech);
 
   // Emitted before the flush, while the entities still have positions to report.

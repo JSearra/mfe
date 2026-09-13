@@ -8,6 +8,7 @@ import { createCattleSystem, type CattleSystem } from '../sim/cattle.js';
 import { createCombatSystem, type CombatSystem } from '../sim/combat.js';
 import { createAi } from '../sim/ai/opponent.js';
 import { createTechState, type TechState } from '../sim/tech.js';
+import { createVictoryState, type VictoryState } from '../sim/victory.js';
 import { createProductionSystem, type ProductionSystem } from '../sim/production.js';
 import { createConstructionSystem, type ConstructionSystem } from '../sim/construction.js';
 import { createEconomy, Resource, type Economy, type GrainPlot } from '../sim/economy/ledger.js';
@@ -61,6 +62,17 @@ export interface PlayerState {
   /** 0 (wet) to 1 (parched). */
   readonly drought: number;
   readonly droughtSevere: boolean;
+
+  /** Cattle this player holds, ledger plus driven herd. */
+  readonly cattleHeld: number;
+  readonly cattleToWin: number;
+  /** 0 to 1: how much of the hold requirement has elapsed. */
+  readonly holdProgress: number;
+  /** 0 ongoing, 1 cattle victory, 2 last standing. */
+  readonly outcome: number;
+  /** -1 while undecided. */
+  readonly winner: number;
+  readonly eliminated: boolean;
 }
 
 export interface SimMessage {
@@ -148,6 +160,7 @@ export interface DirectSimHost extends SimHost {
   readonly production: ProductionSystem;
   readonly economy: Economy;
   readonly tech: TechState;
+  readonly victory: VictoryState;
   readonly fog: FogState;
 }
 
@@ -176,6 +189,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
   // grain income is zero and every player starves — see sim/economy/plots.ts.
   const economy = createEconomy(factions, seed, plots ?? createStartingPlots(map, starts, seed));
   const tech = createTechState(Math.max(factions.length, viewerId + 1));
+  const victory = createVictoryState(Math.max(factions.length, viewerId + 1));
   const fog = createFog(Math.max(factions.length, viewerId + 1), map);
   const loop: SimLoop = createLoop({
     world,
@@ -186,6 +200,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     production,
     economy,
     tech,
+    victory,
     fog,
     map,
   });
@@ -222,6 +237,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     production,
     economy,
     tech,
+    victory,
     fog,
 
     get tick(): number {
@@ -279,6 +295,12 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         shortfall: economy.shortfall[viewerId] ?? 0,
         drought: droughtNow,
         droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
+        cattleHeld: victory.cattleHeld[viewerId] ?? 0,
+        cattleToWin: tuning.victory.cattleToWin,
+        holdProgress: Math.min(1, (victory.holdTicks[viewerId] ?? 0) / tuning.victory.holdTicks),
+        outcome: victory.outcome,
+        winner: victory.winner,
+        eliminated: victory.eliminated[viewerId] === 1,
       };
 
       let fogSlice: Uint8Array | null = null;

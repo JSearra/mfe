@@ -361,7 +361,10 @@ remains:
 - **Art.** The pipeline exists (ADR-0015, `tools/art/`): generation for surfaces, Blender
   headless for unit sheets. What is not done is the art itself, nor the two remaining
   atlas-budget mitigations — shader palette-swap for player colour, and shared silhouettes.
-- **A victory condition.** There is none. A match cannot currently be won or lost.
+- ~~**A victory condition.**~~ **Done.** Measured in cattle rather than corpses, because in
+  this setting cattle are wealth, standing and the reason to fight — so a player who
+  ignores herding cannot win by being good at everything else. The threshold must be
+  *held*, which gives the losing side a window to answer.
 - **A real HUD.** Controls are undiscoverable hotkeys over two debug panels. A selection
   panel, build menu and minimap; the minimap is cheap because the fog already crosses the
   boundary.

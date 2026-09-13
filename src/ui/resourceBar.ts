@@ -23,10 +23,13 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
   const totals = document.createElement('span');
   const season = document.createElement('span');
   season.className = 'resource-bar__season';
+  const herd = document.createElement('span');
+  herd.className = 'resource-bar__herd';
+
   const warning = document.createElement('span');
   warning.className = 'resource-bar__warning';
 
-  element.append(totals, season, warning);
+  element.append(totals, season, herd, warning);
   parent.appendChild(element);
 
   let lastUpdate = -Infinity;
@@ -49,6 +52,19 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
         ? t('resource.droughtSevere', { pct })
         : t('resource.drought', { pct });
       season.classList.toggle('is-severe', player.droughtSevere);
+
+      // The victory track, always visible. A win condition the player cannot see the
+      // progress of is one they cannot play toward.
+      const held = Math.floor(player.cattleHeld);
+      herd.textContent =
+        player.holdProgress > 0
+          ? t('victory.holding', {
+              held,
+              needed: player.cattleToWin,
+              pct: Math.round(player.holdProgress * 100),
+            })
+          : t('victory.progress', { held, needed: player.cattleToWin });
+      herd.classList.toggle('is-holding', player.holdProgress > 0);
 
       warning.textContent =
         player.shortfall > 0 ? t('resource.starving', { amount: Math.ceil(player.shortfall) }) : '';
