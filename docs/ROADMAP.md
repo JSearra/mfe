@@ -328,7 +328,11 @@ npm run lint                            # no hardcoded strings
    lockstep desync in shipped RTS games. Reaping is deliberately separate from whatever
    did the damage, since crushing, starvation and combat all reduce health and none should
    carry its own copy of the rules for dying.
-5. **Buildings and construction** — note construction invalidates path fields.
+5. ~~**Buildings and construction**~~ — **done**, and the note was the whole point: a
+   foundation changes the navigation grid, so placement goes through `blockTile` (which
+   updates the derived tables ADR-0013 warned about) and then invalidates cached fields.
+   Cost layers are *not* discarded on invalidation — they now carry the buildings written
+   into them, so they are state rather than a derived cache.
 6. **AI opponent** — cheap *if* commands remained the sole mutation path, because the AI is
    then just another command source, and it gives headless AI-vs-AI soak tests for free.
 7. **Audio** — consumes the Phase 3 event stream.

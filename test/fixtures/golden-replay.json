@@ -3,7 +3,7 @@
   "capacity": 512,
   "ticks": 10000,
   "checkpointInterval": 100,
-  "tuningHash": 393151851,
+  "tuningHash": 1228612198,
   "checkpoints": [
     428577011,
     757040573,

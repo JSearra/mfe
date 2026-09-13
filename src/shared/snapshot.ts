@@ -14,7 +14,7 @@
  * See docs/ARCHITECTURE.md section 5.
  */
 
-export const SNAPSHOT_VERSION = 3;
+export const SNAPSHOT_VERSION = 4;
 
 export type FieldType = 'u32' | 'f32' | 'u8';
 
@@ -48,6 +48,12 @@ export const SNAPSHOT_FIELDS = [
    * bolting cannot plan around it, which is half of what the mechanic is for.
    */
   { name: 'stressPct', type: 'u8' },
+  /**
+   * Construction progress, 0-255. A separate field from stress rather than sharing the
+   * byte by kind: a union keyed on a discriminator saves one byte per entity and costs
+   * the next reader a careful think about which meaning applies.
+   */
+  { name: 'progressPct', type: 'u8' },
 ] as const satisfies readonly FieldSpec[];
 
 type Fields = typeof SNAPSHOT_FIELDS;

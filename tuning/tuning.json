@@ -90,5 +90,9 @@
     "rangedCooldownTicks": 34,
     "ammunitionPerShot": 1.0,
     "chaseRange": 9.0
+  },
+  "buildings": {
+    "buildRadius": 2.2,
+    "progressPerBuilder": 1.0
   }
 }

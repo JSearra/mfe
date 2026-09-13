@@ -1,6 +1,9 @@
 import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
 import type { CattleSystem } from './cattle.js';
 import type { CombatSystem } from './combat.js';
+import type { ConstructionSystem } from './construction.js';
+import type { Economy } from './economy/ledger.js';
+import type { BuildingType } from '../shared/buildings/index.js';
 import type { MovementSystem } from './movement.js';
 import { destroy, EntityKind, spawn, type Handle, type World } from './world.js';
 
@@ -26,6 +29,7 @@ export const CommandKind = {
   /** Tether a cow to a herder — what right-clicking a neutral herd issues. */
   Leash: 4,
   Attack: 5,
+  Build: 6,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -78,6 +82,8 @@ export function applyCommand(
   movement: MovementSystem,
   cattle: CattleSystem,
   combat: CombatSystem,
+  construction: ConstructionSystem,
+  economy: Economy,
 ): boolean {
   switch (command.kind) {
     case CommandKind.Spawn: {
@@ -104,6 +110,19 @@ export function applyCommand(
 
     case CommandKind.Leash:
       return cattle.leash(world, command.a as Handle, command.b as Handle);
+
+    case CommandKind.Build:
+      return (
+        construction.place(
+          world,
+          economy,
+          command.d,
+          command.c as BuildingType,
+          command.a,
+          command.b,
+          events,
+        ) === 0
+      );
 
     case CommandKind.Attack:
       return combat.attack(world, command.a as Handle, command.b as Handle);

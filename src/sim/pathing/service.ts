@@ -52,6 +52,13 @@ export interface PathingService {
   /** Serve queued requests within this tick's budget. */
   process(): void;
   invalidate(): void;
+  /**
+   * Discard cached flow fields but KEEP the cost layers.
+   *
+   * Construction writes into the layers through blockTile, so throwing them away would
+   * erase every building placed so far — the layers are now state, not a derived cache.
+   */
+  invalidateFields(): void;
 }
 
 export function createPathingService(map: Heightmap): PathingService {
@@ -194,6 +201,12 @@ export function createPathingService(map: Heightmap): PathingService {
 
       stats.servedThisTick = served;
       stats.pending = queue.length;
+    },
+
+    invalidateFields(): void {
+      fields.clear();
+      fieldOrder.length = 0;
+      fieldQueue.length = 0;
     },
 
     invalidate(): void {

@@ -46,5 +46,10 @@
     "panicColour": "#d94a3a",
     "leashColour": "#e8d9a8",
     "radius": 11
+  },
+  "buildings": {
+    "wallColour": "#7d6a4c",
+    "roofColour": "#9c8459",
+    "scaffoldColour": "#4a4029"
   }
 }

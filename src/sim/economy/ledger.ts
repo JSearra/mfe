@@ -41,8 +41,15 @@ export interface Economy {
   spend(player: number, resource: Resource, amount: number): boolean;
   /** Seasonal drought, 0 (wet) to 1 (parched). A pure function of the tick. */
   drought(tick: number): number;
-  update(world: World, events: SimEvent[]): void;
+  /**
+   * `buildingYield` is injected rather than imported so the ledger stays ignorant of
+   * construction. The dependency runs one way: buildings know they produce grain; the
+   * granary does not need to know what a granary is.
+   */
+  update(world: World, events: SimEvent[], buildingYield?: BuildingYield): void;
 }
+
+export type BuildingYield = (owner: number) => { grain: number; cattle: number };
 
 export interface GrainPlot {
   readonly tileX: number;
@@ -118,7 +125,7 @@ export function createEconomy(
       return value < 0 ? 0 : value > 1 ? 1 : value;
     },
 
-    update(world, events) {
+    update(world, events, buildingYield) {
       const tick = world.tick;
       if (tick === 0 || tick % e.upkeepIntervalTicks !== 0) return;
 
@@ -137,6 +144,17 @@ export function createEconomy(
             : 0
           : e.plotBaseYield * (1 - droughtNow * 0.5);
         economy.add(plot.owner, Resource.Grain, yieldNow);
+      }
+
+      // --- buildings --------------------------------------------------------
+      if (buildingYield !== undefined) {
+        for (let player = 0; player < players; player++) {
+          const produced = buildingYield(player);
+          // A granary full of nothing is still empty: buildings share the drought.
+          const factor = parched ? e.shelteredYieldFactor : 1;
+          economy.add(player, Resource.Grain, produced.grain * factor);
+          economy.add(player, Resource.Cattle, produced.cattle);
+        }
       }
 
       // --- headcount --------------------------------------------------------

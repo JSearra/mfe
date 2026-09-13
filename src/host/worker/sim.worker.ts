@@ -2,6 +2,7 @@
 import { makeCommand } from '../../sim/commands.js';
 import { createCattleSystem } from '../../sim/cattle.js';
 import { createCombatSystem } from '../../sim/combat.js';
+import { createConstructionSystem } from '../../sim/construction.js';
 import { createEconomy, Resource, type Economy } from '../../sim/economy/ledger.js';
 import { createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../../sim/loop.js';
 import { createMovementSystem } from '../../sim/movement.js';
@@ -56,11 +57,13 @@ function start(message: InitMessage): void {
   viewerId = message.viewerId;
   playerId = message.playerId;
 
+  const movement = createMovementSystem(map);
   loop = createLoop(
     world,
-    createMovementSystem(map),
+    movement,
     createCattleSystem(),
     createCombatSystem(),
+    createConstructionSystem(map, movement.pathing),
     economy,
     fog,
     map,

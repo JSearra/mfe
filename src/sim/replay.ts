@@ -2,6 +2,7 @@ import { hashTypedArray } from '../shared/hash.js';
 import { createLoop, step } from './loop.js';
 import { createCattleSystem } from './cattle.js';
 import { createCombatSystem } from './combat.js';
+import { createConstructionSystem } from './construction.js';
 import { createEconomy } from './economy/ledger.js';
 import { createFog } from './vision/fog.js';
 import { FactionId } from '../shared/factions/index.js';
@@ -82,11 +83,13 @@ export function runReplay(
   const map = createHeightmap(REPLAY_MAP_SIZE, REPLAY_MAP_SIZE, seed);
   const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], seed);
   const fog = createFog(2, map);
+  const movement = createMovementSystem(map);
   const loop = createLoop(
     world,
-    createMovementSystem(map),
+    movement,
     createCattleSystem(),
     createCombatSystem(),
+    createConstructionSystem(map, movement.pathing),
     economy,
     fog,
     map,

@@ -32,6 +32,11 @@ const ALARM = hex(cattleStyle.alarmColour);
 const PANIC = hex(cattleStyle.panicColour);
 
 const KIND_CATTLE = 1;
+const KIND_BUILDING = 2;
+
+const WALL = hex(presentation.buildings.wallColour);
+const ROOF = hex(presentation.buildings.roofColour);
+const SCAFFOLD = hex(presentation.buildings.scaffoldColour);
 const HERD_STAMPEDING = 3;
 
 /** Blend two packed RGB colours. */
@@ -92,6 +97,53 @@ function drawUnit(graphics: Graphics, faction: number, selected: boolean): void 
   graphics.closePath();
   graphics.fill({ color: FACTION[faction % FACTION.length] ?? FACTION[0]! });
   graphics.stroke({ width: 1, color: 0x1a1610, alpha: 0.8 });
+}
+
+/**
+ * A building, drawn as a block that rises as it is built.
+ *
+ * Growing upward from the foundation is the whole readout: a player can see at a glance
+ * which sites are nearly done without a progress bar, which is one fewer thing competing
+ * for the top of the screen.
+ */
+function drawBuilding(graphics: Graphics, progressPct: number, selected: boolean): void {
+  const half = radius * 1.9;
+  const complete = progressPct >= 255;
+  const rise = radius * 2.6 * (0.18 + (progressPct / 255) * 0.82);
+
+  if (selected) {
+    graphics.ellipse(0, 0, half + 5, (half + 5) / 2);
+    graphics.stroke({ width: 2, color: SELECTED, alpha: 0.9 });
+  }
+
+  // Footprint diamond.
+  graphics.moveTo(0, -half / 2);
+  graphics.lineTo(half, 0);
+  graphics.lineTo(0, half / 2);
+  graphics.lineTo(-half, 0);
+  graphics.closePath();
+  graphics.fill({ color: complete ? WALL : SCAFFOLD, alpha: complete ? 1 : 0.75 });
+  graphics.stroke({ width: 1, color: 0x1a1610, alpha: 0.8 });
+
+  // Body.
+  graphics.moveTo(-half, 0);
+  graphics.lineTo(-half, -rise);
+  graphics.lineTo(0, -rise - half / 2);
+  graphics.lineTo(half, -rise);
+  graphics.lineTo(half, 0);
+  graphics.lineTo(0, half / 2);
+  graphics.closePath();
+  graphics.fill({ color: WALL, alpha: complete ? 1 : 0.55 });
+  graphics.stroke({ width: 1, color: 0x1a1610, alpha: 0.7 });
+
+  if (complete) {
+    graphics.moveTo(-half, -rise);
+    graphics.lineTo(0, -rise - half / 2);
+    graphics.lineTo(half, -rise);
+    graphics.lineTo(0, -rise + half / 2);
+    graphics.closePath();
+    graphics.fill({ color: ROOF });
+  }
 }
 
 function drawCow(graphics: Graphics, stressPct: number, stampeding: boolean, selected: boolean): void {
@@ -182,22 +234,29 @@ export function createEntityLayer(): EntityLayer {
         const marker = markers[slot]!;
         const faction = view.faction[index]!;
         const isSelected = selected.has(view.handle[index]!);
-        const isCattle = view.kind[index] === KIND_CATTLE;
+        const kind = view.kind[index]!;
+        const isCattle = kind === KIND_CATTLE;
+        const isBuilding = kind === KIND_BUILDING;
+        // Quantised for the same reason stress is: redrawing on every 1/255 of progress
+        // would rebuild geometry every frame for no visible gain.
+        const progressBand = isBuilding ? view.progressPct[index]! >> 4 : 0;
         const stampeding = (view.flags[index]! & 0x0f) === HERD_STAMPEDING;
 
         // Stress is quantised into bands: redrawing on every one-part-in-255 change
         // would rebuild geometry for the whole herd every frame for no visible gain.
         const stressBand = isCattle ? view.stressPct[index]! >> 4 : 0;
         const signature =
-          (isCattle ? 1 : 0) |
-          (isSelected ? 2 : 0) |
-          (stampeding ? 4 : 0) |
-          (faction << 3) |
-          (stressBand << 8);
+          kind |
+          (isSelected ? 4 : 0) |
+          (stampeding ? 8 : 0) |
+          (faction << 4) |
+          (stressBand << 9) |
+          (progressBand << 14);
 
         if (marker.signature !== signature) {
           marker.graphics.clear();
-          if (isCattle) drawCow(marker.graphics, stressBand << 4, stampeding, isSelected);
+          if (isBuilding) drawBuilding(marker.graphics, progressBand << 4, isSelected);
+          else if (isCattle) drawCow(marker.graphics, stressBand << 4, stampeding, isSelected);
           else drawUnit(marker.graphics, faction, isSelected);
           marker.signature = signature;
         }

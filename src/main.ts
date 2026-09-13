@@ -2,6 +2,7 @@ import { UPDATE_PRIORITY } from 'pixi.js';
 import { t } from './core/i18n/index.js';
 import { heightAt } from './shared/heightmap.js';
 import { NO_TILE, pickTileIndex, tileX, tileY } from './shared/picking.js';
+import { BuildingType } from './shared/buildings/index.js';
 import { CommandKind } from './sim/commands.js';
 import { createDirectSimHost, type SimHost } from './host/directHost.js';
 import { createWorkerSimHost } from './host/worker/workerHost.js';
@@ -196,8 +197,37 @@ async function main(): Promise<void> {
     return { x: tileX(map, index) + 0.5, y: tileY(map, index) + 0.5 };
   }
 
+  // Build mode: a number key arms a type, the next left-click sites it. Kept in the
+  // composition root rather than in input.ts because it is a game rule about what a
+  // click means, not a fact about the pointer.
+  let armed: BuildingType | null = null;
+  const buildKeys: Readonly<Record<string, BuildingType>> = {
+    '1': BuildingType.Isibaya,
+    '2': BuildingType.Umuzi,
+    '3': BuildingType.GrainStore,
+  };
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      armed = null;
+      return;
+    }
+    const type = buildKeys[event.key];
+    if (type !== undefined) armed = type;
+  });
+
   bindInput(app.canvas, camera, input, {
     onClickSelect(x, y, additive) {
+      if (armed !== null) {
+        const isoX = (x - camera.viewportWidth / 2) / camera.zoom + camera.x;
+        const isoY = (y - camera.viewportHeight / 2) / camera.zoom + camera.y;
+        const index = pickTileIndex(map, isoX, isoY);
+        if (index !== NO_TILE) {
+          sim.sendCommand(CommandKind.Build, tileX(map, index), tileY(map, index), armed, PLAYER);
+        }
+        armed = null;
+        return;
+      }
       if (view !== null) selection.selectAt(view, map, camera, entities, x, y, PLAYER, additive);
     },
     onMarqueeSelect(rect, additive) {

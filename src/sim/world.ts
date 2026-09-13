@@ -80,6 +80,11 @@ export interface World {
   readonly pathCursor: Int32Array;
 
   /** Chokepoint deadlock detection: ticks without meaningful progress. */
+  // --- buildings ------------------------------------------------------------
+  readonly buildingType: Uint8Array;
+  /** Builder-ticks accumulated. Complete when it reaches the type's work value. */
+  readonly buildProgress: Float64Array;
+
   // --- combat ---------------------------------------------------------------
   /** Handle of the current target, or NULL_HANDLE. */
   readonly attackTarget: Uint32Array;
@@ -147,6 +152,8 @@ export function createWorld(capacity: number, seed: number): World {
     useFlowField: new Uint8Array(capacity),
     pathRequest: new Int32Array(capacity).fill(-1),
     pathCursor: new Int32Array(capacity).fill(-1),
+    buildingType: new Uint8Array(capacity),
+    buildProgress: new Float64Array(capacity),
     attackTarget: new Uint32Array(capacity),
     attackCooldown: new Uint16Array(capacity),
     stuckTicks: new Uint16Array(capacity),
@@ -187,6 +194,7 @@ export const ANIM_STAMPEDE = 2;
 export const EntityKind = {
   Unit: 0,
   Cattle: 1,
+  Building: 2,
 } as const;
 
 export type EntityKind = (typeof EntityKind)[keyof typeof EntityKind];
@@ -243,6 +251,8 @@ export function spawn(
   world.useFlowField[index] = 0;
   world.pathRequest[index] = -1;
   world.pathCursor[index] = -1;
+  world.buildingType[index] = 0;
+  world.buildProgress[index] = 0;
   world.attackTarget[index] = NULL_HANDLE;
   world.attackCooldown[index] = 0;
   world.stuckTicks[index] = 0;

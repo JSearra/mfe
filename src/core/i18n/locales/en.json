@@ -9,7 +9,7 @@
     "cursorTile": "Tile {x}, {y} (h{h})",
     "cursorOffMap": "Tile —",
     "fps": "{fps} fps",
-    "hint": "Left-drag selects. Right-click ground to move, a cow to herd it. Middle-drag pans.",
+    "hint": "Left-drag selects. Right-click to move, herd or attack. 1-3 to build. Middle-drag pans.",
     "frameP99": "p99 {ms} ms",
     "drawCalls": "{calls} draw calls",
     "chunks": "{visible}/{total} chunks",
@@ -37,5 +37,12 @@
     "drought": "Drought {pct}%",
     "droughtSevere": "Drought {pct}% — open plots barren",
     "starving": "Starving: {amount} grain short"
+  },
+  "building": {
+    "isibaya": "isibaya",
+    "umuzi": "umuzi",
+    "grainStore": "Grain store",
+    "armed": "Placing {name} — click to site it, Esc to cancel",
+    "refused": "Cannot build there"
   }
 }

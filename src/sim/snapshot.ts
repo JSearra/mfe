@@ -5,6 +5,8 @@ import {
   type SnapshotWriter,
 } from '../shared/snapshot.js';
 import { isVisible, type FogState } from './vision/fog.js';
+import { buildingSpec } from '../shared/buildings/index.js';
+import { EntityKind } from './world.js';
 import { tuning } from './tuning.js';
 import { packHandle, type World } from './world.js';
 
@@ -56,6 +58,10 @@ export function buildSnapshot(
     writer.hpPct[slot] = encodeHpPct(world.hp[i]!, maxHp);
     writer.kind[slot] = world.kind[i]!;
     writer.stressPct[slot] = encodeHpPct(world.stress[i]!, tuning.cattle.stressMax);
+    writer.progressPct[slot] =
+      world.kind[i] === EntityKind.Building
+        ? encodeHpPct(world.buildProgress[i]!, buildingSpec(world.buildingType[i]!).work)
+        : 255;
     // Herd state rides in the flags byte; it is four values, not a field's worth.
     writer.flags[slot] = (world.flags[i]! & 0xf0) | (world.herdState[i]! & 0x0f);
     slot++;
