@@ -1,5 +1,7 @@
 import { hashTypedArray } from '../shared/hash.js';
 import { createLoop, step } from './loop.js';
+import { createMovementSystem } from './movement.js';
+import { createHeightmap } from './terrain/generate.js';
 import { tuningHash } from './tuning.js';
 import type { Command } from './commands.js';
 import { createWorld, type World } from './world.js';
@@ -14,6 +16,13 @@ import { createWorld, type World } from './world.js';
  */
 
 export const DEFAULT_CHECKPOINT_INTERVAL = 100;
+
+/**
+ * Terrain size for replays. Small enough to keep the golden run fast, large enough that
+ * pathfinding has real cliffs and detours to be deterministic about — the map is
+ * generated from the same seed, so route choice is part of what the hash pins down.
+ */
+export const REPLAY_MAP_SIZE = 64;
 
 export interface ReplayRecord {
   readonly seed: number;
@@ -63,7 +72,8 @@ export function runReplay(
   checkpointInterval: number = DEFAULT_CHECKPOINT_INTERVAL,
 ): number[] {
   const world = createWorld(capacity, seed);
-  const loop = createLoop(world, commands);
+  const map = createHeightmap(REPLAY_MAP_SIZE, REPLAY_MAP_SIZE, seed);
+  const loop = createLoop(world, createMovementSystem(map), commands);
   const checkpoints: number[] = [];
 
   for (let i = 0; i < ticks; i++) {

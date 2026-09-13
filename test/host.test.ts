@@ -5,10 +5,11 @@ import { decodeSnapshot } from '../src/shared/snapshot.js';
 import { EventType } from '../src/shared/events.js';
 import { TICK_MS } from '../src/shared/timing.js';
 import { createWorld, isAlive, packHandle } from '../src/sim/world.js';
+import { flatMap } from './simHarness.js';
 
 function host(capacity = 64, options: Record<string, unknown> = {}) {
   const world = createWorld(capacity, 99);
-  return { world, sim: createDirectSimHost({ world, ...options }) };
+  return { world, sim: createDirectSimHost({ world, map: flatMap(32), ...options }) };
 }
 
 describe('direct sim host', () => {

@@ -4,7 +4,13 @@
     "maxSpeed": 3.0,
     "arriveRadius": 0.06,
     "decel": 5.0,
-    "turnRate": 10.0
+    "turnRate": 10.0,
+    "waypointRadius": 0.35,
+    "separationRadius": 0.85,
+    "separationStrength": 2.2,
+    "pushApart": 0.5,
+    "stuckTicks": 30,
+    "stuckDistance": 0.12
   },
   "world": {
     "defaultCapacity": 512
@@ -19,5 +25,15 @@
   },
   "unit": {
     "maxHp": 100
+  },
+  "pathing": {
+    "flowFieldThreshold": 4,
+    "maxRequestsPerTick": 8,
+    "maxExpansionsPerRequest": 6000,
+    "flowFieldCacheSize": 48,
+    "maxFlowFieldsPerTick": 1
+  },
+  "spatial": {
+    "cellSize": 2
   }
 }

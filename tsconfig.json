@@ -29,6 +29,7 @@
   "include": [
     "src",
     "test",
+    "perf",
     "tuning",
     "*.config.ts"
   ]

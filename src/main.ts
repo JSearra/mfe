@@ -47,7 +47,7 @@ async function main(): Promise<void> {
 
   const map = createHeightmap(MAP_SIZE, MAP_SIZE, MAP_SEED);
   const world = createWorld(512, WORLD_SEED);
-  const sim = createDirectSimHost({ world, viewerId: PLAYER, playerId: PLAYER });
+  const sim = createDirectSimHost({ world, map, viewerId: PLAYER, playerId: PLAYER });
 
   // Seed a small force near the centre. Spawning through commands rather than touching
   // the world directly keeps the invariant that commands are the only mutation path.

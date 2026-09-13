@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { CommandKind, compareCommands, makeCommand } from '../src/sim/commands.js';
-import { createLoop, runTicks, step, TICK_HZ, TICK_MS } from '../src/sim/loop.js';
-import { createWorld, handleIndex, isAlive, packHandle } from '../src/sim/world.js';
+import { runTicks, step, TICK_HZ, TICK_MS } from '../src/sim/loop.js';
+import { handleIndex, isAlive, packHandle } from '../src/sim/world.js';
+import { makeSim } from './simHarness.js';
 
 describe('loop', () => {
   it('runs at a fixed 20Hz', () => {
@@ -26,8 +27,7 @@ describe('loop', () => {
   });
 
   it('sorts the log on construction, so arrival order cannot leak in', () => {
-    const world = createWorld(8, 1);
-    const loop = createLoop(world, [
+    const { loop } = makeSim(8, 1, undefined, [
       makeCommand(3, 0, 1, CommandKind.Spawn),
       makeCommand(1, 1, 0, CommandKind.Spawn),
       makeCommand(1, 0, 0, CommandKind.Spawn),
@@ -40,8 +40,7 @@ describe('loop', () => {
   });
 
   it('executes each command on its own tick', () => {
-    const world = createWorld(8, 1);
-    const loop = createLoop(world, [
+    const { world, loop } = makeSim(8, 1, undefined, [
       makeCommand(0, 0, 0, CommandKind.Spawn),
       makeCommand(2, 0, 1, CommandKind.Spawn),
     ]);
@@ -55,8 +54,7 @@ describe('loop', () => {
   });
 
   it('counts late commands instead of stalling the cursor', () => {
-    const world = createWorld(8, 1);
-    const loop = createLoop(world, [makeCommand(0, 0, 0, CommandKind.Spawn)]);
+    const { world, loop } = makeSim(8, 1, undefined, [makeCommand(0, 0, 0, CommandKind.Spawn)]);
     world.tick = 50; // as if the command arrived after its tick had passed
 
     step(loop);
@@ -65,8 +63,7 @@ describe('loop', () => {
   });
 
   it('drops a command naming a recycled handle rather than retargeting', () => {
-    const world = createWorld(4, 1);
-    const loop = createLoop(world, [
+    const { world, loop } = makeSim(4, 1, undefined, [
       makeCommand(0, 0, 0, CommandKind.Spawn, 0, 0, 0, 0),
       makeCommand(1, 0, 1, CommandKind.Destroy, packHandle(0, 1)),
       makeCommand(2, 0, 2, CommandKind.Spawn, 5, 5, 0, 0),
@@ -83,8 +80,7 @@ describe('loop', () => {
   });
 
   it('advances the tick counter exactly once per step', () => {
-    const world = createWorld(8, 1);
-    const loop = createLoop(world, []);
+    const { world, loop } = makeSim(8, 1, undefined, []);
     runTicks(loop, 137);
     expect(world.tick).toBe(137);
   });

@@ -11,7 +11,8 @@ import {
   SnapshotVersionError,
 } from '../src/shared/snapshot.js';
 import { buildSnapshot } from '../src/sim/snapshot.js';
-import { createWorld, orderMove, packHandle, spawn } from '../src/sim/world.js';
+import { createWorld, packHandle, spawn } from '../src/sim/world.js';
+import { makeSim } from './simHarness.js';
 
 describe('snapshot layout', () => {
   it('derives offsets that are aligned and never overlap', () => {
@@ -149,9 +150,9 @@ describe('buildSnapshot', () => {
   });
 
   it('reflects an order in the movement state it sends', () => {
-    const world = createWorld(4, 1);
-    const handle = spawn(world, 0, 0, 0);
-    orderMove(world, handle, 10, 0);
+    const { world, movement } = makeSim(4);
+    const handle = spawn(world, 1, 1, 0);
+    movement.order(world, handle, 10, 1);
     const view = decodeSnapshot(buildSnapshot(world, 0));
     expect(view.count).toBe(1);
     expect(view.animState[0]).toBe(0); // still idle until the next tick runs

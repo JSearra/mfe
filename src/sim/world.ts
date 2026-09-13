@@ -1,4 +1,3 @@
-import { atan2, angleDelta } from './math/trig.js';
 import { createRng, type Rng } from './math/rng.js';
 import { tuning } from './tuning.js';
 
@@ -56,6 +55,21 @@ export interface World {
 
   readonly faction: Uint8Array;
   readonly hp: Uint16Array;
+  readonly movementClass: Uint8Array;
+
+  /** Destination tile index, or -1. */
+  readonly goalIndex: Int32Array;
+  /** 1 when following a shared flow field rather than an individual path. */
+  readonly useFlowField: Uint8Array;
+  /** Outstanding path request ticket, or -1. */
+  readonly pathRequest: Int32Array;
+  /** Waypoint index into the unit's path, or -1. */
+  readonly pathCursor: Int32Array;
+
+  /** Chokepoint deadlock detection: ticks without meaningful progress. */
+  readonly stuckTicks: Uint16Array;
+  readonly lastProgressX: Float64Array;
+  readonly lastProgressY: Float64Array;
   readonly animState: Uint8Array;
   /**
    * Tick the current animation began. Sent across the boundary because a renderer
@@ -102,6 +116,14 @@ export function createWorld(capacity: number, seed: number): World {
     hasTarget: new Uint8Array(capacity),
     faction: new Uint8Array(capacity),
     hp: new Uint16Array(capacity),
+    movementClass: new Uint8Array(capacity),
+    goalIndex: new Int32Array(capacity).fill(-1),
+    useFlowField: new Uint8Array(capacity),
+    pathRequest: new Int32Array(capacity).fill(-1),
+    pathCursor: new Int32Array(capacity).fill(-1),
+    stuckTicks: new Uint16Array(capacity),
+    lastProgressX: new Float64Array(capacity),
+    lastProgressY: new Float64Array(capacity),
     animState: new Uint8Array(capacity),
     animStartTick: new Uint32Array(capacity),
     flags: new Uint8Array(capacity),
@@ -124,7 +146,13 @@ export function isAlive(world: World, handle: Handle): boolean {
 export const ANIM_IDLE = 0;
 export const ANIM_WALK = 1;
 
-export function spawn(world: World, x: number, y: number, faction: number): Handle {
+export function spawn(
+  world: World,
+  x: number,
+  y: number,
+  faction: number,
+  movementClass = 0,
+): Handle {
   if (world.freeCount === 0) return NULL_HANDLE;
 
   const index = world.freeStack[--world.freeCount]!;
@@ -143,18 +171,17 @@ export function spawn(world: World, x: number, y: number, faction: number): Hand
   world.animState[index] = ANIM_IDLE;
   world.animStartTick[index] = world.tick;
   world.flags[index] = 0;
+  world.movementClass[index] = movementClass;
+  world.goalIndex[index] = -1;
+  world.useFlowField[index] = 0;
+  world.pathRequest[index] = -1;
+  world.pathCursor[index] = -1;
+  world.stuckTicks[index] = 0;
+  world.lastProgressX[index] = x;
+  world.lastProgressY[index] = y;
   world.liveCount++;
 
   return packHandle(index, world.generation[index]!);
-}
-
-export function orderMove(world: World, handle: Handle, x: number, y: number): boolean {
-  if (!isAlive(world, handle)) return false;
-  const index = handleIndex(handle);
-  world.targetX[index] = x;
-  world.targetY[index] = y;
-  world.hasTarget[index] = 1;
-  return true;
 }
 
 /**
@@ -201,73 +228,4 @@ export function flushDestroys(world: World): number {
 
   world.pendingDestroyCount = 0;
   return count;
-}
-
-/**
- * Move each unit toward its order target.
- *
- * Not pathfinding — that is Phase 4. A straight approach with arrival deceleration is
- * enough to exercise the boundary, and it establishes the property the renderer's
- * extrapolation guard depends on: a unit must never step past its target. Speed is
- * therefore clamped by distance/dt as well as by maxSpeed, so the final step lands
- * exactly on the target rather than overshooting and springing back.
- */
-export function moveUnits(world: World): void {
-  const { dt, maxSpeed, arriveRadius, decel, turnRate } = tuning.movement;
-  const { alive, posX, posY, velX, velY, facing, targetX, targetY, hasTarget, capacity } = world;
-
-  for (let i = 0; i < capacity; i++) {
-    if (alive[i] !== 1) continue;
-
-    if (hasTarget[i] !== 1) {
-      velX[i] = 0;
-      velY[i] = 0;
-      setAnim(world, i, ANIM_IDLE);
-      continue;
-    }
-
-    const dx = targetX[i]! - posX[i]!;
-    const dy = targetY[i]! - posY[i]!;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    if (distance <= arriveRadius) {
-      posX[i] = targetX[i]!;
-      posY[i] = targetY[i]!;
-      velX[i] = 0;
-      velY[i] = 0;
-      hasTarget[i] = 0;
-      setAnim(world, i, ANIM_IDLE);
-      continue;
-    }
-
-    // Decelerate on approach, and never travel further than the target is away.
-    let speed = distance * decel;
-    if (speed > maxSpeed) speed = maxSpeed;
-    const stepLimit = distance / dt;
-    if (speed > stepLimit) speed = stepLimit;
-
-    const inverse = 1 / distance;
-    const vx = dx * inverse * speed;
-    const vy = dy * inverse * speed;
-
-    velX[i] = vx;
-    velY[i] = vy;
-    posX[i] = posX[i]! + vx * dt;
-    posY[i] = posY[i]! + vy * dt;
-
-    // Turn toward travel the short way round, at a bounded rate.
-    const desired = atan2(dy, dx);
-    const delta = angleDelta(facing[i]!, desired);
-    const maxTurn = turnRate * dt;
-    facing[i] = facing[i]! + (delta > maxTurn ? maxTurn : delta < -maxTurn ? -maxTurn : delta);
-
-    setAnim(world, i, ANIM_WALK);
-  }
-}
-
-/** Stamp the start tick only when the state actually changes, so phase is stable. */
-function setAnim(world: World, index: number, state: number): void {
-  if (world.animState[index] === state) return;
-  world.animState[index] = state;
-  world.animStartTick[index] = world.tick;
 }

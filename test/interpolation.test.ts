@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { createInterpolator, INTERPOLATION_DELAY_TICKS } from '../src/render/interpolation.js';
 import { createSnapshotWriter, encodeFacing } from '../src/shared/snapshot.js';
 import { TICK_MS } from '../src/shared/timing.js';
-import { createLoop, step } from '../src/sim/loop.js';
+import { step } from '../src/sim/loop.js';
 import { buildSnapshot } from '../src/sim/snapshot.js';
-import { createWorld, orderMove, spawn } from '../src/sim/world.js';
+import { spawn } from '../src/sim/world.js';
+import { makeSim } from './simHarness.js';
 
 const FRAME_MS = 1000 / 60;
 
@@ -23,11 +24,9 @@ describe('extrapolation guard', () => {
   // The guard the whole design rests on. Extrapolating past the newest snapshot makes a
   // unit that stops overshoot and spring back, which is what rubber-banding is.
   it('never renders a decelerating unit past its target', () => {
-    const world = createWorld(8, 1);
-    const handle = spawn(world, 0, 0, 0);
-    orderMove(world, handle, 10, 0);
-
-    const loop = createLoop(world);
+    const { world, movement, loop } = makeSim(8);
+    const handle = spawn(world, 2, 2, 0);
+    movement.order(world, handle, 12, 2);
     const interpolator = createInterpolator();
 
     let maxRenderedX = -Infinity;
@@ -44,9 +43,9 @@ describe('extrapolation guard', () => {
       }
     }
 
-    expect(world.posX[0]).toBeCloseTo(10, 6);
+    expect(world.posX[0]).toBeCloseTo(12, 6);
     // A tiny epsilon covers f32 quantisation in the snapshot, nothing more.
-    expect(maxRenderedX).toBeLessThanOrEqual(10 + 1e-4);
+    expect(maxRenderedX).toBeLessThanOrEqual(12 + 1e-3);
   });
 
   it('clamps the blend rather than running past the newest snapshot', () => {

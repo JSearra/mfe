@@ -1,11 +1,13 @@
 import { applyCommand, compareCommands, type Command } from './commands.js';
 import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
-import { flushDestroys, moveUnits, packHandle, type World } from './world.js';
+import type { MovementSystem } from './movement.js';
+import { flushDestroys, packHandle, type World } from './world.js';
 
 export { TICK_HZ, TICK_MS } from '../shared/timing.js';
 
 export interface SimLoop {
   readonly world: World;
+  readonly movement: MovementSystem;
   /** Sorted by (tick, playerId, seq) from `cursor` onward. */
   readonly pending: Command[];
   cursor: number;
@@ -17,9 +19,13 @@ export interface SimLoop {
   readonly events: SimEvent[];
 }
 
-export function createLoop(world: World, commands: readonly Command[] = []): SimLoop {
+export function createLoop(
+  world: World,
+  movement: MovementSystem,
+  commands: readonly Command[] = [],
+): SimLoop {
   const pending = [...commands].sort(compareCommands);
-  return { world, pending, cursor: 0, dirty: false, lateCommands: 0, events: [] };
+  return { world, movement, pending, cursor: 0, dirty: false, lateCommands: 0, events: [] };
 }
 
 /** Queue a command issued during play. */
@@ -36,7 +42,7 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
  * survives until the boundary.
  */
 export function step(loop: SimLoop): void {
-  const { world, pending, events } = loop;
+  const { world, movement, pending, events } = loop;
 
   if (loop.dirty) {
     // Only the unconsumed tail can be out of order.
@@ -49,11 +55,11 @@ export function step(loop: SimLoop): void {
     const command = pending[loop.cursor]!;
     if (command.tick > world.tick) break;
     if (command.tick < world.tick) loop.lateCommands++;
-    applyCommand(world, command, events);
+    applyCommand(world, command, events, movement);
     loop.cursor++;
   }
 
-  moveUnits(world);
+  movement.update(world);
 
   // Emitted before the flush, while the entities still have positions to report.
   for (let i = 0; i < world.pendingDestroyCount; i++) {
@@ -67,6 +73,7 @@ export function step(loop: SimLoop): void {
         world.posY[index]!,
       ),
     );
+    movement.forget(index);
   }
   flushDestroys(world);
 

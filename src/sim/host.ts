@@ -3,6 +3,8 @@ import { makeCommand } from './commands.js';
 import { compactLoop, createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from './loop.js';
 import { buildSnapshot } from './snapshot.js';
 import type { SimEvent } from '../shared/events.js';
+import type { Heightmap } from '../shared/heightmap.js';
+import { createMovementSystem, type MovementSystem } from './movement.js';
 import type { World } from './world.js';
 
 /**
@@ -34,6 +36,7 @@ export interface SimMessage {
 
 export interface SimHost {
   readonly tick: number;
+  readonly movement: MovementSystem;
   sendCommand(kind: CommandKind, a?: number, b?: number, c?: number, d?: number): void;
   /** Advance by real elapsed time. A worker host will tick itself and ignore this. */
   pump(elapsedMs: number): void;
@@ -44,6 +47,8 @@ export interface SimHost {
 
 export interface DirectSimHostOptions {
   world: World;
+  /** Terrain the simulation moves over. Pathing cost layers derive from it. */
+  map: Heightmap;
   viewerId?: number;
   playerId?: number;
   /**
@@ -79,6 +84,7 @@ function defaultStrict(): boolean {
 export function createDirectSimHost(options: DirectSimHostOptions): SimHost {
   const {
     world,
+    map,
     viewerId = 0,
     playerId = 0,
     commandDelayTicks = 0,
@@ -86,7 +92,8 @@ export function createDirectSimHost(options: DirectSimHostOptions): SimHost {
     maxPendingEvents = DEFAULT_MAX_PENDING_EVENTS,
   } = options;
 
-  const loop: SimLoop = createLoop(world);
+  const movement = createMovementSystem(map);
+  const loop: SimLoop = createLoop(world, movement);
   let accumulator = 0;
   let sequence = 0;
 
@@ -111,6 +118,8 @@ export function createDirectSimHost(options: DirectSimHostOptions): SimHost {
   }
 
   const host: SimHost = {
+    movement,
+
     get tick(): number {
       return world.tick;
     },
