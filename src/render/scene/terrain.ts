@@ -71,17 +71,47 @@ function colourForLevel(level: number): number {
  * west faces are always hidden behind the tile's own top.
  */
 /**
- * Pick a variant for a tile, from its coordinates.
- *
- * Deterministic so the ground does not crawl between frames or differ between two
- * players looking at the same map, and hashed rather than taken from (x+y) so the
- * variants do not band into diagonal stripes along the isometric axis.
+ * A stable per-tile hash. Hashed rather than taken from (x+y) so choices do not band
+ * into diagonal stripes along the isometric axis, and deterministic so the ground does
+ * not crawl between frames or differ between two players looking at the same map.
  */
-function variantFor(tiles: readonly TerrainTile[], tileX: number, tileY: number): TerrainTile {
-  let hash = (tileX * 0x1f1f1f1f) ^ (tileY * 0x85ebca6b);
+function tileHash(tileX: number, tileY: number, salt: number): number {
+  let hash = (tileX * 0x1f1f1f1f) ^ (tileY * 0x85ebca6b) ^ Math.imul(salt, 0x9e3779b9);
   hash = Math.imul(hash ^ (hash >>> 15), 0x2c1b3c6d);
-  hash = (hash ^ (hash >>> 13)) >>> 0;
-  return tiles[hash % tiles.length]!;
+  return (hash ^ (hash >>> 13)) >>> 0;
+}
+
+/** How often a tile borrows a neighbour's ground instead of its own. */
+const BLEND_CHANCE = 0.38;
+
+/**
+ * Which height band's art to draw a tile with.
+ *
+ * Not simply its own. Every tile taking the texture of its own level draws the boundary
+ * between two grounds as a clean run of diamond edges — a hard zigzag line across the
+ * map wherever the height changes, which is the thing that stops the set reading as
+ * terrain rather than as tiles.
+ *
+ * So a tile sometimes borrows the band of one of its four neighbours. Inside a region
+ * of constant height the neighbour is the same band and nothing happens; only at a
+ * boundary does it do anything, and there it scatters each ground a tile into the other
+ * so the two interlock. It costs one hash and no extra geometry — a blend mask per
+ * boundary edge would be the thorough version, and would put several thousand more
+ * sprites on screen for a frame budget that is already the tightest thing here.
+ */
+function bandFor(map: Heightmap, tileX: number, tileY: number): number {
+  const own = map.data[tileY * map.width + tileX]!;
+  if (tileHash(tileX, tileY, 1) / 0xffffffff >= BLEND_CHANCE) return own;
+
+  const pick = tileHash(tileX, tileY, 2) & 3;
+  const neighbourX = tileX + (pick === 0 ? 1 : pick === 1 ? -1 : 0);
+  const neighbourY = tileY + (pick === 2 ? 1 : pick === 3 ? -1 : 0);
+  const neighbour = heightAt(map, neighbourX, neighbourY);
+  return neighbour < 0 ? own : neighbour;
+}
+
+function variantFor(tiles: readonly TerrainTile[], tileX: number, tileY: number): TerrainTile {
+  return tiles[tileHash(tileX, tileY, 3) % tiles.length]!;
 }
 
 function drawTile(
@@ -101,7 +131,10 @@ function drawTile(
   const eastX = centreX + HALF_TILE_W;
   const westX = centreX - HALF_TILE_W;
 
-  const tile = tiles === null ? null : (variantFor(tiles.variants(level), tileX, tileY) ?? null);
+  // Drawn with a possibly-borrowed band, but the geometry still uses the tile's real
+  // level: borrowing art must not move the ground a unit walks on.
+  const tile =
+    tiles === null ? null : (variantFor(tiles.variants(bandFor(map, tileX, tileY)), tileX, tileY) ?? null);
   // The faces take the tile's own average colour rather than the palette's, so a flat
   // shaded cliff matches the textured surface it drops away from.
   const base = tile === null ? colourForLevel(level) : tile.colour;

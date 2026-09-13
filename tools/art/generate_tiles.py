@@ -47,12 +47,25 @@ SUBJECTS = {
     # lines" it drew a squiggle instead. Naming unwanted geometry worked for the
     # sandstone stripes and does not work here, so this describes density instead:
     # ground covered edge to edge leaves nowhere to put a subject.
+    # Careful with "fine detail" anywhere in this file. The source is 512px and the tile
+    # is 64x32, so an eight-to-one downscale averages fine detail into flat colour: two
+    # passes at this subject asking for fine gravel produced tiles that were, at tile
+    # size, a single brown. Whatever should be visible in play has to be big enough in
+    # the source to survive that, without being so big it becomes a subject.
     "savanna-low": (
-        "dense fine red-brown gravel and grit covering the ground completely, small "
-        "stones of even size packed across the whole surface, occasional dry grass tuft"
+        "dry red-brown earth with clearly separated clumps of pale dry grass, each clump "
+        "distinct and well spaced, bare reddish ground between them, scattered evenly "
+        "over the whole frame"
     ),
     "savanna-mid": "sun-bleached tall grass over dry earth, scattered stones",
-    "savanna-high": "pale yellow sourveld grass, thin and wind-combed",
+    # "thin and wind-combed" produced exactly that: every blade lying the same way, which
+    # reads as brushed fur or a wheat field and, worse, gives the tile a direction — so
+    # laying four of them together shows the grain turning at every seam.
+    "savanna-high": (
+        "pale straw-coloured bunch grass growing in small separate tufts on stony "
+        "ground, fine detail, bare earth visible between the tufts, no combing, "
+        "no single direction"
+    ),
     "rock": "weathered ironstone and broken shale, grey-brown",
     # "banded strata" came back as flat horizontal stripes — plywood, not rock. Broken
     # and mottled gets weathered stone; the word "bands" does not.
@@ -70,7 +83,13 @@ SUBJECTS = {
         "dry red-brown earth and fine gravel, low grey-green thorn scrub and dry grass "
         "tufts growing across it, bare ground visible between the bushes"
     ),
-    "riverbed": "damp sand and rounded pebbles, darker where wet",
+    # Large pebbles make a tile with a few big shapes in it, and a few big shapes is what
+    # the eye picks out and follows when the tile repeats. Small ones read as gravel at
+    # tile size and hide the repeat.
+    "riverbed": (
+        "damp coarse sand packed with many small rounded pebbles of even size, "
+        "fine detail, darker where wet, no large stones, no boulders"
+    ),
 }
 
 

@@ -180,10 +180,12 @@ async function main(): Promise<void> {
   }
 
   // A clustered herd, not a ring: cattle graze together, and a hollow ring has no
-  // centre to click on or drive into.
+  // centre to click on or drive into. The radius follows the separation distance — at
+  // 1.5 units apart thirty beasts need about four units of room, and spawning them
+  // tighter than they will stand just makes them shove each other apart on tick one.
   for (let i = 0; i < STARTING_CATTLE; i++) {
     const angle = i * 2.399963; // golden angle, so the blob fills evenly
-    const spread = 3.2 * Math.sqrt((i + 0.5) / STARTING_CATTLE);
+    const spread = 5.0 * Math.sqrt((i + 0.5) / STARTING_CATTLE);
     sim.sendCommand(
       CommandKind.SpawnCattle,
       centre + 14 + Math.cos(angle) * spread,

@@ -47,7 +47,13 @@ def main() -> int:
     src = pathlib.Path(args.src)
     subjects: dict[str, list[pathlib.Path]] = {}
     for path in sorted(src.glob("*.png")):
-        subjects.setdefault(path.stem.rsplit("_", 1)[0], []).append(path)
+        # Skip anything that is not a `subject_seed` tile — the directory also holds the
+        # packed page the renderer actually loads, and counting that as a ninth terrain
+        # type puts a sheet of the whole atlas at the bottom of the review.
+        subject, _, seed = path.stem.rpartition("_")
+        if not subject or not seed.isdigit():
+            continue
+        subjects.setdefault(subject, []).append(path)
     if args.only:
         subjects = {k: v for k, v in subjects.items() if k == args.only}
     if not subjects:

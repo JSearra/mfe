@@ -46,6 +46,23 @@ BIPEDS = {
     "musketeer": ((0.42, 0.30, 0.22), (0.34, 0.32, 0.28), False, True),
 }
 
+# Dress and kit, and the silhouette is most of the point.
+#
+# The first figure was a box with a stick: nothing about it said which army it belonged
+# to, and at forty pixels a unit is read almost entirely by its outline. What makes an
+# impi legible at that size is the war shield — the isihlangu is a tall oval of oxhide
+# carried on the left, long enough to cover most of the body, and it is by far the
+# largest thing in the silhouette. After that: a short stabbing spear rather than a long
+# throwing one, cow-tail tufts at the arms and below the knee, and a headband.
+#
+# Naming: docs/CONTENT.md flags that "iklwa" for the short spear is widely repeated but
+# historically contested, and that "assegai" is a generic Portuguese-derived term. Since
+# nothing user-facing is named here, the geometry is just called a spear and the naming
+# decision is left where CONTENT.md puts it.
+SHIELD_HEIGHT = 0.95
+SHIELD_WIDTH = 0.46
+SPEAR_LENGTH = 0.92
+
 # Nguni cattle, not generic cattle, and the difference is the point of the game. These
 # are Sanga-type: smaller than a European breed, lateral lyre-shaped horns, a modest
 # cervico-thoracic hump, and famously patched hides — the pattern vocabulary is dense
@@ -114,6 +131,34 @@ def box(name: str, size: tuple[float, float, float], location: tuple[float, floa
     return obj
 
 
+def blob(name: str, size: tuple[float, float, float], location: tuple[float, float, float]):
+    """A smooth-shaded ellipsoid.
+
+    Cattle were built from cubes and read as crates on legs. An animal is all curve, and
+    at forty pixels the difference between a box and an ellipsoid is the difference
+    between a shipping container and a cow. Smooth shading matters as much as the shape:
+    a faceted low-poly sphere just looks like a worse box.
+    """
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=10, location=location)
+    obj = bpy.context.active_object
+    obj.name = name
+    obj.scale = (size[0] / 2, size[1] / 2, size[2] / 2)
+    bpy.ops.object.shade_smooth()
+    return obj
+
+
+def taper(name: str, lower: float, upper: float, depth: float, location, rotation=(0.0, 0.0, 0.0)):
+    """A truncated cone, for limbs and necks that should not be tubes."""
+    bpy.ops.mesh.primitive_cone_add(
+        vertices=12, radius1=lower, radius2=upper, depth=depth, location=location
+    )
+    obj = bpy.context.active_object
+    obj.name = name
+    obj.rotation_euler = rotation
+    bpy.ops.object.shade_smooth()
+    return obj
+
+
 def cylinder(name, radius, depth, location, rotation=(0.0, 0.0, 0.0)):
     bpy.ops.mesh.primitive_cylinder_add(radius=radius, depth=depth, location=location)
     obj = bpy.context.active_object
@@ -134,70 +179,94 @@ def build_cattle(kind: str):
 
     back = COW_LEG + COW_DEPTH / 2
 
-    body = box("body", (COW_LENGTH, COW_WIDTH, COW_DEPTH), (0, 0, back))
+    # Barrel, deeper at the shoulder than at the flank, which is what gives a cow its
+    # wedge from the side rather than the sausage a plain ellipsoid gives.
+    body = blob("body", (COW_LENGTH, COW_WIDTH, COW_DEPTH), (0, 0, back))
     body.data.materials.append(hide)
     body.parent = root
 
+    # Kept at or below the barrel's own height. Taller than the body and it rises above
+    # the backline as a bulge, which made the animal read as segmented — a caterpillar
+    # rather than a cow. These only broaden the shoulder and the haunch.
+    chest = blob("chest", (COW_LENGTH * 0.46, COW_WIDTH * 1.06, COW_DEPTH * 0.96),
+                 (COW_LENGTH * 0.20, 0, back - 0.01))
+    chest.data.materials.append(hide)
+    chest.parent = root
+
+    rump = blob("rump", (COW_LENGTH * 0.42, COW_WIDTH * 1.0, COW_DEPTH * 0.92),
+                (-COW_LENGTH * 0.30, 0, back - 0.01))
+    rump.data.materials.append(hide)
+    rump.parent = root
+
     # The hump. Small and over the shoulder, which is what makes the silhouette Sanga
     # rather than taurine — it is most of the read at 40 pixels.
-    hump = box("hump", (0.34, 0.30, 0.20), (COW_LENGTH * 0.24, 0, back + COW_DEPTH / 2))
+    hump = blob("hump", (0.40, 0.28, 0.22), (COW_LENGTH * 0.22, 0, back + COW_DEPTH * 0.46))
     hump.data.materials.append(hide)
     hump.parent = root
 
-    # Patches, sitting just proud of the body so they z-fight with nothing. The first
-    # pass made them big flat rectangles spanning the full width, which read as cargo
-    # labels stuck to a crate rather than as markings. Smaller, at different heights,
-    # and not the same on both flanks.
+    # Patches. Flattened blobs pressed onto the flank rather than boxes stuck to a
+    # crate: a rectangle on a curved body reads as a label, which is exactly how the
+    # first version looked.
+    # Big and barely proud of the flank. Two curved surfaces meeting only just intersect,
+    # so a patch the size of the marking comes out as a small lens — the first attempt
+    # gave white dots. These are wide in the plane of the flank and only a little wider
+    # than the body across it.
     for index, (px, pz, size) in enumerate(
         (
-            (-0.30, -0.10, (0.30, COW_WIDTH + 0.02, 0.22)),
-            (0.16, 0.12, (0.20, COW_WIDTH + 0.02, 0.18)),
-            (-0.02, -0.16, (0.16, COW_WIDTH + 0.02, 0.14)),
+            (-0.26, -0.02, (0.62, COW_WIDTH + 0.015, 0.46)),
+            (0.20, 0.10, (0.40, COW_WIDTH + 0.015, 0.34)),
+            (-0.52, -0.10, (0.30, COW_WIDTH + 0.015, 0.28)),
         )
     ):
-        spot = box(f"patch_{index}", size, (px, 0, back + pz))
+        spot = blob(f"patch_{index}", size, (px, 0, back + pz))
         spot.data.materials.append(patch)
         spot.parent = root
 
-    # The underside and lower legs go pale, which is both common in the breed and the
-    # cheapest way to stop the animal reading as one solid lump at tile size.
-    belly = box("belly", (COW_LENGTH * 0.8, COW_WIDTH + 0.015, 0.14), (0, 0, back - COW_DEPTH / 2 + 0.05))
+    # Pale underside, common in the breed and the cheapest way to stop the animal
+    # reading as one solid lump at tile size.
+    # Narrower than the body, so it stays underneath instead of wrapping up the flanks
+    # as a painted stripe.
+    belly = blob("belly", (COW_LENGTH * 0.72, COW_WIDTH * 0.74, 0.20),
+                 (0, 0, back - COW_DEPTH / 2 + 0.02))
     belly.data.materials.append(patch)
     belly.parent = root
 
     # Neck and head, angled up and forward from the shoulder.
     neck_pivot = bpy.data.objects.new("neck", None)
     bpy.context.scene.collection.objects.link(neck_pivot)
-    neck_pivot.location = (COW_LENGTH * 0.42, 0, back + COW_DEPTH * 0.22)
+    neck_pivot.location = (COW_LENGTH * 0.40, 0, back + COW_DEPTH * 0.20)
     neck_pivot.parent = root
 
-    neck = box("neck_mesh", (0.34, 0.26, 0.26), (0.14, 0, 0.06))
+    neck = taper("neck_mesh", 0.17, 0.11, 0.34, (0.15, 0, 0.05), (0, math.radians(78), 0))
     neck.data.materials.append(hide)
     neck.parent = neck_pivot
 
-    head = box("head", (0.36, 0.20, 0.22), (0.40, 0, 0.10))
+    head = blob("head", (0.34, 0.19, 0.20), (0.40, 0, 0.09))
     head.data.materials.append(hide)
     head.parent = neck_pivot
 
-    # Lyre horns: out to the side, then up. Two segments each, because a single angled
-    # cylinder reads as a spike and the lateral sweep is the recognisable part.
+    muzzle = blob("muzzle", (0.16, 0.13, 0.13), (0.53, 0, 0.05))
+    muzzle.data.materials.append(patch)
+    muzzle.parent = neck_pivot
+
     for side, y in (("l", 1.0), ("r", -1.0)):
-        base = cylinder(
-            f"horn_base_{side}",
-            0.022,
-            0.30,
-            (0.36, y * 0.16, 0.22),
-            (math.radians(90 * y * -1), 0, 0),
+        ear = blob(f"ear_{side}", (0.09, 0.13, 0.06), (0.33, y * 0.13, 0.13))
+        ear.data.materials.append(hide)
+        ear.parent = neck_pivot
+
+        # Lyre horns: out to the side, then up. Two segments each, because a single
+        # angled cylinder reads as a spike and the lateral sweep is the recognisable
+        # part. Tapered, so they come to a point like horn rather than ending flat.
+        base = taper(
+            f"horn_base_{side}", 0.026, 0.018, 0.28,
+            (0.36, y * 0.15, 0.21), (math.radians(90 * y * -1), 0, 0),
         )
         base.data.materials.append(horn)
         base.parent = neck_pivot
 
-        tip = cylinder(
-            f"horn_tip_{side}",
-            0.016,
-            0.22,
-            (0.36, y * 0.28, 0.32),
-            (math.radians(-38 * y), 0, 0),
+        tip = taper(
+            f"horn_tip_{side}", 0.017, 0.004, 0.22,
+            (0.36, y * 0.27, 0.31), (math.radians(-38 * y), 0, 0),
         )
         tip.data.materials.append(horn)
         tip.parent = neck_pivot
@@ -205,30 +274,31 @@ def build_cattle(kind: str):
     # Tail, hanging from the rump with a dark switch on the end.
     tail_pivot = bpy.data.objects.new("tail", None)
     bpy.context.scene.collection.objects.link(tail_pivot)
-    tail_pivot.location = (-COW_LENGTH / 2, 0, back + COW_DEPTH * 0.3)
+    tail_pivot.location = (-COW_LENGTH / 2, 0, back + COW_DEPTH * 0.28)
     tail_pivot.parent = root
 
-    tail = cylinder("tail_mesh", 0.018, 0.52, (0, 0, -0.26))
+    tail = taper("tail_mesh", 0.022, 0.010, 0.50, (0, 0, -0.25))
     tail.data.materials.append(hide)
     tail.parent = tail_pivot
 
-    switch = box("switch", (0.06, 0.06, 0.12), (0, 0, -0.52))
+    switch = blob("switch", (0.07, 0.07, 0.14), (0, 0, -0.52))
     switch.data.materials.append(patch)
     switch.parent = tail_pivot
 
     limbs = {"neck": neck_pivot, "tail": tail_pivot}
-    for pair, x in (("fore", COW_LENGTH * 0.34), ("hind", -COW_LENGTH * 0.34)):
-        for side, y in (("l", COW_WIDTH * 0.36), ("r", -COW_WIDTH * 0.36)):
+    for pair, x in (("fore", COW_LENGTH * 0.32), ("hind", -COW_LENGTH * 0.32)):
+        for side, y in (("l", COW_WIDTH * 0.34), ("r", -COW_WIDTH * 0.34)):
             pivot = bpy.data.objects.new(f"{pair}_{side}", None)
             bpy.context.scene.collection.objects.link(pivot)
             pivot.location = (x, y, COW_LEG)
             pivot.parent = root
 
-            leg = box(f"leg_{pair}_{side}", (0.10, 0.10, COW_LEG), (0, 0, -COW_LEG / 2))
+            # Thicker at the top, thinner at the fetlock.
+            leg = taper(f"leg_{pair}_{side}", 0.075, 0.038, COW_LEG, (0, 0, -COW_LEG / 2))
             leg.data.materials.append(hide)
             leg.parent = pivot
 
-            hoof = box(f"hoof_{pair}_{side}", (0.12, 0.12, 0.08), (0, 0, -COW_LEG + 0.04))
+            hoof = blob(f"hoof_{pair}_{side}", (0.10, 0.10, 0.09), (0, 0, -COW_LEG + 0.03))
             hoof.data.materials.append(patch)
             hoof.parent = pivot
 
@@ -287,17 +357,34 @@ def build(kind: str):
     # ARCHITECTURE section 9 wants player colour swapped, not pre-tinted per faction.
     player = material("player_colour", (0.85, 0.55, 0.28))
 
+    hide_pale = material("hide_pale", (0.88, 0.84, 0.76))
+    blade_metal = material("blade", (0.72, 0.72, 0.70))
+
     root = bpy.data.objects.new("unit", None)
     bpy.context.scene.collection.objects.link(root)
 
     hip_height = LIMB
+    # A bare torso, with the umutsha at the waist rather than a tunic over the chest.
+    # The first version dressed everyone in a cloth block, which read as a jerkin.
     torso = box("torso", (0.30, 0.20, TORSO), (0, 0, hip_height + TORSO / 2))
-    torso.data.materials.append(cloth)
+    torso.data.materials.append(skin if has_shield else cloth)
     torso.parent = root
+
+    if has_shield:
+        waist = box("umutsha", (0.32, 0.23, 0.16), (0, 0, hip_height + 0.06))
+        waist.data.materials.append(cloth)
+        waist.parent = root
 
     head = box("head", (HEAD, HEAD, HEAD), (0, 0, hip_height + TORSO + HEAD / 2))
     head.data.materials.append(skin)
     head.parent = root
+
+    if has_shield:
+        # Headband. At tile size it is two pixels, but it is two pixels that stop the
+        # head reading as a bare cube.
+        band = box("headband", (HEAD * 1.06, HEAD * 1.06, 0.05), (0, 0, hip_height + TORSO + HEAD * 0.22))
+        band.data.materials.append(hide_pale)
+        band.parent = root
 
     limbs = {}
     for side, y in (("l", 0.13), ("r", -0.13)):
@@ -324,17 +411,75 @@ def build(kind: str):
         limbs[f"shoulder_{side}"] = arm_pivot
 
         if side == "l" and has_shield:
-            shield = box("shield", (0.06, 0.34, 0.52), (0.10, 0, -LIMB * 0.4))
-            shield.data.materials.append(player)
+            # An oval rather than a slab: scaled spheres cost nothing and the rounded
+            # top is what stops it reading as a door. Carried slightly forward of the
+            # body and tilted, which is how it covers the torso without hiding the arm.
+            # Through blob() like everything else, which takes diameters. Setting .scale
+            # directly here meant this one object was sized in half-extents while its
+            # neighbours were sized in full ones, and the marking below — written to the
+            # other convention — came out thinner than the shield and vanished inside it.
+            shield = blob("shield", (0.10, SHIELD_WIDTH, SHIELD_HEIGHT), (0, 0, 0))
+            # Pale hide, not player colour. Warriors were brown kit on brown ground and
+            # sank into the terrain, while the cattle beside them read clearly — and the
+            # reason is contrast, not size: the cattle carry big pale patches. A war
+            # shield was oxhide in strong two-tone anyway, so the legible choice and the
+            # accurate one are the same. Faction colour goes on the lower field below,
+            # where it still identifies an army without costing the silhouette.
+            shield.data.materials.append(hide_pale)
             shield.parent = arm_pivot
+            shield.location = (0.08, 0.04, -LIMB * 0.15)
+            shield.rotation_euler = (0, math.radians(-8), 0)
+
+            # The pale stripe down the hide. Shields were sorted by colour and marking
+            # into regiments, so this is also where a faction or unit marking belongs.
+            #
+            # Parented to the shoulder rather than to the shield: the shield is a scaled
+            # sphere, and a child of it inherits that scale, so sizing the stripe means
+            # dividing by the parent's scale on every axis. The first attempt did that
+            # and put the stripe somewhere outside the shield entirely. A sibling in the
+            # same place needs no arithmetic at all.
+            # Thicker than the shield, so it actually breaks the surface on both faces.
+            field = blob(
+                "shield_field",
+                (0.13, SHIELD_WIDTH * 0.80, SHIELD_HEIGHT * 0.40),
+                (0.08, 0.04, -LIMB * 0.15 - SHIELD_HEIGHT * 0.15),
+            )
+            field.data.materials.append(player)
+            field.parent = arm_pivot
+
+            stripe = box("shield_stripe", (0.012, 0.06, SHIELD_HEIGHT * 0.52), (0, 0, 0))
+            stripe.data.materials.append(cloth)
+            stripe.parent = arm_pivot
+            stripe.location = (0.052, 0.04, -LIMB * 0.15)
+
+            # The staff behind the shield, projecting past it top and bottom.
+            staff = cylinder("shield_staff", 0.012, SHIELD_HEIGHT * 1.18, (0.065, 0.04, -LIMB * 0.15))
+            staff.data.materials.append(cloth)
+            staff.parent = arm_pivot
+
         if side == "r" and has_spear:
-            bpy.ops.mesh.primitive_cylinder_add(radius=0.018, depth=1.5, location=(0, 0, 0))
-            spear = bpy.context.active_object
-            spear.name = "spear"
+            # Short. The whole tactical point of the weapon is that it is not thrown, so
+            # a long shaft reads as the wrong army.
+            spear = cylinder("spear", 0.016, SPEAR_LENGTH, (0.04, 0, -LIMB * 0.30))
             spear.data.materials.append(cloth)
             spear.parent = arm_pivot
-            spear.location = (0.04, 0, -LIMB * 0.3)
             spear.rotation_euler = (math.radians(12), 0, 0)
+
+            blade = box("spear_blade", (0.035, 0.012, 0.20), (0.04, 0, -LIMB * 0.30 + SPEAR_LENGTH * 0.56))
+            blade.data.materials.append(blade_metal)
+            blade.parent = arm_pivot
+            blade.rotation_euler = (math.radians(12), 0, 0)
+
+        # Amashoba: cow-tail tufts at the upper arm and below the knee. Small, but they
+        # break the limb outline and are one of the few details that survive the
+        # downscale as anything other than a smudge.
+        tuft_arm = box(f"tuft_arm_{side}", (0.10, 0.10, 0.13), (0, 0, -LIMB * 0.62))
+        tuft_arm.data.materials.append(hide_pale)
+        tuft_arm.parent = arm_pivot
+
+        tuft_leg = box(f"tuft_leg_{side}", (0.11, 0.11, 0.12), (0, 0, -LIMB * 0.74))
+        tuft_leg.data.materials.append(hide_pale)
+        tuft_leg.parent = leg_pivot
 
     return root, limbs
 
