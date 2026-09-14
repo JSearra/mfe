@@ -59,7 +59,7 @@ the outcome banner is the end of the road.
       the herd sits ~16 tiles away. A cattle game that opens with no cattle on screen.
 - [x] **C2 — Buildings have no sprites.** Done. Units and cattle are textured; buildings are
       still `Graphics` primitives.
-- [ ] **C3 — Cliff faces are flat-shaded.** They take the tile's average colour; they
+- [x] **C3 — Cliff faces are strata now, deliberately not textured.** They take the tile's average colour; they
       should be textured like the surfaces above them.
 - [ ] **C4 — Player colour should be a shader swap**, not baked geometry. The roadmap has
       wanted this since the art pipeline landed, and the pale shield is now the canvas

@@ -50,11 +50,26 @@ export interface TerrainRenderer {
   update(camera: Camera): void;
 }
 
-function shade(colour: number, factor: number): number {
-  const r = Math.round(((colour >> 16) & 0xff) * factor);
-  const g = Math.round(((colour >> 8) & 0xff) * factor);
-  const b = Math.round((colour & 0xff) * factor);
-  return (r << 16) | (g << 8) | b;
+/**
+ * Scale a colour's channels, clamped.
+ *
+ * The clamp is not decoration. Every caller until now passed a factor below one, so an
+ * overflowing channel was unreachable and the missing bound cost nothing — then the
+ * cliff lip needed a factor of 1.18 to brighten an edge, a channel ran past 255 into the
+ * next byte, and Pixi refused the result with "Unable to convert color 17819798". The
+ * page rendered black: not a wrong colour, no picture at all.
+ */
+function channel(value: number, factor: number): number {
+  const scaled = Math.round(value * factor);
+  return scaled < 0 ? 0 : scaled > 255 ? 255 : scaled;
+}
+
+export function shade(colour: number, factor: number): number {
+  return (
+    (channel((colour >> 16) & 0xff, factor) << 16) |
+    (channel((colour >> 8) & 0xff, factor) << 8) |
+    channel(colour & 0xff, factor)
+  );
 }
 
 const PALETTE = palette.map((hex) => Number.parseInt(hex.slice(1), 16));
@@ -114,6 +129,60 @@ function variantFor(tiles: readonly TerrainTile[], tileX: number, tileY: number)
   return tiles[tileHash(tileX, tileY, 3) % tiles.length]!;
 }
 
+/**
+ * A cliff face, drawn as strata rather than as one flat quad.
+ *
+ * Faces are NOT textured, and the measurement is the reason. A real map carries 2,634 of
+ * them over 16,384 tiles, so sprites would add about a sixth again to a scene whose p99
+ * already sits at 5.8ms of an 8ms budget — and worse, a face is anywhere from one to
+ * seven levels tall, so a single texture would have to stretch (which smears) or tile
+ * vertically (which in Pixi means a heavier object than a sprite). The cost is real and
+ * the gain is a surface most often seen edge-on and in shadow.
+ *
+ * A band per elevation step costs no new display objects, because it is more geometry in
+ * the Graphics that was being drawn anyway. It reads as rock bedding, and it does
+ * something the flat quad could not: the number of bands IS the height, so how far a
+ * drop goes is legible without counting tiles.
+ */
+function drawFace(
+  graphics: Graphics,
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+  levels: number,
+  base: number,
+  faceShade: number,
+  tileX: number,
+  tileY: number,
+): void {
+  // A little per-tile variation so a long escarpment does not read as one printed sheet.
+  // Hashed off the tile so it holds still between frames.
+  let hash = (tileX * 0x27d4eb2d) ^ (tileY * 0x165667b1);
+  hash = Math.imul(hash ^ (hash >>> 13), 0x85ebca6b);
+  const jitter = (((hash >>> 16) & 0xff) / 255 - 0.5) * 0.06;
+
+  for (let band = 0; band < levels; band++) {
+    const top = band * ELEV_STEP;
+    const bottom = top + ELEV_STEP;
+    // Darker with depth: less sky reaches the bottom of a cut, and the gradient is what
+    // stops a tall face reading as a painted wall.
+    const depth = 1 - (band / Math.max(levels, 1)) * 0.34;
+    graphics.moveTo(fromX, fromY + top);
+    graphics.lineTo(toX, toY + top);
+    graphics.lineTo(toX, toY + bottom);
+    graphics.lineTo(fromX, fromY + bottom);
+    graphics.closePath();
+    graphics.fill({ color: shade(base, faceShade * depth + jitter) });
+  }
+
+  // The lip. A hard bright edge where the ground breaks away is most of what says
+  // "cliff" rather than "slope" at this size.
+  graphics.moveTo(fromX, fromY);
+  graphics.lineTo(toX, toY);
+  graphics.stroke({ width: 1, color: shade(base, 1.18), alpha: 0.7 });
+}
+
 function drawTile(
   graphics: Graphics,
   map: Heightmap,
@@ -143,26 +212,14 @@ function drawTile(
   const eastNeighbour = heightAt(map, tileX + 1, tileY);
   const eastDrop = eastNeighbour < 0 ? level : level - eastNeighbour;
   if (eastDrop > 0) {
-    const drop = eastDrop * ELEV_STEP;
-    graphics.moveTo(eastX, centreY);
-    graphics.lineTo(centreX, southY);
-    graphics.lineTo(centreX, southY + drop);
-    graphics.lineTo(eastX, centreY + drop);
-    graphics.closePath();
-    graphics.fill({ color: shade(base, eastFaceShade) });
+    drawFace(graphics, eastX, centreY, centreX, southY, eastDrop, base, eastFaceShade, tileX, tileY);
   }
 
   // South face: shared edge with (tileX, tileY+1), the lower-left edge.
   const southNeighbour = heightAt(map, tileX, tileY + 1);
   const southDrop = southNeighbour < 0 ? level : level - southNeighbour;
   if (southDrop > 0) {
-    const drop = southDrop * ELEV_STEP;
-    graphics.moveTo(centreX, southY);
-    graphics.lineTo(westX, centreY);
-    graphics.lineTo(westX, centreY + drop);
-    graphics.lineTo(centreX, southY + drop);
-    graphics.closePath();
-    graphics.fill({ color: shade(base, southFaceShade) });
+    drawFace(graphics, centreX, southY, westX, centreY, southDrop, base, southFaceShade, tileX, tileY);
   }
 
   graphics.moveTo(centreX, northY);
