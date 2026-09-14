@@ -64,14 +64,13 @@ the outcome banner is the end of the road.
 - [x] **C4 — Player colour is a tinted overlay off the same page.** Done., not baked geometry. The roadmap has
       wanted this since the art pipeline landed, and the pale shield is now the canvas
       for it.
-- [ ] **C5 — Mounted units draw the musketeer sprite.** There is no horse, despite
+- [x] **C5 — Mounted units ride.** Done. Section C complete. There is no horse, despite
       `Mounted` being a movement class with its own cost profile.
 - [x] **C6 — The `herder` sprite is gone.** Done. Herding is done by any unit; either give
       herders a type or drop the sprite from the atlas.
 
 ## D. Multiplayer
 
-Every determinism invariant is in place and CI-enforced; none is proven across two
-machines. This is a milestone rather than a task — transport, lockstep stepping, and
-desync detection wired to the existing replay hash — and wants its own plan and its own
-decision about scope before any of it is written.
+Surveyed rather than started, in `docs/MULTIPLAYER.md`: what already exists, what is
+actually left, and the scope decision it needs. Not begun, because the roadmap calls it a
+milestone rather than a task and its size is a decision nobody has taken.

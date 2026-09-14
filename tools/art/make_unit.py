@@ -94,7 +94,24 @@ CATTLE = {
     "nguni-dark": ((0.10, 0.09, 0.10), (0.86, 0.83, 0.78)),
 }
 
-KINDS = {**BIPEDS, **CATTLE}
+# Mounted Griqua: a rider with a firearm, which is the whole of why they matter here.
+# Horse rather than a bigger man — `Mounted` is a movement class with its own cost
+# profile over slope and drift, and a unit that moves differently should look like it.
+MOUNTED = {
+    # name:       (hide,                  rider cloth)
+    # Linear albedo, sRGB out. 0.30 here came back as pale grey the first time, which
+    # is the same trap the building materials fell into. See make_building.py.
+    "commando": ((0.16, 0.095, 0.055), (0.115, 0.10, 0.082)),
+}
+
+KINDS = {**BIPEDS, **CATTLE, **MOUNTED}
+
+# Horse proportions, metres. Longer in the leg and shallower in the barrel than a cow,
+# which is most of what separates the two silhouettes at tile size.
+HORSE_LENGTH = 1.55
+HORSE_DEPTH = 0.56
+HORSE_WIDTH = 0.40
+HORSE_LEG = 0.88
 
 # Cattle proportions, metres. A cow is longer than a man is tall and half his height at
 # the withers, which is why it needs its own camera framing.
@@ -108,9 +125,11 @@ COW_LEG = 0.62
 ANIMATIONS = {"idle": 8, "walk": 12, "attack": 10, "run": 10}
 
 # Which animations make sense for which kind. A cow does not thrust a spear.
-KIND_ANIMATIONS = {name: ("idle", "walk", "attack", "run") for name in BIPEDS} | {
-    name: ("idle", "walk", "run") for name in CATTLE
-}
+KIND_ANIMATIONS = (
+    {name: ("idle", "walk", "attack", "run") for name in BIPEDS}
+    | {name: ("idle", "walk", "run") for name in CATTLE}
+    | {name: ("idle", "walk", "attack", "run") for name in MOUNTED}
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -321,6 +340,127 @@ def build_cattle(kind: str):
     return root, limbs
 
 
+def build_mounted(kind: str):
+    """A rider on a horse, standing on the origin, facing +X."""
+    hide_colour, cloth_colour = MOUNTED[kind]
+    hide = material("hide", hide_colour)
+    cloth = material("cloth", cloth_colour)
+    skin = material("skin", (0.21, 0.115, 0.070))
+    mane = material("mane", (0.09, 0.06, 0.04))
+    metal = material("metal", (0.30, 0.31, 0.30))
+    player = material("player_colour", (0.78, 0.42, 0.20))
+
+    root = bpy.data.objects.new("mounted", None)
+    bpy.context.scene.collection.objects.link(root)
+
+    back = HORSE_LEG + HORSE_DEPTH / 2
+
+    body = blob("barrel", (HORSE_LENGTH, HORSE_WIDTH, HORSE_DEPTH), (0, 0, back))
+    body.data.materials.append(hide)
+    body.parent = root
+
+    chest = blob("chest", (HORSE_LENGTH * 0.42, HORSE_WIDTH * 1.04, HORSE_DEPTH * 0.98),
+                 (HORSE_LENGTH * 0.22, 0, back - 0.01))
+    chest.data.materials.append(hide)
+    chest.parent = root
+
+    hind = blob("haunch", (HORSE_LENGTH * 0.40, HORSE_WIDTH * 1.02, HORSE_DEPTH * 1.0),
+                (-HORSE_LENGTH * 0.30, 0, back + 0.02))
+    hind.data.materials.append(hide)
+    hind.parent = root
+
+    neck_pivot = bpy.data.objects.new("neck", None)
+    bpy.context.scene.collection.objects.link(neck_pivot)
+    neck_pivot.location = (HORSE_LENGTH * 0.40, 0, back + HORSE_DEPTH * 0.26)
+    neck_pivot.parent = root
+
+    # Carried high and angled, which is the line that reads as horse rather than cow.
+    neck = taper("neck_mesh", 0.15, 0.10, 0.52, (0.13, 0, 0.20), (0, math.radians(48), 0))
+    neck.data.materials.append(hide)
+    neck.parent = neck_pivot
+
+    head = blob("head", (0.34, 0.15, 0.17), (0.31, 0, 0.40))
+    head.data.materials.append(hide)
+    head.parent = neck_pivot
+
+    muzzle = blob("muzzle", (0.16, 0.11, 0.11), (0.44, 0, 0.34))
+    muzzle.data.materials.append(mane)
+    muzzle.parent = neck_pivot
+
+    crest = blob("mane", (0.30, 0.075, 0.13), (0.14, 0, 0.42))
+    crest.data.materials.append(mane)
+    crest.parent = neck_pivot
+
+    tail_pivot = bpy.data.objects.new("tail", None)
+    bpy.context.scene.collection.objects.link(tail_pivot)
+    tail_pivot.location = (-HORSE_LENGTH / 2, 0, back + HORSE_DEPTH * 0.30)
+    tail_pivot.parent = root
+    tail = taper("tail_mesh", 0.07, 0.02, 0.62, (0, 0, -0.30))
+    tail.data.materials.append(mane)
+    tail.parent = tail_pivot
+
+    # The rider, seated. Simplified deliberately: at this size the legs astride and the
+    # firearm across the saddle are the read, and anything more is pixels nobody sees.
+    seat = back + HORSE_DEPTH / 2
+    torso = blob("rider_torso", (0.30, 0.34, 0.46), (-0.04, 0, seat + 0.24))
+    torso.data.materials.append(cloth)
+    torso.parent = root
+
+    rider_head = blob("rider_head", (0.20, 0.19, 0.23), (-0.04, 0, seat + 0.58))
+    rider_head.data.materials.append(skin)
+    rider_head.parent = root
+
+    hat = blob("hat", (0.34, 0.34, 0.09), (-0.04, 0, seat + 0.66))
+    hat.data.materials.append(cloth)
+    hat.parent = root
+
+    for side, y in (("l", 1.0), ("r", -1.0)):
+        thigh = taper(f"rider_thigh_{side}", 0.075, 0.055, 0.36,
+                      (0.06, y * 0.20, seat + 0.02), (0, math.radians(70), 0))
+        thigh.data.materials.append(cloth)
+        thigh.parent = root
+
+        shin = taper(f"rider_shin_{side}", 0.05, 0.035, 0.34,
+                     (0.14, y * 0.22, seat - 0.22))
+        shin.data.materials.append(cloth)
+        shin.parent = root
+
+    # The firearm, carried across. It is why this unit exists.
+    barrel = cylinder("musket", 0.022, 1.05, (0.10, -0.18, seat + 0.26),
+                      (math.radians(90), 0, math.radians(24)))
+    barrel.data.materials.append(metal)
+    barrel.parent = root
+
+    stock = box("stock", (0.30, 0.06, 0.09), (-0.22, -0.10, seat + 0.22))
+    stock.data.materials.append(mane)
+    stock.parent = root
+
+    # A blanket under the saddle carries the faction, since a rider has no shield.
+    blanket = blob("blanket", (0.62, HORSE_WIDTH + 0.06, 0.22), (-0.06, 0, seat - 0.10))
+    blanket.data.materials.append(player)
+    blanket.parent = root
+
+    limbs = {"neck": neck_pivot, "tail": tail_pivot}
+    for pair, x in (("fore", HORSE_LENGTH * 0.34), ("hind", -HORSE_LENGTH * 0.34)):
+        for side, y in (("l", HORSE_WIDTH * 0.32), ("r", -HORSE_WIDTH * 0.32)):
+            pivot = bpy.data.objects.new(f"{pair}_{side}", None)
+            bpy.context.scene.collection.objects.link(pivot)
+            pivot.location = (x, y, HORSE_LEG)
+            pivot.parent = root
+
+            leg = taper(f"leg_{pair}_{side}", 0.07, 0.032, HORSE_LEG, (0, 0, -HORSE_LEG / 2))
+            leg.data.materials.append(hide)
+            leg.parent = pivot
+
+            hoof = blob(f"hoof_{pair}_{side}", (0.10, 0.09, 0.09), (0, 0, -HORSE_LEG + 0.03))
+            hoof.data.materials.append(mane)
+            hoof.parent = pivot
+
+            limbs[f"{pair}_{side}"] = pivot
+
+    return root, limbs
+
+
 def animate_quadruped(limbs: dict, anim: str, frames: int) -> None:
     """Keyframe a cattle cycle.
 
@@ -332,8 +472,8 @@ def animate_quadruped(limbs: dict, anim: str, frames: int) -> None:
         phase = (frame - 1) / frames * math.tau
         scene.frame_set(frame)
 
-        if anim == "idle":
-            # Grazing: head down, weight shifting, tail working at the flies.
+        if anim in ("idle", "attack"):
+            # Grazing, or standing while the rider works: head down, weight shifting.
             limbs["neck"].rotation_euler = (0, math.radians(52), 0)
             limbs["tail"].rotation_euler = (math.radians(16) * math.sin(phase * 2), 0, 0)
             for leg in ("fore_l", "fore_r", "hind_l", "hind_r"):
@@ -364,6 +504,8 @@ def build(kind: str):
     """A figure standing on the origin, facing +X."""
     if kind in CATTLE:
         return build_cattle(kind)
+    if kind in MOUNTED:
+        return build_mounted(kind)
     skin_colour, cloth_colour, has_shield, has_spear = BIPEDS[kind]
     skin = material("skin", skin_colour)
     cloth = material("cloth", cloth_colour)
@@ -610,6 +752,8 @@ def render_kind(renderer, kind: str, anim: str, args: argparse.Namespace) -> int
     # shoulder, so the figure camera clips a nose or a rump depending on rotation.
     if kind in CATTLE:
         ortho, target = 2.9, 0.62
+    elif kind in MOUNTED:
+        ortho, target = 3.1, 0.95
     else:
         ortho, target = renderer.ORTHO_SCALE, renderer.TARGET_HEIGHT
     renderer.setup_camera(args.size, scale=ortho, target=target)

@@ -66,7 +66,7 @@ const TAU = Math.PI * 2;
 function spriteKind(kind: number, subtype: number, handle: number): string {
   if (kind === KIND_CATTLE) return (handle & 1) === 0 ? 'nguni' : 'nguni-dark';
   if (kind === KIND_BUILDING) return BUILDING_KINDS[subtype] ?? BUILDING_KINDS[0];
-  return subtype === CLASS_MOUNTED ? 'musketeer' : 'impi';
+  return subtype === CLASS_MOUNTED ? 'commando' : 'impi';
 }
 
 /**
