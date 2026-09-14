@@ -159,7 +159,22 @@ export function findPath(
   return { status: PathStatus.Unreachable, path: [], expansions };
 }
 
-/** Diagonal step cost: the destination tile's cost, slope-adjusted, scaled for distance. */
+/**
+ * Diagonal step cost: the destination tile's cost, slope-adjusted, scaled for distance.
+ *
+ * Prices the step; it does not re-decide whether the step is legal. `dirs8` has already
+ * ruled on that — both flanking orthogonals climbable and the destination's own rise
+ * within range — and costs.ts calls it the single source of truth precisely because
+ * deriving that rule twice has gone wrong before.
+ *
+ * This priced the move by walking one fixed L, across to the horizontal neighbour and
+ * then down into the destination, and treated a blocked leg as impassable. That asks a
+ * different question from the one dirs8 answers, and the two disagreed: a diagonal off a
+ * ledge whose corner tile stands two levels above the destination is legal by dirs8 and
+ * was refused here, so units detoured around steps the rest of the simulation was happy
+ * to let them take. Either L will do, and the cheaper one is the route a unit would
+ * actually walk.
+ */
 function diagonalCost(layer: CostLayer, fromIndex: number, toIndex: number): number {
   const width = layer.width;
   const fromX = fromIndex % width;
@@ -167,14 +182,25 @@ function diagonalCost(layer: CostLayer, fromIndex: number, toIndex: number): num
   const toX = toIndex % width;
   const toY = (toIndex / width) | 0;
 
-  // Route through the horizontal neighbour to reuse the slope-aware step cost.
-  const midIndex = fromY * width + toX;
   const horizontal = toX > fromX ? 1 : 3;
-  if (layer.edgeCost[fromIndex * 4 + horizontal] === 0) return 0;
-
   const vertical = toY > fromY ? 2 : 0;
-  const second = layer.edgeCost[midIndex * 4 + vertical]!;
-  if (second === 0) return 0;
 
-  return second * DIAG_STEP;
+  const acrossThenDown =
+    layer.edgeCost[fromIndex * 4 + horizontal] !== 0
+      ? layer.edgeCost[(fromY * width + toX) * 4 + vertical]!
+      : 0;
+  const downThenAcross =
+    layer.edgeCost[fromIndex * 4 + vertical] !== 0
+      ? layer.edgeCost[(toY * width + fromX) * 4 + horizontal]!
+      : 0;
+
+  if (acrossThenDown === 0 && downThenAcross === 0) return 0;
+  const cheaper =
+    acrossThenDown === 0
+      ? downThenAcross
+      : downThenAcross === 0
+        ? acrossThenDown
+        : Math.min(acrossThenDown, downThenAcross);
+
+  return cheaper * DIAG_STEP;
 }

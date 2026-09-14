@@ -396,3 +396,40 @@ describe('unit movement under load', () => {
     expect(movement.stats.singlePaths).toBe(1);
   });
 });
+
+describe('one rule for diagonals', () => {
+  /**
+   * `dirs8` is documented as the single source of truth for "may a unit step this way",
+   * and costs.ts warns that deriving that rule in more than one place is how a diagonal
+   * came to be judged wrongly once already. A* re-derived it anyway: it validated a
+   * diagonal by walking one specific L — across to the horizontal neighbour, then down
+   * into the destination — which asks a different question from the one dirs8 answers.
+   *
+   * Here the two disagree. Stepping SE from (0,0) is legal by every rule dirs8 applies:
+   * both flanking orthogonals are climbable and so is the destination. But the corner
+   * tile at (1,0) stands two levels above the destination, so the L-route through it is
+   * blocked, and A* refused a step the rest of the simulation allows.
+   */
+  const ledge = heightmapFrom(
+    [
+      [1, 2],
+      [1, 0],
+    ],
+    8,
+  );
+
+  it('offers the diagonal in dirs8', () => {
+    const layer = buildCostLayer(ledge, MovementClass.Infantry);
+    const SE = 3;
+    expect(layer.dirs8[0]! & (1 << SE)).not.toBe(0);
+  });
+
+  it('takes the diagonal that dirs8 offers', () => {
+    const layer = buildCostLayer(ledge, MovementClass.Infantry);
+    const result = findPath(layer, scratchFor(ledge), 0, 3, 64);
+
+    expect(result.status).toBe(PathStatus.Found);
+    // Straight there, not around by way of (0,1).
+    expect(result.path).toEqual([0, 3]);
+  });
+});
