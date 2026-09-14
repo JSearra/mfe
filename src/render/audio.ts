@@ -11,10 +11,17 @@ import { presentation } from './presentation.js';
  * entity simply stops being in the next one — and anything that happens and reverts
  * inside a tick is inaudible entirely. Every sound here comes from an event.
  *
- * The sounds are synthesised rather than sampled. There are no audio assets yet and the
- * pipeline for them is deferred, so an oscillator and a noise burst are the honest
- * placeholder: they prove the routing, the spatialisation and the voice limiting work,
- * and they are replaced by swapping one function when real audio arrives.
+ * Sounds come from sample files where there is one, and fall back to the synthesised
+ * oscillator voice where there is not. That fallback is not ceremony: the tests run with
+ * no files and no AudioContext, a failed fetch must not silence the game, and the
+ * oscillator set is what proved the routing, spatialisation and voice limiting before any
+ * sample existed.
+ *
+ * The samples themselves are generated rather than recorded or bought — see
+ * `tools/audio/make_sounds.py`, and ADR-0015 for why this project generates rather than
+ * acquires. They are physical models, not field recordings: the right fundamental, the
+ * right formants, the right envelope. Recognisable rather than real, and real recordings
+ * would drop straight in, because nothing below knows where a buffer came from.
  */
 
 const { masterVolume, maxVoices, audibleRadius, minEventGapMs } = presentation.audio;
@@ -124,6 +131,20 @@ const VOICES: Partial<Record<number, VoiceSpec>> = {
     noise: false,
     type: 'sine',
   },
+};
+
+/**
+ * Which sample file backs each voice, and how many interchangeable takes it has.
+ *
+ * Variants exist because repetition is what gives a sample away. A herd calling with one
+ * recording over and over stops being a herd within about four calls.
+ */
+const SAMPLES: Readonly<Record<string, readonly string[]>> = {
+  lowing: ['cattle-low-1', 'cattle-low-2', 'cattle-low-3'],
+  restless: ['cattle-restless'],
+  rumble: ['stampede'],
+  march: ['hoofbeat-1', 'hoofbeat-2'],
+  hit: ['impact'],
 };
 
 const KIND_CATTLE = 1;
@@ -250,6 +271,9 @@ export function createAudioEngine(): AudioEngine {
   let context: AudioContext | null = null;
   let master: GainNode | null = null;
   let noiseBuffer: AudioBuffer | null = null;
+  /** Decoded sample takes by voice name. Empty until the files arrive, or forever. */
+  const bank = new Map<string, AudioBuffer[]>();
+  let nextTake = 0;
 
   let active = 0;
   /** Last time each event type sounded, so forty simultaneous hits are not forty voices. */
@@ -265,7 +289,15 @@ export function createAudioEngine(): AudioEngine {
     if (context === null || master === null) return;
 
     lastAmbient.set(channel, nowMs);
-    play(context, master, noiseBuffer, entry.spec, loudness, pan);
+
+    const takes = bank.get(channel);
+    if (takes !== undefined && takes.length > 0) {
+      const take = takes[nextTake++ % takes.length]!;
+      playSample(context, master, take, entry.spec.gain * 3.2, loudness, pan, 0.94 + ((nextTake * 37) % 13) / 100);
+    } else {
+      play(context, master, noiseBuffer, entry.spec, loudness, pan);
+    }
+
     engine.voicesPlayed++;
     active++;
     window.setTimeout(() => {
@@ -297,6 +329,8 @@ export function createAudioEngine(): AudioEngine {
         noiseBuffer = context.createBuffer(1, frames, context.sampleRate);
         const channel = noiseBuffer.getChannelData(0);
         for (let i = 0; i < frames; i++) channel[i] = Math.random() * 2 - 1;
+
+        void loadSamples(context, bank);
       }
       void context.resume();
     },
@@ -324,7 +358,18 @@ export function createAudioEngine(): AudioEngine {
         if (active >= maxVoices) break;
 
         lastPlayed.set(event.type, nowMs);
-        play(context, master, noiseBuffer, spec, 1 - distance / audibleRadius, dx / audibleRadius);
+
+        const nearness = 1 - distance / audibleRadius;
+        const impacts = bank.get('hit');
+        if (
+          impacts !== undefined &&
+          impacts.length > 0 &&
+          (event.type === EventType.Hit || event.type === EventType.Crushed)
+        ) {
+          playSample(context, master, impacts[nextTake++ % impacts.length]!, spec.gain * 3.2, nearness, dx / audibleRadius, 0.9 + ((nextTake * 29) % 21) / 100);
+        } else {
+          play(context, master, noiseBuffer, spec, nearness, dx / audibleRadius);
+        }
         engine.voicesPlayed++;
         active++;
         window.setTimeout(() => {
@@ -363,6 +408,57 @@ export function createAudioEngine(): AudioEngine {
   };
 
   return engine;
+}
+
+/**
+ * Fetch and decode the sample set, if it is there.
+ *
+ * Failure is silent and total by design: no files, a 404, a codec the browser dislikes —
+ * the bank simply stays empty and every voice falls back to its oscillator. Audio is not
+ * worth failing to start over, and the tests run against a tree with no assets built.
+ */
+async function loadSamples(context: AudioContext, bank: Map<string, AudioBuffer[]>): Promise<void> {
+  for (const [voice, takes] of Object.entries(SAMPLES)) {
+    const decoded: AudioBuffer[] = [];
+    for (const take of takes) {
+      try {
+        const response = await fetch(`assets/audio/${take}.wav`);
+        if (!response.ok) continue;
+        decoded.push(await context.decodeAudioData(await response.arrayBuffer()));
+      } catch {
+        // Leave it out. A missing take costs variety, not sound.
+      }
+    }
+    if (decoded.length > 0) bank.set(voice, decoded);
+  }
+}
+
+/** Play one take of a sample, spatialised the same way a synthesised voice is. */
+function playSample(
+  context: AudioContext,
+  master: GainNode,
+  buffer: AudioBuffer,
+  gainValue: number,
+  nearness: number,
+  pan: number,
+  rate: number,
+): void {
+  const gain = context.createGain();
+  gain.gain.value = gainValue * nearness * nearness;
+
+  const panner = context.createStereoPanner();
+  panner.pan.value = Math.max(-1, Math.min(1, pan * 2));
+
+  const source = context.createBufferSource();
+  source.buffer = buffer;
+  // A little detune per play. Identical pitch every time is the other thing, after
+  // repetition, that gives a sample away as a sample.
+  source.playbackRate.value = rate;
+
+  source.connect(gain);
+  gain.connect(panner);
+  panner.connect(master);
+  source.start();
 }
 
 function play(

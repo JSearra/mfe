@@ -72,3 +72,28 @@ quantisation. Worth checking before a multi-gigabyte download rather than after.
 - Seamless tiling remains luck rather than a guarantee — diffusion has no notion of edge
   wrap. The seam score measures it. Where seams matter more than richness, procedural
   noise beats generation outright and costs nothing.
+
+## Extended to audio
+
+The same bargain, for the same reasons. `tools/audio/make_sounds.py` synthesises the
+sound set from nothing: no licence, no attribution, no asset-store account, byte-identical
+output from the same invocation, and no cost to trying ten variations of a hoofbeat.
+
+What it produces is physical modelling, not recordings — a source with the right
+fundamental and bend, formants where a large vocal tract puts them, envelopes with the
+right decay for the material. **Recognisable rather than real**, which is the same claim
+the procedural units make. The engine plays a sample where one exists and falls back to
+its oscillator where none does, so nothing below knows where a buffer came from and field
+recordings would drop straight in.
+
+One thing worth carrying forward, because it cost a pass: a single-pole lowpass is 6dB an
+octave, which sounds like a lot and is not. White noise through one at 120Hz still carried
+enough energy at 3kHz to dominate the spectral centroid, and a "thud" built on it measured
+brighter than the crack it was meant to sit under. Four poles is 24dB an octave and
+actually removes the top — hoofbeat centroid went from 2853Hz to 733Hz.
+
+And the honest limit, stated because it cannot be tested away: **nobody involved in making
+these has heard them.** The spectra are measured and the relationships hold — the calm
+call is darker than the restless one, the hoof and the herd are ground-heavy, the impact
+sits between. Whether it sounds like cattle is a judgement only a listener can make.
+
