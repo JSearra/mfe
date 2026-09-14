@@ -39,6 +39,11 @@ export const SNAPSHOT_FIELDS = [
   { name: 'facing', type: 'u8' },
   { name: 'animState', type: 'u8' },
   { name: 'faction', type: 'u8' },
+  /**
+   * Low nibble: herd state, which is four values rather than a field's worth. High
+   * nibble: reserved for `world.flags`, which no system has ever written. The renderer
+   * reads the low nibble only — see entities.ts.
+   */
   { name: 'flags', type: 'u8' },
   { name: 'hpPct', type: 'u8' },
   { name: 'kind', type: 'u8' },

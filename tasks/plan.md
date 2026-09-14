@@ -93,3 +93,10 @@ milestone rather than a task and its size is a decision nobody has taken.
 - **`tuning.ai.regroupRadius` was dead for the whole of the project's life** until the
   retreat fix used it. Worth a sweep for other tuning keys nothing reads: they are hashed
   into every replay, so each one costs a re-record when touched and buys nothing.
+
+- **`world.flags` is allocated, spawned, saved, hashed and transmitted, and no system
+  has ever written it.** One byte per entity carrying nothing. The snapshot byte named
+  `flags` is in practice the herd-state byte; only its low nibble is read. Removing the
+  world field would be tidy but moves the save schema and every golden checkpoint for no
+  functional gain, so it is documented where it is declared rather than deleted. Worth
+  folding into the next change that re-records the fixture anyway.

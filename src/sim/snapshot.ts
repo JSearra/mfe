@@ -54,7 +54,6 @@ export function buildSnapshot(
     writer.facing[slot] = encodeFacing(world.facing[i]!);
     writer.animState[slot] = world.animState[i]!;
     writer.faction[slot] = world.faction[i]!;
-    writer.flags[slot] = world.flags[i]!;
     writer.hpPct[slot] = encodeHpPct(world.hp[i]!, maxHp);
     writer.kind[slot] = world.kind[i]!;
     writer.stressPct[slot] = encodeHpPct(world.stress[i]!, tuning.cattle.stressMax);
@@ -64,7 +63,10 @@ export function buildSnapshot(
       world.kind[i] === EntityKind.Building
         ? encodeHpPct(world.buildProgress[i]!, buildingSpec(world.buildingType[i]!).work)
         : 255;
-    // Herd state rides in the flags byte; it is four values, not a field's worth.
+    // Herd state rides in the low nibble of the flags byte; it is four values, not a
+    // field's worth. The high nibble carries world.flags, which nothing has ever set to
+    // anything but zero — this line used to be preceded by a plain `= world.flags[i]`
+    // that it immediately overwrote, which read as though the byte carried two things.
     writer.flags[slot] = (world.flags[i]! & 0xf0) | (world.herdState[i]! & 0x0f);
     slot++;
   }
