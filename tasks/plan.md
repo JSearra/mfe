@@ -74,3 +74,22 @@ the outcome banner is the end of the road.
 Surveyed rather than started, in `docs/MULTIPLAYER.md`: what already exists, what is
 actually left, and the scope decision it needs. Not begun, because the roadmap calls it a
 milestone rather than a task and its size is a decision nobody has taken.
+
+## E. Open findings (not defects — decisions for the project owner)
+
+- **The two AI players diverge hard in an even match.** Measured over 12,000 ticks of
+  `contest(0xf00d)` — identical armies, symmetric starts, mirrored plots — player 1
+  ordered 67 buildings and 19 replacements while player 0 managed 2 and one. This
+  predates the September review and is not caused by it; correcting the build radius
+  only made it more visible, by tipping player 0 from one replacement to none.
+
+  It is a balance question rather than a bug, so nothing here has been tuned to hide it.
+  Worth a look before anyone judges the AI's strength from a single match, because half
+  of every match is a player that never gets going. The likely suspects are the order of
+  the decision branches, which let fighting and herding pre-empt the economy
+  indefinitely, and the herd growth compounding upkeep faster than a small economy can
+  pay it — player 0's grain hits zero while its ledger herd grows to 195.
+
+- **`tuning.ai.regroupRadius` was dead for the whole of the project's life** until the
+  retreat fix used it. Worth a sweep for other tuning keys nothing reads: they are hashed
+  into every replay, so each one costs a re-record when touched and buys nothing.

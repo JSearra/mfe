@@ -20,7 +20,15 @@ export interface SpatialGrid {
   readonly cells: number[][];
   clear(): void;
   insert(entityIndex: number, worldX: number, worldY: number): void;
-  /** Collect entity indices within `radius`, sorted ascending. Returns the count. */
+  /**
+   * Candidates near a point, sorted ascending. Returns the count.
+   *
+   * **A superset of `radius`, not the radius.** The answer is every entity in the cells
+   * the query's bounding box touches, so a candidate can be most of a cell further out
+   * than asked for — with the default cellSize 2 and a radius of 2.2, up to about 4.2.
+   * Narrowing to the true radius is the caller's job and every caller must do it.
+   * Construction did not, and built from units twice as far away as intended.
+   */
   query(worldX: number, worldY: number, radius: number, out: number[]): number;
 }
 

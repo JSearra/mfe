@@ -173,13 +173,24 @@ export function createConstructionSystem(
 
         // Work is done by whoever is standing near it. Nobody there, nothing happens —
         // a site does not raise itself.
-        const count = grid.query(world.posX[index]!, world.posY[index]!, b.buildRadius, neighbours);
+        const siteX = world.posX[index]!;
+        const siteY = world.posY[index]!;
+        const count = grid.query(siteX, siteY, b.buildRadius, neighbours);
+        // The grid answers in whole cells, so what comes back is a superset of the
+        // radius asked for and has to be narrowed here. It was not, and with
+        // buildRadius 2.2 against cellSize 2 that let a unit 4.2 away raise the
+        // building — and counted it, so sites also went up faster than they were tuned
+        // to. Every other caller of query() already does this.
+        const reachSq = b.buildRadius * b.buildRadius;
         let builders = 0;
         for (let n = 0; n < count; n++) {
           const other = neighbours[n]!;
           if (world.alive[other] !== 1) continue;
           if (world.kind[other] !== EntityKind.Unit) continue;
           if (world.faction[other] !== world.faction[index]) continue;
+          const dx = world.posX[other]! - siteX;
+          const dy = world.posY[other]! - siteY;
+          if (dx * dx + dy * dy > reachSq) continue;
           builders++;
         }
         if (builders === 0) continue;

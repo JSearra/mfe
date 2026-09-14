@@ -90,6 +90,8 @@ export function createAi(player: number): AiController {
       const cattle: Sighting[] = [];
       /** Our finished homesteads — where replacements come from. */
       const trainers: number[] = [];
+      /** Our unfinished buildings. Somebody has to go and stand at them. */
+      const sites: Sighting[] = [];
       let homesteads = 0;
       let homeX = 0;
       let homeY = 0;
@@ -113,11 +115,15 @@ export function createAi(player: number): AiController {
         if (mine) {
           if (world.kind[index] !== EntityKind.Building) continue;
           const spec = buildingSpec(world.buildingType[index]!);
+          const finished = world.buildProgress[index]! >= spec.work;
+          // Every unfinished building, not just the homesteads — a granary left half
+          // raised is grain the AI never earns.
+          if (!finished) sites.push({ index, x, y });
           if (!spec.trains) continue;
           homesteads++;
           baseX += x;
           baseY += y;
-          if (world.buildProgress[index]! >= spec.work) trainers.push(index);
+          if (finished) trainers.push(index);
           continue;
         }
 
@@ -158,10 +164,18 @@ export function createAi(player: number): AiController {
 
       // --- build ----------------------------------------------------------
       // A homestead before granaries: grain with nowhere to spend it wins nothing.
-      if (
-        homesteads < ai.wantedHomesteads &&
-        economy.balance(player, Resource.Grain) > ai.grainFloor
-      ) {
+      //
+      // Held back by whatever a replacement costs, once there is anywhere to train one.
+      // The two floors overlapped the wrong way round — building fires at grainFloor
+      // and training needs trainFloor plus the unit's own cost, which is higher — so
+      // every grain that arrived was spent on a site just before it could reach the bar
+      // for a soldier. That inverts the priority stated above it, and an army that
+      // cannot replace losses is on a one-way path to zero however much it builds.
+      const reserve =
+        trainers.length > 0 ? ai.trainFloor + trainingCost(MovementClass.Infantry).grain : 0;
+      const buildFloor = ai.grainFloor + reserve;
+
+      if (homesteads < ai.wantedHomesteads && economy.balance(player, Resource.Grain) > buildFloor) {
         emit({
           kind: CommandKind.Build,
           a: Math.floor(homeX + (buildSlot % 2 === 0 ? -3 : 3)),
@@ -171,7 +185,7 @@ export function createAi(player: number): AiController {
         });
         buildSlot = (buildSlot + 1) % 16;
         stats.buildsOrdered++;
-      } else if (economy.balance(player, Resource.Grain) > ai.grainFloor) {
+      } else if (economy.balance(player, Resource.Grain) > buildFloor) {
         const spacing = ai.buildSpacing;
         const ring = 1 + Math.floor(buildSlot / 4);
         const corner = buildSlot % 4;
@@ -262,11 +276,49 @@ export function createAi(player: number): AiController {
         return;
       }
 
+      // --- finish what we started -------------------------------------------
+      // A site is raised by whoever stands near it, and nothing here ever told anyone
+      // to go and stand there. Sites finished anyway only because the builder check
+      // counted units up to twice the real build radius away; once that was corrected
+      // the AI completed nothing, never trained a replacement, and its economy never
+      // started.
+      //
+      // A detachment rather than the whole army, and it does not return: the rest fall
+      // through to the herd and the scout below. An AI that downed tools to build every
+      // time it had grain for a granary would never take a cow.
+      let assigned = 0;
+      if (sites.length > 0) {
+        let site = sites[0]!;
+        let bestDistance = Infinity;
+        for (const candidate of sites) {
+          const dx = candidate.x - homeX;
+          const dy = candidate.y - homeY;
+          const distance = dx * dx + dy * dy;
+          if (distance < bestDistance || (distance === bestDistance && candidate.index < site.index)) {
+            bestDistance = distance;
+            site = candidate;
+          }
+        }
+
+        assigned = Math.min(own.length, ai.builders);
+        for (let i = 0; i < assigned; i++) {
+          const unit = own[i]!;
+          emit({
+            kind: CommandKind.MoveTo,
+            a: packHandle(unit.index, world.generation[unit.index]!),
+            b: site.x,
+            c: site.y,
+            d: 0,
+          });
+        }
+        stats.ordersIssued += assigned;
+      }
+
       // --- herd -----------------------------------------------------------
       // Nothing to fight: go and take cattle, which is what the war is about.
-      if (cattle.length > 0) {
-        const herders = Math.min(own.length, cattle.length);
-        for (let i = 0; i < herders; i++) {
+      if (cattle.length > 0 && assigned < own.length) {
+        const herders = Math.min(own.length, assigned + cattle.length);
+        for (let i = assigned; i < herders; i++) {
           const unit = own[i]!;
           const cow = cattle[i % cattle.length]!;
           const dx = cow.x - unit.x;
@@ -292,7 +344,7 @@ export function createAi(player: number): AiController {
           );
         }
         stats.herdsOrdered++;
-        stats.ordersIssued += herders;
+        stats.ordersIssued += herders - assigned;
         return;
       }
 
@@ -301,7 +353,8 @@ export function createAi(player: number): AiController {
       // Owned trig, not Math.sin: AI decisions feed the replay hash, so they have to
       // reproduce bit-for-bit across engines like everything else in src/sim.
       const step = ((stats.decisions % 8) / 8) * TWO_PI;
-      for (const unit of own) {
+      for (let i = assigned; i < own.length; i++) {
+        const unit = own[i]!;
         emit({
           kind: CommandKind.MoveTo,
           a: packHandle(unit.index, world.generation[unit.index]!),
@@ -310,7 +363,7 @@ export function createAi(player: number): AiController {
           d: 0,
         });
       }
-      stats.ordersIssued += own.length;
+      stats.ordersIssued += own.length - assigned;
     },
   };
 }

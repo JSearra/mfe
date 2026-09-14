@@ -109,7 +109,8 @@
     "regroupRadius": 6.0,
     "buildSpacing": 4,
     "trainFloor": 120,
-    "wantedHomesteads": 2
+    "wantedHomesteads": 2,
+    "builders": 3
   },
   "production": {
     "queueLimit": 5,

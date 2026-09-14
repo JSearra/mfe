@@ -36,6 +36,36 @@ function site(mapSize = 24) {
   return { map, world, movement, construction, economy, grid, events, tick };
 }
 
+describe('who counts as a builder', () => {
+  // The grid returns everything in the CELLS its query overlaps, which is a superset of
+  // the radius asked for. Every other caller narrows that with its own distance check.
+  // Construction did not, so with buildRadius 2.2 and cellSize 2 a unit up to about 4.2
+  // away raised the building — roughly twice the intended reach, and it inflated the
+  // builder count, so sites also completed faster than they were tuned to.
+  it('ignores a unit outside the build radius that shares a grid cell', () => {
+    const { world, construction, economy, tick } = site();
+    construction.place(world, economy, 0, BuildingType.GrainStore, 5, 5, []);
+    const building = 0;
+
+    // Building centre is (5.5, 5.5). This unit is 3.39 away — well outside 2.2 — but
+    // sits in cell (3,3), which the query's cell range includes.
+    spawn(world, 7.9, 7.9, 0);
+
+    tick();
+    expect(world.buildProgress[building]).toBe(0);
+  });
+
+  it('still counts a unit genuinely within the radius', () => {
+    const { world, construction, economy, tick } = site();
+    construction.place(world, economy, 0, BuildingType.GrainStore, 5, 5, []);
+    const building = 0;
+
+    spawn(world, 6.5, 5.5, 0); // 1.0 away
+    tick();
+    expect(world.buildProgress[building]!).toBeGreaterThan(0);
+  });
+});
+
 describe('building specs', () => {
   it('keeps footprints square and small, so depth sorting stays unambiguous', () => {
     for (const spec of Object.values(BUILDINGS)) {
