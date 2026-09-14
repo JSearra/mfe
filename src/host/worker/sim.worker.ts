@@ -19,6 +19,7 @@ import { createFog, type FogState } from '../../sim/vision/fog.js';
 import { createWorld, type World } from '../../sim/world.js';
 import type { SimEvent } from '../../shared/events.js';
 import type { PlayerState } from '../directHost.js';
+import { createFlightWindow } from './backpressure.js';
 import type { InitMessage, SnapshotMessage, ToWorker } from './protocol.js';
 
 /**
@@ -35,7 +36,7 @@ import type { InitMessage, SnapshotMessage, ToWorker } from './protocol.js';
  */
 
 const MAX_PENDING_EVENTS = 4096;
-/** Snapshots allowed in flight before the worker stops reporting. Real backpressure. */
+/** Snapshots allowed in flight before the worker stops reporting. See backpressure.ts. */
 const MAX_UNACKED = 3;
 const MAX_CATCHUP_TICKS = 5;
 
@@ -50,7 +51,7 @@ let sequence = 0;
 
 let pendingEvents: SimEvent[] = [];
 let droppedEvents = 0;
-let unacked = 0;
+const flight = createFlightWindow(MAX_UNACKED);
 let sentFogVersion = -1;
 let timer: ReturnType<typeof setInterval> | null = null;
 let lastTime = 0;
@@ -128,10 +129,8 @@ function tick(): void {
   if (accumulator > TICK_MS * MAX_CATCHUP_TICKS) accumulator = 0;
   if (ticks === 0) return;
 
-  // Backpressure. A blocked or backgrounded main thread stops acknowledging, and the
-  // worker stops reporting rather than filling its outbound queue until the tab dies.
-  // The simulation keeps running; only the reporting pauses.
-  if (unacked >= MAX_UNACKED) return;
+  // Backpressure. The simulation keeps running; only the reporting pauses.
+  if (flight.blocked()) return;
 
   const droughtNow = economy.drought(world.tick);
   const player: PlayerState = {
@@ -161,7 +160,7 @@ function tick(): void {
   const dropped = droppedEvents;
   pendingEvents = [];
   droppedEvents = 0;
-  unacked++;
+  flight.sent(world.tick);
 
   const message: SnapshotMessage = {
     type: 'snapshot',
@@ -206,7 +205,9 @@ self.onmessage = (event: MessageEvent<ToWorker>): void => {
       return;
 
     case 'ack':
-      unacked = Math.max(0, unacked - 1);
+      // Settles every snapshot at or before this tick: the main thread coalesces, so
+      // the older ones were dropped in favour of this one rather than still awaited.
+      flight.settle(message.tick);
       return;
 
     case 'speed':

@@ -30,7 +30,16 @@ export interface FogState {
   readonly height: number;
   /** players x tiles, row-major per player. */
   readonly tiles: Uint8Array;
-  /** Bumped whenever visibility changes, so the renderer can skip unchanged frames. */
+  /**
+   * Bumped once per vision update, so a host can skip re-sending fog between them.
+   *
+   * Deliberately NOT a change detector. Telling a genuine change from a recomputation
+   * that landed on the same answer needs either a second copy of the grid to diff
+   * against or a sentinel state threaded through both passes here, and it would buy
+   * nothing: with any unit moving, visibility does change every interval, and while the
+   * game is paused this function does not run at all. The hosts compare against the
+   * version they last sent, which is what keeps fog off all the ticks in between.
+   */
   version: number;
 }
 
