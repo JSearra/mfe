@@ -151,6 +151,23 @@ edge to edge leaves nowhere to put a subject.
 way the map does. Every art defect this project has shipped was invisible in the source
 file and obvious the moment it repeated.
 
+**Small sprites need an outline, and it is not optional.** A figure fifty pixels tall
+shares its value range with the ground it stands on, so without a dark edge the silhouette
+dissolves into the terrain and all that survives is a soft lump — which is what "blobby"
+turned out to mean. `postprocess.py` dilates the alpha by a pixel and fills the ring.
+Every hand-drawn sprite of this era has one for the same reason. It is applied to bodies
+and skipped for the tinted overlays, which are drawn ON a body and would otherwise get a
+dark ring painted inside the figure.
+
+**Smooth shading is right for animals and wrong for men.** A smooth ellipsoid resolves to
+a soft gradient, and a figure assembled from gradients has no edges anywhere. Cattle are
+all curve and read better smooth; a man needs facets, so the body parts are built with
+eight sides and flat shading and each plane takes its own value from the key.
+
+**One key light describes form and does nothing for outline.** A rim from behind, cool and
+weak, separates the figure's shaded side from ground of the same value. It is lighting an
+edge, not a scene.
+
 ## What still has to be decided
 
 Three things `ARCHITECTURE.md` section 9 lists as making the budget survivable, of which

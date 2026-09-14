@@ -164,31 +164,52 @@ def box(name: str, size: tuple[float, float, float], location: tuple[float, floa
     return obj
 
 
-def blob(name: str, size: tuple[float, float, float], location: tuple[float, float, float]):
-    """A smooth-shaded ellipsoid.
-
-    Cattle were built from cubes and read as crates on legs. An animal is all curve, and
-    at forty pixels the difference between a box and an ellipsoid is the difference
-    between a shipping container and a cow. Smooth shading matters as much as the shape:
-    a faceted low-poly sphere just looks like a worse box.
+def blob(
+    name: str,
+    size: tuple[float, float, float],
+    location: tuple[float, float, float],
+    smooth: bool = True,
+    segments: int = 16,
+    rings: int = 10,
+):
     """
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=10, location=location)
+    An ellipsoid, smooth-shaded by default and faceted on request.
+
+    Cattle were built from cubes and read as crates on legs. An animal is all curve, so
+    smooth shading is right for them. It is NOT right for a man at forty pixels, and that
+    took a second look to see: a smooth ellipsoid resolves to a soft gradient, and a
+    figure assembled from soft gradients has no edges anywhere — which is exactly the
+    complaint that it looks blobby. Facets give each plane its own value, and those
+    survive the downscale when a gradient does not.
+    """
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=segments, ring_count=rings, location=location)
     obj = bpy.context.active_object
     obj.name = name
     obj.scale = (size[0] / 2, size[1] / 2, size[2] / 2)
-    bpy.ops.object.shade_smooth()
+    if smooth:
+        bpy.ops.object.shade_smooth()
     return obj
 
 
-def taper(name: str, lower: float, upper: float, depth: float, location, rotation=(0.0, 0.0, 0.0)):
+def taper(
+    name: str,
+    lower: float,
+    upper: float,
+    depth: float,
+    location,
+    rotation=(0.0, 0.0, 0.0),
+    smooth: bool = True,
+    verts: int = 12,
+):
     """A truncated cone, for limbs and necks that should not be tubes."""
     bpy.ops.mesh.primitive_cone_add(
-        vertices=12, radius1=lower, radius2=upper, depth=depth, location=location
+        vertices=verts, radius1=lower, radius2=upper, depth=depth, location=location
     )
     obj = bpy.context.active_object
     obj.name = name
     obj.rotation_euler = rotation
-    bpy.ops.object.shade_smooth()
+    if smooth:
+        bpy.ops.object.shade_smooth()
     return obj
 
 
@@ -522,18 +543,25 @@ def build(kind: str):
 
     shoulder_z = HIP_HEIGHT + TORSO
 
+    # Low, faceted geometry for the body. A smooth ellipsoid is a soft gradient and a
+    # figure made of soft gradients has no edges anywhere, which is what reads as blobby
+    # once the sprite is fifty pixels tall. Eight sides around and five up gives each
+    # plane its own value against the key, and those planes survive the downscale.
+    facet = {"smooth": False, "segments": 8, "rings": 5}
+    limb = {"smooth": False, "verts": 7}
+
     # Torso as three masses rather than one box: a chest that carries the shoulders, a
     # narrower waist, and the pelvis. A single block has no waist, and a figure with no
     # waist reads as a crate however good the kit on it is.
-    chest = blob("chest", (0.34, SHOULDER_WIDTH, 0.34), (0, 0, shoulder_z - 0.12))
+    chest = blob("chest", (0.34, SHOULDER_WIDTH, 0.34), (0, 0, shoulder_z - 0.12), **facet)
     chest.data.materials.append(skin)
     chest.parent = root
 
-    waist = blob("waist", (0.27, 0.28, 0.26), (0, 0, HIP_HEIGHT + TORSO * 0.34))
+    waist = blob("waist", (0.27, 0.28, 0.26), (0, 0, HIP_HEIGHT + TORSO * 0.34), **facet)
     waist.data.materials.append(skin)
     waist.parent = root
 
-    pelvis = blob("pelvis", (0.29, 0.32, 0.24), (0, 0, HIP_HEIGHT + 0.05))
+    pelvis = blob("pelvis", (0.29, 0.32, 0.24), (0, 0, HIP_HEIGHT + 0.05), **facet)
     pelvis.data.materials.append(skin)
     pelvis.parent = root
 
@@ -541,7 +569,7 @@ def build(kind: str):
     neck.data.materials.append(skin)
     neck.parent = root
 
-    head = blob("head", (HEAD * 0.82, HEAD * 0.80, HEAD), (0, 0, shoulder_z + NECK + HEAD / 2))
+    head = blob("head", (HEAD * 0.82, HEAD * 0.80, HEAD), (0, 0, shoulder_z + NECK + HEAD / 2), **facet)
     head.data.materials.append(skin)
     head.parent = root
 
@@ -581,15 +609,22 @@ def build(kind: str):
         leg_pivot.parent = root
         limbs[f"hip_{side}"] = leg_pivot
 
-        thigh = taper(f"thigh_{side}", 0.075, 0.055, LEG * 0.52, (0, 0, -LEG * 0.26))
+        thigh = taper(f"thigh_{side}", 0.078, 0.052, LEG * 0.52, (0, 0, -LEG * 0.26), **limb)
         thigh.data.materials.append(skin)
         thigh.parent = leg_pivot
 
-        calf = taper(f"calf_{side}", 0.058, 0.032, LEG * 0.50, (0, 0, -LEG * 0.76))
+        # A knee: a small mass at the break, and the calf set back from the thigh's line.
+        # A leg that is one straight cone from hip to ankle is a stick, and no amount of
+        # shading rescues it.
+        knee = blob(f"knee_{side}", (0.10, 0.10, 0.09), (0.012, 0, -LEG * 0.5), **facet)
+        knee.data.materials.append(skin)
+        knee.parent = leg_pivot
+
+        calf = taper(f"calf_{side}", 0.060, 0.030, LEG * 0.50, (-0.012, 0, -LEG * 0.76), **limb)
         calf.data.materials.append(skin)
         calf.parent = leg_pivot
 
-        foot = blob(f"foot_{side}", (0.19, 0.09, 0.07), (0.035, 0, -LEG + 0.035))
+        foot = blob(f"foot_{side}", (0.19, 0.09, 0.07), (0.035, 0, -LEG + 0.035), **facet)
         foot.data.materials.append(skin)
         foot.parent = leg_pivot
 
@@ -599,19 +634,23 @@ def build(kind: str):
         arm_pivot.parent = root
         limbs[f"shoulder_{side}"] = arm_pivot
 
-        shoulder = blob(f"deltoid_{side}", (0.13, 0.13, 0.14), (0, 0, -0.02))
+        shoulder = blob(f"deltoid_{side}", (0.145, 0.135, 0.15), (0, 0, -0.02), **facet)
         shoulder.data.materials.append(skin)
         shoulder.parent = arm_pivot
 
-        upper = taper(f"upper_arm_{side}", 0.055, 0.042, ARM * 0.48, (0, 0, -ARM * 0.26))
+        upper = taper(f"upper_arm_{side}", 0.058, 0.040, ARM * 0.48, (0, 0, -ARM * 0.26), **limb)
         upper.data.materials.append(skin)
         upper.parent = arm_pivot
 
-        fore = taper(f"forearm_{side}", 0.045, 0.032, ARM * 0.46, (0, 0, -ARM * 0.72))
+        elbow = blob(f"elbow_{side}", (0.085, 0.085, 0.08), (0.01, 0, -ARM * 0.49), **facet)
+        elbow.data.materials.append(skin)
+        elbow.parent = arm_pivot
+
+        fore = taper(f"forearm_{side}", 0.047, 0.030, ARM * 0.46, (-0.01, 0, -ARM * 0.72), **limb)
         fore.data.materials.append(skin)
         fore.parent = arm_pivot
 
-        hand = blob(f"hand_{side}", (0.09, 0.06, 0.10), (0, 0, -ARM * 0.98))
+        hand = blob(f"hand_{side}", (0.09, 0.06, 0.10), (0, 0, -ARM * 0.98), **facet)
         hand.data.materials.append(skin)
         hand.parent = arm_pivot
 

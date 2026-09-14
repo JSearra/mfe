@@ -169,6 +169,21 @@ def ensure_light() -> None:
     bpy.context.scene.collection.objects.link(light)
     light.rotation_euler = (math.radians(50.0), 0.0, math.radians(-35.0))
 
+    # A rim from behind and the other side.
+    #
+    # One key plus fill lights the form but does nothing for the OUTLINE, and at forty
+    # pixels the outline is most of what a player reads. Without it a figure's shaded
+    # side meets the ground at the same value and the silhouette dissolves into the
+    # terrain — which is half of why the units looked like soft lumps rather than men.
+    # Cool, because it stands for sky rather than for a second sun, and weak: it is
+    # separating an edge, not lighting a scene.
+    rim_data = bpy.data.lights.new("rim", type="SUN")
+    rim_data.energy = 2.6
+    rim_data.color = (0.62, 0.72, 0.95)
+    rim = bpy.data.objects.new("rim", rim_data)
+    bpy.context.scene.collection.objects.link(rim)
+    rim.rotation_euler = (math.radians(66.0), 0.0, math.radians(148.0))
+
 
 def main() -> None:
     args = parse_args()

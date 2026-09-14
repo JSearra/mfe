@@ -234,6 +234,46 @@ def command_tile(args: argparse.Namespace) -> int:
     return 0
 
 
+# Frames that are drawn OVER a body rather than as one. Outlining these would paint a
+# dark ring inside the figure, around a shield marking that has no business having an
+# edge of its own.
+OVERLAY_SUFFIXES = ("-team", "-shield")
+
+
+def outline(image: Image.Image, colour: tuple[int, int, int] = (26, 20, 14)) -> Image.Image:
+    """
+    Draw a dark edge around everything opaque.
+
+    This is the single largest thing that makes a small sprite read, and its absence is
+    most of what "blobby" meant. A figure fifty pixels tall shares its value range with
+    the ground it stands on, so without an outline the silhouette dissolves into the
+    terrain and all that survives is a soft lump. Every hand-drawn sprite of this era has
+    one for exactly this reason.
+
+    Done by dilating the alpha by a pixel and filling the new ring, so it follows whatever
+    shape the render produced and costs nothing in the model.
+    """
+    alpha = np.asarray(image.getchannel("A")).astype(np.uint16)
+    grown = alpha.copy()
+    for shift_y, shift_x in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        grown = np.maximum(grown, np.roll(np.roll(alpha, shift_y, axis=0), shift_x, axis=1))
+    # Rolling wraps, so a figure touching an edge would smear onto the opposite one.
+    if grown.shape[0] > 1:
+        grown[0, :] = np.maximum(alpha[0, :], grown[0, :] * 0)
+        grown[-1, :] = np.maximum(alpha[-1, :], grown[-1, :] * 0)
+    if grown.shape[1] > 1:
+        grown[:, 0] = np.maximum(alpha[:, 0], grown[:, 0] * 0)
+        grown[:, -1] = np.maximum(alpha[:, -1], grown[:, -1] * 0)
+
+    ring = (grown > 40) & (alpha <= 40)
+    pixels = np.asarray(image).copy()
+    pixels[ring, 0] = colour[0]
+    pixels[ring, 1] = colour[1]
+    pixels[ring, 2] = colour[2]
+    pixels[ring, 3] = 255
+    return Image.fromarray(pixels, "RGBA")
+
+
 def command_sprite(args: argparse.Namespace) -> int:
     source = pathlib.Path(args.input)
     target = pathlib.Path(args.output)
@@ -243,7 +283,11 @@ def command_sprite(args: argparse.Namespace) -> int:
     packed: list[tuple[str, Image.Image]] = []
     for path in sorted(source.glob("*.png")):
         with Image.open(path) as image:
-            cropped, offset_x, offset_y = trim(image.convert("RGBA"))
+            source = image.convert("RGBA")
+            subject = path.stem.rsplit("_", 3)[0]
+            if not subject.endswith(OVERLAY_SUFFIXES):
+                source = outline(source)
+            cropped, offset_x, offset_y = trim(source)
             width, height = cropped.size
             cropped.save(target / path.name)
         manifest.append(
