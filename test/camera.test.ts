@@ -14,7 +14,10 @@ import {
   worldToViewportY,
   zoomAt,
   zoomStepFactor,
+  clampCamera,
+  mapBounds,
 } from '../src/render/camera.js';
+import { worldToScreenX, worldToScreenY } from '../src/shared/iso.js';
 
 describe('camera zoom', () => {
   it('clamps at both ends', () => {
@@ -162,5 +165,70 @@ describe('camera panning', () => {
     updateCamera(camera, input, 1);
     expect(camera.x).toBeGreaterThan(0);
     expect(camera.y).toBeGreaterThan(0);
+  });
+});
+
+describe('camera bounds', () => {
+  const bounds = mapBounds(128, 128);
+
+  it('keeps a camera that is already over the map where it is', () => {
+    const camera = createCamera(1280, 720);
+    camera.x = 0;
+    camera.y = 128 * 16;
+    const { x, y } = { x: camera.x, y: camera.y };
+    clampCamera(camera, bounds);
+    expect(camera.x).toBe(x);
+    expect(camera.y).toBe(y);
+  });
+
+  it('stops a sustained pan from leaving the map', () => {
+    // The defect this guards: nothing clamped the camera, so holding a pan key walked
+    // the view off into empty space and no input brought it back.
+    const camera = createCamera(1280, 720);
+    const input = createCameraInput();
+    input.panRight = true;
+    input.panDown = true;
+
+    for (let frame = 0; frame < 6000; frame++) {
+      updateCamera(camera, input, 1 / 60);
+      clampCamera(camera, bounds);
+    }
+
+    expect(camera.x).toBeLessThanOrEqual(bounds.maxX);
+    expect(camera.y).toBeLessThanOrEqual(bounds.maxY);
+
+    input.panRight = false;
+    input.panDown = false;
+    input.panLeft = true;
+    input.panUp = true;
+    for (let frame = 0; frame < 6000; frame++) {
+      updateCamera(camera, input, 1 / 60);
+      clampCamera(camera, bounds);
+    }
+
+    expect(camera.x).toBeGreaterThanOrEqual(bounds.minX);
+    expect(camera.y).toBeGreaterThanOrEqual(bounds.minY);
+  });
+
+  it('brackets the projected corners of the map', () => {
+    // Far west is (0, height); far east is (width, 0). A box that does not contain both
+    // would clip a corner of the map out of reach.
+    expect(bounds.minX).toBeLessThanOrEqual(worldToScreenX(0, 128));
+    expect(bounds.maxX).toBeGreaterThanOrEqual(worldToScreenX(128, 0));
+    expect(bounds.maxY).toBeGreaterThanOrEqual(worldToScreenY(128, 128, 0));
+  });
+
+  it('pins the camera inside a map smaller than the viewport rather than oscillating', () => {
+    const small = mapBounds(8, 8);
+    const camera = createCamera(1920, 1080);
+    camera.x = 9999;
+    camera.y = -9999;
+    clampCamera(camera, small);
+    expect(camera.x).toBe(small.maxX);
+    expect(camera.y).toBe(small.minY);
+    const once = { x: camera.x, y: camera.y };
+    clampCamera(camera, small);
+    expect(camera.x).toBe(once.x);
+    expect(camera.y).toBe(once.y);
   });
 });

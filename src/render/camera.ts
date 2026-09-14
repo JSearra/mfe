@@ -1,4 +1,5 @@
 import {
+  ELEV_STEP,
   screenToWorldX,
   screenToWorldY,
   worldToScreenX,
@@ -72,6 +73,51 @@ export function zoomAt(camera: Camera, factor: number, viewportX: number, viewpo
 
 export function zoomStepFactor(direction: number): number {
   return direction > 0 ? zoomStep : 1 / zoomStep;
+}
+
+/**
+ * The box the viewport centre is allowed to roam over, in unzoomed isometric space.
+ *
+ * Nothing constrained the camera before this: holding a pan key walked the view off the
+ * map into empty space, and since no input is relative to the map, nothing brought it
+ * back. The player had to restart.
+ *
+ * The box is the map's own projected bounding box, so at the extreme the camera sits on
+ * a map corner with half a viewport of void beyond it. Clamping tighter — insetting by
+ * half the viewport so no void ever shows — behaves badly when the map is smaller than
+ * the window, because the inset bounds invert and the camera has nowhere legal to be.
+ */
+export interface CameraBounds {
+  readonly minX: number;
+  readonly maxX: number;
+  readonly minY: number;
+  readonly maxY: number;
+}
+
+/**
+ * Projected bounds of a map of this tile size.
+ *
+ * The four map corners do not project to the corners of the box: west is (0, height) and
+ * east is (width, 0), because the projection rotates the grid 45 degrees. The top edge
+ * allows for terrain lifting geometry above the y=0 line, so a peak at the north corner
+ * is still reachable.
+ */
+export function mapBounds(width: number, height: number, maxTileHeight = 16): CameraBounds {
+  return {
+    minX: worldToScreenX(0, height),
+    maxX: worldToScreenX(width, 0),
+    minY: worldToScreenY(0, 0, 0) - maxTileHeight * ELEV_STEP,
+    maxY: worldToScreenY(width, height, 0),
+  };
+}
+
+/** Pull the camera back inside its bounds. Idempotent. */
+export function clampCamera(camera: Camera, bounds: CameraBounds): void {
+  if (camera.x < bounds.minX) camera.x = bounds.minX;
+  else if (camera.x > bounds.maxX) camera.x = bounds.maxX;
+
+  if (camera.y < bounds.minY) camera.y = bounds.minY;
+  else if (camera.y > bounds.maxY) camera.y = bounds.maxY;
 }
 
 /** Pan by a screen-pixel delta, so panning feels the same at every zoom level. */

@@ -19,6 +19,8 @@ import {
   createCameraInput,
   setViewport,
   updateCamera,
+  clampCamera,
+  mapBounds,
   worldToViewportX,
   worldToViewportY,
 } from './render/camera.js';
@@ -275,6 +277,9 @@ async function main(options: GameOptions): Promise<void> {
 
   camera.x = 0;
   camera.y = MAP_SIZE * 16;
+  // The camera may not leave the map. Without this, a held pan key walks the view into
+  // empty space and nothing is relative enough to the map to bring it back.
+  const cameraBounds = mapBounds(map.width, map.height, map.levels - 1);
 
   const terrainTiles = await loadTerrainTiles();
   const terrain = createTerrain(map, terrainTiles);
@@ -619,6 +624,9 @@ async function main(options: GameOptions): Promise<void> {
     }
 
     updateCamera(camera, input, ticker.deltaMS / 1000);
+    // One clamp per frame covers every way the camera moves: keys, edge pan, drag,
+    // wheel zoom, a minimap seek and an alert jump all land before the next frame.
+    clampCamera(camera, cameraBounds);
 
     sim.pump(ticker.deltaMS);
     const message = sim.receive();
