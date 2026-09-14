@@ -574,6 +574,15 @@ def animate(limbs: dict, anim: str) -> int:
     return frames
 
 
+def wears_player_colour(obj) -> bool:
+    """Does this object carry the material a faction recolours?"""
+    if obj.type != "MESH" or obj.data is None:
+        return False
+    return any(
+        slot is not None and slot.name.startswith("player_colour") for slot in obj.data.materials
+    )
+
+
 def load_renderer():
     """Import render_sprites rather than duplicating its camera.
 
@@ -645,6 +654,40 @@ def render_kind(renderer, kind: str, anim: str, args: argparse.Namespace) -> int
             )
             bpy.ops.render.render(write_still=True)
             written += 1
+
+    # The team pass: the same frames again with everything hidden except the parts
+    # carrying player colour, rendered pale so a tint multiplies cleanly.
+    #
+    # This is how one set of art serves four factions. ARCHITECTURE section 9 rules out
+    # pre-tinted per-faction atlases because they multiply the budget by faction count
+    # and asks for a shader swap instead — and a tinted sprite IS a shader swap, applied
+    # in the renderer's own batch shader, which is the version that does not break the
+    # batch. Drawn from the same page as the body, so the two batch together.
+    #
+    # Nearly free in atlas terms: a team frame is a shield marking and nothing else, so
+    # it trims to a fraction of the body frame beside it.
+    team = [obj for obj in bpy.data.objects if wears_player_colour(obj)]
+    if team:
+        hidden = [obj for obj in bpy.data.objects if obj.type == "MESH" and obj not in team]
+        for obj in hidden:
+            obj.hide_render = True
+        mask = material("team_mask", (0.85, 0.85, 0.85))
+        for obj in team:
+            obj.data.materials.clear()
+            obj.data.materials.append(mask)
+
+        for direction in range(directions):
+            root.rotation_euler.z = direction * step
+            for frame in range(frames):
+                scene.frame_set(scene.frame_start + frame)
+                scene.render.filepath = os.path.join(
+                    args.render, f"{kind}-team_{anim}_{direction}_{frame:02d}.png"
+                )
+                bpy.ops.render.render(write_still=True)
+                written += 1
+
+        for obj in hidden:
+            obj.hide_render = False
 
     print(f"[make_unit] {kind}/{anim}: {written} frames")
 

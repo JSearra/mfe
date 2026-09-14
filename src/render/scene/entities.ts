@@ -161,6 +161,8 @@ interface Marker {
   readonly graphics: Graphics;
   /** The textured body of a unit or a cow. */
   readonly sprite: Sprite;
+  /** The player-colour marking, tinted per faction and drawn over the body. */
+  readonly team: Sprite;
   /** Everything the drawn shape depends on, so it is only redrawn when it changes. */
   signature: number;
 }
@@ -310,16 +312,21 @@ export function createEntityLayer(atlas: SpriteAtlas | null = null): EntityLayer
         const decal = new Graphics();
         const graphics = new Graphics();
         const sprite = new Sprite();
+        const team = new Sprite();
         decals.addChild(decal);
         bodies.addChild(graphics);
         bodies.addChild(sprite);
-        markers.push({ decal, graphics, sprite, signature: -1 });
+        // Immediately after its body, and off the same atlas page, so the pair still
+        // batches with every other sprite rather than costing a draw call each.
+        bodies.addChild(team);
+        markers.push({ decal, graphics, sprite, team, signature: -1 });
       }
       for (let i = count; i < markers.length; i++) {
         const marker = markers[i]!;
         marker.decal.visible = false;
         marker.graphics.visible = false;
         marker.sprite.visible = false;
+        marker.team.visible = false;
       }
 
       // Back to front along the isometric axis, computed from the INTERPOLATED
@@ -374,6 +381,7 @@ export function createEntityLayer(atlas: SpriteAtlas | null = null): EntityLayer
         marker.graphics.position.set(position.x, position.y);
         marker.graphics.visible = !textured;
         marker.sprite.visible = false;
+        marker.team.visible = false;
 
         if (!textured) continue;
 
@@ -407,6 +415,24 @@ export function createEntityLayer(atlas: SpriteAtlas | null = null): EntityLayer
         );
         marker.sprite.tint = isSelected ? SELECTED : 0xffffff;
         marker.sprite.visible = true;
+
+        // Player colour, as a tinted overlay rather than a recoloured atlas.
+        // ARCHITECTURE section 9 rules out pre-tinted per-faction pages — they multiply
+        // the art budget by faction count and every extra page breaks the batch — and
+        // asks for a shader swap. A tinted sprite IS one: the tint is applied in the
+        // renderer's own batch shader, so one set of art serves every faction and the
+        // overlay batches with the body it sits on.
+        const teamFrame = atlas!.frame(`${name}-team`, anim, direction, frameIndex);
+        if (teamFrame !== null) {
+          marker.team.texture = teamFrame.texture;
+          marker.team.scale.set(teamFrame.scale);
+          marker.team.position.set(
+            position.x - teamFrame.anchorX * teamFrame.scale,
+            position.y - teamFrame.anchorY * teamFrame.scale,
+          );
+          marker.team.tint = FACTION[faction % FACTION.length] ?? FACTION[0]!;
+          marker.team.visible = true;
+        }
       }
     },
   };

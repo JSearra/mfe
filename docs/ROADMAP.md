@@ -398,7 +398,12 @@ remains:
 
 - **Art.** The pipeline exists (ADR-0015, `tools/art/`): generation for surfaces, Blender
   headless for unit sheets. What is not done is the art itself, nor the two remaining
-  atlas-budget mitigations — shader palette-swap for player colour, and shared silhouettes.
+  atlas-budget mitigation of shared silhouettes. Player colour is done: the parts that
+  carry it render as their own trimmed frames on the same atlas page, and the renderer
+  draws them over the body tinted per faction. The tint is applied in the renderer's own
+  batch shader, so it is the shader swap ARCHITECTURE section 9 asked for in the version
+  that does not break the batch — one set of art serves every faction, and the overlay
+  batches with the body it sits on. Draw calls unchanged at 25 of 60.
 - ~~**A victory condition.**~~ **Done.** Measured in cattle rather than corpses, because in
   this setting cattle are wealth, standing and the reason to fight — so a player who
   ignores herding cannot win by being good at everything else. The threshold must be

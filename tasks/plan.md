@@ -61,12 +61,12 @@ the outcome banner is the end of the road.
       still `Graphics` primitives.
 - [x] **C3 — Cliff faces are strata now, deliberately not textured.** They take the tile's average colour; they
       should be textured like the surfaces above them.
-- [ ] **C4 — Player colour should be a shader swap**, not baked geometry. The roadmap has
+- [x] **C4 — Player colour is a tinted overlay off the same page.** Done., not baked geometry. The roadmap has
       wanted this since the art pipeline landed, and the pale shield is now the canvas
       for it.
 - [ ] **C5 — Mounted units draw the musketeer sprite.** There is no horse, despite
       `Mounted` being a movement class with its own cost profile.
-- [ ] **C6 — The `herder` sprite is unused.** Herding is done by any unit; either give
+- [x] **C6 — The `herder` sprite is gone.** Done. Herding is done by any unit; either give
       herders a type or drop the sprite from the atlas.
 
 ## D. Multiplayer
