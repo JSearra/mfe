@@ -45,6 +45,7 @@ import { createDebugOverlay } from './ui/debugOverlay.js';
 import { createCommandPanel } from './ui/commandPanel.js';
 import { createMinimap } from './ui/minimap.js';
 import { createAlerts } from './ui/alerts.js';
+import { showSetup } from './ui/setup.js';
 import { createOutcomeBanner } from './ui/outcomeBanner.js';
 import { createResourceBar } from './ui/resourceBar.js';
 
@@ -126,13 +127,44 @@ declare global {
   }
 }
 
-async function restart(): Promise<void> {
-  for (const release of teardown.reverse()) release();
-  teardown = [];
-  await main();
+/** What a match is set up with. */
+export interface GameOptions {
+  /** One of the four scripted landscapes, or null for the generated heightmap. */
+  readonly mapScript: MapScript | null;
+  readonly mapSeed: number;
+  readonly playerFaction: FactionId;
+  readonly enemyFaction: FactionId;
 }
 
-async function main(): Promise<void> {
+/**
+ * The options in force. Restart reuses them, so "play again" means the same match
+ * rather than dropping the player back into a menu they have already answered.
+ */
+let currentOptions: GameOptions | null = null;
+
+async function restart(options: GameOptions | null = currentOptions): Promise<void> {
+  for (const release of teardown.reverse()) release();
+  teardown = [];
+  await main(options ?? defaultOptions());
+}
+
+function defaultOptions(): GameOptions {
+  // The query parameters still work and still win. They predate the setup screen, they
+  // are how the perf harness and the screenshot tooling ask for a specific match, and a
+  // menu that ignored them would break both.
+  const params = new URLSearchParams(location.search);
+  const requested = params.get('map');
+  const seed = Number(params.get('seed'));
+  return {
+    mapScript: MAP_SCRIPTS.includes(requested as MapScript) ? (requested as MapScript) : null,
+    mapSeed: Number.isFinite(seed) && seed !== 0 ? seed : MAP_SEED,
+    playerFaction: FactionId.Zulu,
+    enemyFaction: FactionId.Sotho,
+  };
+}
+
+async function main(options: GameOptions): Promise<void> {
+  currentOptions = options;
   document.title = t('app.title');
 
   const root = document.getElementById('app') ?? document.body;
@@ -143,15 +175,12 @@ async function main(): Promise<void> {
   // deterministic, so both sides arrive at the same map without transferring it.
   // ?map=karoo and friends pick one of the four scripted landscapes. Both sides build
   // it from the same seed, so nothing has to be transferred.
-  const requested = new URLSearchParams(location.search).get('map');
-  const mapScript: MapScript | null = MAP_SCRIPTS.includes(requested as MapScript)
-    ? (requested as MapScript)
-    : null;
+  const { mapScript, mapSeed } = options;
 
   const map =
     mapScript === null
-      ? createHeightmap(MAP_SIZE, MAP_SIZE, MAP_SEED)
-      : generateMap(mapScript, MAP_SIZE, MAP_SIZE, MAP_SEED);
+      ? createHeightmap(MAP_SIZE, MAP_SIZE, mapSeed)
+      : generateMap(mapScript, MAP_SIZE, MAP_SIZE, mapSeed);
 
   // Where each side begins. The hosts lay arable land out around these, and the unit
   // seeding below uses the same numbers, so the fields are where the people are.
@@ -168,13 +197,13 @@ async function main(): Promise<void> {
   const sim: SimHost = useWorker
     ? createWorkerSimHost({
         mapSize: MAP_SIZE,
-        mapSeed: MAP_SEED,
+        mapSeed,
         mapScript,
         worldSeed: WORLD_SEED,
         capacity: 512,
         viewerId: PLAYER,
         playerId: PLAYER,
-        factions: [FactionId.Zulu, FactionId.Sotho],
+        factions: [options.playerFaction, options.enemyFaction],
         aiPlayers: [ENEMY],
         starts,
       })
@@ -184,6 +213,7 @@ async function main(): Promise<void> {
         viewerId: PLAYER,
         playerId: PLAYER,
         aiPlayers: [ENEMY],
+        factions: [options.playerFaction, options.enemyFaction],
         starts,
       });
 
@@ -648,4 +678,25 @@ async function main(): Promise<void> {
   );
 }
 
-void main();
+/**
+ * Ask for a match, then play it.
+ *
+ * The setup screen is skipped when the URL already names a map, so the perf harness and
+ * the screenshot tooling — both of which drive the page unattended — still land straight
+ * in a game rather than waiting on a menu nobody is there to answer.
+ */
+async function boot(): Promise<void> {
+  const defaults = defaultOptions();
+  const root = document.getElementById('app') ?? document.body;
+
+  const params = new URLSearchParams(location.search);
+  if (params.has('map') || params.has('perf')) {
+    await main(defaults);
+    return;
+  }
+
+  const chosen = await showSetup(root, defaults);
+  await main({ ...defaults, ...chosen });
+}
+
+void boot();

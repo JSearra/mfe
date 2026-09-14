@@ -150,6 +150,67 @@
 
       /* Sits above the resource bar, out of the way of the command panel and the
          minimap — the two corners a player's hands are already in. */
+      .setup {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #14110d;
+        z-index: 10;
+      }
+
+      .setup-panel {
+        min-width: 320px;
+        padding: 28px 32px;
+        border: 1px solid #c8a86a;
+        border-radius: 6px;
+        background: rgba(28, 24, 17, 0.96);
+        color: #e8d9a8;
+      }
+
+      .setup-panel h1 {
+        margin: 0 0 20px;
+        font-size: 22px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+      }
+
+      .setup-field {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+
+      .setup-field select,
+      .setup-field input {
+        min-width: 170px;
+        padding: 5px 8px;
+        border: 1px solid #6d5c3c;
+        border-radius: 3px;
+        background: #241f17;
+        color: #e8d9a8;
+        font: inherit;
+        font-size: 14px;
+      }
+
+      .setup-start {
+        width: 100%;
+        margin-top: 18px;
+        padding: 9px;
+        border: 1px solid #c8a86a;
+        border-radius: 4px;
+        background: #3a3122;
+        color: #e8d9a8;
+        font: inherit;
+        font-size: 15px;
+        letter-spacing: 0.03em;
+        cursor: pointer;
+      }
+
       .alerts {
         position: absolute;
         top: 74px;

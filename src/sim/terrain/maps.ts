@@ -1,4 +1,5 @@
 import type { Heightmap } from '../../shared/heightmap.js';
+import { MapScript } from '../../shared/maps.js';
 import { createRng, nextInt, nextU32 } from '../math/rng.js';
 import { cos, sin, TWO_PI } from '../math/trig.js';
 import { buildPermutation, fbm, smoothstep } from './noise.js';
@@ -16,18 +17,9 @@ import { buildPermutation, fbm, smoothstep } from './noise.js';
  * something a replay can reference by name and number rather than having to ship.
  */
 
-export const MapScript = {
-  /** Tabular sandstone mesas with sheer sides and a handful of climbable passes. */
-  ThabaBosiu: 'thaba-bosiu',
-  /** Dissected rolling spurs cut by a braided river. */
-  Umfolozi: 'umfolozi',
-  /** Flat arid plain, ironstone koppies, and dongas sunk into it. */
-  Karoo: 'karoo',
-  /** Parallel ridge lines pierced by narrow poorts. */
-  Magaliesberg: 'magaliesberg',
-} as const;
-
-export type MapScript = (typeof MapScript)[keyof typeof MapScript];
+// The names live in src/shared so the UI can offer them without importing from the
+// simulation; the generators below stay here, where they belong.
+export { MapScript, MAP_SCRIPTS } from '../../shared/maps.js';
 
 const LEVELS = 8;
 
@@ -256,4 +248,3 @@ export function generateMap(
   return GENERATORS[script](width, height, seed);
 }
 
-export const MAP_SCRIPTS: readonly MapScript[] = Object.values(MapScript);

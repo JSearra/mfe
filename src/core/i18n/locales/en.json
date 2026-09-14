@@ -79,5 +79,16 @@
     "buildingComplete": "Building complete",
     "research": "Research complete",
     "jump": "press Space to look"
+  },
+  "setup": {
+    "map": "Land",
+    "faction": "People",
+    "seed": "Seed",
+    "start": "Begin",
+    "mapOpen": "Open veld",
+    "mapThabaBosiu": "Thaba Bosiu",
+    "mapUmfolozi": "Umfolozi",
+    "mapKaroo": "The Great Karoo",
+    "mapMagaliesberg": "Magaliesberg"
   }
 }
