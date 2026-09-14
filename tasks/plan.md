@@ -121,12 +121,18 @@ Fixed in that pass:
 
 Still open, and all of them decisions rather than defects:
 
-- **The victory condition can be reached by doing nothing.** The winning match above was
-  won without issuing a single order: the ledger herd grows ~1.5% per upkeep, which
-  carries 120 cattle to 200 in roughly eight minutes on its own. Raiding — the mechanic
-  the whole game is built around — is currently optional. Lowering
-  `cattleGrowthPerHundred`, raising `cattleToWin`, or capping growth by kraal capacity
-  would each fix it, and they play very differently. Worth deciding deliberately.
+- ~~The victory condition can be reached by doing nothing.~~ **Fixed:**
+  `cattleGrowthPerHundred` 1.5 → 0.4. An idle herd now takes about 28 minutes to reach
+  200 rather than eight, so passive growth cannot win a match, while a herd held for
+  fifteen minutes still grows 120 → 157 and remains worth keeping.
+
+  **What this promotes to the open question:** with passive growth out of the way, the
+  isibaya is the cheapest route to the win condition — 1.5 cattle an upkeep, flat, so a
+  single finished kraal is about +90 cattle over ten minutes for 120 grain and 600 work.
+  Raiding the thirty cattle on the map is now a real contribution (37% of the 80 needed)
+  and denies them to the enemy, but building still outpaces it. If raiding should be
+  *the* route rather than *a* route, `cattleYield` on the isibaya is the next lever, or
+  the map wants more cattle to fight over.
 - **Starvation damage is not proportional to the shortfall.** Being five grain short does
   the same damage, to every unit you own, as being five hundred short. A small miss
   should be a warning, not the same catastrophe as a collapse.

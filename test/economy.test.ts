@@ -13,6 +13,7 @@ import { flatMap } from './simHarness.js';
 import { tuning } from '../src/sim/tuning.js';
 import { createWorld, EntityKind, spawn, type World } from '../src/sim/world.js';
 import { NEUTRAL_FACTION } from '../src/sim/commands.js';
+import { TICK_MS } from '../src/shared/timing.js';
 
 const E = tuning.economy;
 const PLAYERS = [FactionId.Zulu, FactionId.Sotho] as const;
@@ -396,5 +397,63 @@ describe('can a player survive their own opening position', () => {
       (7 * open + 3 * Math.max(open, tuning.economy.shelteredYieldFactor));
     const upkeep = (24 * tuning.economy.grainPerUnit + 148 * tuning.economy.grainPerCattle) * 1.1;
     expect(income, 'the worst of a bad year should not pay for itself').toBeLessThan(upkeep);
+  });
+});
+
+describe('the herd does not grow into a victory on its own', () => {
+  /**
+   * A played match was won at tick 10211 without a single order being issued. The ledger
+   * herd compounded at 1.5% an upkeep, which carried the Zulu's starting 120 cattle past
+   * the 200 needed to win in about eight minutes — so raiding, the mechanic the whole
+   * game is built around, was optional.
+   *
+   * Growth still has to be worth something, or holding a herd stops mattering and the
+   * cattle are just a score. These two pin both sides of that.
+   */
+  function idleHerd(seed: number, cattle = 120) {
+    const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], seed, []);
+    economy.add(0, Resource.Cattle, cattle - economy.balance(0, Resource.Cattle));
+    // Grain enough that upkeep is always paid: this isolates growth from starvation.
+    economy.add(0, Resource.Grain, 1_000_000);
+    return economy;
+  }
+
+  /** Upkeeps in `minutes` of real time. */
+  const upkeeps = (minutes: number) =>
+    Math.floor((minutes * 60 * 1000) / (TICK_MS * tuning.economy.upkeepIntervalTicks));
+
+  it('cannot reach the victory threshold inside a long match', () => {
+    // Twenty-five minutes is already a long match for this game; the winning playthrough
+    // took eight and a half.
+    for (const seed of [1, 7, 0xbeef]) {
+      const economy = idleHerd(seed);
+      const world = worldWithTroops(0);
+
+      for (let i = 1; i <= upkeeps(25); i++) {
+        world.tick = i * tuning.economy.upkeepIntervalTicks;
+        economy.update(world, []);
+      }
+
+      expect(
+        economy.balance(0, Resource.Cattle),
+        `seed ${seed}: an idle herd reached the win threshold`,
+      ).toBeLessThan(tuning.victory.cattleToWin);
+    }
+  });
+
+  it('still rewards holding a herd', () => {
+    // The opposite failure: growth nerfed into irrelevance, so cattle become a score
+    // rather than wealth and there is no reason to keep what you take.
+    const economy = idleHerd(1);
+    const world = worldWithTroops(0);
+    const before = economy.balance(0, Resource.Cattle);
+
+    for (let i = 1; i <= upkeeps(15); i++) {
+      world.tick = i * tuning.economy.upkeepIntervalTicks;
+      economy.update(world, []);
+    }
+
+    const grown = economy.balance(0, Resource.Cattle);
+    expect(grown / before, 'a herd held for fifteen minutes barely grew').toBeGreaterThan(1.15);
   });
 });

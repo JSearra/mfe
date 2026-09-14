@@ -68,7 +68,7 @@
     "upkeepIntervalTicks": 200,
     "grainPerUnit": 1.0,
     "grainPerCattle": 0.25,
-    "cattleGrowthPerHundred": 1.5,
+    "cattleGrowthPerHundred": 0.4,
     "ammunitionPerUpkeep": 2.0,
     "starvationDamage": 6,
     "seasonTicks": 12000,
