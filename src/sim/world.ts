@@ -146,6 +146,35 @@ export interface World {
   readonly rng: Rng;
 }
 
+/**
+ * Every typed array the world holds, in a stable order.
+ *
+ * Derived rather than listed, because the two places that used to list it — the save's
+ * WORLD_FIELDS and the replay's hashWorld — had each drifted, and each drift hid the
+ * other. The save was missing nine arrays including every building's type, and the hash
+ * could not see the loss because it covered ten arrays out of fifty-three.
+ *
+ * Sorted, so the order does not depend on property insertion order and a hash built from
+ * it is stable.
+ */
+let cachedStateFields: readonly string[] | null = null;
+
+export function worldStateFields(world: World): readonly string[] {
+  // Every world has the same shape, so this is computed once.
+  if (cachedStateFields === null) {
+    const all = world as unknown as Record<string, unknown>;
+    cachedStateFields = Object.keys(all)
+      .filter((key) => ArrayBuffer.isView(all[key] as object))
+      .sort();
+  }
+  return cachedStateFields;
+}
+
+/** One of the world's state arrays, by name. */
+export function worldStateField(world: World, name: string): ArrayBufferView {
+  return (world as unknown as Record<string, ArrayBufferView>)[name]!;
+}
+
 export function createWorld(capacity: number, seed: number): World {
   if (capacity <= 0 || capacity > MAX_CAPACITY) {
     throw new RangeError(`capacity must be in 1..${MAX_CAPACITY}, got ${capacity}`);

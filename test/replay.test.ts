@@ -5,9 +5,11 @@ import {
   recordReplay,
   runReplay,
   verifyReplay,
+  hashWorld,
   type ReplayRecord,
 } from '../src/sim/replay.js';
 import { tuningHash } from '../src/sim/tuning.js';
+import { createWorld, worldStateFields, type World } from '../src/sim/world.js';
 import { buildScenario, GOLDEN_CAPACITY, GOLDEN_SEED, GOLDEN_TICKS } from './scenario.js';
 import { GOLDEN_PATH, type GoldenFixture } from './golden.js';
 
@@ -92,5 +94,47 @@ describe('divergence reporting', () => {
     const record = recordReplay(GOLDEN_SEED, 64, 100, []);
     expect(record.tuningHash).toBe(tuningHash());
     expect(verifyReplay(record).ok).toBe(true);
+  });
+});
+
+describe('what the state hash can see', () => {
+  /**
+   * `hashWorld` said it hashed "the complete mutable state" and listed ten arrays by
+   * hand while the world held fifty-three. The gate was blind to health, faction, kind,
+   * facing, every order and its queue, every building's type and progress and every
+   * attack target — so a determinism bug anywhere in combat or construction moved
+   * nothing at all. It also made the save round-trip test blind, which is how a save
+   * that dropped nine world arrays passed for as long as it did.
+   */
+  // This one pins the derivation that both the hash and the save consume; the eight
+  // below pin what the hash itself can actually see. Kept separate on purpose — a
+  // complete field list that the hash then failed to iterate would pass this and fail
+  // those.
+  it('derives a field list covering every typed array the world holds', () => {
+    const world = createWorld(16, 1);
+    const held = Object.keys(world).filter((key) =>
+      ArrayBuffer.isView((world as unknown as Record<string, unknown>)[key] as object),
+    );
+    const covered = new Set(worldStateFields(world));
+    const blind = held.filter((key) => !covered.has(key));
+    expect(blind, `state the hash cannot see: ${blind.join(', ')}`).toEqual([]);
+  });
+
+  it.each([
+    ['hp', (w: World) => (w.hp[0] = 7)],
+    ['buildingType', (w: World) => (w.buildingType[0] = 3)],
+    ['buildProgress', (w: World) => (w.buildProgress[0] = 12)],
+    ['attackTarget', (w: World) => (w.attackTarget[0] = 99)],
+    ['stance', (w: World) => (w.stance[0] = 2)],
+    ['queueCount', (w: World) => (w.queueCount[0] = 1)],
+    ['faction', (w: World) => (w.faction[0] = 1)],
+    ['facing', (w: World) => (w.facing[0] = 1.5)],
+  ])('notices a change to %s', (_name, mutate) => {
+    const before = createWorld(16, 1);
+    const after = createWorld(16, 1);
+    expect(hashWorld(after)).toBe(hashWorld(before));
+
+    mutate(after);
+    expect(hashWorld(after)).not.toBe(hashWorld(before));
   });
 });

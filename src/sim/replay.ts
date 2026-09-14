@@ -13,7 +13,7 @@ import { createMovementSystem } from './movement.js';
 import { createHeightmap } from './terrain/generate.js';
 import { tuningHash } from './tuning.js';
 import type { Command } from './commands.js';
-import { createWorld, type World } from './world.js';
+import { createWorld, worldStateField, worldStateFields, type World } from './world.js';
 
 /**
  * The golden replay: (seed, tuning hash, command log) -> state hash every N ticks.
@@ -53,6 +53,14 @@ const scalarScratch = new Float64Array(4);
  * Dead slots are deliberate: they carry the free-stack ordering, and free-stack
  * divergence is exactly the cascading failure that generation counters and the
  * sorted destroy flush exist to prevent. Hashing only live entities would hide it.
+ *
+ * "Complete" is now true. This listed ten arrays by hand while the world held
+ * fifty-three, so the gate was blind to health, faction, kind, facing, every order and
+ * its queue, every building's type and progress, and every attack target — a
+ * determinism bug anywhere in combat or construction moved nothing. It also made the
+ * save round-trip test blind, which is how a save that dropped nine world arrays passed
+ * for as long as it did. The field list is derived from the world now, so an array added
+ * there is hashed without anyone remembering to come here.
  */
 export function hashWorld(world: World): number {
   scalarScratch[0] = world.tick;
@@ -62,15 +70,9 @@ export function hashWorld(world: World): number {
 
   let h = hashTypedArray(scalarScratch);
   h = hashTypedArray(world.rng.state, h);
-  h = hashTypedArray(world.alive, h);
-  h = hashTypedArray(world.generation, h);
-  h = hashTypedArray(world.freeStack, h);
-  h = hashTypedArray(world.posX, h);
-  h = hashTypedArray(world.posY, h);
-  h = hashTypedArray(world.velX, h);
-  h = hashTypedArray(world.velY, h);
-  h = hashTypedArray(world.stress, h);
-  h = hashTypedArray(world.herdState, h);
+  for (const name of worldStateFields(world)) {
+    h = hashTypedArray(worldStateField(world, name) as ArrayBufferView & { length: number }, h);
+  }
   return h;
 }
 

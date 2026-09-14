@@ -1,6 +1,6 @@
 import type { Command } from '../commands.js';
 import type { SimLoop } from '../loop.js';
-import type { World } from '../world.js';
+import { worldStateField, worldStateFields } from '../world.js';
 
 /**
  * Saving and restoring a game in progress.
@@ -63,23 +63,6 @@ export interface SaveGame {
  * come here. A scratch buffer added to the world would be saved too, which is wasted
  * bytes rather than a wrong answer — the safe direction to err in.
  */
-let cachedFields: readonly string[] | null = null;
-
-function worldFields(world: World): readonly string[] {
-  // Every world has the same shape, so this is computed once.
-  if (cachedFields === null) {
-    const all = world as unknown as Record<string, unknown>;
-    cachedFields = Object.keys(all)
-      .filter((key) => ArrayBuffer.isView(all[key] as object))
-      .sort();
-  }
-  return cachedFields;
-}
-
-function fieldOf(world: World, name: string): ArrayBufferView {
-  return (world as unknown as Record<string, ArrayBufferView>)[name]!;
-}
-
 function toBase64(view: ArrayBufferView): string {
   const bytes = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
   let binary = '';
@@ -106,8 +89,8 @@ export function captureState(loop: SimLoop): SaveGame {
   const { world, economy, fog, movement } = loop;
 
   const fields: Record<string, string> = {};
-  for (const name of worldFields(world)) {
-    fields[name] = toBase64(fieldOf(world, name));
+  for (const name of worldStateFields(world)) {
+    fields[name] = toBase64(worldStateField(world, name));
   }
   // The RNG is state, not configuration. Leaving it out is the classic save bug: the
   // game reloads and every subsequent random draw differs.
@@ -147,10 +130,10 @@ export function restoreState(loop: SimLoop, save: SaveGame): void {
 
   const { world, economy, fog, movement } = loop;
 
-  for (const name of worldFields(world)) {
+  for (const name of worldStateFields(world)) {
     const encoded = save.world[name];
     if (encoded === undefined) throw new RangeError(`save is missing world field "${name}"`);
-    fromBase64(encoded, fieldOf(world, name));
+    fromBase64(encoded, worldStateField(world, name));
   }
   fromBase64(save.world.rng!, world.rng.state);
 
