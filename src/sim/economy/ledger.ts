@@ -4,7 +4,7 @@ import { FACTIONS, type FactionConfig, type FactionId } from '../../shared/facti
 import { cos, TWO_PI } from '../math/trig.js';
 import { mixSeed } from '../math/rng.js';
 import { tuning } from '../tuning.js';
-import { EntityKind, packHandle, type World } from '../world.js';
+import { EntityKind, handleIndex, isAlive, NULL_HANDLE, packHandle, type World } from '../world.js';
 
 /**
  * The economic ledger: what each player holds, what it costs to keep, and what the
@@ -185,10 +185,26 @@ export function createEconomy(
       const herds = new Float64Array(players);
       for (let i = 0; i < world.capacity; i++) {
         if (world.alive[i] !== 1) continue;
+
+        if (world.kind[i] === EntityKind.Cattle) {
+          // A cow eats the grain of whoever is DRIVING it, which is not the same as the
+          // faction it was born into. Cattle spawn neutral and leashing one sets its
+          // tether and its herd state, never its faction — so charging world.faction
+          // here charged the neutral faction, which has no ledger, and a driven herd
+          // cost its owner nothing while still counting toward the cattle victory.
+          //
+          // Resolved through the tether, which is how victory.ts has always counted the
+          // same animals. The two now agree about who holds a herd.
+          const tether = world.tetheredTo[i]!;
+          if (tether === NULL_HANDLE || !isAlive(world, tether)) continue;
+          const driver = world.faction[handleIndex(tether)]!;
+          if (driver < players) herds[driver]!++;
+          continue;
+        }
+
         const owner = world.faction[i]!;
         if (owner >= players) continue;
-        if (world.kind[i] === EntityKind.Cattle) herds[owner]!++;
-        else units[owner]!++;
+        units[owner]!++;
       }
 
       for (let player = 0; player < players; player++) {

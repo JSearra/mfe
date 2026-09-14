@@ -11,7 +11,15 @@ import { createStartingPlots } from '../src/sim/economy/plots.js';
 import { heightmapFrom } from '../src/shared/heightmap.js';
 import { flatMap } from './simHarness.js';
 import { tuning } from '../src/sim/tuning.js';
-import { createWorld, EntityKind, spawn, type World } from '../src/sim/world.js';
+import {
+  createWorld,
+  EntityKind,
+  handleIndex,
+  HerdState,
+  packHandle,
+  spawn,
+  type World,
+} from '../src/sim/world.js';
 import { NEUTRAL_FACTION } from '../src/sim/commands.js';
 import { TICK_MS } from '../src/shared/timing.js';
 
@@ -455,5 +463,69 @@ describe('the herd does not grow into a victory on its own', () => {
 
     const grown = economy.balance(0, Resource.Cattle);
     expect(grown / before, 'a herd held for fifteen minutes barely grew').toBeGreaterThan(1.15);
+  });
+});
+
+describe('who pays for a driven herd', () => {
+  /**
+   * The ledger says "Cattle on the ledger are the standing herd; cattle on the map are
+   * the ones being driven. Both eat." Only the first half was true.
+   *
+   * The headcount charged a cow to `world.faction[i]`, and a cow's faction is set once,
+   * at spawn, to NEUTRAL — leashing one changes `tetheredTo` and `herdState` and nothing
+   * else. So `herds[]` was always zero and a driven herd cost its owner nothing at all,
+   * while still counting toward the cattle victory. Raiding was pure profit, which is
+   * not the bargain this game is about: cattle are wealth and a burden together.
+   */
+  it('charges a driven herd to whoever is driving it', () => {
+    const economy = createEconomy(PLAYERS, 1);
+    const world = worldWithTroops(4);
+    world.tick = E.upkeepIntervalTicks;
+
+    const before = economy.balance(0, Resource.Grain);
+    economy.update(world, []);
+    const withoutCattle = before - economy.balance(0, Resource.Grain);
+
+    // Same again, but this time the troops are driving a herd.
+    const driving = createEconomy(PLAYERS, 1);
+    const herded = worldWithTroops(4);
+    const herder = packHandle(0, herded.generation[0]!);
+    for (let i = 0; i < 8; i++) {
+      const cow = spawn(herded, 5 + i * 0.4, 5, NEUTRAL_FACTION, 1, EntityKind.Cattle);
+      herded.tetheredTo[handleIndex(cow)] = herder;
+      herded.herdState[handleIndex(cow)] = HerdState.Leashed;
+    }
+    herded.tick = E.upkeepIntervalTicks;
+
+    const startGrain = driving.balance(0, Resource.Grain);
+    driving.update(herded, []);
+    const withCattle = startGrain - driving.balance(0, Resource.Grain);
+
+    expect(withCattle).toBeGreaterThan(withoutCattle);
+    expect(withCattle - withoutCattle).toBeCloseTo(8 * E.grainPerCattle * 1.1, 6);
+  });
+
+  it('leaves a wild herd costing nobody anything', () => {
+    // Untethered cattle belong to no one and eat no one's grain.
+    const economy = createEconomy(PLAYERS, 1);
+    const world = worldWithTroops(4);
+    for (let i = 0; i < 8; i++) {
+      spawn(world, 5 + i * 0.4, 5, NEUTRAL_FACTION, 1, EntityKind.Cattle);
+    }
+    world.tick = E.upkeepIntervalTicks;
+
+    const bare = createEconomy(PLAYERS, 1);
+    const bareWorld = worldWithTroops(4);
+    bareWorld.tick = E.upkeepIntervalTicks;
+
+    const a = economy.balance(0, Resource.Grain);
+    const b = bare.balance(0, Resource.Grain);
+    economy.update(world, []);
+    bare.update(bareWorld, []);
+
+    expect(a - economy.balance(0, Resource.Grain)).toBeCloseTo(
+      b - bare.balance(0, Resource.Grain),
+      6,
+    );
   });
 });
