@@ -80,6 +80,19 @@ export interface SelectionModel {
   ): void;
   clear(): void;
   /**
+   * Drop anything no longer in the view, and report whether that changed anything.
+   *
+   * Nothing did this, so a selected unit that died stayed selected for the rest of the
+   * match: the panel kept offering its actions, the readout kept counting it, and the
+   * set grew quietly as casualties mounted. Orders to it were rejected on the
+   * generation check, so it was never dangerous — just permanently wrong on screen.
+   *
+   * Safe because your own entities are never fog-filtered out of your own snapshot
+   * (`buildSnapshot` returns early for them), so for the selection — which can only ever
+   * hold your own units — absent from the view means dead, not merely unseen.
+   */
+  retain(view: InterpolatedView): boolean;
+  /**
    * Remember the current selection under a digit, and recall it later.
    *
    * Entirely client state. `CLAUDE.md` is explicit that selection never enters the
@@ -98,11 +111,28 @@ const GROUPS = 9;
 export function createSelection(): SelectionModel {
   const handles = new Set<number>();
   const groups = new Map<number, number[]>();
+  /** Reused each frame so the per-frame prune allocates nothing. */
+  const live = new Set<number>();
 
   return {
     handles,
     clear(): void {
       handles.clear();
+    },
+
+    retain(view): boolean {
+      if (handles.size === 0) return false;
+
+      live.clear();
+      for (let i = 0; i < view.count; i++) live.add(view.handle[i]!);
+
+      let dropped = false;
+      for (const handle of handles) {
+        if (live.has(handle)) continue;
+        handles.delete(handle);
+        dropped = true;
+      }
+      return dropped;
     },
 
     assignGroup(digit): void {

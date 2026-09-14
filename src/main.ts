@@ -654,6 +654,9 @@ async function main(options: GameOptions): Promise<void> {
     if (view !== null) {
       const at = performance.now();
       damage.expire(at);
+      // Casualties leave the selection. Everything downstream — the panel, the readout,
+      // the order dispatch — reads this set, so it has to mean what it says.
+      selection.retain(view);
       entities.update(view, map, selection.handles, damage, at);
       // What the field sounds like, as opposed to what just happened. Read from the same
       // interpolated view the renderer draws, so the audio agrees with the picture.
@@ -707,6 +710,12 @@ async function main(options: GameOptions): Promise<void> {
     () => lifetime.abort(),
     () => boundInput.dispose(),
     () => minimap.dispose(),
+    // Browsers cap AudioContexts at around six, so leaking one per restart means audio
+    // silently stops working on the sixth game and never comes back. This teardown list
+    // exists precisely so an acquisition without a release is visible where it is made —
+    // and audio was acquired without one anyway, which is the argument for reading the
+    // list rather than trusting the pattern.
+    () => audio.dispose(),
     () => sim.dispose(),
     () => app.destroy(true, { children: true }),
     () => root.replaceChildren(),

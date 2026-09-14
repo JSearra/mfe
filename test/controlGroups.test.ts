@@ -112,3 +112,39 @@ describe('scenery keys', () => {
     expect(sawTopBit).toBe(true);
   });
 });
+
+describe('selection outlives nothing', () => {
+  const viewOf = (handles: readonly number[]) =>
+    ({ count: handles.length, handle: new Uint32Array(handles) }) as unknown as InterpolatedView;
+
+  it('drops the dead and says so', () => {
+    const selection = createSelection();
+    selection.handles.add(101);
+    selection.handles.add(102);
+
+    expect(selection.retain(viewOf([101]))).toBe(true);
+    expect([...selection.handles]).toEqual([101]);
+  });
+
+  it('reports no change when everything is still alive', () => {
+    const selection = createSelection();
+    selection.handles.add(101);
+    expect(selection.retain(viewOf([101, 999]))).toBe(false);
+    expect([...selection.handles]).toEqual([101]);
+  });
+
+  it('costs nothing on an empty selection', () => {
+    const selection = createSelection();
+    expect(selection.retain(viewOf([1, 2, 3]))).toBe(false);
+  });
+
+  it('empties out when the whole selection is wiped', () => {
+    const selection = createSelection();
+    selection.handles.add(101);
+    selection.handles.add(102);
+    selection.retain(viewOf([]));
+    // The readout said "24 SELECTED" over an army that no longer existed, and the panel
+    // went on offering its orders. The set has to mean what it says.
+    expect(selection.handles.size).toBe(0);
+  });
+});

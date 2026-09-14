@@ -633,18 +633,42 @@ def build(kind: str):
             shield.rotation_euler = (0, math.radians(-8), 0)
 
             # Thicker than the shield, so it actually breaks the surface on both faces.
-            field = blob(
-                "shield_field",
-                (0.13, SHIELD_WIDTH * 0.80, SHIELD_HEIGHT * 0.40),
-                (0.11, 0.05, -ARM * 0.34 - SHIELD_HEIGHT * 0.15),
+            # The hide patches.
+            #
+            # An isihlangu is a cow, and it keeps the cow's markings — irregular patches
+            # of a second colour, not a painted band. This was one solid field across the
+            # lower half, which reads as a shield that has been DECORATED rather than one
+            # that WAS an animal. Same trick the cattle use: flattened blobs pressed
+            # through the surface so they break it on both faces, sized and placed
+            # unevenly, because nothing about a real hide is regular.
+            patches = (
+                (0.30, -0.26, SHIELD_WIDTH * 0.52, SHIELD_HEIGHT * 0.30),
+                (-0.18, 0.20, SHIELD_WIDTH * 0.40, SHIELD_HEIGHT * 0.22),
+                (0.22, 0.11, SHIELD_WIDTH * 0.26, SHIELD_HEIGHT * 0.15),
+                (-0.26, -0.06, SHIELD_WIDTH * 0.22, SHIELD_HEIGHT * 0.12),
             )
-            field.data.materials.append(player)
-            field.parent = arm_pivot
+            for index, (across, up, wide, tall) in enumerate(patches):
+                patch = blob(
+                    f"shield_patch_{index}",
+                    (0.13, wide, tall),
+                    (0.11, 0.05 + across * SHIELD_WIDTH * 0.5, -ARM * 0.34 + up * SHIELD_HEIGHT),
+                )
+                patch.data.materials.append(player)
+                patch.parent = arm_pivot
 
             staff = cylinder("shield_staff", 0.012, SHIELD_HEIGHT * 1.18,
                              (0.09, 0.05, -ARM * 0.34))
             staff.data.materials.append(cloth)
             staff.parent = arm_pivot
+
+            # The row of hide laces binding the shield to that staff — the one regular
+            # feature a real one has, and the thing that says "assembled from an animal"
+            # rather than "cut from a sheet".
+            for lace in range(5):
+                strip = box("shield_lace", (0.016, 0.06, 0.045), (0, 0, 0))
+                strip.data.materials.append(cloth)
+                strip.parent = arm_pivot
+                strip.location = (0.075, 0.05, -ARM * 0.34 + (lace - 2) * SHIELD_HEIGHT * 0.17)
 
         if side == "r" and has_spear:
             # Short. The whole tactical point of the weapon is that it is not thrown, so
