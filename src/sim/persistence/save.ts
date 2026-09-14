@@ -1,5 +1,6 @@
 import type { Command } from '../commands.js';
 import type { SimLoop } from '../loop.js';
+import type { World } from '../world.js';
 
 /**
  * Saving and restoring a game in progress.
@@ -8,14 +9,24 @@ import type { SimLoop } from '../loop.js';
  * piece of mutable state lives in a typed array or a serialisable structure, a save is a
  * copy of those; if state has leaked into closures or object graphs, it is a rewrite.
  *
- * That claim is checkable rather than hopeful. The round-trip test saves a running game,
- * restores it into a *fresh* simulation, and runs both forward comparing state hashes.
- * Anything the save missed shows up as divergence within a few hundred ticks — which is
- * the only way to find out that, say, the RNG state or a unit's path cursor was left
- * behind.
+ * The round-trip test saves a running game, restores it into a *fresh* simulation, and
+ * runs both forward comparing state hashes. That catches a great deal — the RNG state or
+ * a unit's path cursor left behind shows up as divergence within a few hundred ticks.
+ *
+ * It is not the whole guarantee, though it read like one for a long time. `hashWorld`
+ * covers ten of the world's fifty-three arrays, so anything outside those ten can go
+ * missing from a save and diverge from nothing at all. That is exactly what happened,
+ * for nine fields including every building's type. The completeness of a save is pinned
+ * by asserting the fields directly, in `test/save.test.ts`; the hash comparison proves
+ * the *dynamics* survive, not the inventory.
  */
 
-export const SAVE_VERSION = 1;
+/**
+ * 2 adds the nine world arrays version 1 silently dropped. A version 1 save cannot be
+ * restored correctly — it has no building types in it — so it is rejected rather than
+ * loaded into a game that would look subtly wrong.
+ */
+export const SAVE_VERSION = 2;
 
 export interface SaveGame {
   readonly version: number;
@@ -35,53 +46,39 @@ export interface SaveGame {
   readonly commandCursor: number;
 }
 
-/** Typed array fields of the world that make up its state. */
-const WORLD_FIELDS = [
-  'alive',
-  'destroyPending',
-  'generation',
-  'posX',
-  'posY',
-  'velX',
-  'velY',
-  'facing',
-  'targetX',
-  'targetY',
-  'hasTarget',
-  'faction',
-  'hp',
-  'animState',
-  'animStartTick',
-  'flags',
-  'movementClass',
-  'orderMode',
-  'stance',
-  'patrolX',
-  'patrolY',
-  'postX',
-  'postY',
-  'queueX',
-  'queueY',
-  'queueMode',
-  'queueHead',
-  'queueCount',
-  'kind',
-  'herdState',
-  'stress',
-  'tetheredTo',
-  'stampedeTicks',
-  'prevX',
-  'prevY',
-  'goalIndex',
-  'useFlowField',
-  'pathRequest',
-  'pathCursor',
-  'stuckTicks',
-  'lastProgressX',
-  'lastProgressY',
-  'freeStack',
-  'pendingDestroy',
-] as const;
+/**
+ * Every typed array the world holds, derived from the world itself.
+ *
+ * This was a hand-written list, and it had drifted nine fields behind the world it
+ * describes: buildingType, buildProgress, the three training-queue arrays, both rally
+ * coordinates, attackTarget and attackCooldown. A saved game restored with every
+ * building reduced to an unfinished site of the wrong type, no production queued and
+ * nobody fighting anyone.
+ *
+ * Nothing caught it because the round-trip test compares `hashWorld`, which covers ten
+ * of the world's fifty-three arrays — so a save that dropped all nine diverged from
+ * nothing. Two hand-maintained lists of the same thing, neither complete.
+ *
+ * Deriving it means a field added to the world is saved without anyone remembering to
+ * come here. A scratch buffer added to the world would be saved too, which is wasted
+ * bytes rather than a wrong answer — the safe direction to err in.
+ */
+let cachedFields: readonly string[] | null = null;
+
+function worldFields(world: World): readonly string[] {
+  // Every world has the same shape, so this is computed once.
+  if (cachedFields === null) {
+    const all = world as unknown as Record<string, unknown>;
+    cachedFields = Object.keys(all)
+      .filter((key) => ArrayBuffer.isView(all[key] as object))
+      .sort();
+  }
+  return cachedFields;
+}
+
+function fieldOf(world: World, name: string): ArrayBufferView {
+  return (world as unknown as Record<string, ArrayBufferView>)[name]!;
+}
 
 function toBase64(view: ArrayBufferView): string {
   const bytes = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
@@ -109,8 +106,8 @@ export function captureState(loop: SimLoop): SaveGame {
   const { world, economy, fog, movement } = loop;
 
   const fields: Record<string, string> = {};
-  for (const name of WORLD_FIELDS) {
-    fields[name] = toBase64(world[name]);
+  for (const name of worldFields(world)) {
+    fields[name] = toBase64(fieldOf(world, name));
   }
   // The RNG is state, not configuration. Leaving it out is the classic save bug: the
   // game reloads and every subsequent random draw differs.
@@ -150,10 +147,10 @@ export function restoreState(loop: SimLoop, save: SaveGame): void {
 
   const { world, economy, fog, movement } = loop;
 
-  for (const name of WORLD_FIELDS) {
+  for (const name of worldFields(world)) {
     const encoded = save.world[name];
     if (encoded === undefined) throw new RangeError(`save is missing world field "${name}"`);
-    fromBase64(encoded, world[name]);
+    fromBase64(encoded, fieldOf(world, name));
   }
   fromBase64(save.world.rng!, world.rng.state);
 

@@ -12,6 +12,8 @@ import { Resource } from '../src/sim/economy/ledger.js';
 import { Modifier, TechId, TECHS } from '../src/shared/tech/index.js';
 import { createHeightmap } from '../src/sim/terrain/generate.js';
 import { makeSim } from './simHarness.js';
+import { BuildingType, buildingSpec } from '../src/shared/buildings/index.js';
+import { EntityKind, handleIndex, spawn } from '../src/sim/world.js';
 
 /** A scenario with movement, cattle, orders and an economy all in flight. */
 function busyScenario(seed: number) {
@@ -156,5 +158,60 @@ describe('save and load', () => {
     const save = captureState(big.loop);
     const small = makeSim(16, 0x22);
     expect(() => restoreState(small.loop, save)).toThrow(RangeError);
+  });
+});
+
+describe('what a save actually carries', () => {
+  /**
+   * WORLD_FIELDS is a hand-written list of the world arrays a save copies, and it had
+   * drifted nine fields behind the world it describes. The round-trip test could not see
+   * it: that test compares `hashWorld`, which covers ten of the world's fifty-three
+   * arrays, so a save that dropped every building's type and progress diverged from
+   * nothing and passed.
+   *
+   * These assert the state directly instead of through a hash, which is the only way a
+   * missing field is visible.
+   */
+  it('saves every typed array the world holds', () => {
+    const { world } = makeSim(32, 1);
+    const save = captureState(makeSim(32, 1).loop);
+
+    const held = Object.keys(world).filter((key) =>
+      ArrayBuffer.isView((world as unknown as Record<string, unknown>)[key] as object),
+    );
+
+    const missing = held.filter((key) => save.world[key] === undefined);
+    expect(missing, `world state absent from the save: ${missing.join(', ')}`).toEqual([]);
+  });
+
+  it('restores a finished building as the building it was', () => {
+    const origin = makeSim(64, 5);
+    origin.construction.place(origin.world, origin.economy, 0, BuildingType.Umuzi, 10, 10, []);
+    const site = origin.world.kind.findIndex(
+      (kind, i) => kind === EntityKind.Building && origin.world.alive[i] === 1,
+    );
+    const spec = buildingSpec(origin.world.buildingType[site]!);
+    origin.world.buildProgress[site] = spec.work;
+
+    const save = captureState(origin.loop);
+
+    const restored = makeSim(64, 5);
+    restoreState(restored.loop, save);
+
+    expect(restored.world.buildingType[site]).toBe(BuildingType.Umuzi);
+    expect(restored.world.buildProgress[site]).toBe(spec.work);
+  });
+
+  it('restores a unit still fighting the enemy it was fighting', () => {
+    const origin = makeSim(64, 6);
+    const attacker = spawn(origin.world, 10, 10, 0);
+    const victim = spawn(origin.world, 10.5, 10, 1);
+    origin.world.attackTarget[handleIndex(attacker)] = victim;
+
+    const save = captureState(origin.loop);
+    const restored = makeSim(64, 6);
+    restoreState(restored.loop, save);
+
+    expect(restored.world.attackTarget[handleIndex(attacker)]).toBe(victim);
   });
 });
