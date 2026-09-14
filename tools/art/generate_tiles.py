@@ -32,7 +32,13 @@ MFLUX = HERE / ".venv" / "bin" / "mflux-generate"
 STYLE = (
     "flat overhead texture, orthographic, no perspective, no horizon, no sky, "
     "single light source from the upper left, soft even lighting, no cast shadows, "
-    "muted ochre and olive palette, hand-painted 2D game texture, seamless, "
+    # The land, not the dry season. This is summer-rainfall grassland in the uplands of
+    # what is now KwaZulu-Natal and Lesotho: green for much of the year, over the deep
+    # orange-red oxidic soil that is most of the region's ground. The first set came out
+    # uniformly ochre and read as Karoo everywhere, which is the wrong half of the
+    # country — and the Karoo is a map script here, not the default landscape.
+    "green summer grassland, orange-red iron-rich soil, "
+    "hand-painted 2D game texture, seamless, "
     # An allover pattern, emphatically. The first batch produced a picture OF a bush,
     # centred in frame, rather than a texture OF scrub — which tiles into a grid of
     # identical centred bushes. A texture has no subject, and the model has to be told.
@@ -42,56 +48,58 @@ STYLE = (
 )
 
 SUBJECTS = {
-    # The plainest texture in the set and the most trouble. Left bare it drew a large
-    # gravel ellipse in the middle of the frame; told "no rings, no arcs, no curved
-    # lines" it drew a squiggle instead. Naming unwanted geometry worked for the
-    # sandstone stripes and does not work here, so this describes density instead:
-    # ground covered edge to edge leaves nowhere to put a subject.
     # Careful with "fine detail" anywhere in this file. The source is 512px and the tile
-    # is 64x32, so an eight-to-one downscale averages fine detail into flat colour: two
-    # passes at this subject asking for fine gravel produced tiles that were, at tile
-    # size, a single brown. Whatever should be visible in play has to be big enough in
-    # the source to survive that, without being so big it becomes a subject.
+    # is 64x32, so an eight-to-one downscale averages fine detail into flat colour.
+    # Whatever should be visible in play has to be big enough in the source to survive
+    # that, without being so big it becomes a subject.
     "savanna-low": (
-        "dry red-brown earth with clearly separated clumps of pale dry grass, each clump "
-        "distinct and well spaced, bare reddish ground between them, scattered evenly "
-        "over the whole frame"
+        "deep orange-red earth with clearly separated clumps of green grass, each clump "
+        "distinct and well spaced, bare red ground showing between them, scattered "
+        "evenly over the whole frame"
     ),
-    "savanna-mid": "sun-bleached tall grass over dry earth, scattered stones",
+    "savanna-mid": (
+        "lush green summer grassland, dense tufts of green grass over red-brown soil, "
+        "scattered small stones, soil visible between the tufts"
+    ),
     # "thin and wind-combed" produced exactly that: every blade lying the same way, which
-    # reads as brushed fur or a wheat field and, worse, gives the tile a direction — so
-    # laying four of them together shows the grain turning at every seam.
+    # reads as brushed fur and, worse, gives the tile a direction — so laying four of
+    # them together shows the grain turning at every seam.
     "savanna-high": (
-        "pale straw-coloured bunch grass growing in small separate tufts on stony "
-        "ground, fine detail, bare earth visible between the tufts, no combing, "
-        "no single direction"
+        "pale green and straw sourveld grass growing in small separate tufts on stony "
+        "red ground, bare earth visible between the tufts, no combing, no single direction"
     ),
-    "rock": "weathered ironstone and broken shale, grey-brown",
+    "rock": "weathered ironstone and broken shale, grey-brown with rust staining, patches of green lichen",
     # "banded strata" came back as flat horizontal stripes — plywood, not rock. Broken
     # and mottled gets weathered stone; the word "bands" does not.
+    # Pitting and fine cracks do not survive an eight-to-one downscale, which is why
+    # three passes at this came out as flat orange. Broken slabs are big enough to.
     "sandstone": (
-        "weathered sandstone surface seen from directly above, mottled cream and rust "
-        "patches, irregular pitting and fine cracks, broken uneven tone, no stripes, "
-        "no straight lines, no grain direction"
+        "weathered orange-red sandstone broken into irregular slabs seen from directly "
+        "above, deep shadowed gaps between the slabs, mottled rust and ochre, "
+        "no stripes, no straight lines, no grain direction"
     ),
-    "donga-floor": "cracked dry clay with fine erosion channels, deep shadow in cracks",
-    # Three attempts. "a thorn bush" gave a portrait of one bush, centred. Correcting that
-    # with "tiny and dark", "speckling" and "seen from far above" gave literally that:
-    # black specks on a blank tan plane, no ground at all. The subjects that work describe
-    # the substrate first and the vegetation second, so this one now does too.
+    "donga-floor": (
+        "cracked dry orange-red clay with fine erosion channels, deep shadow in the "
+        "cracks, bare exposed subsoil, no vegetation"
+    ),
+    # Three attempts. "a thorn bush" gave a portrait of one bush, centred. Correcting
+    # that with "tiny and dark", "speckling" and "seen from far above" gave literally
+    # that: black specks on a blank plane, no ground at all. The subjects that work
+    # describe the substrate first and the vegetation second, so this one now does too.
     "thornveld": (
-        "dry red-brown earth and fine gravel, low grey-green thorn scrub and dry grass "
-        "tufts growing across it, bare ground visible between the bushes"
+        "orange-red earth and fine gravel, low grey-green thorn scrub and green grass "
+        "tufts growing across it, bare red ground visible between the bushes"
     ),
     # Large pebbles make a tile with a few big shapes in it, and a few big shapes is what
-    # the eye picks out and follows when the tile repeats. Small ones read as gravel at
-    # tile size and hide the repeat.
+    # the eye picks out and follows when the tile repeats.
+    # "dark sand ... green with algae" came back nearly black, which reads as tar rather
+    # than as a riverbed. Wet sand is DARKER than dry sand and still pale; the words that
+    # matter are the ones naming the colour it is, not the direction it moves.
     "riverbed": (
-        "damp coarse sand packed with many small rounded pebbles of even size, "
-        "fine detail, darker where wet, no large stones, no boulders"
+        "pale damp sand packed with many small rounded pebbles of even size, light "
+        "grey-brown, a few patches of green algae, no large stones, no boulders"
     ),
 }
-
 
 def generate(name: str, subject: str, seed: int, args: argparse.Namespace) -> pathlib.Path:
     out = pathlib.Path(args.out) / f"{name}_{seed}.png"

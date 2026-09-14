@@ -119,6 +119,27 @@ is genuinely their linguistic register. The point is deliberateness, not blanket
 
 ---
 
+## 4b. What the land looks like
+
+The first terrain set came out uniformly ochre and tan — dry-season Karoo, everywhere.
+That is the wrong half of the country. The Zulu and Sotho heartland is summer-rainfall
+grassland: green for much of the year, and standing on deep orange-red iron-rich soil that
+shows wherever grass thins, erosion cuts, or a track is worn.
+
+Two consequences, both now in the tile palette and the generation prompts:
+
+- **Green is the default, not the exception.** Grassland, thornveld scrub and sourveld are
+  green or grey-green. The golden dry-season look belongs to a season and to the drought
+  mechanic, not to the whole map.
+- **The soil is orange-red.** It is the single most recognisable thing about the ground in
+  this region, and it should be visible in the low ground, in donga floors where subsoil is
+  exposed, and through thin grass.
+
+The Karoo stays arid, because the Karoo is arid. It is one map script among four, not the
+house style.
+
+---
+
 ## 5. Depiction limits
 
 The period involved real mass death, displacement and famine affecting identifiable

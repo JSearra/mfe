@@ -26,6 +26,7 @@ import { bindInput } from './render/input.js';
 import { createInterpolator, type InterpolatedView } from './render/interpolation.js';
 import { installPerfHarness } from './render/perfHarness.js';
 import { createEntityLayer } from './render/scene/entities.js';
+import { planDecorations } from './render/scene/decoration.js';
 import { loadSpriteAtlas, loadTerrainTiles } from './render/assets.js';
 import { presentation } from './render/presentation.js';
 import { createTileCursor, placeTileCursor } from './render/scene/cursor.js';
@@ -276,7 +277,9 @@ async function main(options: GameOptions): Promise<void> {
   // drawing shapes. Art is not worth failing to start over, and the build runs without
   // the pipeline ever having been run.
   const atlas = await loadSpriteAtlas(presentation.sprites.pixelsPerWorldUnit);
-  const entities = createEntityLayer(atlas);
+  // Scenery is derived from the map seed rather than stored: identical on every machine
+  // that builds the same map, and nothing to transmit or save.
+  const entities = createEntityLayer(atlas, planDecorations(map, mapSeed));
   const fog = createFogRenderer(map);
   terrain.container.addChild(cursor);
   terrain.container.addChild(entities.container);

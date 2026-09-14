@@ -5,6 +5,7 @@ import type { InterpolatedView } from '../interpolation.js';
 import { presentation } from '../presentation.js';
 import { createDepthOrder } from './depthOrder.js';
 import type { SpriteAtlas } from '../assets.js';
+import type { Decoration } from './decoration.js';
 
 /**
  * Draws entities from the interpolated view.
@@ -275,7 +276,10 @@ function groundHeight(map: Heightmap, worldX: number, worldY: number): number {
   return height < 0 ? 0 : height;
 }
 
-export function createEntityLayer(atlas: SpriteAtlas | null = null): EntityLayer {
+export function createEntityLayer(
+  atlas: SpriteAtlas | null = null,
+  decorations: readonly Decoration[] = [],
+): EntityLayer {
   const container = new Container();
   // Two layers, because batching depends on it. Ground decoration is all Graphics and
   // all of it draws below every body; bodies are Sprites off one atlas page and batch
@@ -291,6 +295,48 @@ export function createEntityLayer(atlas: SpriteAtlas | null = null): EntityLayer
   // Persistent, hysteresis-damped order. See depthOrder.ts: a plain sort by depth is
   // correct and makes a dense herd shimmer.
   const depthOrder = createDepthOrder();
+
+  /**
+   * Scenery, sorted in the same pass as the entities.
+   *
+   * It has to be the same pass. Drawing vegetation with the terrain would put every unit
+   * in front of every tree, so troops would walk over a canopy instead of behind it —
+   * and a tree that cannot be stood behind is a painted backdrop rather than part of the
+   * scene. So each prop joins the depth sort as if it were an entity, with a synthetic
+   * handle that cannot collide with a real one.
+   *
+   * They never move, so their depth is computed once. Positions are fixed, kinds are
+   * fixed, and the only per-frame work is where the sort puts them.
+   */
+  const props: { sprite: Sprite; depth: number; x: number; y: number }[] = [];
+  if (atlas !== null) {
+    for (const decoration of decorations) {
+      const frame = atlas.frame(decoration.kind, 'still', 0, decoration.variant);
+      if (frame === null) continue;
+      const sprite = new Sprite(frame.texture);
+      sprite.scale.set(frame.scale);
+      const screenX = worldToScreenX(decoration.worldX, decoration.worldY);
+      const screenY = worldToScreenY(decoration.worldX, decoration.worldY, 0);
+      sprite.position.set(
+        screenX - frame.anchorX * frame.scale,
+        screenY - frame.anchorY * frame.scale,
+      );
+      bodies.addChild(sprite);
+      props.push({
+        sprite,
+        depth: decoration.worldX + decoration.worldY,
+        x: decoration.worldX,
+        y: decoration.worldY,
+      });
+    }
+  }
+
+  // Synthetic handles for the scenery. The high bit is never set on a real handle, which
+  // packs a 24-bit index under an 8-bit generation, so this cannot collide with one.
+  const propHandles = new Uint32Array(props.length);
+  for (let i = 0; i < props.length; i++) propHandles[i] = 0x80000000 | i;
+
+  let handleScratch = new Uint32Array(0);
 
   return {
     container,
@@ -330,17 +376,45 @@ export function createEntityLayer(atlas: SpriteAtlas | null = null): EntityLayer
       }
 
       // Back to front along the isometric axis, computed from the INTERPOLATED
-      // positions these markers are actually drawn at.
+      // positions these markers are actually drawn at. Scenery joins the same sort,
+      // appended after the entities, so a unit can stand behind a tree.
+      const total = count + props.length;
+      if (handleScratch.length !== total) handleScratch = new Uint32Array(total);
+      handleScratch.set(view.handle.subarray(0, count));
+      handleScratch.set(propHandles, count);
+
       const order = depthOrder.order(
-        count,
-        view.handle,
-        (slot) => view.x[slot]! + view.y[slot]!,
+        total,
+        handleScratch,
+        (slot) => (slot < count ? view.x[slot]! + view.y[slot]! : props[slot - count]!.depth),
         presentation.entities.depthHysteresis,
       );
 
-      for (let slot = 0; slot < count; slot++) {
-        const index = order[slot]!;
-        const marker = markers[slot]!;
+      // Child order IS draw order, and markers are no longer contiguous now that
+      // scenery is interleaved with them — so the sort is applied by re-parenting each
+      // object in turn, rather than by relying on marker N being the Nth child. The
+      // props are re-parented too: they never move, but what has to be drawn between
+      // them does.
+      let markerSlot = 0;
+      for (let place = 0; place < order.length; place++) {
+        const sorted = order[place]!;
+        if (sorted >= count) {
+          bodies.addChild(props[sorted - count]!.sprite);
+          continue;
+        }
+        const marker = markers[markerSlot++]!;
+        decals.addChild(marker.decal);
+        bodies.addChild(marker.graphics);
+        bodies.addChild(marker.sprite);
+        bodies.addChild(marker.team);
+      }
+
+      markerSlot = 0;
+      for (let place = 0; place < order.length; place++) {
+        const sorted = order[place]!;
+        if (sorted >= count) continue;
+        const index = sorted;
+        const marker = markers[markerSlot++]!;
         const faction = view.faction[index]!;
         const handle = view.handle[index]!;
         const isSelected = selected.has(handle);
