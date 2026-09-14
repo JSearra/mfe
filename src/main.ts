@@ -68,7 +68,17 @@ const MAP_SEED = 0x4d666563;
 const WORLD_SEED = 0x5eedcafe;
 const PLAYER = 0;
 const STARTING_UNITS = 24;
-const STARTING_CATTLE = 30;
+/**
+ * Cattle per grazing herd. Six herds, so seventy-two head on the veld.
+ *
+ * There were thirty, in a single blob within sight of the player, and that was the whole
+ * raidable supply of a game about raiding cattle. Against the eighty head a player needs
+ * to win it meant a raid could never be the fastest route: building kraals out-produced
+ * the entire veld. Seventy-two, in six herds, makes sweeping the map worth roughly what
+ * winning costs — and still not quite enough on its own, so the last stretch has to come
+ * from breeding or from the enemy.
+ */
+const HERD_SIZE = 12;
 const ENEMY = 1;
 const ENEMY_UNITS = 16;
 
@@ -252,23 +262,46 @@ async function main(options: GameOptions): Promise<void> {
     );
   }
 
-  // A clustered herd, not a ring: cattle graze together, and a hollow ring has no
-  // centre to click on or drive into. The radius follows the separation distance — at
-  // 1.5 units apart thirty beasts need about four units of room, and spawning them
-  // tighter than they will stand just makes them shove each other apart on tick one.
+  // Where the herds graze, as offsets from the centre of the map.
   //
-  // Close enough to the starting force to be IN SIGHT. The herd used to sit sixteen
-  // tiles out against a vision radius of eight, so a game about cattle opened with no
-  // cattle on screen and the player had to go looking for the mechanic. Far enough that
-  // the troops do not frighten it: nothing stampedes in the opening minute.
-  for (let i = 0; i < STARTING_CATTLE; i++) {
-    const angle = i * 2.399963; // golden angle, so the blob fills evenly
-    const spread = 5.0 * Math.sqrt((i + 0.5) / STARTING_CATTLE);
-    sim.sendCommand(
-      CommandKind.SpawnCattle,
-      centre + 9 + Math.cos(angle) * spread,
-      centre + 6 + Math.sin(angle) * spread,
-    );
+  // The first is on the player's doorstep and deliberately stays there: the herd once
+  // sat sixteen tiles out against a vision radius of eight, so a game about cattle
+  // opened with no cattle on screen and the player had to go looking for the mechanic.
+  // It is still far enough off that the troops do not frighten it — nothing stampedes
+  // in the opening minute.
+  //
+  // The rest are mirrored about the midpoint between the two starts, so neither side is
+  // handed a herd the other cannot reach on the same terms. Each gets one on its
+  // doorstep at about eleven tiles, one close by at twelve, and one out at twenty-eight
+  // that has to be ranged for. A raid means driving a herd home over ground the other
+  // side also wants, and holding it once you have — which is the game this project is
+  // named for.
+  //
+  // Measured rather than eyeballed: with the player at the centre and the enemy at
+  // (+36, +28), these sit at 10.8 / 12.2 / 27.9 tiles from each start respectively.
+  const HERD_SITES: readonly (readonly [number, number])[] = [
+    [9, 6], // the player's doorstep
+    [27, 22], // the enemy's, its mirror
+    [2, -12], // near the player
+    [34, 40], // near the enemy, its mirror
+    [-10, 26], // out in open country, player's side
+    [46, 2], // out in open country, enemy's side
+  ];
+
+  for (const [herdX, herdY] of HERD_SITES) {
+    // A cluster, not a ring: cattle graze together, and a hollow ring has no centre to
+    // click on or drive into. The radius follows the separation distance — at 1.5 units
+    // apart a dozen beasts need about three units of room, and spawning them tighter
+    // than they will stand just makes them shove each other apart on tick one.
+    for (let i = 0; i < HERD_SIZE; i++) {
+      const angle = i * 2.399963; // golden angle, so the blob fills evenly
+      const spread = 3.2 * Math.sqrt((i + 0.5) / HERD_SIZE);
+      sim.sendCommand(
+        CommandKind.SpawnCattle,
+        centre + herdX + Math.cos(angle) * spread,
+        centre + herdY + Math.sin(angle) * spread,
+      );
+    }
   }
 
   const { app } = await createRenderer(root, BACKGROUND);

@@ -149,3 +149,41 @@ Still open, and all of them decisions rather than defects:
 - **The command panel offers actions that silently fail**: Train on an unfinished
   building, and buildings or techs that cannot be afforded. The click does nothing and
   says nothing.
+
+## G. Two of the four named maps wall the player in
+
+Found while checking that the six new herds are reachable, and **not caused by that
+change** — measured with eight-way A* from the player's start on each map, counting how
+many of the six herd sites can be walked to:
+
+| map | reachable |
+|---|---|
+| open veld (default) | 6 / 6 |
+| thaba-bosiu | 6 / 6 |
+| karoo | 6 / 6 |
+| **umfolozi** | **1 / 6** |
+| **magaliesberg** | **0 / 6** |
+
+On umfolozi the braided river cuts the map into pockets; the start can reach about 5% of
+it. On magaliesberg the ridge lines seal it completely — the start reaches about 1% and
+cannot walk the eleven tiles to its own doorstep herd. That doorstep site is exactly
+where the game's *only* herd sat before there were six, so **magaliesberg has never been
+winnable**: the cattle victory is the objective and the cattle were behind a wall.
+
+Every movement class has `maxClimb: 1`, so the poorts that are supposed to pierce the
+ridges are steeper than anything can climb. The fix belongs in the map scripts — carve
+the passes to a single height step — or in the class profiles, and it wants a
+connectivity assertion in the generator itself rather than only at these six points.
+
+`test/herds.test.ts` pins the reachable maps and records these two as broken, in a way
+that fails once they are fixed so the exclusion cannot rot.
+
+## H. The event stream is not filtered by fog
+
+"The herd has broken" fires within the first ten seconds of most matches, for a herd the
+player cannot see — usually the enemy's, as its AI walks into its own cattle. Snapshots
+are filtered per viewer by `buildSnapshot`, but the event list beside them is sent whole,
+so alerts, audio and damage flashes all report things happening under fog. With six herds
+and an opponent that herds, this went from a curiosity to a constant.
+
+Filtering events per viewer is the fix, and it belongs next to the snapshot filter.
