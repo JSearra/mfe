@@ -333,6 +333,51 @@ describe('stampede', () => {
     expect(world.posX[victimIndex]!).toBeGreaterThan(10.2);
   });
 
+  it('cannot stampede off the edge of the map', () => {
+    // Cattle move themselves: movement.update skips everything that is not a Unit, and
+    // this file knew nothing about terrain. A charge at the edge simply kept going —
+    // measured at x=24 on a 16-wide map, and still accelerating. Cattle are the victory
+    // condition, so a herd that leaves the map takes the match with it.
+    const map = flat(16, 16);
+    const movement = createMovementSystem(map);
+    const world = createWorld(8, 7);
+    const grid = createSpatialGrid(16, 16, 2);
+    const cattle = createCattleSystem();
+
+    const cow = spawn(world, 12, 8, 0, 1, EntityKind.Cattle);
+    const cowIndex = handleIndex(cow);
+    panic(world, cowIndex, 1, 0);
+
+    for (let t = 0; t < 30; t++) {
+      rebuild(world, grid);
+      cattle.update(world, grid, [], undefined, movement.displace);
+      world.tick++;
+    }
+
+    expect(world.posX[cowIndex]!).toBeLessThan(16);
+    expect(world.posX[cowIndex]!).toBeGreaterThanOrEqual(0);
+  });
+
+  it('cannot stampede through a cliff', () => {
+    const map = withCliff(16, 16, 12);
+    const movement = createMovementSystem(map);
+    const world = createWorld(8, 7);
+    const grid = createSpatialGrid(16, 16, 2);
+    const cattle = createCattleSystem();
+
+    const cow = spawn(world, 9, 8, 0, 1, EntityKind.Cattle);
+    const cowIndex = handleIndex(cow);
+    panic(world, cowIndex, 1, 0);
+
+    for (let t = 0; t < 30; t++) {
+      rebuild(world, grid);
+      cattle.update(world, grid, [], undefined, movement.displace);
+      world.tick++;
+    }
+
+    expect(world.posX[cowIndex]!).toBeLessThan(12);
+  });
+
   it('does not knock a victim off the map', () => {
     // Knockback wrote straight into posX/posY, the one position write in the whole
     // simulation that did not go through the movement system's occupancy check. A cow

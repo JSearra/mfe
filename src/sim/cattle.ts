@@ -358,8 +358,12 @@ export function createCattleSystem(): CattleSystem {
 
           world.velX[index] = vx;
           world.velY[index] = vy;
-          world.posX[index] = world.posX[index]! + vx * dt;
-          world.posY[index] = world.posY[index]! + vy * dt;
+          // Through displace like everything else that moves. Cattle steer themselves —
+          // the movement system skips anything that is not a Unit — and for a long time
+          // that meant they were the only entities in the simulation with no terrain
+          // underneath them at all: a stampede ran off the edge of the map and kept
+          // going, and walked through cliffs on the way.
+          displace(world, index, world.posX[index]! + vx * dt, world.posY[index]! + vy * dt);
         }
 
         const vx = world.velX[index]!;
