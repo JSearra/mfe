@@ -10,6 +10,7 @@ import {
   spawn,
 } from '../src/sim/world.js';
 import { tuning } from '../src/sim/tuning.js';
+import { captureState, restoreState } from '../src/sim/persistence/save.js';
 import { makeSim } from './simHarness.js';
 
 /**
@@ -300,5 +301,39 @@ describe('patrol', () => {
     issue(sim, CommandKind.MoveTo, unit, 6, 16);
     run(sim, 10);
     expect(sim.world.orderMode[index]).toBe(OrderMode.Move);
+  });
+});
+
+describe('order state survives a save', () => {
+  it('round-trips stance, mode, post and the queue', () => {
+    const sim = makeSim(64, 21);
+    const unit = spawn(sim.world, 6, 6, PLAYER);
+    const index = handleIndex(unit);
+
+    issue(sim, CommandKind.AttackMove, unit, 20, 6);
+    queued(sim, CommandKind.MoveTo, unit, 20, 20);
+    issue(sim, CommandKind.SetStance, unit, Stance.Defensive, 0);
+    run(sim, 4);
+
+    const before = {
+      stance: sim.world.stance[index],
+      mode: sim.world.orderMode[index],
+      postX: sim.world.postX[index],
+      queued: sim.world.queueCount[index],
+    };
+    expect(before.queued).toBe(1);
+
+    // Every field added for the command vocabulary has to be in WORLD_FIELDS, or a
+    // saved advance reloads as a stroll and a saved patrol stops patrolling. The
+    // existing save test runs a busy game forward and compares hashes, which would only
+    // catch a missing field if its scenario happened to exercise it — this names them.
+    const save = captureState(sim.loop);
+    const restored = makeSim(64, 21);
+    restoreState(restored.loop, save);
+
+    expect(restored.world.stance[index]).toBe(before.stance);
+    expect(restored.world.orderMode[index]).toBe(before.mode);
+    expect(restored.world.postX[index]).toBe(before.postX);
+    expect(restored.world.queueCount[index]).toBe(before.queued);
   });
 });

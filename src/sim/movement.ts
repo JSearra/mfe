@@ -495,11 +495,21 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
           // Arrived. If anything is queued behind this, start it now rather than going
           // idle for a tick first — a visible stutter at every waypoint is what makes a
           // queued route look like a series of separate orders instead of one path.
-          const next = dequeueOrder(world, index);
-          if (next !== null && system.order(world, packHandle(index, world.generation[index]!), next.x, next.y)) {
-            world.orderMode[index] = next.mode;
-            continue;
+          //
+          // Keep taking waypoints until one is accepted. Stopping at the first refusal
+          // strands everything behind it: the unit goes idle, and nothing ever runs the
+          // arrival code again to drain the rest — so a single unreachable waypoint in
+          // the middle of a route silently cancels the remainder of it.
+          const handle = packHandle(index, world.generation[index]!);
+          let started = false;
+          for (let next = dequeueOrder(world, index); next !== null; next = dequeueOrder(world, index)) {
+            if (system.order(world, handle, next.x, next.y)) {
+              world.orderMode[index] = next.mode;
+              started = true;
+              break;
+            }
           }
+          if (started) continue;
 
           setAnim(world, index, ANIM_IDLE);
           continue;

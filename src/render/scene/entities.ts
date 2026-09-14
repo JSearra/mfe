@@ -331,12 +331,28 @@ export function createEntityLayer(
     }
   }
 
-  // Synthetic handles for the scenery. The high bit is never set on a real handle, which
-  // packs a 24-bit index under an 8-bit generation, so this cannot collide with one.
+  /**
+   * Keys for the scenery in the depth sort, in a range no real handle can occupy.
+   *
+   * A handle packs a 24-bit index under an 8-bit GENERATION, so the generation owns bits
+   * 24 to 31 — the top bit included. Tagging props with the high bit, which is what this
+   * did first, collides with every real handle whose generation has reached 128, and
+   * generations climb as slots are recycled. The collision would corrupt the draw order
+   * rather than the simulation, since draw order is presentation, but a herd redrawing
+   * itself in the wrong order after a long match is not a defect anyone would trace back
+   * to here.
+   *
+   * The sound range is the one the allocator refuses to issue: generation zero. `spawn`
+   * never assigns it — it skips from 255 to 1 on wrap, and world.test.ts asserts that
+   * across a full cycle — so any value with zero in the top eight bits is a key no live
+   * entity can ever hold. A plain index is exactly that, for any map with fewer than 16
+   * million trees on it.
+   */
   const propHandles = new Uint32Array(props.length);
-  for (let i = 0; i < props.length; i++) propHandles[i] = 0x80000000 | i;
+  for (let i = 0; i < props.length; i++) propHandles[i] = i & 0x00ffffff;
 
   let handleScratch = new Uint32Array(0);
+  let previousOrder = new Int32Array(0);
 
   return {
     container,
@@ -390,19 +406,45 @@ export function createEntityLayer(
         presentation.entities.depthHysteresis,
       );
 
-      // Child order IS draw order, and markers are no longer contiguous now that
-      // scenery is interleaved with them — so the sort is applied by re-parenting each
-      // object in turn, rather than by relying on marker N being the Nth child. The
-      // props are re-parented too: they never move, but what has to be drawn between
-      // them does.
+      // Child order IS draw order, and markers are no longer contiguous now that scenery
+      // is interleaved with them — so the sort is applied by re-parenting each object in
+      // turn, rather than by relying on marker N being the Nth child.
+      //
+      // Only when something actually moved, though. Pixi's addChild removes before it
+      // appends and the removal is a linear scan, so re-parenting every object every
+      // frame is quadratic in the number of children — and with several hundred trees on
+      // the map that is a bill paid on every frame for a draw order that, most frames,
+      // has not changed.
+      //
+      // Compared against the previous order rather than trusting the comparator's swap
+      // count. Zero swaps means it did not REORDER anything, which is not the same as
+      // nothing having changed: one entity dying while another spawns leaves the count
+      // identical and can leave the swap count at zero, while the mapping from sorted
+      // position to marker has shifted underneath. Comparing the order itself is the
+      // same O(n) the loop already costs and cannot be fooled.
+      let settled = previousOrder.length === order.length;
+      if (settled) {
+        for (let i = 0; i < order.length; i++) {
+          if (previousOrder[i] !== order[i]) {
+            settled = false;
+            break;
+          }
+        }
+      }
+      if (!settled) {
+        if (previousOrder.length !== order.length) previousOrder = new Int32Array(order.length);
+        previousOrder.set(order);
+      }
+
       let markerSlot = 0;
       for (let place = 0; place < order.length; place++) {
         const sorted = order[place]!;
         if (sorted >= count) {
-          bodies.addChild(props[sorted - count]!.sprite);
+          if (!settled) bodies.addChild(props[sorted - count]!.sprite);
           continue;
         }
         const marker = markers[markerSlot++]!;
+        if (settled) continue;
         decals.addChild(marker.decal);
         bodies.addChild(marker.graphics);
         bodies.addChild(marker.sprite);

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { createSelection } from '../src/render/selection.js';
 import type { InterpolatedView } from '../src/render/interpolation.js';
+import {
+  createWorld,
+  destroy,
+  flushDestroys,
+  handleGeneration,
+  spawn,
+} from '../src/sim/world.js';
 
 /**
  * Control groups are selection, and `CLAUDE.md` is explicit that selection never enters
@@ -70,5 +77,38 @@ describe('control groups', () => {
     selection.assignGroup(10);
     expect(selection.recallGroup(0, viewOf([101]))).toBe(false);
     expect(selection.recallGroup(10, viewOf([101]))).toBe(false);
+  });
+});
+
+describe('scenery keys', () => {
+  /**
+   * The entity layer sorts vegetation alongside entities and needs a key per prop that
+   * no live handle can hold. The range it uses is generation zero, which the allocator
+   * refuses to issue — so this pins the invariant that makes that safe, from the render
+   * side, where the assumption is actually being relied on.
+   */
+  it('generation zero is never issued, so a zero-generation key is free', () => {
+    const world = createWorld(4, 1);
+    for (let i = 0; i < 2000; i++) {
+      const handle = spawn(world, 0, 0, 0);
+      expect(handleGeneration(handle)).not.toBe(0);
+      destroy(world, handle);
+      flushDestroys(world);
+    }
+  });
+
+  it('a real handle CAN have its top bit set, which is why that range is not free', () => {
+    // The bug this replaced: prop keys were tagged with the high bit on the claim that
+    // no handle uses it. A handle's generation occupies bits 24-31, so every generation
+    // from 128 up sets it.
+    const world = createWorld(1, 1);
+    let sawTopBit = false;
+    for (let i = 0; i < 400; i++) {
+      const handle = spawn(world, 0, 0, 0);
+      if ((handle & 0x80000000) !== 0) sawTopBit = true;
+      destroy(world, handle);
+      flushDestroys(world);
+    }
+    expect(sawTopBit).toBe(true);
   });
 });
