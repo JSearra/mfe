@@ -24,8 +24,29 @@ export interface AudioEngine {
   resume(): void;
   readonly running: boolean;
   handle(events: readonly SimEvent[], camera: Camera): void;
+  /**
+   * The continuous half: what the field sounds like, rather than what just happened.
+   *
+   * Events cannot carry this. A herd grazing and a column marching are STATES — nothing
+   * happens at any particular tick — so they are read from the view each frame and
+   * sounded on their own cadence. Aggregated rather than per entity: forty cattle are
+   * one herd making one sound, not forty voices competing for the eight the mixer has.
+   */
+  ambience(view: AmbienceView, camera: Camera): void;
+  /** Played immediately on a click, before the simulation has seen the order. */
+  acknowledge(kind: 'move' | 'attack' | 'herd'): void;
   voicesPlayed: number;
   dispose(): void;
+}
+
+/** The slice of the interpolated view the ambience reads. */
+export interface AmbienceView {
+  readonly count: number;
+  readonly x: Float32Array;
+  readonly y: Float32Array;
+  readonly kind: Uint8Array;
+  readonly animState: Uint8Array;
+  readonly stressPct: Uint8Array;
 }
 
 interface VoiceSpec {
@@ -105,6 +126,126 @@ const VOICES: Partial<Record<number, VoiceSpec>> = {
   },
 };
 
+const KIND_CATTLE = 1;
+const ANIM_IDLE = 0;
+const ANIM_STAMPEDE = 2;
+
+/**
+ * The ambient voices, and how often each may sound.
+ *
+ * Deliberately sparse. Continuous audio in an RTS is a bed the player stops hearing
+ * within a minute, and the moment it stops being heard it is only masking the sounds
+ * that matter. These are occasional enough to stay noticeable.
+ */
+const AMBIENT: Readonly<Record<string, { spec: VoiceSpec; everyMs: number }>> = {
+  // A hoof-fall texture for troops on the move. One pulse for the whole column, its
+  // volume carrying how many are marching, because thirty sets of footsteps is a drone.
+  march: {
+    spec: { frequency: 150, endFrequency: 70, durationMs: 110, gain: 0.16, noise: true, type: 'triangle' },
+    everyMs: 460,
+  },
+  // Cattle at rest. Low, slow and infrequent — the sound of nothing being wrong.
+  lowing: {
+    spec: { frequency: 155, endFrequency: 118, durationMs: 620, gain: 0.2, noise: false, type: 'sawtooth' },
+    everyMs: 3400,
+  },
+  // The same herd, uneasy. Higher and more often: this is the audible half of the stress
+  // readout the rings carry visually, and it arrives before a player is looking.
+  restless: {
+    spec: { frequency: 240, endFrequency: 180, durationMs: 420, gain: 0.26, noise: false, type: 'sawtooth' },
+    everyMs: 1100,
+  },
+  // A herd already running. Sustained rumble under everything else; StampedeBegan fires
+  // once, and a stampede lasts far longer than once.
+  rumble: {
+    spec: { frequency: 74, endFrequency: 52, durationMs: 700, gain: 0.34, noise: true, type: 'sawtooth' },
+    everyMs: 520,
+  },
+};
+
+/** Immediate feedback on a click, before the order has reached the simulation. */
+const ACKNOWLEDGE: Readonly<Record<string, VoiceSpec>> = {
+  move: { frequency: 520, endFrequency: 700, durationMs: 70, gain: 0.13, noise: false, type: 'triangle' },
+  attack: { frequency: 300, endFrequency: 190, durationMs: 110, gain: 0.18, noise: true, type: 'square' },
+  herd: { frequency: 400, endFrequency: 470, durationMs: 130, gain: 0.14, noise: false, type: 'sine' },
+};
+
+export interface AmbienceMix {
+  /** Which herd voice, if any, should be sounding. */
+  readonly herd: 'lowing' | 'restless' | 'rumble' | null;
+  readonly herdLoudness: number;
+  readonly herdPan: number;
+  /** Loudness of the marching texture, or 0 for silence. */
+  readonly march: number;
+}
+
+/**
+ * What the field should sound like, from what is on screen.
+ *
+ * Separated from the playing so the policy can be tested without an AudioContext — and
+ * the policy is the interesting half. Two rules are doing the work:
+ *
+ * Contributions are AGGREGATED, not per entity. Forty cattle are one herd making one
+ * sound; sounding each of them would spend the whole voice budget on the least
+ * informative thing on the field.
+ *
+ * And a herd makes ONE sound at a time, the most urgent one it has. A stampeding herd
+ * silences its own grazing, because a player who can hear both learns nothing from
+ * either.
+ */
+export function chooseAmbience(view: AmbienceView, centreX: number, centreY: number): AmbienceMix {
+  let marching = 0;
+  let grazing = 0;
+  let uneasy = 0;
+  let running = 0;
+  let herdPan = 0;
+  let herdWeight = 0;
+
+  for (let i = 0; i < view.count; i++) {
+    const dx = view.x[i]! - centreX;
+    const dy = view.y[i]! - centreY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance > audibleRadius) continue;
+    // Squared, so the far edge of the audible radius contributes almost nothing and the
+    // mix does not swell every time the camera drifts across open ground.
+    const nearness = 1 - distance / audibleRadius;
+    const weight = nearness * nearness;
+
+    if (view.kind[i] === KIND_CATTLE) {
+      if (view.animState[i] === ANIM_STAMPEDE) running += weight;
+      else if (view.stressPct[i]! > 90) uneasy += weight;
+      else grazing += weight;
+      herdPan += (dx / audibleRadius) * weight;
+      herdWeight += weight;
+    } else if (view.animState[i] !== ANIM_IDLE) {
+      marching += weight;
+    }
+  }
+
+  const pan = herdWeight > 0 ? herdPan / herdWeight : 0;
+  const herd =
+    running > 0.2 ? 'rumble' : uneasy > 0.2 ? 'restless' : grazing > 0.3 ? 'lowing' : null;
+  // Gentle scaling, so the channel has somewhere to go. At the first set of factors a
+  // mere four cattle standing under the camera already clipped at full volume, which
+  // means a handful and a whole herd sound identical and the loudness carries no
+  // information at all. A stampede is the exception and is meant to dominate.
+  const herdLoudness =
+    herd === 'rumble'
+      ? Math.min(1, 0.45 + running * 0.2)
+      : herd === 'restless'
+        ? Math.min(1, uneasy * 0.16)
+        : herd === 'lowing'
+          ? Math.min(1, grazing * 0.1)
+          : 0;
+
+  return {
+    herd,
+    herdLoudness,
+    herdPan: pan,
+    march: marching > 0.25 ? Math.min(1, marching * 0.5) : 0,
+  };
+}
+
 export function createAudioEngine(): AudioEngine {
   let context: AudioContext | null = null;
   let master: GainNode | null = null;
@@ -113,6 +254,24 @@ export function createAudioEngine(): AudioEngine {
   let active = 0;
   /** Last time each event type sounded, so forty simultaneous hits are not forty voices. */
   const lastPlayed = new Map<number, number>();
+
+  /** Last time each ambient channel sounded, so each keeps its own cadence. */
+  const lastAmbient = new Map<string, number>();
+
+  function sound(channel: string, nowMs: number, loudness: number, pan: number): void {
+    const entry = AMBIENT[channel]!;
+    if (nowMs - (lastAmbient.get(channel) ?? -Infinity) < entry.everyMs) return;
+    if (active >= maxVoices) return;
+    if (context === null || master === null) return;
+
+    lastAmbient.set(channel, nowMs);
+    play(context, master, noiseBuffer, entry.spec, loudness, pan);
+    engine.voicesPlayed++;
+    active++;
+    window.setTimeout(() => {
+      active--;
+    }, entry.spec.durationMs);
+  }
 
   const engine: AudioEngine = {
     voicesPlayed: 0,
@@ -172,6 +331,28 @@ export function createAudioEngine(): AudioEngine {
           active--;
         }, spec.durationMs);
       }
+    },
+
+    ambience(view, camera): void {
+      if (context === null || master === null || context.state !== 'running') return;
+
+      const centreX = viewportToWorldX(camera, camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
+      const centreY = viewportToWorldY(camera, camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
+      const nowMs = performance.now();
+
+      const mix = chooseAmbience(view, centreX, centreY);
+      if (mix.herd !== null) sound(mix.herd, nowMs, mix.herdLoudness, mix.herdPan);
+      if (mix.march > 0) sound('march', nowMs, mix.march, 0);
+    },
+
+    acknowledge(kind): void {
+      if (context === null || master === null || context.state !== 'running') return;
+      // Unspatialised and unthrottled by distance, because this is the player's own
+      // click answering back. ARCHITECTURE section 6: local feedback fires immediately
+      // and never waits for the round trip — that split is what makes a renderer running
+      // 75ms behind the simulation feel instant.
+      play(context, master, noiseBuffer, ACKNOWLEDGE[kind]!, 1, 0);
+      engine.voicesPlayed++;
     },
 
     dispose(): void {

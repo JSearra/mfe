@@ -470,6 +470,10 @@ async function main(options: GameOptions): Promise<void> {
       // bare ground is a move order. One button, three meanings, as the genre expects.
       const foe = pickEnemy(view, map, camera, entities, x, y, PLAYER);
       if (foe !== -1) {
+        // Answer the click now. The order will not execute for another tick or three,
+        // and a renderer running 75ms behind the simulation only feels instant because
+        // the local half of the feedback does not wait for it.
+        audio.acknowledge('attack');
         for (const handle of selection.handles) {
           sim.sendCommand(CommandKind.Attack, handle, foe);
         }
@@ -487,6 +491,7 @@ async function main(options: GameOptions): Promise<void> {
           KIND_CATTLE,
           herdScratch,
         );
+        audio.acknowledge('herd');
         const herders = [...selection.handles];
         for (let i = 0; i < herd.length; i++) {
           sim.sendCommand(CommandKind.Leash, herders[i % herders.length]!, herd[i]!);
@@ -498,6 +503,7 @@ async function main(options: GameOptions): Promise<void> {
       if (target === null) return;
       // Orders carry a handle, never a position: by the time this executes the target
       // may be dead, and the handle's generation is what says so.
+      audio.acknowledge('move');
       const kind = patrolArmed
         ? CommandKind.Patrol
         : attackMoveArmed
@@ -636,6 +642,9 @@ async function main(options: GameOptions): Promise<void> {
       const at = performance.now();
       damage.expire(at);
       entities.update(view, map, selection.handles, damage, at);
+      // What the field sounds like, as opposed to what just happened. Read from the same
+      // interpolated view the renderer draws, so the audio agrees with the picture.
+      audio.ambience(view, camera);
     }
 
     const isoX = (input.pointerX - camera.viewportWidth / 2) / camera.zoom + camera.x;
