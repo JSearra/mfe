@@ -121,6 +121,17 @@ export interface MovementSystem {
   /** Record an order. Routing is resolved once per tick, so groups can be detected. */
   order(world: World, handle: Handle, goalX: number, goalY: number): boolean;
   update(world: World, tech?: TechState): void;
+  /**
+   * Put a unit at a proposed position, refusing anything it could not occupy.
+   *
+   * For displacement that does not come from the unit's own movement — knockback from
+   * being run over by a stampede is the only such case today. That wrote posX/posY
+   * directly and was the one position write in the simulation with no occupancy check
+   * behind it, so a charge at a map edge threw people over it and a charge at a cliff
+   * put them inside a tile whose direction mask is empty, which they could never walk
+   * out of again.
+   */
+  displace(world: World, index: number, toX: number, toY: number): void;
   forget(index: number): void;
   /** Per-unit routes for saving, keyed by packed handle. */
   exportPaths(): [number, number[]][];
@@ -323,6 +334,8 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
 
   const direction: [number, number] = [0, 0];
   const step: [number, number] = [0, 0];
+  /** Scratch for displace(), which is called from outside this system's own update. */
+  const displaceStep: [number, number] = [0, 0];
 
   // Named rather than returned as a literal, so `update` can issue the next queued
   // order through the same path a player's order takes — routing, group detection and
@@ -368,6 +381,21 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
       // queue that no longer exists. Units holding one re-request on their next order
       // or stuck timer rather than waiting forever for a reply that cannot come.
       pending = [];
+    },
+
+    displace(world: World, index: number, toX: number, toY: number): void {
+      constrainStep(
+        pathing.layer(world.movementClass[index]! as MovementClass),
+        map.width,
+        map.height,
+        world.posX[index]!,
+        world.posY[index]!,
+        toX,
+        toY,
+        displaceStep,
+      );
+      world.posX[index] = displaceStep[0];
+      world.posY[index] = displaceStep[1];
     },
 
     forget(index: number): void {

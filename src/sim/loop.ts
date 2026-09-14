@@ -139,7 +139,7 @@ export function step(loop: SimLoop): void {
 
   movement.update(world, tech);
   // Cattle read the grid movement just built, so they see this tick's unit positions.
-  cattle.update(world, movement.grid, events, tech);
+  cattle.update(world, movement.grid, events, tech, movement.displace);
   // Upkeep lands on exact tick multiples. It reads world.tick before the increment
   // below, so the first cycle is tick 200, not 199.
   // Combat after movement and cattle, so a strike lands on where things ended up

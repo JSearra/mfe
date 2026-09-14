@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { SimEvent } from '../src/shared/events.js';
 import { createCattleSystem } from '../src/sim/cattle.js';
+import { createMovementSystem } from '../src/sim/movement.js';
+import { heightmapFrom } from '../src/shared/heightmap.js';
 import { createSpatialGrid, type SpatialGrid } from '../src/sim/spatial/grid.js';
 import { tuning } from '../src/sim/tuning.js';
 import { presentation } from '../src/render/presentation.js';
@@ -40,6 +42,11 @@ const FRAMES_PER_TICK = 3;
 
 const HERD = 40;
 
+/** Open ground: this gate is about legibility and control, not terrain. */
+const openGround = createMovementSystem(
+  heightmapFrom(Array.from({ length: 64 }, () => Array.from({ length: 64 }, () => 0)), 8),
+).displace;
+
 function rebuild(world: World, grid: SpatialGrid): void {
   grid.clear();
   for (let i = 0; i < world.capacity; i++) {
@@ -71,7 +78,7 @@ function makeHerd(cows: number) {
 
   const tick = () => {
     rebuild(world, grid);
-    cattle.update(world, grid, events);
+    cattle.update(world, grid, events, undefined, openGround);
     world.tick++;
   };
   return { world, cattle, events, handles, tick };

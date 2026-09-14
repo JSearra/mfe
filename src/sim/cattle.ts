@@ -48,12 +48,27 @@ export interface CattleStats {
   leashed: number;
 }
 
+/** Moves a unit to a proposed position, refusing what it could not occupy. */
+export type Displace = (world: World, index: number, toX: number, toY: number) => void;
+
 export interface CattleSystem {
   readonly stats: CattleStats;
   /** Tether a cow to a herder. Right-clicking a neutral herd is what issues this. */
   leash(world: World, herder: Handle, cow: Handle): boolean;
   release(world: World, cow: Handle): void;
-  update(world: World, grid: SpatialGrid, events: SimEvent[], tech?: TechState): void;
+  /**
+   * `displace` applies knockback. It is required rather than optional on purpose: the
+   * crush is the only thing in the simulation that moves a unit it does not own, and a
+   * default that wrote the position directly is exactly how the unchecked version
+   * survived — every test would have quietly agreed with it.
+   */
+  update(
+    world: World,
+    grid: SpatialGrid,
+    events: SimEvent[],
+    tech: TechState | undefined,
+    displace: Displace,
+  ): void;
 }
 
 /** Squared distance from a point to the segment a->b. The swept crush test. */
@@ -108,7 +123,7 @@ export function createCattleSystem(): CattleSystem {
       }
     },
 
-    update(world, grid, events, tech): void {
+    update(world, grid, events, tech, displace): void {
       const c = tuning.cattle;
       const dt = tuning.movement.dt / c.substeps;
 
@@ -363,7 +378,7 @@ export function createCattleSystem(): CattleSystem {
           state === HerdState.Stampeding ? ANIM_STAMPEDE : speed > 0.05 ? ANIM_WALK : ANIM_IDLE;
       }
 
-      crush(world, grid, events, stats, neighbours);
+      crush(world, grid, events, stats, neighbours, displace);
     },
   };
 }
@@ -381,6 +396,7 @@ function crush(
   events: SimEvent[],
   stats: CattleStats,
   neighbours: number[],
+  displace: Displace,
 ): void {
   const c = tuning.cattle;
   const radiusSq = c.crushRadius * c.crushRadius;
@@ -422,10 +438,15 @@ function crush(
       world.hp[victim] = hp > c.crushDamage ? hp - c.crushDamage : 0;
 
       // Knocked along the cow's travel, not away from it: being run over throws you
-      // forward.
+      // forward. Through displace, so a charge at the map edge or a cliff cannot put
+      // the victim somewhere it could not have walked.
       if (travel > 1e-9) {
-        world.posX[victim] = world.posX[victim]! + ((toX - fromX) / travel) * c.knockback;
-        world.posY[victim] = world.posY[victim]! + ((toY - fromY) / travel) * c.knockback;
+        displace(
+          world,
+          victim,
+          world.posX[victim]! + ((toX - fromX) / travel) * c.knockback,
+          world.posY[victim]! + ((toY - fromY) / travel) * c.knockback,
+        );
       }
 
       stats.crushes++;

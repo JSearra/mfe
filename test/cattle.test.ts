@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { EventType, type SimEvent } from '../src/shared/events.js';
 import { createCattleSystem } from '../src/sim/cattle.js';
+import { createMovementSystem } from '../src/sim/movement.js';
 import { createSpatialGrid, type SpatialGrid } from '../src/sim/spatial/grid.js';
+import { heightmapFrom } from '../src/shared/heightmap.js';
 import { tuning } from '../src/sim/tuning.js';
 import {
   EntityKind,
@@ -13,6 +15,21 @@ import {
 } from '../src/sim/world.js';
 
 const C = tuning.cattle;
+
+const flat = (width: number, height: number) =>
+  heightmapFrom(Array.from({ length: height }, () => Array.from({ length: width }, () => 0)), 8);
+
+/** Open ground for the tests that are not about terrain at all. */
+const openGround = createMovementSystem(flat(64, 64)).displace;
+
+/** Flat ground with one unclimbable column of high tiles at `atX`. */
+const withCliff = (width: number, height: number, atX: number) =>
+  heightmapFrom(
+    Array.from({ length: height }, () =>
+      Array.from({ length: width }, (_, x) => (x === atX ? 7 : 0)),
+    ),
+    8,
+  );
 
 function rebuild(world: World, grid: SpatialGrid): void {
   grid.clear();
@@ -35,7 +52,7 @@ function makeHerd(cows: number, originX = 10, originY = 10) {
   }
   const tick = () => {
     rebuild(world, grid);
-    cattle.update(world, grid, events);
+    cattle.update(world, grid, events, undefined, openGround);
     world.tick++;
   };
   return { world, grid, cattle, events, handles, tick };
@@ -294,7 +311,7 @@ describe('stampede', () => {
       const hpBefore = world.hp[victimIndex]!;
 
       rebuild(world, grid);
-      cattle.update(world, grid, events);
+      cattle.update(world, grid, events, undefined, openGround);
 
       expect(world.hp[victimIndex]!, `offset ${offset.toFixed(2)}`).toBeLessThan(hpBefore);
       expect(cattle.stats.crushes, `offset ${offset.toFixed(2)}`).toBeGreaterThan(0);
@@ -312,8 +329,53 @@ describe('stampede', () => {
     const victimIndex = handleIndex(victim);
 
     rebuild(world, grid);
-    cattle.update(world, grid, []);
+    cattle.update(world, grid, [], undefined, openGround);
     expect(world.posX[victimIndex]!).toBeGreaterThan(10.2);
+  });
+
+  it('does not knock a victim off the map', () => {
+    // Knockback wrote straight into posX/posY, the one position write in the whole
+    // simulation that did not go through the movement system's occupancy check. A cow
+    // charging the map edge threw people over it.
+    const map = flat(16, 16);
+    const movement = createMovementSystem(map);
+    const world = createWorld(16, 7);
+    const grid = createSpatialGrid(16, 16, 2);
+    const cattle = createCattleSystem();
+
+    // The cow sweeps 15.0 -> 15.4 this tick; the victim is 0.3 off the end of that
+    // segment, inside the 0.35 crush radius, and 0.55 of knockback puts it past 16.
+    const cow = spawn(world, 15.0, 8, 0, 1, EntityKind.Cattle);
+    panic(world, handleIndex(cow), 1, 0);
+    const victim = spawn(world, 15.7, 8, 1);
+    const victimIndex = handleIndex(victim);
+
+    rebuild(world, grid);
+    cattle.update(world, grid, [], undefined, movement.displace);
+
+    expect(world.posX[victimIndex]!).toBeLessThan(16);
+    expect(world.posX[victimIndex]!).toBeGreaterThanOrEqual(0);
+  });
+
+  it('does not knock a victim through a cliff it could never walk out of', () => {
+    // Worse than the map edge: an impassable tile has no outbound direction mask, so a
+    // unit put inside one can never leave. A stampede removed it from the match.
+    const map = withCliff(16, 16, 12);
+    const movement = createMovementSystem(map);
+    const world = createWorld(16, 7);
+    const grid = createSpatialGrid(16, 16, 2);
+    const cattle = createCattleSystem();
+
+    const cow = spawn(world, 11.0, 8, 0, 1, EntityKind.Cattle);
+    panic(world, handleIndex(cow), 1, 0);
+    const victim = spawn(world, 11.7, 8, 1);
+    const victimIndex = handleIndex(victim);
+
+    rebuild(world, grid);
+    cattle.update(world, grid, [], undefined, movement.displace);
+
+    // The cliff column starts at x=12 and stands far above the ground beside it.
+    expect(world.posX[victimIndex]!).toBeLessThan(12);
   });
 
   it('does not crush other cattle', () => {
@@ -328,7 +390,7 @@ describe('stampede', () => {
     const hpBefore = world.hp[bystanderIndex]!;
 
     rebuild(world, grid);
-    cattle.update(world, grid, []);
+    cattle.update(world, grid, [], undefined, openGround);
     expect(world.hp[bystanderIndex]).toBe(hpBefore);
   });
 
