@@ -126,13 +126,21 @@ Still open, and all of them decisions rather than defects:
   200 rather than eight, so passive growth cannot win a match, while a herd held for
   fifteen minutes still grows 120 → 157 and remains worth keeping.
 
-  **What this promotes to the open question:** with passive growth out of the way, the
-  isibaya is the cheapest route to the win condition — 1.5 cattle an upkeep, flat, so a
-  single finished kraal is about +90 cattle over ten minutes for 120 grain and 600 work.
-  Raiding the thirty cattle on the map is now a real contribution (37% of the 80 needed)
-  and denies them to the enemy, but building still outpaces it. If raiding should be
-  *the* route rather than *a* route, `cattleYield` on the isibaya is the next lever, or
-  the map wants more cattle to fight over.
+  The isibaya followed it down, 1.5 cattle an upkeep → 0.5, anchored so that a kraal
+  running a full ten minutes breeds exactly the thirty head already grazing on the map:
+  building is never faster than going and taking what is there.
+
+- **Massed kraals still beat raiding, because kraals stack and the herd does not.**
+  Measured against the real ledger, minutes to carry 120 cattle to the 200 that win:
+  passive alone 26.3, raid alone 18.7, raid plus one kraal 8.5, two kraals and never
+  raid 8.7 — but **three kraals and never raid, 6.7**. Raiding is now competitive with a
+  small build, which is what the yield cut bought, and still loses to a big one.
+
+  It cannot be fixed with another yield number: kraals add linearly and forever, while
+  the raidable pool is a fixed thirty. Two levers, and they play differently. Either
+  give the veld more cattle to fight over — `STARTING_CATTLE` in `main.ts` is 30 against
+  the 80 a player needs, which is thin for a game about cattle — or make kraal cattle
+  yield diminish per building so the fourth kraal is worth much less than the first.
 - **Starvation damage is not proportional to the shortfall.** Being five grain short does
   the same damage, to every unit you own, as being five hundred short. A small miss
   should be a warning, not the same catastrophe as a collapse.

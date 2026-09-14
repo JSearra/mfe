@@ -78,6 +78,36 @@ describe('building specs', () => {
     }
   });
 
+  /**
+   * A kraal must not be a better way to get cattle than going and taking them. The
+   * isibaya paid 1.5 an upkeep — ninety head over ten minutes against the thirty
+   * grazing on the map — so a player who ignored the herd entirely and put up two
+   * kraals won faster than one who raided, which makes the game's central mechanic
+   * decorative.
+   */
+  it('does not let a kraal out-produce the herd a raid could take', () => {
+    // main.ts starts thirty cattle on the map; sixty upkeeps is ten minutes.
+    const RAIDABLE = 30;
+    const UPKEEPS_IN_TEN_MINUTES = 60;
+    const bred = BUILDINGS[BuildingType.Isibaya].cattleYield * UPKEEPS_IN_TEN_MINUTES;
+
+    expect(bred).toBeLessThanOrEqual(RAIDABLE);
+    // ...and not so low that the building stops being worth putting up at all.
+    expect(bred).toBeGreaterThan(RAIDABLE / 2);
+  });
+
+  it('keeps the isibaya the best building for cattle', () => {
+    // The inversion this guards: drop the isibaya's yield to the indlunkulu's and the
+    // indlunkulu becomes strictly better, since it pays the same cattle plus grain.
+    const isibaya = BUILDINGS[BuildingType.Isibaya].cattleYield;
+    for (const spec of Object.values(BUILDINGS)) {
+      if (spec.type === BuildingType.Isibaya) continue;
+      expect(spec.cattleYield, `${spec.nameKey} matches or beats the isibaya`).toBeLessThan(
+        isibaya,
+      );
+    }
+  });
+
   it('falls back rather than throwing on an unknown type', () => {
     expect(buildingSpec(99).type).toBe(BuildingType.GrainStore);
   });

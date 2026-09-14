@@ -62,7 +62,14 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     cattleCost: 0,
     work: 600,
     grainYield: 0,
-    cattleYield: 1.5,
+    /**
+     * Sixty upkeeps is ten minutes, so a kraal running that long breeds exactly the
+     * thirty head already grazing on the map at the start. Building is therefore never
+     * faster than going and taking what is there, which is the whole argument of the
+     * game. It was 1.5 — ninety head over the same ten minutes — and a player who
+     * ignored the herd entirely and put up two kraals won faster than one who raided.
+     */
+    cattleYield: 0.5,
     maxHeightVariation: 0,
     trains: false,
   },
@@ -107,7 +114,10 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     cattleCost: 3,
     work: 700,
     grainYield: 2,
-    cattleYield: 0.5,
+    // A third of the isibaya's, as it was before that came down. At parity the
+    // indlunkulu would be strictly better — the same cattle plus grain — and the
+    // building actually named for cattle would be the wrong thing to build.
+    cattleYield: 0.15,
     maxHeightVariation: 0,
     trains: false,
   },
