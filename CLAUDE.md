@@ -32,6 +32,18 @@ recorded in `docs/adr/`. Read the ADR before re-opening a settled decision.
   A tie resolved by array order is a desync.
 - Entity destruction is flushed in a deterministic (sorted) order at the tick boundary.
 
+## Movement
+
+- **Every position write goes through the occupancy check.** `world.posX` / `world.posY`
+  are written directly only in `movement.ts` and in `spawn`. Anything that moves an
+  entity it does not own — knockback, and cattle steering themselves — calls
+  `MovementSystem.displace`, which refuses a destination out of bounds, on an impassable
+  tile, or across an edge that movement class cannot climb. Both of those bypassed it
+  and neither was caught, because the cattle tests built a world with no terrain in it.
+  See ADR-0018.
+- A test that constructs the world without the constraint under test cannot observe the
+  constraint being broken, and will pass forever while it is.
+
 ## Boundaries
 
 - `src/sim/**` may not import `pixi.js`, nor anything from `src/render/**` or `src/ui/**`,
