@@ -44,6 +44,16 @@ const ANIM_NAME = ['idle', 'walk', 'run'] as const;
 /** Movement classes, from src/sim/pathing/costs.ts. Unit subtype is its movement class. */
 const CLASS_MOUNTED = 2;
 
+/**
+ * Building sprite names by BuildingType, and their construction stages.
+ *
+ * A building does not turn, so there is one direction and the stage rides in the frame
+ * index — which needed no new atlas format and no new loading code. Three stages: a
+ * cleared footprint, a half-raised frame, and the finished thing.
+ */
+const BUILDING_KINDS = ['isibaya', 'umuzi', 'grain-store'] as const;
+const BUILD_STAGES = 3;
+
 const TAU = Math.PI * 2;
 
 /**
@@ -55,6 +65,7 @@ const TAU = Math.PI * 2;
  */
 function spriteKind(kind: number, subtype: number, handle: number): string {
   if (kind === KIND_CATTLE) return (handle & 1) === 0 ? 'nguni' : 'nguni-dark';
+  if (kind === KIND_BUILDING) return BUILDING_KINDS[subtype] ?? BUILDING_KINDS[0];
   return subtype === CLASS_MOUNTED ? 'musketeer' : 'impi';
 }
 
@@ -346,12 +357,12 @@ export function createEntityLayer(atlas: SpriteAtlas | null = null): EntityLayer
           (progressBand << 14);
 
         const position = this.screenPosition(view, index, map);
-        const textured = atlas !== null && !isBuilding;
+        const textured = atlas !== null;
 
         if (marker.signature !== signature) {
           marker.decal.clear();
           marker.graphics.clear();
-          if (isBuilding) drawBuilding(marker.graphics, progressBand << 4, isSelected);
+          if (isBuilding && !textured) drawBuilding(marker.graphics, progressBand << 4, isSelected);
           else if (textured) drawDecal(marker.decal, isCattle, stressBand << 4, stampeding, isSelected);
           else if (isCattle) drawCow(marker.graphics, stressBand << 4, stampeding, isSelected);
           else drawUnit(marker.graphics, faction, isSelected);
@@ -367,7 +378,7 @@ export function createEntityLayer(atlas: SpriteAtlas | null = null): EntityLayer
         if (!textured) continue;
 
         const name = spriteKind(kind, view.subtype[index]!, handle);
-        const anim = ANIM_NAME[view.animState[index]!] ?? 'idle';
+        const anim = isBuilding ? 'build' : (ANIM_NAME[view.animState[index]!] ?? 'idle');
         const frames = atlas!.frameCount(name, anim);
         if (frames === 0) continue;
 
@@ -377,10 +388,14 @@ export function createEntityLayer(atlas: SpriteAtlas | null = null): EntityLayer
         // directions halfway between them, so a unit turning on the spot switches at
         // the midpoint instead of a step early.
         const turn = TAU / atlas!.directions;
-        let direction = Math.round(view.facing[index]! / turn) % atlas!.directions;
+        let direction = isBuilding ? 0 : Math.round(view.facing[index]! / turn) % atlas!.directions;
         if (direction < 0) direction += atlas!.directions;
 
-        const frameIndex = Math.floor(view.animPhase[index]! / spriteStyle.ticksPerFrame) % frames;
+        // A building's "frame" is how far along it is, not how long it has been alive.
+        // The last stage holds once complete rather than looping back to a foundation.
+        const frameIndex = isBuilding
+          ? Math.min(frames - 1, Math.floor((view.progressPct[index]! / 256) * BUILD_STAGES))
+          : Math.floor(view.animPhase[index]! / spriteStyle.ticksPerFrame) % frames;
         const frame = atlas!.frame(name, anim, direction, frameIndex);
         if (!frame) continue;
 
