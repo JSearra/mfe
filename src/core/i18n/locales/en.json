@@ -93,6 +93,11 @@
     "mapThabaBosiu": "Thaba Bosiu",
     "mapUmfolozi": "uMfolozi",
     "mapKaroo": "The Great Karoo",
-    "mapMagaliesberg": "Magaliesberg"
+    "mapMagaliesberg": "Magaliesberg",
+    "livery": "Shields",
+    "liveryWhite": "White, black marking",
+    "liveryBlack": "Black, white marking",
+    "liveryRed": "Red, white marking",
+    "liveryDun": "Dun, dark marking"
   }
 }

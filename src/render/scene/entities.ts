@@ -173,6 +173,8 @@ interface Marker {
   readonly sprite: Sprite;
   /** The player-colour marking, tinted per faction and drawn over the body. */
   readonly team: Sprite;
+  /** The shield hide, tinted to the player's chosen livery. */
+  readonly shield: Sprite;
   /** Everything the drawn shape depends on, so it is only redrawn when it changes. */
   signature: number;
 }
@@ -317,9 +319,27 @@ function groundHeight(map: Heightmap, worldX: number, worldY: number): number {
   return height < 0 ? 0 : height;
 }
 
+/**
+ * What the player's own troops and buildings look like.
+ *
+ * One set of art, several choosable colours. Each of these tints a separate small
+ * overlay drawn over the body from the same atlas page — the shield hide and the marking
+ * on it, which is how regiments were actually told apart. Pixi applies tint in its batch
+ * shader, so a dozen colour schemes cost no extra art and no extra draw call.
+ */
+export interface Livery {
+  /** The hide of the shield. */
+  readonly shield: number;
+  /** The marking on it, and the faction colour elsewhere. */
+  readonly marking: number;
+  /** Whose troops wear it. Everyone else keeps their faction colour. */
+  readonly faction: number;
+}
+
 export function createEntityLayer(
   atlas: SpriteAtlas | null = null,
   decorations: readonly Decoration[] = [],
+  livery: Livery | null = null,
 ): EntityLayer {
   const container = new Container();
   // Two layers, because batching depends on it. Ground decoration is all Graphics and
@@ -428,20 +448,25 @@ export function createEntityLayer(
         const decal = new Graphics();
         const graphics = new Graphics();
         const sprite = new Sprite();
+        const shield = new Sprite();
         const team = new Sprite();
         decals.addChild(decal);
         bodies.addChild(graphics);
         bodies.addChild(sprite);
         // Immediately after its body, and off the same atlas page, so the pair still
         // batches with every other sprite rather than costing a draw call each.
+        // Hide first, then the marking on top of it — the order they sit in reality,
+        // and both off the same page as the body so the three still batch together.
+        bodies.addChild(shield);
         bodies.addChild(team);
-        markers.push({ decal, graphics, sprite, team, signature: -1 });
+        markers.push({ decal, graphics, sprite, shield, team, signature: -1 });
       }
       for (let i = count; i < markers.length; i++) {
         const marker = markers[i]!;
         marker.decal.visible = false;
         marker.graphics.visible = false;
         marker.sprite.visible = false;
+        marker.shield.visible = false;
         marker.team.visible = false;
       }
 
@@ -502,6 +527,7 @@ export function createEntityLayer(
         decals.addChild(marker.decal);
         bodies.addChild(marker.graphics);
         bodies.addChild(marker.sprite);
+        bodies.addChild(marker.shield);
         bodies.addChild(marker.team);
       }
 
@@ -558,6 +584,7 @@ export function createEntityLayer(
         marker.graphics.position.set(position.x, position.y);
         marker.graphics.visible = !textured;
         marker.sprite.visible = false;
+        marker.shield.visible = false;
         marker.team.visible = false;
 
         if (!textured) continue;
@@ -603,16 +630,27 @@ export function createEntityLayer(
         // asks for a shader swap. A tinted sprite IS one: the tint is applied in the
         // renderer's own batch shader, so one set of art serves every faction and the
         // overlay batches with the body it sits on.
-        const teamFrame = atlas!.frame(`${name}-team`, anim, direction, frameIndex);
-        if (teamFrame !== null) {
-          marker.team.texture = teamFrame.texture;
-          marker.team.scale.set(teamFrame.scale);
-          marker.team.position.set(
-            position.x - teamFrame.anchorX * teamFrame.scale,
-            position.y - teamFrame.anchorY * teamFrame.scale,
+        // The player's own troops wear the chosen livery; everyone else keeps their
+        // faction colour, or an enemy army would be indistinguishable from yours.
+        const own = livery !== null && faction === livery.faction;
+        const markingTint = own
+          ? livery.marking
+          : (FACTION[faction % FACTION.length] ?? FACTION[0]!);
+
+        overlay(marker.shield, `${name}-shield`, own ? livery.shield : 0xffffff);
+        overlay(marker.team, `${name}-team`, markingTint);
+
+        function overlay(sprite: Sprite, kindName: string, tint: number): void {
+          const frame = atlas!.frame(kindName, anim, direction, frameIndex);
+          if (frame === null) return;
+          sprite.texture = frame.texture;
+          sprite.scale.set(frame.scale);
+          sprite.position.set(
+            position.x - frame.anchorX * frame.scale,
+            position.y - frame.anchorY * frame.scale,
           );
-          marker.team.tint = FACTION[faction % FACTION.length] ?? FACTION[0]!;
-          marker.team.visible = true;
+          sprite.tint = tint;
+          sprite.visible = true;
         }
       }
     },

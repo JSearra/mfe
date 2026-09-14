@@ -18,7 +18,26 @@ export interface SetupChoice {
   readonly mapSeed: number;
   readonly playerFaction: FactionId;
   readonly enemyFaction: FactionId;
+  /** Shield hide, as #rrggbb. */
+  readonly shieldColour: string;
+  /** The marking on it, and the player's colour elsewhere. */
+  readonly markingColour: string;
 }
+
+/**
+ * Shield liveries offered as presets.
+ *
+ * Regiments were told apart by the colour of the hide and the marking on it — white
+ * shields for one ibutho, black for another, and the young regiments carried the darker
+ * hides. These are presets rather than a free colour wheel because the point is to look
+ * like a regiment, and two arbitrary colours usually do not.
+ */
+const LIVERIES: readonly { readonly key: MessageKey; readonly shield: string; readonly marking: string }[] = [
+  { key: 'setup.liveryWhite', shield: '#e8e2d4', marking: '#2b2723' },
+  { key: 'setup.liveryBlack', shield: '#3a3532', marking: '#e8e2d4' },
+  { key: 'setup.liveryRed', shield: '#96372a', marking: '#e8e2d4' },
+  { key: 'setup.liveryDun', shield: '#9c7c4e', marking: '#3a3026' },
+]
 
 /** Map keys, in the order they are offered. Null is the generated heightmap. */
 const MAPS: readonly (MapScript | null)[] = [null, ...MAP_SCRIPTS];
@@ -90,6 +109,15 @@ export function showSetup(parent: HTMLElement, initial: SetupChoice): Promise<Se
     seedInput.value = String(initial.mapSeed);
     field(panel, 'setup.seed').appendChild(seedInput);
 
+    const liverySelect = document.createElement('select');
+    for (const [index, livery] of LIVERIES.entries()) {
+      const option = document.createElement('option');
+      option.value = String(index);
+      option.textContent = t(livery.key);
+      liverySelect.appendChild(option);
+    }
+    field(panel, 'setup.livery').appendChild(liverySelect);
+
     const start = document.createElement('button');
     start.className = 'setup-start';
     start.textContent = t('setup.start');
@@ -100,7 +128,10 @@ export function showSetup(parent: HTMLElement, initial: SetupChoice): Promise<Se
       const player = factionSelect.value as FactionId;
       const seed = Number(seedInput.value);
       screen.remove();
+      const livery = LIVERIES[Number(liverySelect.value)] ?? LIVERIES[0]!;
       resolve({
+        shieldColour: livery.shield,
+        markingColour: livery.marking,
         mapScript: chosen,
         // A seed of zero or a blank box falls back rather than generating the same flat
         // nothing every time, which is what Number('') gives.

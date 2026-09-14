@@ -621,12 +621,13 @@ def build(kind: str):
             # neighbours were sized in full ones, and the marking below — written to the
             # other convention — came out thinner than the shield and vanished inside it.
             shield = blob("shield", (0.10, SHIELD_WIDTH, SHIELD_HEIGHT), (0, 0, 0))
+            shield_hide = material("shield_hide", (0.92, 0.82, 0.62))
             # Pale hide, not player colour. Warriors were brown kit on brown ground and
             # sank into the terrain, while the cattle beside them read clearly — and the
             # reason is contrast, not size: the cattle carry big pale patches. A war
             # shield was oxhide in strong two-tone anyway, so the legible choice and the
             # accurate one are the same.
-            shield.data.materials.append(hide_pale)
+            shield.data.materials.append(shield_hide)
             shield.parent = arm_pivot
             shield.location = (0.11, 0.05, -ARM * 0.34)
             shield.rotation_euler = (0, math.radians(-8), 0)
@@ -716,13 +717,25 @@ def animate(limbs: dict, anim: str) -> int:
     return frames
 
 
-def wears_player_colour(obj) -> bool:
-    """Does this object carry the material a faction recolours?"""
+def wears(obj, prefix: str) -> bool:
+    """Does this object carry a material with this name prefix?"""
     if obj.type != "MESH" or obj.data is None:
         return False
-    return any(
-        slot is not None and slot.name.startswith("player_colour") for slot in obj.data.materials
-    )
+    return any(slot is not None and slot.name.startswith(prefix) for slot in obj.data.materials)
+
+
+def wears_player_colour(obj) -> bool:
+    """Does this object carry the material a faction recolours?"""
+    return wears(obj, "player_colour")
+
+
+# Which parts get their own tinted overlay pass, and what each pass is called.
+#
+# One set of art, several choosable colours. A war shield was sorted into regiments by
+# the colour of its hide and the marking on it, so those are exactly the two axes worth
+# making choosable — and each is a separate small frame drawn over the body, which is the
+# same trick that made player colour work without a per-faction atlas.
+OVERLAYS = (("shield_hide", "shield"), ("player_colour", "team"))
 
 
 def load_renderer():
@@ -810,13 +823,19 @@ def render_kind(renderer, kind: str, anim: str, args: argparse.Namespace) -> int
     #
     # Nearly free in atlas terms: a team frame is a shield marking and nothing else, so
     # it trims to a fraction of the body frame beside it.
-    team = [obj for obj in bpy.data.objects if wears_player_colour(obj)]
-    if team:
-        hidden = [obj for obj in bpy.data.objects if obj.type == "MESH" and obj not in team]
+    for prefix, suffix in OVERLAYS:
+        parts = [obj for obj in bpy.data.objects if wears(obj, prefix)]
+        if not parts:
+            continue
+
+        hidden = [obj for obj in bpy.data.objects if obj.type == "MESH" and obj not in parts]
         for obj in hidden:
             obj.hide_render = True
-        mask = material("team_mask", (0.85, 0.85, 0.85))
-        for obj in team:
+        # Rendered pale, so a tint multiplies cleanly rather than fighting a colour that
+        # is already there.
+        mask = material(f"{suffix}_mask", (0.88, 0.88, 0.88))
+        kept = [(obj, list(obj.data.materials)) for obj in parts]
+        for obj in parts:
             obj.data.materials.clear()
             obj.data.materials.append(mask)
 
@@ -825,13 +844,19 @@ def render_kind(renderer, kind: str, anim: str, args: argparse.Namespace) -> int
             for frame in range(frames):
                 scene.frame_set(scene.frame_start + frame)
                 scene.render.filepath = os.path.join(
-                    args.render, f"{kind}-team_{anim}_{direction}_{frame:02d}.png"
+                    args.render, f"{kind}-{suffix}_{anim}_{direction}_{frame:02d}.png"
                 )
                 bpy.ops.render.render(write_still=True)
                 written += 1
 
         for obj in hidden:
             obj.hide_render = False
+        # Put the originals back, or the next overlay pass renders the previous one's
+        # mask instead of the part it was looking for.
+        for obj, materials in kept:
+            obj.data.materials.clear()
+            for slot in materials:
+                obj.data.materials.append(slot)
 
     print(f"[make_unit] {kind}/{anim}: {written} frames")
 

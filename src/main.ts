@@ -136,6 +136,9 @@ export interface GameOptions {
   readonly mapSeed: number;
   readonly playerFaction: FactionId;
   readonly enemyFaction: FactionId;
+  /** How the player's own troops are turned out. Purely presentational. */
+  readonly shieldColour: string;
+  readonly markingColour: string;
 }
 
 /**
@@ -162,6 +165,8 @@ function defaultOptions(): GameOptions {
     mapSeed: Number.isFinite(seed) && seed !== 0 ? seed : MAP_SEED,
     playerFaction: FactionId.Zulu,
     enemyFaction: FactionId.Sotho,
+    shieldColour: '#e8e2d4',
+    markingColour: '#2b2723',
   };
 }
 
@@ -280,7 +285,11 @@ async function main(options: GameOptions): Promise<void> {
   const atlas = await loadSpriteAtlas(presentation.sprites.pixelsPerWorldUnit);
   // Scenery is derived from the map seed rather than stored: identical on every machine
   // that builds the same map, and nothing to transmit or save.
-  const entities = createEntityLayer(atlas, planDecorations(map, mapSeed));
+  const entities = createEntityLayer(atlas, planDecorations(map, mapSeed), {
+    shield: Number.parseInt(options.shieldColour.slice(1), 16),
+    marking: Number.parseInt(options.markingColour.slice(1), 16),
+    faction: PLAYER,
+  });
   const damage = createDamageFlashes();
   const fog = createFogRenderer(map);
   terrain.container.addChild(cursor);
