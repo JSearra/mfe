@@ -34,7 +34,7 @@ ISIBAYA_RADIUS = 3.4
 HUT_RADIUS = 1.15
 GRANARY_RADIUS = 0.85
 
-KINDS = ("isibaya", "umuzi", "grain-store")
+KINDS = ("isibaya", "umuzi", "grain-store", "ikhanda", "indlunkulu")
 STAGES = 3
 
 
@@ -173,10 +173,98 @@ def build_grain_store(root, stage, thatch, timber, earth):
     cap.parent = root
 
 
+def build_ikhanda(root, stage, thatch, timber, earth):
+    """
+    A military homestead: a ring of houses around its own enclosure, and bigger.
+
+    Read against the umuzi at tile size, the difference has to be scale and ORDER — an
+    ikhanda is laid out, not grown. So the huts are evenly spaced on a true ring with a
+    palisade behind them, where the umuzi's sit at a scatter of distances.
+    """
+    radius = 3.1
+    yard = cylinder("yard", radius * 0.62, 0.06, (0, 0, 0.03), verts=24)
+    yard.data.materials.append(earth)
+    yard.parent = root
+
+    if stage == 0:
+        for i in range(8):
+            angle = (i / 8) * math.tau
+            post = cylinder(
+                f"peg_{i}", 0.07, 0.4,
+                (math.cos(angle) * radius, math.sin(angle) * radius, 0.2), verts=6,
+            )
+            post.data.materials.append(timber)
+            post.parent = root
+        return
+
+    huts = 5 if stage == 1 else 9
+    for i in range(huts):
+        angle = (i / huts) * math.tau
+        hut = dome(
+            f"hut_{i}", HUT_RADIUS * 1.05, HUT_RADIUS * 0.8,
+            (math.cos(angle) * radius * 0.78, math.sin(angle) * radius * 0.78, 0.02),
+        )
+        hut.data.materials.append(thatch)
+        hut.parent = root
+
+    if stage < 2:
+        return
+
+    # The palisade. A regiment's homestead is enclosed; a family's is not.
+    for i in range(26):
+        angle = (i / 26) * math.tau
+        post = cylinder(
+            f"pale_{i}", 0.075, 1.25,
+            (math.cos(angle) * radius, math.sin(angle) * radius, 0.62), verts=6,
+        )
+        post.data.materials.append(timber)
+        post.parent = root
+
+
+def build_indlunkulu(root, stage, thatch, timber, earth):
+    """
+    The great house: one large dome on a swept platform, with a screened entrance.
+
+    Deliberately a single mass rather than a cluster. It is the only structure in a
+    homestead that stands alone and above, and at tile size one big dome beside the
+    umuzi's several small ones is the fastest way to read which is which.
+    """
+    platform = cylinder("platform", 1.95, 0.12, (0, 0, 0.06), verts=24)
+    platform.data.materials.append(earth)
+    platform.parent = root
+
+    if stage == 0:
+        for rib in range(7):
+            tilt = (rib / 7) * math.pi
+            arc = cylinder(
+                f"rib_{rib}", 0.035, 2.9, (0, 0, 0.85),
+                rotation=(math.pi / 2, 0, tilt), verts=6,
+            )
+            arc.data.materials.append(timber)
+            arc.parent = root
+        return
+
+    height = 1.05 if stage == 1 else 1.5
+    hut = dome("great_house", 1.72, height, (0, 0, 0.08))
+    hut.data.materials.append(thatch)
+    hut.parent = root
+
+    if stage < 2:
+        return
+
+    # A screen across the doorway, which is where the entrance actually is on one of
+    # these, and the one piece of asymmetry in an otherwise radial shape.
+    screen = cylinder("screen", 0.95, 0.9, (1.55, 0, 0.45), verts=16)
+    screen.data.materials.append(timber)
+    screen.parent = root
+
+
 BUILDERS = {
     "isibaya": build_isibaya,
     "umuzi": build_umuzi,
     "grain-store": build_grain_store,
+    "ikhanda": build_ikhanda,
+    "indlunkulu": build_indlunkulu,
 }
 
 FRAMING = {
@@ -184,6 +272,8 @@ FRAMING = {
     "isibaya": (8.4, 0.9),
     "umuzi": (6.6, 0.9),
     "grain-store": (3.4, 1.0),
+    "ikhanda": (9.2, 1.0),
+    "indlunkulu": (5.4, 1.0),
 }
 
 

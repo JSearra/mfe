@@ -55,7 +55,7 @@ const CLASS_MOUNTED = 2;
  * index — which needed no new atlas format and no new loading code. Three stages: a
  * cleared footprint, a half-raised frame, and the finished thing.
  */
-const BUILDING_KINDS = ['isibaya', 'umuzi', 'grain-store'] as const;
+const BUILDING_KINDS = ['isibaya', 'umuzi', 'grain-store', 'ikhanda', 'indlunkulu'] as const;
 const BUILD_STAGES = 3;
 
 const TAU = Math.PI * 2;

@@ -352,6 +352,10 @@ async function main(options: GameOptions): Promise<void> {
   let attackMoveArmed = false;
   let patrolArmed = false;
 
+  // Only the first three have a digit. Control groups own 4-9, and making the most-used
+  // keys in the game ambiguous is a worse trade than reaching for the panel to place a
+  // structure you build once a match. The command panel lists every building type
+  // automatically, so the new ones are not hidden — just not on a digit.
   const buildKeys: Readonly<Record<string, BuildingType>> = {
     '1': BuildingType.Isibaya,
     '2': BuildingType.Umuzi,

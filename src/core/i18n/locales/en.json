@@ -23,7 +23,9 @@
     "impi": "armed body of men",
     "iQhugwane": "beehive grass hut",
     "amabutho": "age-set regiments",
-    "umkhosi": "first-fruits ceremony"
+    "umkhosi": "first-fruits ceremony",
+    "ikhanda": "military homestead, where a regiment is quartered",
+    "indlunkulu": "the great house at the head of a homestead"
   },
   "faction": {
     "zulu": "amaZulu",
@@ -45,7 +47,9 @@
     "umuzi": "umuzi",
     "grainStore": "Grain store",
     "armed": "Placing {name} — click to site it, Esc to cancel",
-    "refused": "Cannot build there"
+    "refused": "Cannot build there",
+    "ikhanda": "ikhanda",
+    "indlunkulu": "indlunkulu"
   },
   "tech": {
     "amabutho": "amabutho",
