@@ -6,6 +6,10 @@ import { createConstructionSystem, PlacementResult } from '../src/sim/constructi
 import { createEconomy, Resource } from '../src/sim/economy/ledger.js';
 import { FactionId } from '../src/shared/factions/index.js';
 import { createMovementSystem } from '../src/sim/movement.js';
+import { CommandKind, makeCommand } from '../src/sim/commands.js';
+import { enqueueCommand, step } from '../src/sim/loop.js';
+import { TECH_IDS } from '../src/shared/tech/index.js';
+import { makeSim } from './simHarness.js';
 import { MovementClass, IMPASSABLE } from '../src/sim/pathing/costs.js';
 import { buildFlowField } from '../src/sim/pathing/flowField.js';
 import { createSpatialGrid } from '../src/sim/spatial/grid.js';
@@ -262,5 +266,42 @@ describe('yields', () => {
     expect(withBuilding.balance(0, Resource.Grain)).toBeGreaterThan(
       without.balance(0, Resource.Grain),
     );
+  });
+});
+
+describe('who a command acts for', () => {
+  /**
+   * Build and Research read the acting player out of the command's PAYLOAD rather than
+   * from its `playerId`. Every caller happens to pass its own id, so the two always
+   * agree today and nothing is wrong on screen — but the payload is data a client sends
+   * and `playerId` is who the command came from, and lockstep is a stated goal of this
+   * project. Under it, the payload version lets any client raise buildings for a rival,
+   * or spend a rival's grain.
+   *
+   * Cheap to close now and invisible to change, which is the best moment to do it.
+   */
+  it('builds for the player who issued the command, not the one named in it', () => {
+    const { world, economy, loop } = makeSim(64, 2);
+    const before = economy.balance(1, Resource.Grain);
+
+    // Issued by player 0, but the payload names player 1.
+    enqueueCommand(loop, makeCommand(0, 0, 0, CommandKind.Build, 6, 6, BuildingType.GrainStore, 1));
+    step(loop);
+
+    const site = world.kind.findIndex((k, i) => k === EntityKind.Building && world.alive[i] === 1);
+    expect(site).toBeGreaterThanOrEqual(0);
+    expect(world.faction[site]).toBe(0);
+    expect(economy.balance(1, Resource.Grain)).toBe(before);
+  });
+
+  it('researches for the player who issued the command, not the one named in it', () => {
+    const { tech, loop } = makeSim(64, 3);
+
+    enqueueCommand(loop, makeCommand(0, 0, 0, CommandKind.Research, 0, 1, 0, 0));
+    step(loop);
+
+    // Player 1 was named in the payload; player 0 sent it, so player 0 is researching.
+    expect(tech.status[1 * TECH_IDS.length]).toBe(0);
+    expect(tech.status[0]).toBe(1);
   });
 });

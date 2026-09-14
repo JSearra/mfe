@@ -203,12 +203,17 @@ export function applyCommand(
     case CommandKind.Leash:
       return cattle.leash(world, command.a as Handle, command.b as Handle);
 
+    // The acting player is who SENT the command, never a player named in its payload.
+    // Both read command.d / command.b once. Every caller passes its own id, so the two
+    // have always agreed and nothing was visibly wrong — but the payload is data a
+    // client controls and playerId is provenance, and under the lockstep this project
+    // keeps possible the payload version lets any client build with a rival's grain.
     case CommandKind.Build:
       return (
         construction.place(
           world,
           economy,
-          command.d,
+          command.playerId,
           command.c as BuildingType,
           command.a,
           command.b,
@@ -219,7 +224,8 @@ export function applyCommand(
     case CommandKind.Research: {
       const id = TECH_IDS[command.a];
       if (id === undefined) return false;
-      return tech.begin(command.b, id, economy);
+      // Provenance, not payload — see the note on Build above.
+      return tech.begin(command.playerId, id, economy);
     }
 
     case CommandKind.Train:
