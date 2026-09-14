@@ -24,6 +24,10 @@ export interface PathingStats {
   flowFieldsQueued: number;
   flowFieldsBuiltThisTick: number;
   expansionsThisTick: number;
+  /** Results computed but not yet collected. Should sit at or near zero. */
+  unclaimedResults: number;
+  /** Results dropped unclaimed. Normal in small numbers; a climbing rate is a caller bug. */
+  discardedResults: number;
 }
 
 interface Request {
@@ -91,6 +95,8 @@ export function createPathingService(map: Heightmap): PathingService {
     flowFieldsQueued: 0,
     flowFieldsBuiltThisTick: 0,
     expansionsThisTick: 0,
+    unclaimedResults: 0,
+    discardedResults: 0,
   };
 
   function layerFor(movementClass: MovementClass): CostLayer {
@@ -164,6 +170,7 @@ export function createPathingService(map: Heightmap): PathingService {
       const result = results.get(handle);
       if (result === undefined) return null;
       results.delete(handle);
+      stats.unclaimedResults = results.size;
       return result;
     },
 
@@ -171,6 +178,25 @@ export function createPathingService(map: Heightmap): PathingService {
       stats.servedThisTick = 0;
       stats.expansionsThisTick = 0;
       stats.flowFieldsBuiltThisTick = 0;
+
+      /*
+       * Results expire after one tick.
+       *
+       * They used to live until collected, and a great many are never collected:
+       * clearRoute abandons a ticket, a group folded into a shared flow field abandons
+       * one each, a stuck unit's repath overwrites its own, and a unit that dies with a
+       * request outstanding is skipped by collectPaths altogether. Every one of those
+       * left a PathResult and its tile array in this map for the rest of the match.
+       *
+       * Cancelling at each of those sites would work until someone adds a fifth, which
+       * is the hand-maintained-list shape that has already cost this project a save.
+       * Expiry cannot be forgotten. It is safe because the caller's order within a tick
+       * is fixed — resolveOrders, process, collectPaths — so a result is always
+       * collected in the tick it was produced, and anything still here belongs to a
+       * caller that has moved on.
+       */
+      stats.discardedResults += results.size;
+      results.clear();
 
       let built = 0;
       while (fieldQueue.length > 0 && built < maxFlowFieldsPerTick) {
@@ -201,6 +227,7 @@ export function createPathingService(map: Heightmap): PathingService {
 
       stats.servedThisTick = served;
       stats.pending = queue.length;
+      stats.unclaimedResults = results.size;
     },
 
     invalidateFields(): void {

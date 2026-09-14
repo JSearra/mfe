@@ -433,3 +433,43 @@ describe('one rule for diagonals', () => {
     expect(result.path).toEqual([0, 3]);
   });
 });
+
+describe('abandoned path requests', () => {
+  /**
+   * `results` is filled by process() and emptied only by consumePath(). Tickets are
+   * abandoned all over movement.ts — clearRoute drops one, a group folded into a flow
+   * field drops one each, a stuck unit's repath overwrites its own, and a unit that dies
+   * with a request outstanding is skipped by collectPaths entirely. None of those
+   * consume, so every one left a PathResult, tile array and all, in the map for the rest
+   * of the match.
+   *
+   * Nothing can be fixed by remembering to cancel at each of those sites; that is the
+   * same hand-maintained-list shape that has already cost this project a save. Results
+   * expire instead: process() runs once a tick and collectPaths consumes immediately
+   * after it, so anything still unclaimed when the next process() begins is abandoned by
+   * definition.
+   */
+  const map = flatMap(16);
+
+  it('hands a result to a caller that collects it in the same tick', () => {
+    const pathing = createPathingService(map);
+    const ticket = pathing.requestPath(0, 16 * 15 + 15, MovementClass.Infantry);
+    pathing.process();
+
+    expect(pathing.consumePath(ticket)).not.toBeNull();
+    expect(pathing.stats.discardedResults).toBe(0);
+  });
+
+  it('does not hoard results nobody ever collects', () => {
+    const pathing = createPathingService(map);
+
+    for (let tick = 0; tick < 200; tick++) {
+      pathing.requestPath(0, 16 * 15 + 15, MovementClass.Infantry);
+      pathing.process();
+    }
+
+    // 199 abandoned, the 200th still claimable.
+    expect(pathing.stats.unclaimedResults).toBeLessThanOrEqual(1);
+    expect(pathing.stats.discardedResults).toBeGreaterThan(100);
+  });
+});
