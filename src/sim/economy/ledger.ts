@@ -136,28 +136,46 @@ export function createEconomy(
 
       economy.upkeepCount++;
       const droughtNow = economy.drought(tick);
-      const parched = droughtNow >= e.droughtThreshold;
+
+      /*
+       * Yield falls away with the drought instead of off a cliff at a threshold.
+       *
+       * It used to be all or nothing: below droughtThreshold a plot paid
+       * base * (1 - drought/2), and at or above it the open veld paid nothing at all.
+       * At the shipped numbers that was 37.8 grain a cycle at 74% drought and 8.1 at
+       * 75% — an 86% collapse for a one-point change in a value the player watches tick
+       * upward. Nothing about that is plannable, and planning around the dry season is
+       * the whole of what this mechanic is for.
+       *
+       * Squared, so the bite comes late: a merely dry year is a dip, a real drought is a
+       * catastrophe. Sheltered ground — a river bottom, a kloof — never falls below its
+       * floor, which is what makes it worth holding and is the drought's counterplay.
+       */
+      const openFactor = 1 - droughtNow * droughtNow;
+      const shelteredFactor =
+        openFactor < e.shelteredYieldFactor ? e.shelteredYieldFactor : openFactor;
 
       // --- harvest ----------------------------------------------------------
       for (const plot of plots) {
         if (plot.owner >= players) continue;
-        // Open savanna yields nothing once the drought passes the threshold. Sheltered
-        // ground keeps producing, at a reduced rate.
-        const yieldNow = parched
-          ? plot.sheltered
-            ? e.plotBaseYield * e.shelteredYieldFactor
-            : 0
-          : e.plotBaseYield * (1 - droughtNow * 0.5);
-        economy.add(plot.owner, Resource.Grain, yieldNow);
+        economy.add(
+          plot.owner,
+          Resource.Grain,
+          e.plotBaseYield * (plot.sheltered ? shelteredFactor : openFactor),
+        );
       }
 
       // --- buildings --------------------------------------------------------
       if (buildingYield !== undefined) {
         for (let player = 0; player < players; player++) {
           const produced = buildingYield(player);
-          // A granary full of nothing is still empty: buildings share the drought.
-          const factor = parched ? e.shelteredYieldFactor : 1;
-          economy.add(player, Resource.Grain, produced.grain * factor * (grainMultiplier?.(player) ?? 1));
+          // A granary full of nothing is still empty: buildings share the drought, on
+          // the sheltered curve — they are built structures, not open veld.
+          economy.add(
+            player,
+            Resource.Grain,
+            produced.grain * shelteredFactor * (grainMultiplier?.(player) ?? 1),
+          );
           economy.add(player, Resource.Cattle, produced.cattle);
         }
       }
@@ -189,10 +207,10 @@ export function createEconomy(
           economy.spend(player, Resource.Grain, needed);
           shortfall[player] = 0;
 
-          // The herd grows only when it is fed.
+          // The herd grows only when it is fed, and grows slowly on dry grazing.
           const growth =
             (onLedger * e.cattleGrowthPerHundred) / 100 * config.herdGrowthMultiplier;
-          economy.add(player, Resource.Cattle, growth * (parched ? 0.25 : 1));
+          economy.add(player, Resource.Cattle, growth * shelteredFactor);
         } else {
           economy.spend(player, Resource.Grain, held);
           shortfall[player] = needed - held;

@@ -100,3 +100,38 @@ milestone rather than a task and its size is a decision nobody has taken.
   world field would be tidy but moves the save schema and every golden checkpoint for no
   functional gain, so it is documented where it is declared rather than deleted. Worth
   folding into the next change that re-records the fixture anyway.
+
+## F. Playtest findings (September, two complete matches)
+
+Two matches played to an outcome in a browser. The first ended **Defeat at tick 4768**,
+about four minutes in, without ever meeting an enemy: the whole impi starved while
+holding 136 cattle. The second, after the fixes below, ended **Victory at tick 10211**.
+
+Fixed in that pass:
+
+- **The economy was net negative at tick zero.** Income 60 grain per upkeep against 67.1
+  for the army and herd every player starts with, in *perfect* weather. The 400 starting
+  grain was a countdown, not a buffer. Worse, upkeep scales with cattle held, so closing
+  on the 200-cattle victory condition took it to −21.4 — the objective accelerated your
+  own starvation. `plotBaseYield` 6 → 12.
+- **Drought was a cliff, not a curve.** 37.8 grain a cycle at 74% drought, 8.1 at 75%: an
+  86% collapse for a one-point change in a number the player watches tick upward. Now
+  falls continuously as `1 − drought²`, with sheltered ground held above a floor.
+- **The year was four minutes**, so the first crisis landed ninety seconds in. Now ten.
+
+Still open, and all of them decisions rather than defects:
+
+- **The victory condition can be reached by doing nothing.** The winning match above was
+  won without issuing a single order: the ledger herd grows ~1.5% per upkeep, which
+  carries 120 cattle to 200 in roughly eight minutes on its own. Raiding — the mechanic
+  the whole game is built around — is currently optional. Lowering
+  `cattleGrowthPerHundred`, raising `cattleToWin`, or capping growth by kraal capacity
+  would each fix it, and they play very differently. Worth deciding deliberately.
+- **Starvation damage is not proportional to the shortfall.** Being five grain short does
+  the same damage, to every unit you own, as being five hundred short. A small miss
+  should be a warning, not the same catastrophe as a collapse.
+- **Troops spawn in perfectly straight parade-ground columns**, which is the first thing
+  on screen and reads as placeholder.
+- **The command panel offers actions that silently fail**: Train on an unfinished
+  building, and buildings or techs that cannot be afforded. The click does nothing and
+  says nothing.

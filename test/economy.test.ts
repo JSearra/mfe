@@ -11,7 +11,8 @@ import { createStartingPlots } from '../src/sim/economy/plots.js';
 import { heightmapFrom } from '../src/shared/heightmap.js';
 import { flatMap } from './simHarness.js';
 import { tuning } from '../src/sim/tuning.js';
-import { createWorld, spawn, type World } from '../src/sim/world.js';
+import { createWorld, EntityKind, spawn, type World } from '../src/sim/world.js';
+import { NEUTRAL_FACTION } from '../src/sim/commands.js';
 
 const E = tuning.economy;
 const PLAYERS = [FactionId.Zulu, FactionId.Sotho] as const;
@@ -163,17 +164,20 @@ describe('drought', () => {
     expect(other.drought(mid)).not.toBe(economy.drought(mid));
   });
 
-  it('zeroes open plots at the threshold and spares sheltered ones', () => {
+  it('dries open plots out gradually and keeps sheltered ones above a floor', () => {
     const plots: GrainPlot[] = [
       { tileX: 1, tileY: 1, owner: 0, sheltered: false },
       { tileX: 2, tileY: 2, owner: 0, sheltered: true },
     ];
 
-    // Find a tick where the drought has crossed the threshold.
+    // Find a tick deep enough into a bad year that open ground has dried well below
+    // the sheltered floor. There is no threshold to cross any more — yield falls with
+    // the drought rather than off a cliff — so this looks for severity instead.
     const probe = createEconomy(PLAYERS, 3, plots);
     let parchedTick = -1;
     for (let tick = E.upkeepIntervalTicks; tick < E.seasonTicks * 4; tick += E.upkeepIntervalTicks) {
-      if (probe.drought(tick) >= E.droughtThreshold) {
+      const drought = probe.drought(tick);
+      if (1 - drought * drought < E.shelteredYieldFactor) {
         parchedTick = tick;
         break;
       }
@@ -191,10 +195,16 @@ describe('drought', () => {
     for (const economy of [noPlots, openOnly, shelteredOnly]) economy.update(world, []);
 
     const control = noPlots.balance(0, Resource.Grain);
-    // Open savanna yields exactly nothing past the threshold...
-    expect(openOnly.balance(0, Resource.Grain)).toBe(control);
-    // ...while a river bottom or a kloof keeps producing, which is the counterplay.
-    expect(shelteredOnly.balance(0, Resource.Grain)).toBeGreaterThan(control);
+    const open = openOnly.balance(0, Resource.Grain) - control;
+    const shelteredYield = shelteredOnly.balance(0, Resource.Grain) - control;
+
+    // Open savanna is nearly spent, but not switched off: the player watching the
+    // number fall can still see it falling, which is what makes it plannable.
+    expect(open).toBeGreaterThan(0);
+    expect(open).toBeLessThan(E.plotBaseYield * E.shelteredYieldFactor);
+    // A river bottom or a kloof holds its floor, which is the counterplay.
+    expect(shelteredYield).toBeGreaterThan(open);
+    expect(shelteredYield).toBeCloseTo(E.plotBaseYield * E.shelteredYieldFactor, 6);
   });
 });
 
@@ -311,5 +321,80 @@ describe('arable land', () => {
     expect(withPlots.balance(0, Resource.Grain)).toBeGreaterThan(
       barren.balance(0, Resource.Grain),
     );
+  });
+});
+
+describe('can a player survive their own opening position', () => {
+  /**
+   * The test that was missing, and the reason a completed playthrough ended in Defeat
+   * four minutes in without meeting an enemy.
+   *
+   * The shipped economy was net -7.1 grain per upkeep at tick zero in perfect weather —
+   * income 60 against upkeep 67.1 for the army and herd every player starts with. The
+   * 400 starting grain was not a buffer, it was a countdown, and the first drought
+   * turned it into a short one. Worse, upkeep scales with cattle held, so closing on the
+   * 200-cattle victory condition took the deficit to -21.4: the objective accelerated
+   * your own starvation.
+   *
+   * Nothing in the suite looked at whether the numbers add up, because every economy
+   * test asserted a mechanism — upkeep is charged, drought scales yield — and none
+   * asserted that a player can live.
+   */
+  function opening(seed: number) {
+    const map = flatMap(48);
+    const world = createWorld(128, seed);
+    // What a match actually starts with: a Zulu impi and the herd around it.
+    for (let i = 0; i < 24; i++) spawn(world, 20 + (i % 6) * 0.5, 20 + (i / 6 | 0) * 0.5, 0);
+    for (let i = 0; i < 28; i++) {
+      spawn(world, 26 + (i % 7) * 0.5, 26 + (i / 7 | 0) * 0.5, NEUTRAL_FACTION, 1, EntityKind.Cattle);
+    }
+    const economy = createEconomy(
+      [FactionId.Zulu, FactionId.Sotho],
+      seed,
+      createStartingPlots(map, [{ x: 20, y: 20 }, { x: 40, y: 40 }], seed),
+    );
+    return { world, economy };
+  }
+
+  it('does not starve standing still through a whole year', () => {
+    // Every seed is a different drought severity, so this covers mild years and ruinous
+    // ones alike.
+    for (const seed of [1, 7, 42, 0x51ee, 0xbeef]) {
+      const { world, economy } = opening(seed);
+      const events: SimEvent[] = [];
+      let lowest = Infinity;
+
+      for (let tick = 1; tick <= tuning.economy.seasonTicks; tick++) {
+        world.tick = tick;
+        economy.update(world, events);
+        lowest = Math.min(lowest, economy.balance(0, Resource.Grain));
+      }
+
+      expect(lowest, `seed ${seed} ran out of grain doing nothing`).toBeGreaterThan(0);
+      expect(
+        events.filter((e) => e.type === EventType.Starved).length,
+        `seed ${seed} starved its own troops`,
+      ).toBe(0);
+    }
+  });
+
+  it('still makes the dry season hurt', () => {
+    // The opposite failure: an economy so generous the mechanic stops mattering. At the
+    // height of a bad year the harvest must not cover upkeep, or there is nothing to
+    // plan around and sheltered ground is worth nothing.
+    const { economy } = opening(0xbeef);
+    const season = tuning.economy.seasonTicks;
+
+    let worst = Infinity;
+    for (let tick = 0; tick < season; tick += 50) worst = Math.min(worst, -economy.drought(tick));
+    const peak = -worst;
+    expect(peak).toBeGreaterThan(0.5);
+
+    const open = 1 - peak * peak;
+    const income =
+      tuning.economy.plotBaseYield *
+      (7 * open + 3 * Math.max(open, tuning.economy.shelteredYieldFactor));
+    const upkeep = (24 * tuning.economy.grainPerUnit + 148 * tuning.economy.grainPerCattle) * 1.1;
+    expect(income, 'the worst of a bad year should not pay for itself').toBeLessThan(upkeep);
   });
 });
