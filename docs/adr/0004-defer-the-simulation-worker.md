@@ -53,3 +53,26 @@ impossible rather than merely discouraged.
 - Vite's dev-server worker handling and production bundling have historically differed.
   Verify `new Worker(new URL(...), { type: 'module' })` against a **production build** on the
   day of the flip, not at launch.
+
+## Outcome (the flip happened)
+
+The worker is the default now; `?sim=direct` keeps the main-thread host one query
+parameter away, because stepping a simulation in a debugger is worth a great deal when
+something is wrong.
+
+The prediction held exactly. The flip was one host implementation and nothing in
+`src/render` was touched. What made that true was not the `SimHost` interface on its own
+but the rule the interface existed to protect — that rendering reads snapshots and events
+and never the world — enforced by lint for the whole time the worker did not exist.
+
+One thing this ADR did not anticipate: the hosts had to MOVE, out of `src/sim` and into
+`src/host`. A host translates wall-clock time into ticks, and that is not simulation
+logic; leaving it under the determinism ban would have meant carving an exception for the
+worker's own clock, which is precisely the sort of exception that stops a ban meaning
+anything.
+
+Also settled, and recorded here because this ADR is where the worry was written down:
+speed and pause live on the host. The tick stays a fixed 50ms — every determinism
+guarantee rests on that — and the host only changes how many identical ticks a second of
+real time buys.
+

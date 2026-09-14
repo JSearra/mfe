@@ -132,12 +132,26 @@ which is why it is decided before Phase 2 rather than reserved as a field. See A
 
 ## 4. Rendering and depth sort
 
-**Terrain** bakes into 16x16-tile `RenderTexture` chunks — roughly 64 quads, not 16,384
-sprites with per-frame transform recalculation. Cull chunks, not tiles.
+**Terrain is chunked, but not baked.** The original plan here was 16x16-tile
+`RenderTexture` chunks — "roughly 64 quads, not 16,384 sprites". ADR-0010 rejected the
+bake on VRAM grounds and the chunks are 32 tiles square, culled as whole chunks.
 
-**Everything that occludes goes in one depth-sorted dynamic pass**: cliff faces, trees,
-buildings, units, cattle. Tall terrain props are *not* part of the terrain bake, because a
-unit standing behind a cliff edge must sort against that cliff.
+What actually draws, now that tile art exists, is two global layers rather than one pass
+per chunk: every cliff face as retained `Graphics` geometry, and every tile top as a
+sprite off one atlas page above it. So it IS the 16,384 sprites the original note set out
+to avoid — and they cost less than the bake would have, because they all share a texture
+and batch into a single call. ADR-0010 predicted exactly this and said to revisit when
+tile art landed; this is that revisit.
+
+**Most of what occludes goes in one depth-sorted dynamic pass**: trees, buildings, units,
+cattle. Vegetation joins that sort rather than the terrain, because a tree that cannot be
+stood behind is a painted backdrop.
+
+**Cliff faces are the exception, and it is a known gap.** They live in the terrain layer,
+so a unit behind a tall cliff draws in front of it. Closing it means pulling faces out of
+the chunk geometry and into the dynamic pass, and it has not been worth the cost yet: a
+real map carries around 2,600 faces, and they are drawn as per-elevation strata in a
+Graphics that was already being built, at no extra display object.
 
 Depth key is `(tileX + tileY)` with an `entityId` tie-break. Three non-obvious requirements:
 
@@ -152,9 +166,14 @@ Depth key is `(tileX + tileY)` with an `entityId` tie-break. Three non-obvious r
   occlusion (correct, but admits cycles needing stable arbitrary breaking), or constrain
   footprints and art so ambiguity cannot arise. We take the third.
 
-Pixi's `sortableChildren`/`zIndex` re-sorts the whole container each frame and allocates.
-At a few hundred entities that is likely fine — prove it with the benchmark rather than
-assuming it either way.
+Pixi's `sortableChildren`/`zIndex` is not used. The sort is applied by re-parenting
+children in order, which is what child order means to Pixi — and measured, that is the
+expensive part rather than the sorting: `addChild` removes before it appends and the
+removal is a linear scan, so re-parenting several hundred objects every frame is
+quadratic. It is skipped on frames where the order has not changed, which is most of
+them, and that is compared against the previous ORDER rather than against the
+comparator's swap count: zero swaps means nothing was reordered, not that nothing
+changed, and an entity dying as another spawns shifts the mapping with neither.
 
 ### Performance budget
 
@@ -196,20 +215,29 @@ shared-reference leak then fails immediately instead of at flip time.
 
 ### Snapshot schema
 
-Per entity, roughly 20 bytes:
+Per entity, roughly 25 bytes. The schema is declared once in `src/shared/snapshot.ts` and
+the codec is derived from it, so this table is a description of that declaration and not a
+second copy of it — if the two disagree, the file is right.
 
 | field | type | notes |
 |---|---|---|
 | `handle` | `u32` | index + generation packed |
+| `animStartTick` | `u32` | required — see interpolation |
 | `x`, `y` | `f32` | position at tick end |
 | `facing` | `u8` | quantized to the atlas direction count |
-| `animState` | `u8` | idle / walk / attack / die |
-| `animStartTick` | `u32` | required — see interpolation |
+| `animState` | `u8` | idle / walk / stampede |
 | `faction` | `u8` | |
-| `flags` | `u8` | damaged, stunned, panicked, carrying |
+| `flags` | `u8` | herd state, and room for more |
 | `hpPct` | `u8` | |
+| `kind` | `u8` | unit, cattle or building — the discriminator the rest reads through |
+| `subtype` | `u8` | movement class for a unit, building type for a building |
+| `stressPct` | `u8` | cattle only, and the whole of Gate 1's readout |
+| `progressPct` | `u8` | construction, drawn as the building stage |
 
-2000 entities is ~40KB per snapshot, ~800KB/s at 20Hz. Structured clone handles that
+The last four arrived with the systems that needed them and are worth noting as a pattern:
+a kind discriminator plus a few kind-specific bytes has been cheaper every time than a
+second entity store or a union keyed on type. 2000 entities is ~50KB per snapshot,
+~1MB/s at 20Hz. Structured clone handles that
 comfortably; transferable `ArrayBuffer`s make it free when the worker lands. **Do not reach
 for `SharedArrayBuffer`** — it adds a tearing problem (a snapshot read while the sim writes
 yields half-updated positions) requiring a seqlock or double buffer with `Atomics`, to save
@@ -373,7 +401,12 @@ Three mitigations, to decide before commissioning anything:
 
 - Mirror 3 of 8 directions — 5 unique, as AoE2 did.
 - Palette-swap player colour **in a shader**. Pre-tinted per-faction atlases multiply the
-  budget by faction count.
+  budget by faction count. **Done**, and the shape of the answer is worth recording: the
+  parts carrying player colour render as their own trimmed frames on the SAME atlas page,
+  and the renderer draws them over the body with a per-faction tint. Pixi applies tint in
+  its batch shader, so that is a shader swap in the one version that does not break the
+  batch — a filter per sprite would have cost a draw call per unit. Nearly free in atlas
+  terms, because a team frame is a shield marking and nothing else.
 - Share silhouettes across factions where historically defensible.
 
 The renderer stays asset-agnostic: an asset-manifest indirection, with no code referencing

@@ -3,19 +3,27 @@
 Browser 2D isometric RTS (Age of Empires II lineage), set in early-19th-century southern
 Africa. Defining mechanic: cattle herding, flocking and stampedes.
 
-**Current phase: backlog.** Phases 0-6 are complete. The backlog in `docs/ROADMAP.md`
-is ordered by retrofit cost — fog of war first, because it changes the snapshot
-signature; then save/load, then the worker flip.
+**Current state: the single-player game is playable end to end.** Phases 0-6 and the whole
+backlog are done — fog, save/load, the worker flip, combat, buildings, AI, audio, the four
+map scripts, tech, production, victory, a HUD. So is the command vocabulary (attack-move,
+stances with pursuit, an order queue, control groups, patrol), the game lifecycle (setup
+screen, restart, pause and speed), and the art: terrain, units, cattle, buildings and
+vegetation all render from a generated atlas.
+
+What is open is in `tasks/plan.md` and `docs/MULTIPLAYER.md`. Multiplayer is deliberately
+not started: the invariants are all in place and none is proven across two machines.
+
 Design reasoning lives in `docs/ARCHITECTURE.md`. Reversals of the original brief are
 recorded in `docs/adr/`. Read the ADR before re-opening a settled decision.
 
 ## Determinism (hard invariant — lockstep multiplayer must stay possible)
 
 - Sim state lives in `Float64Array`. Not fixed-point. See ADR-0002.
-- **Banned inside `src/sim/**`:** `Math.random`, `Math.sin`, `Math.cos`, `Math.tan`,
+- **Banned inside `src/sim/**` AND `src/shared/**`:** `Math.random`, `Math.sin`, `Math.cos`, `Math.tan`,
   `Math.atan2`, `Math.exp`, `Math.log`, `Math.pow`, the `**` operator, `Math.hypot`,
   `Date.now`, `performance.now`. These are implementation-defined or non-reproducible.
-  ESLint enforces this; do not suppress it.
+  ESLint enforces this over both trees — anything the simulation shares has to be as
+  reproducible as the simulation — and it is not to be suppressed.
 - Use `src/sim/math/rng.ts` (seeded xoshiro128**, state is serializable) and
   `src/sim/math/trig.ts` (lookup table + lerp).
 - Distance is `Math.sqrt(dx*dx + dy*dy)`. Never `Math.hypot`.
@@ -41,16 +49,25 @@ recorded in `docs/adr/`. Read the ADR before re-opening a settled decision.
 
 - Commands are the **sole** path by which sim state changes. Systems do not mutate directly.
 - Same-tick commands are ordered by `(playerId, sequence)`.
-- Selection is client state. It never enters the sim.
+- Selection is client state. It never enters the sim — and that includes control groups,
+  which are therefore entirely in `src/render/selection.ts` with no command and no world
+  field.
 - Entity handles are `(index: u24, generation: u8)` packed into a `u32`. Check `isAlive()`
   at every command dispatch and snapshot decode — a recycled index without a generation
   check retargets an unrelated entity.
+  - **The generation occupies the TOP eight bits, bit 31 included.** A handle whose
+    generation has reached 128 has its high bit set, so "the high bit is free" is false
+    and has already caused one bug. The range that IS free is generation zero: `spawn`
+    never issues it, skipping 255 to 1 on wrap.
 - Target entities by **handle**, never by position. The player clicks what they see, which
   is ~75ms stale.
 
 ## Content & strings
 
 - No hardcoded user-facing strings. `t()` only. `en` is the only locale until the UI settles.
+  **Nest new keys.** `LeafPaths` cannot tell a nested path from a flat key containing
+  dots, so `"alert.stampede"` written at the top level of the dictionary typechecks and
+  then renders the raw key on screen — the one shape the key union does not catch.
 - Proper nouns and material-culture terms are **not** translated, only glossed.
   See `docs/CONTENT.md` before naming anything.
 - Tuning constants live in a data file, never inline in systems. Two files, and the split
@@ -69,12 +86,23 @@ npm test           # vitest
 npm run replay     # golden replay hash test (the determinism gate)
 npm run replay:record  # re-record the golden fixture — deliberate, see below
 npm run perf:terrain    # render performance budget, drives a real browser (nightly in CI)
+npm run perf:terrain -- --software   # ...on the software renderer CI actually has
 npm run perf:pathing    # simulation movement and path-request budgets
+node scripts/screenshot.mjs out.png  # drive the running game and photograph it
 ```
+
+`npm test` includes simulation soaks — the golden replay runs 10,000 ticks — so the Vitest
+timeout is raised well past its default. That default is tuned for unit tests and this
+suite is not only unit tests; see the note in `vitest.config.ts`.
 
 ## Definition of done
 
 Every change: `typecheck` clean, `lint` clean, `test` passes, `replay` hash unchanged.
+Anything touching the renderer or the art: **look at it**, in a browser, before believing
+it. Every art and rendering defect this project has shipped passed every gate — a palette
+that destroyed texture, decapitated sprites, a repeating hoop across the veld, and a
+colour overflow that rendered the entire page black. None was reachable from types, tests
+or output size.
 
 If `replay` reports a **tuning mismatch**, the tuning file changed: re-record with
 `npm run replay:record` and say why in the commit message. If it reports **divergence at

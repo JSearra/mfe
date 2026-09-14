@@ -87,3 +87,20 @@ A single conflated number hides which of the two regressed, and would have read 
   excludes shader compilation.
 - The derived-table obligation in (3) is the one that will bite later, when buildings
   start blocking tiles. `blockTile` is the only safe route.
+
+## Held up under pursuit (added later)
+
+Stances brought pursuit, which is a unit continuously re-targeting a moving quarry — the
+exact shape of the disaster this ADR records, if written naively. Two rules from here were
+applied deliberately:
+
+- **A pursuer re-routes only when its quarry has moved more than a tile.** Re-pathing
+  every pursuer every tick is a full route solve per unit per tick, which is what took the
+  original implementation to 81.9ms.
+- **Only units with no standing move order pursue.** That is mechanically necessary rather
+  than merely cheap — pursuit works by writing the quarry's position into the move goal, so
+  a marching unit that pursued would overwrite the destination it was sent to.
+
+`perf:pathing` still passes. The budgets it asserts were rewritten in the meantime for a
+different reason; see ADR-0016.
+

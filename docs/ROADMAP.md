@@ -393,17 +393,9 @@ npm run lint                            # no hardcoded strings
    it behaves exactly as before — the failure mode is "the upgrade does nothing", not "the
    simulation breaks".
 
-**The backlog is clear**, and unit production has since closed the core loop. What
-remains:
+**The backlog is clear**, and the single-player game is playable end to end. What has
+landed since, and what is left:
 
-- **Art.** The pipeline exists (ADR-0015, `tools/art/`): generation for surfaces, Blender
-  headless for unit sheets. What is not done is the art itself, nor the two remaining
-  atlas-budget mitigation of shared silhouettes. Player colour is done: the parts that
-  carry it render as their own trimmed frames on the same atlas page, and the renderer
-  draws them over the body tinted per faction. The tint is applied in the renderer's own
-  batch shader, so it is the shader swap ARCHITECTURE section 9 asked for in the version
-  that does not break the batch — one set of art serves every faction, and the overlay
-  batches with the body it sits on. Draw calls unchanged at 25 of 60.
 - ~~**A victory condition.**~~ **Done.** Measured in cattle rather than corpses, because in
   this setting cattle are wealth, standing and the reason to fight — so a player who
   ignores herding cannot win by being good at everything else. The threshold must be
@@ -411,9 +403,28 @@ remains:
 - ~~**A real HUD.**~~ **Done.** Command panel (selection, build menu, research, training),
   minimap, victory track and outcome banner. Hotkeys still work; they are no longer the
   only way to find an action.
-- **Gate 2 re-run** against real sprites. The depth-sort hysteresis comparator that
-  `ARCHITECTURE.md` section 4 specified is now implemented and tested — a dense herd holds
-  its draw order through 50 frames of sub-threshold jitter — but its real test is 40
-  overlapping sprites, which needs sprites.
-- **Multiplayer.** Every determinism invariant is in place and CI-enforced; none is yet
-  proven across two machines.
+- ~~**Gate 2 re-run** against real sprites.~~ **Done and passed** — see Phase 5 above for
+  the numbers and for what it turned up that was not about legibility.
+- ~~**A command vocabulary.**~~ **Done.** Attack-move, stances, an order queue, control
+  groups, patrol. Two of those were larger than they looked: stances needed pursuit,
+  which did not exist at all — `attack` set a target and nothing ever closed with it — and
+  control groups are pure client state by rule, so they carry no command and no world
+  field.
+- ~~**A game rather than a scenario.**~~ **Done.** A setup screen choosing land, people and
+  seed; restart without reloading; pause and speed on the host, where the fixed tick is
+  not at risk.
+- ~~**The art itself.**~~ **Done**, and it is placeholder art that looks it: procedural
+  Blender for units, cattle, buildings and vegetation, local diffusion for ground
+  textures, all packed into one atlas page. Proportion, silhouette, kit and colour are
+  right; nobody will mistake it for commissioned work, and the renderer is asset-agnostic
+  behind the manifest so commissioned work drops in without touching rendering code.
+- **Shared silhouettes across factions** — the last atlas-budget mitigation from
+  ARCHITECTURE section 9, and currently moot: every faction already draws the same unit
+  models. It becomes real the moment faction-specific art exists.
+- **Wild animals.** Considered and deliberately not built. Decorative fauna is cheap and
+  lifeless; huntable game would touch entities, pathing and possibly the food economy,
+  which already has cattle in it. It wants a design decision before any code.
+- **Multiplayer.** Every determinism invariant is in place and CI-enforced; none is proven
+  across two machines. Surveyed in `docs/MULTIPLAYER.md` rather than started — what is
+  left is a transport, advancing on consensus instead of on elapsed time, and a
+  two-process soak that would turn the claim into an observation.

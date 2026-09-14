@@ -40,3 +40,11 @@ compile speed on a few thousand lines, in the phase whose job is to make the rul
   semantics.
 - Note for whoever checks: npm's `beta` dist-tag for TypeScript still points at `6.0.0-beta`
   and is stale. 6.0.3 is a real stable release.
+
+## Checked 2026-09-14
+
+typescript-eslint issue #10940 is still open, so the pin stands and nothing here changes.
+Recorded so the next session can see the trigger was looked at rather than assumed — the
+whole value of a revisit trigger is lost if checking it is itself a research task every
+time.
+

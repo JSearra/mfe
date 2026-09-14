@@ -65,3 +65,21 @@ and meaningful either way.
 
 The alternative — asserting a frame-time number that depends on whether CI happened to
 get a GPU — produces a check that is either always red or quietly meaningless.
+
+## Resolution (tile art landed)
+
+The prediction held. Tile tops are now sprites off a single atlas page, they batch across
+chunks, and the count collapsed rather than grew: **25 draw calls of a budget of 60**, with
+twelve chunks visible — against a measured 38 when each chunk was one `Graphics`.
+
+Two things learned in getting there, both about batching rather than about chunking:
+
+- **The layers have to be global, not per chunk.** A `Graphics` between every pair of
+  sprite batches breaks them, so one face-layer and one top-layer per chunk cost 114 draw
+  calls at 38 visible chunks. Split globally — all faces, then all tops — it is 25.
+- **Smaller chunks are the wrong lever, measured.** At 16 tiles the frame cost is
+  unchanged and the draw calls triple, because each chunk's face geometry is its own
+  object. The chunk size stays 32.
+
+The frame budget in this ADR is unchanged and still holds: settled p99 is around 2.3ms of
+the 8ms allowed.

@@ -125,6 +125,32 @@ needs 30 degrees of elevation at 45 degrees of azimuth. The derivation is in the
 of `render_sprites.py`; it is worth reading before changing the number, because half the
 tutorials on the subject are wrong about it.
 
+## Things that cost a pass each, so they are written down
+
+**Base colours are LINEAR; the render is sRGB on the way out.** That transfer is steep at
+the bottom — linear 0.34 leaves as roughly 158 — so a number that reads on paper as dark
+brown renders as pale grey-beige. Three separate material sets were written at plausible
+values and all came out looking like unpainted plaster, and halving the number barely
+moved the picture, which is the tell. If a colour looks washed out, render a pure red and
+measure the pixels before theorising; it settles it in one pass.
+
+**Detail below about eight source pixels does not exist.** Sources are 512px and tiles are
+64x32, so "fine detail" averages to flat colour. Anything meant to be visible in play has
+to be large in the source without being so large it becomes a subject.
+
+**A texture has no subject.** Ask for a thing and the model paints a portrait of it,
+centred — which tiles into a grid of identical centred things. The shared style says so
+explicitly, and it is still worth checking every new subject against a contact sheet.
+
+**Naming the unwanted geometry works sometimes and not others.** "No stripes, no straight
+lines" fixed sandstone reading as plywood. The same move on savanna-low replaced a gravel
+ring with a squiggle. What worked there was describing density instead: ground covered
+edge to edge leaves nowhere to put a subject.
+
+**Look at the tiled result, not the image.** `contact_sheet.py` lays every subject out the
+way the map does. Every art defect this project has shipped was invisible in the source
+file and obvious the moment it repeated.
+
 ## What still has to be decided
 
 Three things `ARCHITECTURE.md` section 9 lists as making the budget survivable, of which
