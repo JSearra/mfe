@@ -93,6 +93,9 @@ export function createAi(player: number): AiController {
       let homesteads = 0;
       let homeX = 0;
       let homeY = 0;
+      /** Centre of our own buildings. Where a beaten army falls back to. */
+      let baseX = 0;
+      let baseY = 0;
 
       for (let index = 0; index < world.capacity; index++) {
         if (world.alive[index] !== 1) continue;
@@ -112,6 +115,8 @@ export function createAi(player: number): AiController {
           const spec = buildingSpec(world.buildingType[index]!);
           if (!spec.trains) continue;
           homesteads++;
+          baseX += x;
+          baseY += y;
           if (world.buildProgress[index]! >= spec.work) trainers.push(index);
           continue;
         }
@@ -232,12 +237,24 @@ export function createAi(player: number): AiController {
         }
 
         // Outnumbered: pull back together rather than feeding units in piecemeal.
-        for (const unit of own) {
+        //
+        // Back to our own ground, not to the army's own centroid. When the enemy is on
+        // top of us the centroid IS the fight, so retreating to it retreats nowhere —
+        // which is what this did until the destination became the homesteads.
+        const rallyX = homesteads > 0 ? baseX / homesteads : homeX;
+        const rallyY = homesteads > 0 ? baseY / homesteads : homeY;
+
+        // A ring, not a point. Every unit ordered to one identical tile arrives as a
+        // scrum, and push-apart then spends the engagement fighting the stuck timer
+        // over it. This is what tuning's regroupRadius was for; nothing had used it.
+        for (let i = 0; i < own.length; i++) {
+          const unit = own[i]!;
+          const angle = (i / own.length) * TWO_PI;
           emit({
             kind: CommandKind.MoveTo,
             a: packHandle(unit.index, world.generation[unit.index]!),
-            b: homeX,
-            c: homeY,
+            b: rallyX + cos(angle) * ai.regroupRadius,
+            c: rallyY + sin(angle) * ai.regroupRadius,
             d: 0,
           });
         }

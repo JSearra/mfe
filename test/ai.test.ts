@@ -6,6 +6,7 @@ import { hashWorld } from '../src/sim/replay.js';
 import { Resource } from '../src/sim/economy/ledger.js';
 import { tuning } from '../src/sim/tuning.js';
 import { updateFog } from '../src/sim/vision/fog.js';
+import { BuildingType } from '../src/shared/buildings/index.js';
 import { EntityKind, spawn } from '../src/sim/world.js';
 import { makeSim } from './simHarness.js';
 
@@ -98,6 +99,51 @@ describe('ai as a command source', () => {
     createAi(0).decide(sim.world, sim.fog, sim.economy, sim.tech, (c) => kinds.push(c.kind));
     expect(kinds).toContain(CommandKind.MoveTo);
     expect(kinds).not.toContain(CommandKind.Attack);
+  });
+
+  it('retreats toward its own ground, not to the middle of the fight', () => {
+    // The centroid of the army IS the fight when the enemy is on top of it, so a
+    // "pull back" to that point retreats nowhere. It falls back on a homestead if it
+    // has one.
+    const sim = makeSim(128, 1, undefined, []);
+    for (let i = 0; i < 2; i++) spawn(sim.world, 30 + i * 0.4, 20, 0);
+    for (let i = 0; i < 8; i++) spawn(sim.world, 31 + i * 0.3, 20, 1);
+    sim.construction.place(sim.world, sim.economy, 0, BuildingType.Umuzi, 12, 20, []);
+
+    updateFog(sim.world, sim.map, sim.fog);
+    sim.world.tick = AI.decideEveryTicks;
+    sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
+
+    const moves: { x: number; y: number }[] = [];
+    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.tech, (c) => {
+      if (c.kind === CommandKind.MoveTo) moves.push({ x: c.b, y: c.c });
+    });
+
+    expect(moves.length).toBe(2);
+    const averageX = moves.reduce((sum, m) => sum + m.x, 0) / moves.length;
+    // Away from the enemy at x=31, back toward the homestead at x=12.
+    expect(averageX).toBeLessThan(25);
+  });
+
+  it('gives each retreating unit its own ground to stand on', () => {
+    // Every unit ordered to the identical tile arrives as a scrum: push-apart and the
+    // stuck timer then fight each other. tuning.ai.regroupRadius exists for this and
+    // was going unused.
+    const sim = makeSim(128, 1, undefined, []);
+    for (let i = 0; i < 5; i++) spawn(sim.world, 20 + i * 0.4, 20, 0);
+    for (let i = 0; i < 12; i++) spawn(sim.world, 21 + i * 0.2, 20, 1);
+
+    updateFog(sim.world, sim.map, sim.fog);
+    sim.world.tick = AI.decideEveryTicks;
+    sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
+
+    const moves: string[] = [];
+    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.tech, (c) => {
+      if (c.kind === CommandKind.MoveTo) moves.push(`${c.b.toFixed(3)},${c.c.toFixed(3)}`);
+    });
+
+    expect(moves.length).toBe(5);
+    expect(new Set(moves).size).toBe(5);
   });
 
   it('goes for cattle when there is nothing to fight', () => {
