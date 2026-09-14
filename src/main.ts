@@ -27,6 +27,7 @@ import { createInterpolator, type InterpolatedView } from './render/interpolatio
 import { installPerfHarness } from './render/perfHarness.js';
 import { createEntityLayer } from './render/scene/entities.js';
 import { planDecorations } from './render/scene/decoration.js';
+import { createDamageFlashes } from './render/scene/damage.js';
 import { loadSpriteAtlas, loadTerrainTiles } from './render/assets.js';
 import { presentation } from './render/presentation.js';
 import { createTileCursor, placeTileCursor } from './render/scene/cursor.js';
@@ -280,6 +281,7 @@ async function main(options: GameOptions): Promise<void> {
   // Scenery is derived from the map seed rather than stored: identical on every machine
   // that builds the same map, and nothing to transmit or save.
   const entities = createEntityLayer(atlas, planDecorations(map, mapSeed));
+  const damage = createDamageFlashes();
   const fog = createFogRenderer(map);
   terrain.container.addChild(cursor);
   terrain.container.addChild(entities.container);
@@ -614,6 +616,10 @@ async function main(options: GameOptions): Promise<void> {
       // exactly the thing a player needs told about, and it cannot be seen in a snapshot
       // diff any more than a death can.
       alerts.handle(message.events, performance.now());
+      // Same stream again. A blow that lands and leaves a unit standing is an event, not
+      // a state change worth diffing for — and one that kills removes the entity from the
+      // next snapshot entirely, so a diff would show nothing at all.
+      damage.handle(message.events, performance.now());
     }
     view = interpolator.sample(ticker.deltaMS);
 
@@ -626,7 +632,11 @@ async function main(options: GameOptions): Promise<void> {
     alerts.update(performance.now());
     fog.update(camera);
 
-    if (view !== null) entities.update(view, map, selection.handles);
+    if (view !== null) {
+      const at = performance.now();
+      damage.expire(at);
+      entities.update(view, map, selection.handles, damage, at);
+    }
 
     const isoX = (input.pointerX - camera.viewportWidth / 2) / camera.zoom + camera.x;
     const isoY = (input.pointerY - camera.viewportHeight / 2) / camera.zoom + camera.y;

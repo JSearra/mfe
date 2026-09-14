@@ -6,6 +6,7 @@ import { presentation } from '../presentation.js';
 import { createDepthOrder } from './depthOrder.js';
 import type { SpriteAtlas } from '../assets.js';
 import type { Decoration } from './decoration.js';
+import type { DamageFlashes } from './damage.js';
 
 /**
  * Draws entities from the interpolated view.
@@ -29,6 +30,8 @@ const hex = (value: string): number => Number.parseInt(value.slice(1), 16);
 
 const FACTION = factionColours.map(hex);
 const SELECTED = hex(selectedColour);
+/** Tint for an entity struck within the last fraction of a second. */
+const HURT = 0xff8c78;
 const CATTLE_BODY = hex(cattleStyle.bodyColour);
 const CALM = hex(cattleStyle.calmColour);
 const ALARM = hex(cattleStyle.alarmColour);
@@ -150,7 +153,13 @@ function stressColour(stressPct: number): number {
 
 export interface EntityLayer {
   readonly container: Container;
-  update(view: InterpolatedView, map: Heightmap, selected: ReadonlySet<number>): void;
+  update(
+    view: InterpolatedView,
+    map: Heightmap,
+    selected: ReadonlySet<number>,
+    damage?: DamageFlashes,
+    now?: number,
+  ): void;
   /** Screen position of each drawn entity, for hit-testing against what is on screen. */
   screenPosition(view: InterpolatedView, index: number, map: Heightmap): { x: number; y: number };
 }
@@ -271,6 +280,38 @@ function drawCow(graphics: Graphics, stressPct: number, stampeding: boolean, sel
   });
 }
 
+/**
+ * A health bar, drawn only when there is something to say.
+ *
+ * Full health draws nothing. A bar over every unit on the field is noise that hides the
+ * one piece of information it exists to carry — which of them is in trouble — and a herd
+ * of forty would be a wall of green.
+ */
+function drawHealth(
+  graphics: Graphics,
+  hpPct: number,
+  kind: number,
+  screenX: number,
+  screenY: number,
+): void {
+  if (hpPct >= 255) return;
+
+  const isCattle = kind === KIND_CATTLE;
+  const isBuilding = kind === KIND_BUILDING;
+  const width = isBuilding ? 30 : isCattle ? 20 : 16;
+  const lift = isBuilding ? 34 : isCattle ? 22 : 40;
+  const left = screenX - width / 2;
+  const top = screenY - lift;
+  const fraction = hpPct / 255;
+
+  graphics.rect(left - 1, top - 1, width + 2, 5);
+  graphics.fill({ color: 0x000000, alpha: 0.55 });
+  graphics.rect(left, top, width * fraction, 3);
+  // Green through amber to red, so the colour says how bad it is without reading a
+  // length — the same reason the cattle stress ring is coloured rather than sized.
+  graphics.fill({ color: fraction > 0.5 ? CALM : fraction > 0.25 ? ALARM : PANIC });
+}
+
 function groundHeight(map: Heightmap, worldX: number, worldY: number): number {
   const height = heightAt(map, Math.floor(worldX), Math.floor(worldY));
   return height < 0 ? 0 : height;
@@ -288,8 +329,14 @@ export function createEntityLayer(
   // cost are affordable, which is not true of units.
   const decals = new Container();
   const bodies = new Container();
+  // Health bars go above everything, in one Graphics for the whole field. Drawing them
+  // per entity would put a Graphics between every pair of sprites and break the batch;
+  // one object redrawn each frame costs a single draw call, and only wounded entities
+  // are in it.
+  const health = new Graphics();
   container.addChild(decals);
   container.addChild(bodies);
+  container.addChild(health);
 
   const markers: Marker[] = [];
   // Persistent, hysteresis-damped order. See depthOrder.ts: a plain sort by depth is
@@ -367,8 +414,15 @@ export function createEntityLayer(
       };
     },
 
-    update(view: InterpolatedView, map: Heightmap, selected: ReadonlySet<number>): void {
+    update(
+      view: InterpolatedView,
+      map: Heightmap,
+      selected: ReadonlySet<number>,
+      damage?: DamageFlashes,
+      now = 0,
+    ): void {
       const count = view.count;
+      health.clear();
 
       while (markers.length < count) {
         const decal = new Graphics();
@@ -480,6 +534,13 @@ export function createEntityLayer(
           (progressBand << 14);
 
         const position = this.screenPosition(view, index, map);
+
+        // Before the textured branch, not inside it. Health has nothing to do with
+        // whether the body is a sprite or a fallback shape, and putting it in the
+        // textured path meant the bars vanished entirely whenever the atlas failed to
+        // load — which is exactly when a player would most need to know what is going on.
+        drawHealth(health, view.hpPct[index]!, kind, position.x, position.y);
+
         const textured = atlas !== null;
 
         if (marker.signature !== signature) {
@@ -529,7 +590,11 @@ export function createEntityLayer(
           position.x - frame.anchorX * frame.scale,
           position.y - frame.anchorY * frame.scale,
         );
-        marker.sprite.tint = isSelected ? SELECTED : 0xffffff;
+        // A struck entity flashes. It takes precedence over the selection tint for the
+        // fraction of a second it lasts, because "this one is being hurt right now" is
+        // the more urgent of the two things to say.
+        const struck = damage?.isFlashing(handle, now) === true;
+        marker.sprite.tint = struck ? HURT : isSelected ? SELECTED : 0xffffff;
         marker.sprite.visible = true;
 
         // Player colour, as a tinted overlay rather than a recoloured atlas.
