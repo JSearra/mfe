@@ -25,6 +25,12 @@ better in a subsistence game than a military one. The stampede is a disaster, no
 weapon. The platform stays the browser, and that is a decision rather than an accident:
 ADR-0019 says why.
 
+**A soak harness must seed a starting force.** `createDirectSimHost` seeds nothing;
+`main.ts` spawns the units, the enemy and the herds separately. A harness that skips that
+is a ledger with a herd in it, not the game — it produced two phases' worth of plausible
+and wrong measurements before an impossible result (hungry seasons with zero starvation
+deaths) gave it away.
+
 **Retired enum values are numbered gaps, never renumbered.** `CommandKind` 5, 10 and 11,
 `EventType` 6 and `OrderMode` 1 were combat and are holes in their enums, because those
 values sit in recorded command logs and cross the worker boundary; reusing one makes an

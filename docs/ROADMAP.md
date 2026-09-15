@@ -577,11 +577,26 @@ so the no-regard path in `trade.ts` is the genuinely neutral rate — falls by h
 break, and returns at 0.004 a season, which is seventy-five seasons before anyone will
 have you again.
 
-Measured over five seeds, twenty minutes each, one village allied and the other not:
-seasons spent hungry fell 11→7, 2→0, 4→0, 7→2 and 21→18. Relief fired only in the bad
-runs — 130 grain over six seasons on one seed, 336 over seventeen on another, and nothing
-at all on the two comfortable ones. That is the design working rather than a gap in it: a
-year where everybody eats is a year the tie costs cattle for no visible return.
+**Measured badly the first time, and the corrected numbers are worse.** The original
+figures here — "seasons spent hungry fell 11→7, 2→0, 4→0" — were taken from a harness that
+seeded a map with cattle and no people, so the only upkeep in it was the herd's and the
+alliance looked like it was carrying a village it was not. Re-measured on a properly
+seeded opening, five seeds at twenty minutes each, allied against not: hungry seasons went
+75→77, 49→49, 58→57, 68→71 and 72→66. That is noise. The tie is close to a wash.
+
+The machinery is not what is wrong with it. Relief fires constantly — 48 to 72 seasons out
+of 120, moving between 19 and 907 grain — so the conditional return is exercised far more
+than the first measurement suggested. It does not help because **both villages are hungry**
+in this economy, so relief is a trickle passed between two empty granaries while the cattle
+tithe roughly cancels. An alliance between two villages that are each short is worth about
+nothing, which is arguably correct and is certainly not what the phase set out to build.
+
+*Open:* whether that is a tuning problem (the economy is too tight for anyone to have a
+surplus to lend — see the note at the end of Phase V6) or a design one (relief should be
+proportional to the giver's *surplus* rather than to their store, so a village with nothing
+spare sends nothing and one with plenty sends more). Not resolved here. The figure below is
+the part of the phase that does hold up, because it is a property of the pricing rather
+than of the economy around it.
 
 The price of walking out, measured on identical books one tick apart: 8 cattle bought
 19.1 grain as an ally, 17.6 as a stranger and 15.6 after the break; 30 timber bought 56.7,
@@ -641,6 +656,14 @@ precisely because removing it first would leave an economy with no failure condi
 Measured over five thirty-minute AI matches on the seeded opening: 1,530–2,130 starvation
 events and 90–115 deaths per match, every one of them from hunger, with villages going
 short in 86–132 seasons out of 180. Nobody was killed by anybody.
+
+*A lesson about measuring, recorded because it cost two phases.* The soak harness used for
+V5 seeded cattle and no people, so every "village" in it was a ledger with a herd and
+nothing that eats grain per head. It produced plausible numbers that were wrong, and they
+went into this document as fact. What caught it was an assertion that could not be true —
+1,500 hungry seasons and zero starvation deaths — rather than any test. `createDirectSimHost`
+does not seed a starting force; `main.ts` does that separately, and a harness that skips it
+is not running the game. Both phases' numbers have been re-measured on a seeded opening.
 
 *Open, and a tuning question rather than a deletion one:* that is arguably too harsh. Peak
 village size reached 41–48 against the 60 needed to settle, and four matches in five ended
