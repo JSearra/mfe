@@ -428,3 +428,75 @@ landed since, and what is left:
   across two machines. Surveyed in `docs/MULTIPLAYER.md` rather than started — what is
   left is a transport, advancing on consensus instead of on elapsed time, and a
   two-process soak that would turn the claim into an observation.
+
+---
+
+# Part II — the village
+
+**The game changed shape on 2026-09-15. See ADR-0019.** Two matches were played to an
+outcome and neither contained a fight; every decision that mattered in both was economic.
+The RTS is not being abandoned so much as its live half is being promoted. What follows
+replaces the "what is left" list above, which was written for a war.
+
+The ordering below is deliberate and is the opposite of the intuitive one. Combat retires
+**last**. It is the only thing currently standing between the economy and having no
+failure condition at all, and a village simulator with nothing to fear is a spreadsheet.
+
+## Phase V1 — an objective that is not a body count
+
+Holding 200 cattle is the only goal the game has, and it is the reason the economy has
+teeth. Replacing it comes first because everything after it is balanced against it.
+
+*Done when:* a match can be won and lost on terms that never mention an opponent, the
+losing condition is reachable through the player's own choices rather than only through a
+timer, and the soak in `test/economy.test.ts` still holds both ways — a player who does
+nothing survives an ordinary year, and the worst of a bad one still does not pay for
+itself.
+
+*Not in this phase:* removing combat, the AI, or any command.
+
+## Phase V2 — foraging
+
+The veld is currently scenery with collision. Gathering from it is the cheapest new loop
+that makes *where* a village sits matter, and it needs no new entity kind — the
+vegetation the decoration layer already places can carry it.
+
+*Done when:* a villager sent to forage returns food, a patch depletes and recovers on a
+seasonal schedule, and the yield is worth less per head than farming but needs no land
+committed in advance.
+
+## Phase V3 — farming as a decision
+
+Grain plots are laid out once at map generation and yield forever. They become something
+the player places, tends and loses: land committed ahead of a season whose weather is not
+yet known.
+
+*Done when:* a plot is placed by command, takes work to establish, yields on the seasonal
+curve from ADR-0019's economy, and competes with grazing for the same ground — which is
+where the first self-inflicted scarcity comes from.
+
+## Phase V4 — trade
+
+*Done when:* a neighbouring settlement will exchange one resource for another at a rate
+that moves with scarcity, the offer can be refused, and the AI values the same trade from
+its own side rather than from the player's.
+
+## Phase V5 — alliances
+
+*Done when:* a neighbour can be brought into a standing relationship that costs something
+per season and returns something conditional — refuge in a bad year, cattle on loan, a
+claim on labour — and breaking it has a cost that is not a battle.
+
+## Phase V6 — retire combat
+
+Only once the loops above carry the pressure. This is a deletion phase, and the sequence
+within it matters because several systems read combat state without being about combat:
+`movement.ts` pursuit and stances, `world.ts` attack fields, the AI's fight branch, the
+damage-flash and health-bar render paths, and four commands.
+
+*Done when:* `src/sim/combat.ts` is gone, no world field exists only for it, the golden
+replay has been re-recorded deliberately with the reason in the commit, and nothing in
+`src/render` draws a health bar.
+
+*Kept deliberately:* the stampede. It is a disaster now rather than a weapon — see
+ADR-0014 and ADR-0017, neither of which is superseded.

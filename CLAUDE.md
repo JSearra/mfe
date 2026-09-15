@@ -1,17 +1,28 @@
 # Mfecane RTS — session rules
 
-Browser 2D isometric RTS (Age of Empires II lineage), set in early-19th-century southern
-Africa. Defining mechanic: cattle herding, flocking and stampedes.
+Browser 2D isometric village simulator set in early-19th-century southern Africa, built
+on an RTS engine and pivoting away from that framing (ADR-0019). Defining mechanic:
+cattle herding, flocking and stampedes.
 
-**Current state: the single-player game is playable end to end.** Phases 0-6 and the whole
-backlog are done — fog, save/load, the worker flip, combat, buildings, AI, audio, the four
-map scripts, tech, production, victory, a HUD. So is the command vocabulary (attack-move,
-stances with pursuit, an order queue, control groups, patrol), the game lifecycle (setup
-screen, restart, pause and speed), and the art: terrain, units, cattle, buildings and
-vegetation all render from a generated atlas.
+**Current state: pivoting from an RTS to a village simulator. See ADR-0019.**
 
-What is open is in `tasks/plan.md` and `docs/MULTIPLAYER.md`. Multiplayer is deliberately
-not started: the invariants are all in place and none is proven across two machines.
+Phases 0-6 and the whole original backlog are done, and the RTS is playable end to end —
+fog, save/load, the worker flip, combat, buildings, AI, audio, four map scripts, tech,
+production, victory, a HUD, a command vocabulary, a setup screen, and generated art.
+
+Then it was played to an outcome twice, and neither match contained a fight. Every
+decision that mattered in both was economic. So the game is becoming what it already was
+underneath: a village sustained through the seasons — farming, foraging, herding, trade
+and alliances — rather than an army taking a map.
+
+**The order of that work is counter-intuitive and is set out in `docs/ROADMAP.md` Part
+II. Combat retires LAST.** It is the only thing currently standing between the economy
+and having no failure condition at all; remove it first and the game has nothing to fear.
+Replace the objective, build the new loops, then delete.
+
+Cattle herding, flocking and stampedes stay — they are the defining mechanic and they are
+better in a subsistence game than a military one. The platform stays the browser, and
+that is a decision rather than an accident: ADR-0019 says why.
 
 Design reasoning lives in `docs/ARCHITECTURE.md`. Reversals of the original brief are
 recorded in `docs/adr/`. Read the ADR before re-opening a settled decision.
