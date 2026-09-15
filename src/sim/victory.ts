@@ -64,7 +64,6 @@ export function createVictoryState(players: number): VictoryState {
 
       const v = tuning.victory;
       const units = new Float64Array(players);
-      const buildings = new Float64Array(players);
 
       for (let index = 0; index < world.capacity; index++) {
         if (world.alive[index] !== 1) continue;
@@ -75,7 +74,6 @@ export function createVictoryState(players: number): VictoryState {
         const owner = world.faction[index]!;
         if (owner >= players) continue;
         if (world.kind[index] === EntityKind.Unit) units[owner]!++;
-        else if (world.kind[index] === EntityKind.Building) buildings[owner]!++;
       }
 
       for (let player = 0; player < players; player++) state.households[player] = units[player]!;
@@ -84,10 +82,20 @@ export function createVictoryState(players: number): VictoryState {
         if (state.eliminated[player] === 1) continue;
 
         // --- elimination ---------------------------------------------------
-        // No troops and nothing that could raise any. The grace period covers the gap
-        // between a last soldier dying and a homestead finishing a replacement, so a
-        // player is not counted out for being briefly empty-handed.
-        const helpless = units[player] === 0 && buildings[player] === 0;
+        //
+        // Nobody left, for longer than it takes to raise somebody. The grace period is
+        // doing the real work: a village with a homestead and grain in it puts a new
+        // household up well inside four hundred ticks, and one that cannot is finished
+        // whatever is still standing on the ground.
+        //
+        // It used to also require every building to be gone, which was only ever
+        // satisfiable because combat could knock them down. Nothing destroys a building
+        // now (Phase V6), so that clause made elimination unreachable for anyone who had
+        // ever built anything: a village starved to the last villager left its empty
+        // huts standing and the match ran on forever with no one in it. Measured before
+        // the fix — four of five AI matches ended with every villager dead and the
+        // outcome still reported as ongoing.
+        const helpless = units[player] === 0;
         if (helpless) {
           state.graceTicks[player]!++;
           if (state.graceTicks[player]! >= v.eliminationGraceTicks) {

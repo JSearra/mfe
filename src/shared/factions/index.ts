@@ -29,7 +29,15 @@ export interface FactionConfig {
    * trees.
    */
   readonly startingWood: number;
-  readonly startingAmmunition: number;
+  /**
+   * Multiplier on the margin a neighbour adds when this village asks for a trade.
+   *
+   * Below 1 means it deals finer than anyone else. This is the Griqua's identity now
+   * that powder is not a resource: they were intermediaries who lived off the exchange
+   * between the Colony and the interior, and the loops this game has make that a better
+   * trait than mounted gunnery ever was. See src/sim/trade.ts.
+   */
+  readonly tradeMargin: number;
   /** Multiplier on grain consumed per upkeep. */
   readonly upkeepMultiplier: number;
   /** Multiplier on herd growth. */
@@ -47,7 +55,7 @@ export const FACTIONS: Readonly<Record<FactionId, FactionConfig>> = {
     startingCattle: 120,
     startingGrain: 400,
     startingWood: 90,
-    startingAmmunition: 0,
+    tradeMargin: 1.0,
     upkeepMultiplier: 1.1,
     herdGrowthMultiplier: 1.0,
     herdingSkill: 1.0,
@@ -59,7 +67,7 @@ export const FACTIONS: Readonly<Record<FactionId, FactionConfig>> = {
     startingCattle: 90,
     startingGrain: 560,
     startingWood: 110,
-    startingAmmunition: 20,
+    tradeMargin: 1.0,
     upkeepMultiplier: 0.9,
     herdGrowthMultiplier: 0.95,
     herdingSkill: 0.85,
@@ -71,7 +79,7 @@ export const FACTIONS: Readonly<Record<FactionId, FactionConfig>> = {
     startingCattle: 150,
     startingGrain: 300,
     startingWood: 80,
-    startingAmmunition: 0,
+    tradeMargin: 1.05,
     upkeepMultiplier: 1.15,
     herdGrowthMultiplier: 1.15,
     herdingSkill: 0.95,
@@ -83,7 +91,7 @@ export const FACTIONS: Readonly<Record<FactionId, FactionConfig>> = {
     startingCattle: 60,
     startingGrain: 340,
     startingWood: 70,
-    startingAmmunition: 160,
+    tradeMargin: 0.7,
     upkeepMultiplier: 1.0,
     herdGrowthMultiplier: 0.85,
     herdingSkill: 1.2,
@@ -125,7 +133,8 @@ export function validateFaction(config: Partial<FactionConfig>): FactionProblem[
 
   requireFinite('startingCattle', 0);
   requireFinite('startingGrain', 0);
-  requireFinite('startingAmmunition', 0);
+  requireFinite('startingWood', 0);
+  requireFinite('tradeMargin', 0.01);
   requireFinite('upkeepMultiplier', 0.01);
   requireFinite('herdGrowthMultiplier', 0);
   requireFinite('herdingSkill', 0.01);

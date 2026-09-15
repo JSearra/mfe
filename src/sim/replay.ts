@@ -1,7 +1,6 @@
 import { hashTypedArray } from '../shared/hash.js';
 import { createLoop, step } from './loop.js';
 import { createCattleSystem } from './cattle.js';
-import { createCombatSystem } from './combat.js';
 import { createTechState } from './tech.js';
 import { createVictoryState } from './victory.js';
 import { createProductionSystem } from './production.js';
@@ -100,7 +99,6 @@ export function runReplay(
       world,
       movement,
       cattle: createCattleSystem(),
-      combat: createCombatSystem(),
       construction: createConstructionSystem(map, movement.pathing),
       production: createProductionSystem(movement),
       economy,

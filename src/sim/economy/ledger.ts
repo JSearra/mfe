@@ -16,17 +16,25 @@ import { EntityKind, handleIndex, isAlive, NULL_HANDLE, packHandle, type World }
  * exactly.
  */
 
+/**
+ * What a village holds.
+ *
+ * `Ammunition` was 2 until Phase V6. It existed to be spent per shot and nothing else,
+ * so retiring combat left it a column that could only ever go up. Unlike the event and
+ * command enums, resource indices are not durable wire values — no recorded command log
+ * names one — so this renumbers rather than leaving a gap, and the save format moves
+ * with it.
+ */
 export const Resource = {
   Cattle: 0,
   Grain: 1,
-  Ammunition: 2,
   /** Timber, cut from the woodland. See src/sim/woodland.ts. */
-  Wood: 3,
+  Wood: 2,
 } as const;
 
 export type Resource = (typeof Resource)[keyof typeof Resource];
 
-export const RESOURCE_COUNT = 4;
+export const RESOURCE_COUNT = 3;
 
 export interface Economy {
   readonly players: number;
@@ -100,7 +108,6 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
     const config = factions[player]!;
     amounts[player * RESOURCE_COUNT + Resource.Cattle] = config.startingCattle;
     amounts[player * RESOURCE_COUNT + Resource.Grain] = config.startingGrain;
-    amounts[player * RESOURCE_COUNT + Resource.Ammunition] = config.startingAmmunition;
     amounts[player * RESOURCE_COUNT + Resource.Wood] = config.startingWood;
   }
 
@@ -261,8 +268,6 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
           shortfall[player] = needed - held;
           starve(world, player, events);
         }
-
-        economy.add(player, Resource.Ammunition, e.ammunitionPerUpkeep * (config.startingAmmunition > 0 ? 1 : 0));
       }
     },
   };

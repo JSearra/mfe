@@ -48,6 +48,9 @@ const WATCHED: Readonly<Record<number, MessageKey>> = {
   [EventType.StampedeBegan]: 'alert.stampede',
   [EventType.BuildingCompleted]: 'alert.buildingComplete',
   [EventType.TechCompleted]: 'alert.research',
+  // The only thing left that kills anybody (Phase V6), so it is worth interrupting for.
+  // It has a real position — the unit going hungry — so the camera can be sent to it.
+  [EventType.Starved]: 'alert.starving',
   [EventType.AllianceRelief]: 'alert.relief',
 };
 

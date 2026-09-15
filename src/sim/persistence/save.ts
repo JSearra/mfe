@@ -29,8 +29,13 @@ import { worldStateField, worldStateFields } from '../world.js';
  * 3 adds the standing ties (src/sim/alliance.ts). A version 2 save has no record of who
  * was allied with whom or what the neighbours made of anyone, and restoring it would
  * silently dissolve every tie and reset every reputation, so it is refused too.
+ *
+ * 4 is Phase V6 retiring combat: five world arrays went (stance, both post coordinates,
+ * attackTarget, attackCooldown) and the ledger lost its ammunition column, so a version
+ * 3 save is the wrong length in two places at once. `fromBase64` would catch that as a
+ * RangeError, which is a worse way to find out than being told the save is too old.
  */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 export interface SaveGame {
   readonly version: number;

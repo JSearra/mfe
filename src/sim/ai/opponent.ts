@@ -13,7 +13,7 @@ import { trainingCost } from '../production.js';
 import { EntityKind, HerdState, packHandle, type World } from '../world.js';
 
 /**
- * A computer opponent.
+ * A computer neighbour.
  *
  * ARCHITECTURE section 6 predicted this would be cheap so long as one invariant held —
  * that all state change originates from a command — because then the AI is simply
@@ -40,7 +40,6 @@ export interface AiCommand {
 export interface AiStats {
   decisions: number;
   ordersIssued: number;
-  attacksOrdered: number;
   buildsOrdered: number;
   techsOrdered: number;
   herdsOrdered: number;
@@ -72,7 +71,6 @@ export function createAi(player: number): AiController {
   const stats: AiStats = {
     decisions: 0,
     ordersIssued: 0,
-    attacksOrdered: 0,
     buildsOrdered: 0,
     techsOrdered: 0,
     herdsOrdered: 0,
@@ -93,7 +91,6 @@ export function createAi(player: number): AiController {
       stats.decisions++;
 
       const own: Sighting[] = [];
-      const foes: Sighting[] = [];
       const cattle: Sighting[] = [];
       /** Our finished homesteads — where replacements come from. */
       const trainers: number[] = [];
@@ -102,9 +99,6 @@ export function createAi(player: number): AiController {
       let homesteads = 0;
       let homeX = 0;
       let homeY = 0;
-      /** Centre of our own buildings. Where a beaten army falls back to. */
-      let baseX = 0;
-      let baseY = 0;
 
       for (let index = 0; index < world.capacity; index++) {
         if (world.alive[index] !== 1) continue;
@@ -128,8 +122,6 @@ export function createAi(player: number): AiController {
           if (!finished) sites.push({ index, x, y });
           if (!spec.trains) continue;
           homesteads++;
-          baseX += x;
-          baseY += y;
           if (finished) trainers.push(index);
           continue;
         }
@@ -137,10 +129,12 @@ export function createAi(player: number): AiController {
         // Everything else has to be seen to be acted on.
         if (!isVisible(fog, player, Math.floor(x), Math.floor(y))) continue;
 
+        // Only cattle are worth noting on somebody else's ground now. A neighbour's
+        // villagers are neither a threat nor an opportunity — see ADR-0019 and the
+        // trade and alliance branches below, which are what dealing with them looks
+        // like in this game.
         if (world.kind[index] === EntityKind.Cattle) {
           if (world.herdState[index] !== HerdState.Stampeding) cattle.push({ index, x, y });
-        } else if (world.kind[index] === EntityKind.Unit) {
-          foes.push({ index, x, y });
         }
       }
 
@@ -279,67 +273,6 @@ export function createAi(player: number): AiController {
           stats.techsOrdered++;
           break;
         }
-      }
-
-      // --- fight ----------------------------------------------------------
-      if (foes.length > 0) {
-        const strongEnough = own.length >= foes.length * ai.attackStrengthRatio;
-
-        if (strongEnough) {
-          // Concentrate: everyone onto one target rather than spreading thin. The
-          // target is the nearest to our centre, with the index tie-break every
-          // argmin in this project carries.
-          let target = foes[0]!;
-          let bestDistance = Infinity;
-          for (const foe of foes) {
-            const dx = foe.x - homeX;
-            const dy = foe.y - homeY;
-            const distance = dx * dx + dy * dy;
-            if (distance < bestDistance || (distance === bestDistance && foe.index < target.index)) {
-              bestDistance = distance;
-              target = foe;
-            }
-          }
-
-          const targetHandle = packHandle(target.index, world.generation[target.index]!);
-          for (const unit of own) {
-            emit({
-              kind: CommandKind.Attack,
-              a: packHandle(unit.index, world.generation[unit.index]!),
-              b: targetHandle,
-              c: 0,
-              d: 0,
-            });
-          }
-          stats.attacksOrdered++;
-          stats.ordersIssued += own.length;
-          return;
-        }
-
-        // Outnumbered: pull back together rather than feeding units in piecemeal.
-        //
-        // Back to our own ground, not to the army's own centroid. When the enemy is on
-        // top of us the centroid IS the fight, so retreating to it retreats nowhere —
-        // which is what this did until the destination became the homesteads.
-        const rallyX = homesteads > 0 ? baseX / homesteads : homeX;
-        const rallyY = homesteads > 0 ? baseY / homesteads : homeY;
-
-        // A ring, not a point. Every unit ordered to one identical tile arrives as a
-        // scrum, and push-apart then spends the engagement fighting the stuck timer
-        // over it. This is what tuning's regroupRadius was for; nothing had used it.
-        for (let i = 0; i < own.length; i++) {
-          const unit = own[i]!;
-          const angle = (i / own.length) * TWO_PI;
-          emit({
-            kind: CommandKind.MoveTo,
-            a: packHandle(unit.index, world.generation[unit.index]!),
-            b: rallyX + cos(angle) * ai.regroupRadius,
-            c: rallyY + sin(angle) * ai.regroupRadius,
-            d: 0,
-          });
-        }
-        stats.ordersIssued += own.length;
-        return;
       }
 
       // --- finish what we started -------------------------------------------

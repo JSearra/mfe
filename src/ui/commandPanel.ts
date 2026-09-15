@@ -9,7 +9,6 @@ import type { Relation } from '../sim/alliance.js';
 const RESOURCE_KEYS: readonly MessageKey[] = [
   'resource.cattle',
   'resource.grain',
-  'resource.ammunition',
   'resource.wood',
 ];
 

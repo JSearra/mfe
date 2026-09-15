@@ -48,8 +48,10 @@ of times. Those edits must not be in Q16.16. See ADR-0002.
 Five failure points, all free to prevent now and painful to fix later:
 
 1. **Nearest/best-target tie-breaks.** The single most common desync in shipped RTS games.
-   Two enemies equidistant — which does the impi attack? If the answer depends on spatial-hash
-   bucket order or array order, two clients diverge on the first tick of combat.
+   Two cows equidistant — which does the herder leash? Two trees, which is felled? If the
+   answer depends on spatial-hash bucket order or array order, two clients diverge on the
+   first tick. Combat was the original example and combat is gone (Phase V6); the hazard is
+   not, because every nearest-thing query has it.
 2. **A\* open-list ties.** A binary heap's behaviour on equal `f` is arbitrary. Break on
    `(f, h, nodeIndex)` explicitly.
 3. **Entity ID allocation order.** Free-list order follows destruction order, which follows
@@ -257,8 +259,8 @@ inside one tick is invisible entirely. So a parallel event list travels alongsid
 { tick, type, handle, x, y, payload }
 ```
 
-Deaths, spawns, hits, stampede-start, construction-complete. This is the channel audio,
-VFX and floating combat text all consume.
+Deaths, spawns, crushings, stampede-start, construction-complete, trades, alliances. This
+is the channel audio, VFX and the alert bar all consume.
 
 ### Per-viewer snapshots from day one
 
@@ -309,8 +311,8 @@ responsive.
 ## 6. Spatial index
 
 Absent from the original brief and more performance-critical than pathfinding. Flocking is
-an O(n·k) neighbour query at 20Hz over hundreds of cattle; combat targeting, selection and
-stampede collision all need it too.
+an O(n·k) neighbour query at 20Hz over hundreds of cattle; selection, construction's
+builder count and stampede collision all need it too.
 
 Uniform grid hash sized to the largest query radius. For determinism: traverse buckets in
 index order and sort candidate lists by entity ID.

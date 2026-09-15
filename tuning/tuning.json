@@ -69,7 +69,6 @@
     "grainPerUnit": 1.0,
     "grainPerCattle": 0.25,
     "cattleGrowthPerHundred": 0.4,
-    "ammunitionPerUpkeep": 2.0,
     "starvationDamage": 6,
     "seasonTicks": 12000,
     "droughtThreshold": 0.75,
@@ -148,18 +147,6 @@
     "eyeHeight": 1.5,
     "intervalTicks": 4
   },
-  "combat": {
-    "acquireRadius": 7.0,
-    "meleeRange": 0.95,
-    "meleeDamage": 12,
-    "meleeCooldownTicks": 16,
-    "rangedRange": 6.0,
-    "rangedDamage": 20,
-    "rangedCooldownTicks": 34,
-    "ammunitionPerShot": 1.0,
-    "chaseRange": 9.0,
-    "defendRadius": 5.0
-  },
   "buildings": {
     "buildRadius": 2.2,
     "progressPerBuilder": 1.0
@@ -167,9 +154,7 @@
   "ai": {
     "decideEveryTicks": 20,
     "grainFloor": 150,
-    "attackStrengthRatio": 1.2,
     "herdRadius": 14.0,
-    "regroupRadius": 6.0,
     "buildSpacing": 4,
     "trainFloor": 120,
     "wantedHomesteads": 2,

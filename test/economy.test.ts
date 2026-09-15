@@ -83,7 +83,8 @@ describe('factions', () => {
       nameKey: '',
       startingCattle: Number.NaN,
       startingGrain: -5,
-      startingAmmunition: 0,
+      startingWood: 0,
+      tradeMargin: 1,
       upkeepMultiplier: 0,
       herdGrowthMultiplier: 1,
       herdingSkill: 1,
@@ -103,9 +104,10 @@ describe('factions', () => {
   });
 
   it('gives each faction a distinct economic shape', () => {
-    // Griqua trade for powder and hold fewer cattle; amaNdebele are the reverse.
-    expect(FACTIONS[FactionId.Griqua].startingAmmunition).toBeGreaterThan(
-      FACTIONS[FactionId.Zulu].startingAmmunition,
+    // The Griqua deal finer than anyone and hold fewest cattle; amaNdebele are the
+    // reverse. Powder was the Griqua's trait until Phase V6 retired it as a resource.
+    expect(FACTIONS[FactionId.Griqua].tradeMargin).toBeLessThan(
+      FACTIONS[FactionId.Zulu].tradeMargin,
     );
     expect(FACTIONS[FactionId.Ndebele].startingCattle).toBeGreaterThan(
       FACTIONS[FactionId.Griqua].startingCattle,

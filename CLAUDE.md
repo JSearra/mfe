@@ -1,28 +1,34 @@
 # Mfecane RTS — session rules
 
 Browser 2D isometric village simulator set in early-19th-century southern Africa, built
-on an RTS engine and pivoting away from that framing (ADR-0019). Defining mechanic:
-cattle herding, flocking and stampedes.
+on an RTS engine and no longer one (ADR-0019). Defining mechanic: cattle herding, flocking
+and stampedes.
 
-**Current state: pivoting from an RTS to a village simulator. See ADR-0019.**
+**Current state: the pivot is complete. Phases V1-V6 are done and there is no combat.**
 
-Phases 0-6 and the whole original backlog are done, and the RTS is playable end to end —
-fog, save/load, the worker flip, combat, buildings, AI, audio, four map scripts, tech,
-production, victory, a HUD, a command vocabulary, a setup screen, and generated art.
+The engine underneath is the original one and all of it still stands — fog, save/load, the
+worker flip, buildings, AI, audio, four map scripts, tech, production, a HUD, the order
+queue and control groups, a setup screen, and generated art.
 
-Then it was played to an outcome twice, and neither match contained a fight. Every
-decision that mattered in both was economic. So the game is becoming what it already was
-underneath: a village sustained through the seasons — farming, foraging, herding, trade
-and alliances — rather than an army taking a map.
+What the game *is* changed in Part II of `docs/ROADMAP.md`: the objective is to settle a
+village and hold it fed (V1); trees grow, bear and are felled for timber (V2); fields are
+sited, worked and lost (V3); neighbours trade at rates set by their own scarcity (V4);
+neighbours enter standing ties that cost cattle a season and send grain to whoever went
+hungry (V5); and combat is gone (V6).
 
-**The order of that work is counter-intuitive and is set out in `docs/ROADMAP.md` Part
-II. Combat retires LAST.** It is the only thing currently standing between the economy
-and having no failure condition at all; remove it first and the game has nothing to fear.
-Replace the objective, build the new loops, then delete.
+**Starvation is the only failure condition now, and it is a real one** — measured at
+1,530-2,130 starvation events and 90-115 deaths per thirty-minute AI match, none of them
+caused by anybody. It is arguably too harsh; see the note at the end of Phase V6.
 
 Cattle herding, flocking and stampedes stay — they are the defining mechanic and they are
-better in a subsistence game than a military one. The platform stays the browser, and
-that is a decision rather than an accident: ADR-0019 says why.
+better in a subsistence game than a military one. The stampede is a disaster, not a
+weapon. The platform stays the browser, and that is a decision rather than an accident:
+ADR-0019 says why.
+
+**Retired enum values are numbered gaps, never renumbered.** `CommandKind` 5, 10 and 11,
+`EventType` 6 and `OrderMode` 1 were combat and are holes in their enums, because those
+values sit in recorded command logs and cross the worker boundary; reusing one makes an
+old log decode as nonsense instead of failing.
 
 Design reasoning lives in `docs/ARCHITECTURE.md`. Reversals of the original brief are
 recorded in `docs/adr/`. Read the ADR before re-opening a settled decision.

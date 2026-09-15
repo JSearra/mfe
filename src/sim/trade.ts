@@ -60,9 +60,7 @@ function referenceOf(resource: Resource): number {
 /**
  * What one more unit of a resource is worth to this village, right now.
  *
- * Marginal, so it rises as the store empties. Ammunition has no weight of its own and
- * falls through to the cattle weight, which is harmless because nothing trades it — it
- * is a combat resource and combat is on its way out (roadmap V6).
+ * Marginal, so it rises as the store empties.
  */
 export function marginalValue(economy: Economy, player: number, resource: Resource): number {
   const reference = referenceOf(resource);
@@ -84,13 +82,18 @@ export interface Regard {
  * terms are the channel through which an alliance and a betrayal are actually felt, and
  * a player who never opens the alliance panel still sees their rates move.
  */
-function marginFor(regard: Regard | undefined, partner: number): number {
+function marginFor(economy: Economy, regard: Regard | undefined, partner: number): number {
   const base = tuning.trade.margin;
   if (regard === undefined) return base;
 
+  // Who is asking, as a people. The Griqua lived off the exchange between the Colony and
+  // the interior and they deal finer than anybody because of it — which is their whole
+  // identity now that powder is not a resource (Phase V6). See shared/factions.
+  const asking = economy.factions[regard.asker]?.tradeMargin ?? 1;
+
   const a = tuning.alliance;
   const trust = standingOf(regard.alliance, partner, regard.asker);
-  const marked = base * (1 + a.distrustMargin * (1 - trust));
+  const marked = base * asking * (1 + a.distrustMargin * (1 - trust));
   return alliedWith(regard.alliance, partner, regard.asker) ? marked * (1 - a.allyMargin) : marked;
 }
 
@@ -127,7 +130,8 @@ export function quote(
   const lossPerUnit = marginalValue(economy, partner, wanted);
   if (lossPerUnit <= 0) return 0;
 
-  const affordable = (amount * gainPerUnit) / (lossPerUnit * (1 + marginFor(regard, partner)));
+  const affordable =
+    (amount * gainPerUnit) / (lossPerUnit * (1 + marginFor(economy, regard, partner)));
   const capped = Math.min(affordable, available, theirs * t.maxOfferFraction);
   return capped > 0 ? capped : 0;
 }

@@ -5,7 +5,6 @@ import { buildSnapshot } from '../sim/snapshot.js';
 import type { SimEvent } from '../shared/events.js';
 import type { Heightmap } from '../shared/heightmap.js';
 import { createCattleSystem, type CattleSystem } from '../sim/cattle.js';
-import { createCombatSystem, type CombatSystem } from '../sim/combat.js';
 import { createAi } from '../sim/ai/opponent.js';
 import { createTechState, type TechState } from '../sim/tech.js';
 import { createVictoryState, type VictoryState } from '../sim/victory.js';
@@ -60,7 +59,6 @@ import { createAlliance, relationsFor, type Alliance, type Relation } from '../s
 export interface PlayerState {
   readonly cattle: number;
   readonly grain: number;
-  readonly ammunition: number;
   /** Timber in hand. Buildings need it, and only the woodland supplies it. */
   readonly wood: number;
   /**
@@ -197,7 +195,6 @@ function defaultStrict(): boolean {
 export interface DirectSimHost extends SimHost {
   readonly movement: MovementSystem;
   readonly cattle: CattleSystem;
-  readonly combat: CombatSystem;
   readonly construction: ConstructionSystem;
   readonly production: ProductionSystem;
   readonly economy: Economy;
@@ -226,7 +223,6 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
 
   const movement = createMovementSystem(map);
   const cattle = createCattleSystem();
-  const combat = createCombatSystem();
   const construction = createConstructionSystem(map, movement.pathing);
   const production = createProductionSystem(movement);
   // Explicit plots win; otherwise lay them out around the starts. Without either,
@@ -242,7 +238,6 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     world,
     movement,
     cattle,
-    combat,
     construction,
     production,
     economy,
@@ -284,7 +279,6 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
   const host: DirectSimHost = {
     movement,
     cattle,
-    combat,
     construction,
     production,
     economy,
@@ -354,7 +348,6 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
       const player: PlayerState = {
         cattle: economy.balance(viewerId, Resource.Cattle),
         grain: economy.balance(viewerId, Resource.Grain),
-        ammunition: economy.balance(viewerId, Resource.Ammunition),
         wood: economy.balance(viewerId, Resource.Wood),
         offers: offersFor(economy, viewerId, alliance),
         relations: relationsFor(alliance, viewerId),

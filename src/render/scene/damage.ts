@@ -3,10 +3,10 @@ import { EventType, type SimEvent } from '../../shared/events.js';
 /**
  * Which entities were struck recently, so the renderer can show it.
  *
- * Combat was audible and invisible: `hpPct` crossed the boundary in every snapshot and
- * was interpolated on arrival, and then nothing ever drew it. A player could hear a blow
- * land and had no way to see who was hurt, who was winning, or which of two engagements
- * to reinforce.
+ * Built for combat, kept for the stampede. A blow landing was once audible and
+ * invisible; with combat retired (Phase V6) the one thing left that strikes a body is a
+ * herd going over it, and being trampled is exactly the event a player needs to see
+ * rather than merely hear. ADR-0014 and ADR-0017 are not superseded: the stampede stays.
  *
  * Driven by the event stream rather than by diffing snapshots, for the reason the event
  * stream exists: a blow that lands and leaves a unit alive is a thing that HAPPENED, and
@@ -31,7 +31,7 @@ export function createDamageFlashes(): DamageFlashes {
   return {
     handle(events, now): void {
       for (const event of events) {
-        if (event.type !== EventType.Hit && event.type !== EventType.Crushed) continue;
+        if (event.type !== EventType.Crushed) continue;
         struck.set(event.handle, now);
       }
     },

@@ -1,7 +1,6 @@
 import { heightmapFrom, type Heightmap } from '../src/shared/heightmap.js';
 import { createLoop, type SimLoop } from '../src/sim/loop.js';
 import { createCattleSystem, type CattleSystem } from '../src/sim/cattle.js';
-import { createCombatSystem, type CombatSystem } from '../src/sim/combat.js';
 import { createTechState, type TechState } from '../src/sim/tech.js';
 import { createVictoryState, type VictoryState } from '../src/sim/victory.js';
 import { createProductionSystem, type ProductionSystem } from '../src/sim/production.js';
@@ -30,7 +29,6 @@ export interface Harness {
   world: World;
   movement: MovementSystem;
   cattle: CattleSystem;
-  combat: CombatSystem;
   construction: ConstructionSystem;
   production: ProductionSystem;
   economy: Economy;
@@ -53,7 +51,6 @@ export function makeSim(
   const world = createWorld(capacity, seed);
   const movement = createMovementSystem(map);
   const cattle = createCattleSystem();
-  const combat = createCombatSystem();
   const construction = createConstructionSystem(map, movement.pathing);
   const production = createProductionSystem(movement);
   const woodland = createWoodland(map, seed);
@@ -67,7 +64,6 @@ export function makeSim(
     world,
     movement,
     cattle,
-    combat,
     construction,
     production,
     economy,
@@ -78,7 +74,7 @@ export function makeSim(
     victory,
     fog,
     loop: createLoop(
-      { world, movement, cattle, combat, construction, production, economy, woodland, farmland, alliance, tech, victory, fog, map },
+      { world, movement, cattle, construction, production, economy, woodland, farmland, alliance, tech, victory, fog, map },
       commands,
     ),
     map,

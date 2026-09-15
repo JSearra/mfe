@@ -18,10 +18,10 @@ import {
 /**
  * Raising troops.
  *
- * Until this existed the game had no loop. Units were seeded once at startup and combat
- * only ever subtracted, so a long match trended toward both sides holding full granaries
- * and empty fields. Production is what closes it: grain and cattle buy troops, troops
- * take and lose ground, losses demand more grain and cattle.
+ * Until this existed the game had no loop. Units were seeded once at startup and nothing
+ * ever replaced them, so a long match trended toward both sides holding full granaries
+ * and empty fields. Production is what closes it: grain and cattle buy people, people
+ * work the land and mind the herd, and more of them eat more of what they bring in.
  *
  * It also gives the rest of the simulation something to act on. Drought becomes a threat
  * because it starves the reinforcement rate rather than merely a number on the bar;

@@ -21,7 +21,15 @@ export type TechId = (typeof TechId)[keyof typeof TechId];
 
 /** What a completed advance multiplies. Every modifier defaults to 1. */
 export const Modifier = {
-  CombatDamage: 'combatDamage',
+  /**
+   * Work done per builder per tick.
+   *
+   * This was `combatDamage` until Phase V6. The *amabutho* were age-set regiments and
+   * they were a labour institution as much as a military one — the age grades built,
+   * herded and cut for the king — so pointing the advance at work rather than at damage
+   * is closer to what it was, not a salvage job on an orphaned modifier.
+   */
+  Labour: 'labour',
   VisionRadius: 'visionRadius',
   /** Below 1 means cattle are calmer near herders — a larger band to work in. */
   HerdStress: 'herdStress',
@@ -50,7 +58,7 @@ export const TECHS: Readonly<Record<TechId, TechSpec>> = {
     cattleCost: 4,
     researchTicks: 900,
     requires: [],
-    effects: { [Modifier.CombatDamage]: 1.25 },
+    effects: { [Modifier.Labour]: 1.25 },
   },
   [TechId.Umkhosi]: {
     id: TechId.Umkhosi,
@@ -86,7 +94,10 @@ export const TECHS: Readonly<Record<TechId, TechSpec>> = {
     cattleCost: 8,
     researchTicks: 1200,
     requires: [TechId.Amabutho],
-    effects: { [Modifier.MoveSpeed]: 1.2, [Modifier.CombatDamage]: 1.1 },
+    // Lost its damage clause with combat. A commando was a mounted RANGING party before
+    // it was anything else — far ground covered and word brought back — so what it keeps
+    // is reach and sight, which is also what it was actually for.
+    effects: { [Modifier.MoveSpeed]: 1.2, [Modifier.VisionRadius]: 1.15 },
   },
 };
 

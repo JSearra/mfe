@@ -41,7 +41,7 @@ export interface AudioEngine {
    */
   ambience(view: AmbienceView, camera: Camera): void;
   /** Played immediately on a click, before the simulation has seen the order. */
-  acknowledge(kind: 'move' | 'attack' | 'herd'): void;
+  acknowledge(kind: 'move' | 'herd'): void;
   voicesPlayed: number;
   dispose(): void;
 }
@@ -98,14 +98,6 @@ const VOICES: Partial<Record<number, VoiceSpec>> = {
     gain: 0.5,
     noise: false,
     type: 'triangle',
-  },
-  [EventType.Hit]: {
-    frequency: 620,
-    endFrequency: 420,
-    durationMs: 70,
-    gain: 0.3,
-    noise: false,
-    type: 'square',
   },
   [EventType.BuildingCompleted]: {
     frequency: 380,
@@ -364,7 +356,7 @@ export function createAudioEngine(): AudioEngine {
         if (
           impacts !== undefined &&
           impacts.length > 0 &&
-          (event.type === EventType.Hit || event.type === EventType.Crushed)
+          event.type === EventType.Crushed
         ) {
           playSample(context, master, impacts[nextTake++ % impacts.length]!, spec.gain * 3.2, nearness, dx / audibleRadius, 0.9 + ((nextTake * 29) % 21) / 100);
         } else {

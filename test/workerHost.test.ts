@@ -19,7 +19,6 @@ import type { FromWorker, ToWorker } from '../src/host/worker/protocol.js';
 const IDLE: PlayerState = {
   cattle: 0,
   grain: 0,
-  ammunition: 0,
   wood: 0,
   offers: [],
   relations: [],

@@ -294,13 +294,24 @@ function drawCow(graphics: Graphics, stressPct: number, stampeding: boolean, sel
 }
 
 /**
- * A health bar, drawn only when there is something to say.
+ * A condition bar, drawn only when there is something to say.
  *
  * Full health draws nothing. A bar over every unit on the field is noise that hides the
  * one piece of information it exists to carry — which of them is in trouble — and a herd
  * of forty would be a wall of green.
+ *
+ * **This was a health bar and the V6 acceptance criterion said to delete it.** Not done,
+ * deliberately, and the reasoning is worth leaving here because it reverses something
+ * written down. That criterion was recorded on the assumption a health bar is a combat
+ * readout. It is not one any more: with combat retired, the only two things that can
+ * take a body's health are hunger and being trampled, and starvation is now the game's
+ * *primary* failure condition rather than a side effect of one. Deleting the bar would
+ * have made the one thing that can still end a village invisible until the moment it
+ * killed somebody. So the RTS idiom goes — no bar on a unit that is merely in a fight,
+ * because there are no fights — and the information stays, under a name that says what
+ * it now means.
  */
-function drawHealth(
+function drawCondition(
   graphics: Graphics,
   hpPct: number,
   kind: number,
@@ -360,10 +371,10 @@ export function createEntityLayer(
   // cost are affordable, which is not true of units.
   const decals = new Container();
   const bodies = new Container();
-  // Health bars go above everything, in one Graphics for the whole field. Drawing them
-  // per entity would put a Graphics between every pair of sprites and break the batch;
-  // one object redrawn each frame costs a single draw call, and only wounded entities
-  // are in it.
+  // Condition bars go above everything, in one Graphics for the whole field. Drawing
+  // them per entity would put a Graphics between every pair of sprites and break the
+  // batch; one object redrawn each frame costs a single draw call, and only entities in
+  // trouble are in it.
   const health = new Graphics();
   container.addChild(decals);
   container.addChild(bodies);
@@ -654,11 +665,11 @@ export function createEntityLayer(
 
         const position = this.screenPosition(view, index, map);
 
-        // Before the textured branch, not inside it. Health has nothing to do with
+        // Before the textured branch, not inside it. Condition has nothing to do with
         // whether the body is a sprite or a fallback shape, and putting it in the
         // textured path meant the bars vanished entirely whenever the atlas failed to
         // load — which is exactly when a player would most need to know what is going on.
-        drawHealth(health, view.hpPct[index]!, kind, position.x, position.y);
+        drawCondition(health, view.hpPct[index]!, kind, position.x, position.y);
 
         const textured = atlas !== null;
 

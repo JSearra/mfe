@@ -1,7 +1,6 @@
 /// <reference lib="webworker" />
 import { makeCommand } from '../../sim/commands.js';
 import { createCattleSystem } from '../../sim/cattle.js';
-import { createCombatSystem } from '../../sim/combat.js';
 import { createAi } from '../../sim/ai/opponent.js';
 import { createConstructionSystem } from '../../sim/construction.js';
 import { createTechState } from '../../sim/tech.js';
@@ -83,7 +82,6 @@ function start(message: InitMessage): void {
     world,
     movement,
     cattle: createCattleSystem(),
-    combat: createCombatSystem(),
     construction: createConstructionSystem(map, movement.pathing),
     production: createProductionSystem(movement),
     economy,
@@ -146,7 +144,6 @@ function tick(): void {
   const player: PlayerState = {
     cattle: economy.balance(viewerId, Resource.Cattle),
     grain: economy.balance(viewerId, Resource.Grain),
-    ammunition: economy.balance(viewerId, Resource.Ammunition),
     wood: economy.balance(viewerId, Resource.Wood),
     offers: alliance === null ? [] : offersFor(economy, viewerId, alliance),
     relations: alliance === null ? [] : relationsFor(alliance, viewerId),

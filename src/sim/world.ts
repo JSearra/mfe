@@ -79,7 +79,6 @@ export interface World {
   /** Waypoint index into the unit's path, or -1. */
   readonly pathCursor: Int32Array;
 
-  /** Chokepoint deadlock detection: ticks without meaningful progress. */
   // --- buildings ------------------------------------------------------------
   readonly buildingType: Uint8Array;
   /** Builder-ticks accumulated. Complete when it reaches the type's work value. */
@@ -93,18 +92,12 @@ export interface World {
   readonly rallyX: Float64Array;
   readonly rallyY: Float64Array;
 
-  // --- combat ---------------------------------------------------------------
-  /** Handle of the current target, or NULL_HANDLE. */
+  // --- orders ---------------------------------------------------------------
   /** One of OrderMode. Plain move unless the order said otherwise. */
   readonly orderMode: Uint8Array;
-  /** One of Stance. */
-  readonly stance: Uint8Array;
   /** The far end of a patrol: the point a patrolling unit turns back toward. */
   readonly patrolX: Float64Array;
   readonly patrolY: Float64Array;
-  /** Where a defensive unit returns to, and what its leash is measured from. */
-  readonly postX: Float64Array;
-  readonly postY: Float64Array;
   /**
    * Queued orders, ORDER_QUEUE_MAX per unit, as a ring starting at queueHead.
    *
@@ -119,10 +112,8 @@ export interface World {
   readonly queueMode: Uint8Array;
   readonly queueHead: Uint8Array;
   readonly queueCount: Uint8Array;
-  readonly attackTarget: Uint32Array;
-  /** Ticks until this unit may strike again. */
-  readonly attackCooldown: Uint16Array;
 
+  /** Chokepoint deadlock detection: ticks without meaningful progress. */
   readonly stuckTicks: Uint16Array;
   readonly lastProgressX: Float64Array;
   readonly lastProgressY: Float64Array;
@@ -221,18 +212,13 @@ export function createWorld(capacity: number, seed: number): World {
     rallyX: new Float64Array(capacity),
     rallyY: new Float64Array(capacity),
     orderMode: new Uint8Array(capacity),
-    stance: new Uint8Array(capacity),
     patrolX: new Float64Array(capacity),
     patrolY: new Float64Array(capacity),
-    postX: new Float64Array(capacity),
-    postY: new Float64Array(capacity),
     queueX: new Float64Array(capacity * ORDER_QUEUE_MAX),
     queueY: new Float64Array(capacity * ORDER_QUEUE_MAX),
     queueMode: new Uint8Array(capacity * ORDER_QUEUE_MAX),
     queueHead: new Uint8Array(capacity),
     queueCount: new Uint8Array(capacity),
-    attackTarget: new Uint32Array(capacity),
-    attackCooldown: new Uint16Array(capacity),
     stuckTicks: new Uint16Array(capacity),
     lastProgressX: new Float64Array(capacity),
     lastProgressY: new Float64Array(capacity),
@@ -256,21 +242,27 @@ export function isAlive(world: World, handle: Handle): boolean {
 }
 
 /**
- * How a unit treats what it meets on the way to its destination.
+ * What kind of standing order a unit is under.
  *
- * A plain move walks past a fight; an attack-move stops and takes it. The distinction
- * lives on the unit rather than on the order because the order is consumed by the
- * pathing service, which has no business knowing about combat.
+ * It lives on the unit rather than on the order because the order is consumed by the
+ * pathing service, which has no business knowing why the unit is going anywhere. That
+ * was true when this distinguished a march from an advance and it is still true now
+ * that the only distinction left is whether the unit turns round at the far end.
  */
 export const OrderMode = {
   Move: 0,
-  AttackMove: 1,
   /**
-   * Walk between two points until told otherwise, engaging on the way.
+   * 1 was `AttackMove`. Retired with combat in Phase V6: "move, but engage what you meet"
+   * has nothing left to engage. The value is left as a gap because orderMode is also the
+   * mode slot in the shift-click waypoint queue, and queued modes are saved.
+   */
+  /**
+   * Walk between two points until told otherwise.
    *
-   * Implemented as an attack-move that refuses to finish: on arrival the unit swaps its
-   * goal with the point it set out from, which it keeps in patrolX/patrolY. That reuses
-   * the whole of attack-move rather than growing a second kind of standing order.
+   * On arrival the unit swaps its goal with the point it set out from, which it keeps in
+   * patrolX/patrolY, so it never actually finishes. Kept through the combat retirement:
+   * a beat walked between two points is a herding order as readily as a military one,
+   * and it needs nothing combat left behind.
    */
   Patrol: 2,
 } as const;
@@ -326,17 +318,6 @@ export function clearOrderQueue(world: World, index: number): void {
   world.queueCount[index] = 0;
   world.queueHead[index] = 0;
 }
-
-export const Stance = {
-  /** Chase what it acquires, as far as the chase range allows. */
-  Aggressive: 0,
-  /** Fight what comes near, then return to where it was posted. */
-  Defensive: 1,
-  /** Never leave the spot. Fights only what comes into reach. */
-  HoldGround: 2,
-} as const;
-
-export type Stance = (typeof Stance)[keyof typeof Stance];
 
 export const ANIM_IDLE = 0;
 export const ANIM_WALK = 1;
@@ -419,12 +400,7 @@ export function spawn(
   world.rallyX[index] = x;
   world.rallyY[index] = y;
   world.orderMode[index] = OrderMode.Move;
-  world.stance[index] = Stance.Aggressive;
   clearOrderQueue(world, index);
-  world.postX[index] = x;
-  world.postY[index] = y;
-  world.attackTarget[index] = NULL_HANDLE;
-  world.attackCooldown[index] = 0;
   world.stuckTicks[index] = 0;
   world.lastProgressX[index] = x;
   world.lastProgressY[index] = y;

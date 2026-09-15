@@ -594,47 +594,67 @@ expensive would spend a reputation it has no way to value.
 
 ## Phase V6 — retire combat
 
-Only once the loops above carry the pressure. This is a deletion phase, and the sequence
-within it matters because several systems read combat state without being about combat:
-`movement.ts` pursuit and stances, `world.ts` attack fields, the AI's fight branch, the
-damage-flash and health-bar render paths, and four commands.
+**Done.** `src/sim/combat.ts` is gone, with the stance and pursuit machinery in
+`movement.ts`, the AI's fight branch, four commands, five world arrays, one event, one
+resource and the whole `tuning.combat` block. The bundle went from 112.69 kB gzipped to
+111.25 kB, which is the least interesting thing about it.
 
-*Done when:* `src/sim/combat.ts` is gone, no world field exists only for it, the golden
-replay has been re-recorded deliberately with the reason in the commit, and nothing in
-`src/render` draws a health bar.
+**The hazard survey was worth doing and mostly right.** `reap()` was rehomed first, in
+its own commit, and the golden replay passed unchanged — which is the only way to prove a
+move of that kind is inert rather than to assert it. Retired command, event and order-mode
+values were left as numbered gaps rather than renumbered, because they sit in recorded
+logs and cross the worker boundary. Resource indices are not durable that way and no
+recorded log names one, so the ledger renumbered instead of carrying a dead column.
 
-**Hazards, surveyed 2026-09-15 before any of it was touched.** Ranked by how badly each
-would bite a session that started deleting from the obvious end:
+**Two repurposings rather than deletions, as hazards 4 and 5 asked for.**
+`Modifier.CombatDamage` became `Modifier.Labour` and now multiplies build rate, which
+makes *amabutho* closer to what it was — the age-set regiments were a labour institution
+as much as a military one, and the age grades built and herded for the king. The mounted
+commando kept its reach and gained vision, a commando having been a mounted ranging party
+before it was anything else. `Resource.Ammunition` was deleted outright: it existed to be
+spent per shot, so retiring combat left a column that could only ever go up. The Griqua's
+identity moved with it, from mounted gunmen to the thing they actually were — the
+intermediaries of the Colony trade — as a `tradeMargin` on the faction config that makes
+every neighbour deal with them at a finer margin than with anybody else.
 
-1. **`reap()` lives inside `combat.ts`** and is private to it. It destroys anything at
-   zero health and emits `Died` — for *starvation* and *stampede crush* as much as for a
-   spear. Deleting combat without rehoming it leaves starved villagers alive at zero
-   health forever, which the file's own comment records as having happened once already.
-   Rehome first, delete second.
-2. **`movement.ts` lines ~448-483** hold the stand-and-fight branch, inside the hot
-   per-unit loop and ahead of ordinary steering. Removing it changes every unit's
-   trajectory, so it forces a golden re-record on its own.
-3. **Any world array deletion changes the replay hash and the save format**, because
-   `worldStateFields()` derives both from `Object.keys` — see ADR-0018. Deliberate, and
-   it must be said in the commit.
-4. **`Resource.Ammunition` is orphaned by the removal** and it is the Griqua faction's
-   entire identity (`startingAmmunition: 160`, mounted gunmen). It needs a new purpose or
-   the faction needs a new trait; the resource column and its HUD readout go with it.
-5. **`Modifier.CombatDamage` leaves `Amabutho` with no effect at all**, which
-   `validateTechTree()` reports as a problem and `test/tech.test.ts` asserts on. The
-   advance needs repurposing, not deleting.
-6. **`orderMode` is dual-purpose.** `AttackMove` and `Patrol` are combat; the field itself
-   is also the mode slot in the shift-click waypoint queue, which is not. Keep the field.
-7. **`EventType.Died` is not combat-only** — it fires for starvation and crush too. `Hit`
-   is the only combat-only event. Command and event enum values cross the worker boundary
-   and sit in recorded command logs, so retire values by leaving gaps rather than
-   renumbering.
-8. `damage.ts` and the `impact` sample key on `Crushed` as well as `Hit`; the stampede
-   keeps both. Attack animation frames already exist in the atlas and are already unused
-   — no `ANIM_` constant references them.
+**One acceptance criterion was NOT met, deliberately.** "Nothing in `src/render` draws a
+health bar" was recorded on the assumption that a health bar is a combat readout. It is
+not one any more. With combat gone the only two things that can take a body's health are
+hunger and being trampled, and starvation is now the game's *primary* failure condition
+rather than a side effect of one — so deleting the bar would have made the one thing that
+can still end a village invisible until the moment it killed somebody. The RTS idiom went
+and the information stayed: it is `drawCondition` now, and `EventType.Starved` was added
+to the alert bar so hunger says so out loud instead of only shading a bar.
+
+**Retiring combat broke elimination, and only a measurement found it.** A player was
+counted out on having no troops *and* no buildings — a conjunction that was only ever
+satisfiable because combat could knock a building down. Nothing destroys a building now,
+so a village starved down to its last villager left its empty huts standing and could
+never be eliminated: four AI matches in five ended with every villager dead and the
+outcome still reported as ongoing. Elimination is about people now, with the grace period
+doing the work it was always described as doing — a village with a homestead and grain in
+it raises a household well inside four hundred ticks, and one that cannot is finished
+whatever is still on the ground. All five seeds resolve after the fix.
+
+**There is still something to fear, which was the whole worry.** ADR-0019 put combat last
+precisely because removing it first would leave an economy with no failure condition.
+Measured over five thirty-minute AI matches on the seeded opening: 1,530–2,130 starvation
+events and 90–115 deaths per match, every one of them from hunger, with villages going
+short in 86–132 seasons out of 180. Nobody was killed by anybody.
+
+*Open, and a tuning question rather than a deletion one:* that is arguably too harsh. Peak
+village size reached 41–48 against the 60 needed to settle, and four matches in five ended
+in total famine collapse. The AI raises households it has no grain to feed, which is as
+much an AI-quality problem as an economy one — see the open items in `tasks/plan.md`. This
+phase deliberately did not retune the economy while deleting a system; doing both at once
+would leave neither change attributable.
 
 *Kept deliberately:* the stampede. It is a disaster now rather than a weapon — see
-ADR-0014 and ADR-0017, neither of which is superseded.
+ADR-0014 and ADR-0017, neither of which is superseded. The damage flash and the `impact`
+sample keyed on `Hit` and `Crushed` and now key on `Crushed` alone, which is the one thing
+left that strikes a body.
 
-*Kept deliberately:* the stampede. It is a disaster now rather than a weapon — see
-ADR-0014 and ADR-0017, neither of which is superseded.
+*Kept deliberately:* patrol. It was built as an attack-move that refuses to finish, but
+nothing about walking a beat between two points needs a fight at the end of it, and a
+herder covering ground wants exactly that. `orderMode`, `patrolX` and `patrolY` stay with
+it; `OrderMode.AttackMove` is a numbered gap beside them.

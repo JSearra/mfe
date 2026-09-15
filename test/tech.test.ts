@@ -77,24 +77,27 @@ describe('research', () => {
 
     tech.update(1, events);
     expect(tech.isComplete(0, TechId.Amabutho)).toBe(false);
-    expect(tech.modifier(0, Modifier.CombatDamage)).toBe(1);
+    expect(tech.modifier(0, Modifier.Labour)).toBe(1);
 
     research(tech, TechId.Amabutho, events);
     expect(tech.isComplete(0, TechId.Amabutho)).toBe(true);
-    expect(tech.modifier(0, Modifier.CombatDamage)).toBeCloseTo(1.25, 6);
+    expect(tech.modifier(0, Modifier.Labour)).toBeCloseTo(1.25, 6);
     expect(events.some((e) => e.type === EventType.TechCompleted)).toBe(true);
   });
 
   it('compounds two advances touching the same number', () => {
     const { economy, tech } = setup();
+    tech.begin(0, TechId.ScoutingParties, economy);
+    research(tech, TechId.ScoutingParties);
     tech.begin(0, TechId.Amabutho, economy);
     research(tech, TechId.Amabutho);
     tech.begin(0, TechId.MountedCommando, economy);
     research(tech, TechId.MountedCommando);
 
     // Multiplicative, so the later advance adds to the earlier rather than replacing it.
-    expect(tech.modifier(0, Modifier.CombatDamage)).toBeCloseTo(1.25 * 1.1, 6);
+    expect(tech.modifier(0, Modifier.VisionRadius)).toBeCloseTo(1.3 * 1.15, 6);
     expect(tech.modifier(0, Modifier.MoveSpeed)).toBeCloseTo(1.2, 6);
+    expect(tech.modifier(0, Modifier.Labour)).toBeCloseTo(1.25, 6);
   });
 
   it('benefits only the player who researched it', () => {
@@ -102,13 +105,13 @@ describe('research', () => {
     tech.begin(0, TechId.Amabutho, economy);
     research(tech, TechId.Amabutho);
 
-    expect(tech.modifier(0, Modifier.CombatDamage)).toBeGreaterThan(1);
-    expect(tech.modifier(1, Modifier.CombatDamage)).toBe(1);
+    expect(tech.modifier(0, Modifier.Labour)).toBeGreaterThan(1);
+    expect(tech.modifier(1, Modifier.Labour)).toBe(1);
   });
 
   it('returns a neutral modifier for a player that does not exist', () => {
     const { tech } = setup(2);
-    expect(tech.modifier(9, Modifier.CombatDamage)).toBe(1);
+    expect(tech.modifier(9, Modifier.Labour)).toBe(1);
   });
 
   it('lowers herd stress rather than raising it', () => {

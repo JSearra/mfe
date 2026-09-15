@@ -74,8 +74,9 @@ describe('health bars', () => {
 });
 
 describe('damage flashes', () => {
+  // Crushed, not Hit: being trampled is the only thing left that strikes a body.
   const hit = (handle: number): SimEvent =>
-    ({ tick: 0, type: EventType.Hit, handle, x: 0, y: 0, payload: 0 }) as SimEvent;
+    ({ tick: 0, type: EventType.Crushed, handle, x: 0, y: 0, payload: 0 }) as SimEvent;
 
   it('lights a struck entity and then stops', () => {
     const flashes = createDamageFlashes();

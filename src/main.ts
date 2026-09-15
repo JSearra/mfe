@@ -43,7 +43,6 @@ import {
   createSelection,
   drawMarquee,
   entitiesNear,
-  pickEnemy,
   pickEntity,
   type Rect,
 } from './render/selection.js';
@@ -453,7 +452,6 @@ async function main(options: GameOptions): Promise<void> {
   let researchCursor = 0;
   // Armed by A, spent on the next order click. Client state: which ORDER a click will
   // issue is not something the simulation has any business knowing.
-  let attackMoveArmed = false;
   let patrolArmed = false;
 
   // Only the first three have a digit. Control groups own 4-9, and making the most-used
@@ -502,13 +500,6 @@ async function main(options: GameOptions): Promise<void> {
     }
     if (event.key === 'p' || event.key === 'P') {
       patrolArmed = true;
-      attackMoveArmed = false;
-      return;
-    }
-    if (event.key === 'a' || event.key === 'A') {
-      // Arm, then click — the genre's convention, and the reason it is a mode rather
-      // than a modifier is that the click may be a long way from the key press.
-      attackMoveArmed = true;
       return;
     }
     if (event.key === ' ') {
@@ -519,7 +510,6 @@ async function main(options: GameOptions): Promise<void> {
       return;
     }
     if (event.key === 'Escape') {
-      attackMoveArmed = false;
       patrolArmed = false;
       armed = null;
       planting = false;
@@ -597,18 +587,6 @@ async function main(options: GameOptions): Promise<void> {
         return;
       }
 
-      const foe = pickEnemy(view, map, camera, entities, x, y, PLAYER);
-      if (foe !== -1) {
-        // Answer the click now. The order will not execute for another tick or three,
-        // and a renderer running 75ms behind the simulation only feels instant because
-        // the local half of the feedback does not wait for it.
-        audio.acknowledge('attack');
-        for (const handle of selection.handles) {
-          sim.sendCommand(CommandKind.Attack, handle, foe);
-        }
-        return;
-      }
-
       const cow = pickEntity(view, map, camera, entities, x, y, KIND_CATTLE);
       if (cow !== -1) {
         const slot = view.handle.indexOf(cow);
@@ -633,12 +611,7 @@ async function main(options: GameOptions): Promise<void> {
       // Orders carry a handle, never a position: by the time this executes the target
       // may be dead, and the handle's generation is what says so.
       audio.acknowledge('move');
-      const kind = patrolArmed
-        ? CommandKind.Patrol
-        : attackMoveArmed
-          ? CommandKind.AttackMove
-          : CommandKind.MoveTo;
-      attackMoveArmed = false;
+      const kind = patrolArmed ? CommandKind.Patrol : CommandKind.MoveTo;
       patrolArmed = false;
       for (const handle of selection.handles) {
         sim.sendCommand(kind, handle, target.x, target.y, queued ? 1 : 0);

@@ -3,7 +3,8 @@ import { EventType, type SimEvent } from '../src/shared/events.js';
 import { Resource } from '../src/sim/economy/ledger.js';
 import { Outcome } from '../src/sim/victory.js';
 import { tuning } from '../src/sim/tuning.js';
-import { spawn } from '../src/sim/world.js';
+import { EntityKind, spawn } from '../src/sim/world.js';
+import { BuildingType } from '../src/shared/buildings/index.js';
 import { makeSim } from './simHarness.js';
 
 const V = tuning.victory;
@@ -108,6 +109,28 @@ describe('elimination', () => {
     spawn(sim.world, 30, 30, 1);
     sim.run(1);
     expect(sim.victory.graceTicks[1]).toBe(0);
+  });
+
+  it('counts out a village with no people left, whatever is still standing', () => {
+    const sim = match();
+    // A homestead of its own, finished. Until Phase V6 this alone kept a player in the
+    // match forever, because elimination also demanded every building be gone and only
+    // combat could knock one down. A starved-out village left its empty huts on the
+    // ground and the match ran on with nobody in it — measured at four AI matches in
+    // five ending that way.
+    sim.construction.place(sim.world, sim.economy, 1, BuildingType.Umuzi, 25, 25, []);
+    for (let i = 0; i < sim.world.capacity; i++) {
+      if (sim.world.alive[i] === 1 && sim.world.faction[i] === 1 && sim.world.kind[i] === EntityKind.Unit) {
+        sim.world.alive[i] = 0;
+      }
+    }
+    const standing = sim.world.kind.some(
+      (kind, i) => kind === EntityKind.Building && sim.world.alive[i] === 1 && sim.world.faction[i] === 1,
+    );
+    expect(standing).toBe(true);
+
+    sim.run(V.eliminationGraceTicks + 5);
+    expect(sim.victory.eliminated[1]).toBe(1);
   });
 
   it('hands the match to the last side standing', () => {

@@ -1,6 +1,5 @@
 import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
 import type { CattleSystem } from './cattle.js';
-import type { CombatSystem } from './combat.js';
 import type { ConstructionSystem } from './construction.js';
 import type { ProductionSystem } from './production.js';
 import type { Economy } from './economy/ledger.js';
@@ -22,7 +21,6 @@ import {
   handleIndex,
   isAlive,
   OrderMode,
-  Stance,
   spawn,
   type Handle,
   type World,
@@ -49,16 +47,23 @@ export const CommandKind = {
   SpawnCattle: 3,
   /** Tether a cow to a herder — what right-clicking a neutral herd issues. */
   Leash: 4,
-  Attack: 5,
+  /**
+   * 5 was `Attack`. Retired with combat in Phase V6. Command values are durable — they
+   * sit in recorded logs and cross the worker boundary — so retired ones are left as
+   * gaps rather than renumbered.
+   */
   Build: 6,
   Research: 7,
   Train: 8,
   SetRally: 9,
-  /** Move, but engage what you meet on the way. */
-  AttackMove: 10,
-  /** Set how far a unit will go to fight. */
-  SetStance: 11,
-  /** Walk between here and there until told otherwise. */
+  /** 10 was `AttackMove`, 11 `SetStance`. Both retired with combat. */
+  /**
+   * Walk between here and there until told otherwise.
+   *
+   * Kept through the combat retirement. It was built as an attack-move that refuses to
+   * finish, but nothing about walking a beat needs a fight at the end of it, and a
+   * herder covering ground between two points wants exactly this.
+   */
   Patrol: 12,
   /** Cut a standing tree for its timber. `a` is the index into the woodland. */
   Fell: 13,
@@ -133,7 +138,6 @@ export interface CommandContext {
   /** Terrain, for siting decisions a command makes. */
   readonly map: Heightmap;
   readonly cattle: CattleSystem;
-  readonly combat: CombatSystem;
   readonly construction: ConstructionSystem;
   readonly production: ProductionSystem;
   readonly economy: Economy;
@@ -147,7 +151,7 @@ export function applyCommand(
   events: SimEvent[],
   context: CommandContext,
 ): boolean {
-  const { movement, cattle, combat, construction, production, economy, woodland, farmland, map, alliance, tech } =
+  const { movement, cattle, construction, production, economy, woodland, farmland, map, alliance, tech } =
     context;
   switch (command.kind) {
     case CommandKind.Spawn: {
@@ -157,11 +161,9 @@ export function applyCommand(
       return true;
     }
 
-    case CommandKind.MoveTo:
-    case CommandKind.AttackMove: {
+    case CommandKind.MoveTo: {
       const handle = command.a as Handle;
-      const mode =
-        command.kind === CommandKind.AttackMove ? OrderMode.AttackMove : OrderMode.Move;
+      const mode = OrderMode.Move;
 
       // `d` non-zero appends rather than replaces. It rides on the existing command
       // rather than doubling the command kinds, because queueing is a property of how an
@@ -212,23 +214,6 @@ export function applyCommand(
       clearOrderQueue(world, index);
       world.orderMode[index] = OrderMode.Patrol;
       events.push(makeEvent(world.tick, EventType.OrderIssued, handle, command.b, command.c));
-      return true;
-    }
-
-    case CommandKind.SetStance: {
-      const handle = command.a as Handle;
-      if (!isAlive(world, handle)) return false;
-      const stance = command.b;
-      if (stance !== Stance.Aggressive && stance !== Stance.Defensive && stance !== Stance.HoldGround) {
-        return false;
-      }
-      const index = handleIndex(handle);
-      if (world.kind[index] !== EntityKind.Unit) return false;
-      world.stance[index] = stance;
-      // The post moves with the order to hold here, not to wherever the unit was last
-      // told to go: a unit set to hold ground holds THIS ground.
-      world.postX[index] = world.posX[index]!;
-      world.postY[index] = world.posY[index]!;
       return true;
     }
 
@@ -323,9 +308,6 @@ export function applyCommand(
 
     case CommandKind.SetRally:
       return production.setRally(world, command.a as Handle, command.b, command.c);
-
-    case CommandKind.Attack:
-      return combat.attack(world, command.a as Handle, command.b as Handle);
 
     case CommandKind.Destroy:
       return destroy(world, command.a as Handle);

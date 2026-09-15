@@ -1,7 +1,6 @@
 import { applyCommand, compareCommands, type Command } from './commands.js';
 import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
 import type { CattleSystem } from './cattle.js';
-import type { CombatSystem } from './combat.js';
 import type { ConstructionSystem } from './construction.js';
 import type { ProductionSystem } from './production.js';
 import type { VictoryState } from './victory.js';
@@ -25,7 +24,6 @@ export interface SimLoop {
   readonly world: World;
   readonly movement: MovementSystem;
   readonly cattle: CattleSystem;
-  readonly combat: CombatSystem;
   readonly construction: ConstructionSystem;
   readonly production: ProductionSystem;
   /** Computer players, each simply another source of commands. */
@@ -63,7 +61,6 @@ export interface SimSystems {
   world: World;
   movement: MovementSystem;
   cattle: CattleSystem;
-  combat: CombatSystem;
   construction: ConstructionSystem;
   production: ProductionSystem;
   economy: Economy;
@@ -104,7 +101,7 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
  * survives until the boundary.
  */
 export function step(loop: SimLoop): void {
-  const { world, movement, cattle, combat, construction, production, economy, woodland, farmland, alliance, tech, victory, fog, map, pending, events } =
+  const { world, movement, cattle, construction, production, economy, woodland, farmland, alliance, tech, victory, fog, map, pending, events } =
     loop;
 
   // Computer players act first, through exactly the same queue a human's clicks use.
@@ -139,7 +136,6 @@ export function step(loop: SimLoop): void {
     applyCommand(world, command, events, {
       movement,
       cattle,
-      combat,
       woodland,
       farmland,
       map,
@@ -159,9 +155,10 @@ export function step(loop: SimLoop): void {
   // below, so the first cycle is tick 200, not 199.
   // Combat after movement and cattle, so a strike lands on where things ended up
   // this tick rather than where they started.
-  construction.update(world, movement.grid, events);
+  construction.update(world, movement.grid, events, (player) =>
+    tech.modifier(player, Modifier.Labour),
+  );
   production.update(world, events);
-  combat.update(world, movement.grid, economy, tech, events);
   // After everything that can take health away, and in one place, because dying is not
   // a rule any of them owns. See src/sim/mortality.ts.
   reap(world, events);

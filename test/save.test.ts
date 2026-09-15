@@ -14,7 +14,7 @@ import { Modifier, TechId, TECHS } from '../src/shared/tech/index.js';
 import { createHeightmap } from '../src/sim/terrain/generate.js';
 import { makeSim } from './simHarness.js';
 import { BuildingType, buildingSpec } from '../src/shared/buildings/index.js';
-import { EntityKind, handleIndex, spawn } from '../src/sim/world.js';
+import { EntityKind } from '../src/sim/world.js';
 
 /** A scenario with movement, cattle, orders and an economy all in flight. */
 function busyScenario(seed: number) {
@@ -130,8 +130,8 @@ describe('save and load', () => {
     expect(restored.tech.isComplete(0, TechId.Amabutho)).toBe(true);
     // Multipliers are derived, so this proves the rebuild happened rather than the
     // save carrying a second copy free to disagree with the first.
-    expect(restored.tech.modifier(0, Modifier.CombatDamage)).toBeCloseTo(
-      original.tech.modifier(0, Modifier.CombatDamage),
+    expect(restored.tech.modifier(0, Modifier.Labour)).toBeCloseTo(
+      original.tech.modifier(0, Modifier.Labour),
       9,
     );
     expect(Array.from(restored.tech.progress)).toEqual(Array.from(original.tech.progress));
@@ -221,18 +221,5 @@ describe('what a save actually carries', () => {
 
     expect(restored.world.buildingType[site]).toBe(BuildingType.Umuzi);
     expect(restored.world.buildProgress[site]).toBe(spec.work);
-  });
-
-  it('restores a unit still fighting the enemy it was fighting', () => {
-    const origin = makeSim(64, 6);
-    const attacker = spawn(origin.world, 10, 10, 0);
-    const victim = spawn(origin.world, 10.5, 10, 1);
-    origin.world.attackTarget[handleIndex(attacker)] = victim;
-
-    const save = captureState(origin.loop);
-    const restored = makeSim(64, 6);
-    restoreState(restored.loop, save);
-
-    expect(restored.world.attackTarget[handleIndex(attacker)]).toBe(victim);
   });
 });

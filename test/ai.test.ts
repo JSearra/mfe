@@ -57,7 +57,7 @@ describe('ai as a command source', () => {
   it('acts only on what it can see', () => {
     const sim = makeSim(128, 1, undefined, []);
     spawn(sim.world, 4, 4, 0);
-    spawn(sim.world, 28, 28, 1); // beyond vision
+    spawn(sim.world, 28, 28, 2, 1, EntityKind.Cattle); // beyond vision
 
     updateFog(sim.world, sim.map, sim.fog);
     sim.world.tick = AI.decideEveryTicks;
@@ -66,87 +66,10 @@ describe('ai as a command source', () => {
     const kinds: number[] = [];
     ai.decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) => kinds.push(c.kind));
 
-    // An enemy it cannot see draws no attack order — it scouts or builds instead.
-    expect(kinds).not.toContain(CommandKind.Attack);
-  });
-
-  it('concentrates on one target when it has the numbers', () => {
-    const sim = makeSim(128, 1, undefined, []);
-    for (let i = 0; i < 8; i++) spawn(sim.world, 10 + i * 0.4, 10, 0);
-    spawn(sim.world, 12, 10, 1);
-    spawn(sim.world, 13, 10, 1);
-
-    updateFog(sim.world, sim.map, sim.fog);
-    sim.world.tick = AI.decideEveryTicks;
-    sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
-
-    const attacks: number[] = [];
-    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) => {
-      if (c.kind === CommandKind.Attack) attacks.push(c.b);
-    });
-
-    expect(attacks.length).toBe(8);
-    expect(new Set(attacks).size).toBe(1);
-  });
-
-  it('pulls back rather than feeding units in when outnumbered', () => {
-    const sim = makeSim(128, 1, undefined, []);
-    spawn(sim.world, 10, 10, 0);
-    for (let i = 0; i < 6; i++) spawn(sim.world, 11 + i * 0.3, 10, 1);
-
-    updateFog(sim.world, sim.map, sim.fog);
-    sim.world.tick = AI.decideEveryTicks;
-    sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
-
-    const kinds: number[] = [];
-    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) => kinds.push(c.kind));
-    expect(kinds).toContain(CommandKind.MoveTo);
-    expect(kinds).not.toContain(CommandKind.Attack);
-  });
-
-  it('retreats toward its own ground, not to the middle of the fight', () => {
-    // The centroid of the army IS the fight when the enemy is on top of it, so a
-    // "pull back" to that point retreats nowhere. It falls back on a homestead if it
-    // has one.
-    const sim = makeSim(128, 1, undefined, []);
-    for (let i = 0; i < 2; i++) spawn(sim.world, 30 + i * 0.4, 20, 0);
-    for (let i = 0; i < 8; i++) spawn(sim.world, 31 + i * 0.3, 20, 1);
-    sim.construction.place(sim.world, sim.economy, 0, BuildingType.Umuzi, 12, 20, []);
-
-    updateFog(sim.world, sim.map, sim.fog);
-    sim.world.tick = AI.decideEveryTicks;
-    sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
-
-    const moves: { x: number; y: number }[] = [];
-    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) => {
-      if (c.kind === CommandKind.MoveTo) moves.push({ x: c.b, y: c.c });
-    });
-
-    expect(moves.length).toBe(2);
-    const averageX = moves.reduce((sum, m) => sum + m.x, 0) / moves.length;
-    // Away from the enemy at x=31, back toward the homestead at x=12.
-    expect(averageX).toBeLessThan(25);
-  });
-
-  it('gives each retreating unit its own ground to stand on', () => {
-    // Every unit ordered to the identical tile arrives as a scrum: push-apart and the
-    // stuck timer then fight each other. tuning.ai.regroupRadius exists for this and
-    // was going unused.
-    const sim = makeSim(128, 1, undefined, []);
-    for (let i = 0; i < 5; i++) spawn(sim.world, 20 + i * 0.4, 20, 0);
-    for (let i = 0; i < 12; i++) spawn(sim.world, 21 + i * 0.2, 20, 1);
-
-    updateFog(sim.world, sim.map, sim.fog);
-    sim.world.tick = AI.decideEveryTicks;
-    sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
-
-    const moves: string[] = [];
-    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) => {
-      if (c.kind === CommandKind.MoveTo) moves.push(`${c.b.toFixed(3)},${c.c.toFixed(3)}`);
-    });
-
-    expect(moves.length).toBe(5);
-    expect(new Set(moves).size).toBe(5);
+    // A herd it cannot see draws no order for it. The AI reads the world through its
+    // own fog, which is both fair and the only thing exercising the per-viewer
+    // information model outside the renderer.
+    expect(kinds).not.toContain(CommandKind.Leash);
   });
 
   it('does not spend on a site the grain a replacement is waiting for', () => {
@@ -236,10 +159,9 @@ describe('ai soak', () => {
     expect(b!.controller.stats.decisions).toBeGreaterThan(100);
     expect(a!.controller.stats.ordersIssued).toBeGreaterThan(0);
 
-    // Something actually happened: contact was made, or ground was taken.
-    const fought = sim.combat.stats.strikes > 0;
-    const built = sim.construction.stats.placed > 0;
-    expect(fought || built).toBe(true);
+    // Something actually happened: ground was taken. Contact used to be the other way
+    // this could pass, and there is no contact to make any more (Phase V6).
+    expect(sim.construction.stats.placed).toBeGreaterThan(0);
   });
 
   // Before production existed, an AI-vs-AI match was a one-way ratchet to zero units.

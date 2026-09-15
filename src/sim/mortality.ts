@@ -1,5 +1,5 @@
 import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
-import { destroy, handleIndex, NULL_HANDLE, packHandle, type World } from './world.js';
+import { destroy, packHandle, type World } from './world.js';
 
 /**
  * Death, from whatever caused it.
@@ -12,8 +12,9 @@ import { destroy, handleIndex, NULL_HANDLE, packHandle, type World } from './wor
  * say in it.
  *
  * Rehomed here ahead of retiring combat (roadmap Phase V6) rather than during it, so the
- * move could be proved inert on its own: it runs at exactly the point in the tick it ran
- * at before, and the golden replay is unchanged by it.
+ * move could be proved inert on its own: it ran at exactly the point in the tick it had
+ * before, and the golden replay was unchanged by it. Combat is gone now and this is all
+ * that is left of it — which is the point, because none of it was ever combat's.
  */
 
 /** Remove anything whose health has run out. Returns how many died. */
@@ -30,18 +31,6 @@ export function reap(world: World, events: SimEvent[]): number {
     );
     destroy(world, handle);
     died++;
-  }
-
-  if (died === 0) return 0;
-
-  // Clear targets that just died, so the invariant "no unit ends a tick holding a dead
-  // target" holds. Leaving it to the next tick works, but it means a save taken between
-  // the two restores a unit aiming at a corpse.
-  for (let index = 0; index < world.capacity; index++) {
-    if (world.alive[index] !== 1) continue;
-    const target = world.attackTarget[index]!;
-    if (target === NULL_HANDLE) continue;
-    if (world.destroyPending[handleIndex(target)] === 1) world.attackTarget[index] = NULL_HANDLE;
   }
 
   return died;

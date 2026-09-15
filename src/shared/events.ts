@@ -4,7 +4,7 @@
  * State snapshots cannot express events. An entity that dies simply vanishes from the
  * next snapshot, with no signal to play a death animation; anything that happens and
  * reverts inside one tick is invisible entirely. So discrete occurrences travel
- * alongside the state, and audio, VFX and floating combat text all read from here.
+ * alongside the state, and audio, VFX and the alert bar all read from here.
  *
  * See docs/ARCHITECTURE.md section 5.
  */
@@ -16,7 +16,13 @@ export const EventType = {
   StampedeBegan: 3,
   Crushed: 4,
   Starved: 5,
-  Hit: 6,
+  /**
+   * 6 was `Hit`, the only combat-only event. Retired with combat in Phase V6 and left
+   * as a gap rather than renumbered: event values cross the worker boundary and sit in
+   * recorded command logs, so reusing one would make an old log decode as nonsense
+   * instead of failing.
+   */
+  /** Not combat-only, and never was: starvation and stampede crush both end here. */
   Died: 7,
   BuildingPlaced: 8,
   BuildingCompleted: 9,

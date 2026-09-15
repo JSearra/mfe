@@ -56,7 +56,17 @@ export interface ConstructionSystem {
     tileY: number,
     events: SimEvent[],
   ): PlacementResult;
-  update(world: World, grid: SpatialGrid, events: SimEvent[]): void;
+  /**
+   * `labour` is injected rather than imported, the way the ledger takes its grain
+   * multiplier: construction knows that people build things, and does not need to learn
+   * what a tech tree is to find out how fast.
+   */
+  update(
+    world: World,
+    grid: SpatialGrid,
+    events: SimEvent[],
+    labour?: (player: number) => number,
+  ): void;
   /** Grain and cattle produced per upkeep by this player's finished buildings. */
   yieldFor(world: World, owner: number): { grain: number; cattle: number };
 }
@@ -167,7 +177,7 @@ export function createConstructionSystem(
       return PlacementResult.Placed;
     },
 
-    update(world, grid, events): void {
+    update(world, grid, events, labour): void {
       const b = tuning.buildings;
 
       for (let index = 0; index < world.capacity; index++) {
@@ -200,7 +210,8 @@ export function createConstructionSystem(
         }
         if (builders === 0) continue;
 
-        world.buildProgress[index] = world.buildProgress[index]! + builders * b.progressPerBuilder;
+        const rate = b.progressPerBuilder * (labour?.(world.faction[index]!) ?? 1);
+        world.buildProgress[index] = world.buildProgress[index]! + builders * rate;
         if (world.buildProgress[index]! < spec.work) continue;
 
         world.buildProgress[index] = spec.work;
