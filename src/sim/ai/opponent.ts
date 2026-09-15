@@ -3,6 +3,7 @@ import { TECH_IDS } from '../../shared/tech/index.js';
 import type { TechState } from '../tech.js';
 import { CommandKind } from '../commands.js';
 import { Resource, type Economy } from '../economy/ledger.js';
+import { wantedTrade } from '../trade.js';
 import { cos, sin, TWO_PI } from '../math/trig.js';
 import { isVisible, type FogState } from '../vision/fog.js';
 import { tuning } from '../tuning.js';
@@ -43,6 +44,7 @@ export interface AiStats {
   techsOrdered: number;
   herdsOrdered: number;
   troopsOrdered: number;
+  tradesOffered: number;
 }
 
 export interface AiController {
@@ -72,6 +74,7 @@ export function createAi(player: number): AiController {
     techsOrdered: 0,
     herdsOrdered: 0,
     troopsOrdered: 0,
+    tradesOffered: 0,
   };
 
   /** Where the next building goes. Walked outward so sites do not pile up. */
@@ -201,6 +204,32 @@ export function createAi(player: number): AiController {
         });
         buildSlot = (buildSlot + 1) % 16;
         stats.buildsOrdered++;
+      }
+
+      // --- trade ------------------------------------------------------------
+      //
+      // A neighbour rather than only an enemy (ADR-0019). It asks for whatever it is
+      // shortest of and offers whatever it has most of, judged by exactly the valuation
+      // that prices the player's offers — so it charges dearly for grain for the same
+      // reason it goes looking for grain, and the two cannot disagree.
+      //
+      // On its own cadence rather than every decision, because a village that proposed
+      // a trade every ten seconds would be a market stall.
+      if (stats.decisions % ai.tradeEveryDecisions === 0) {
+        for (let neighbour = 0; neighbour < economy.players; neighbour++) {
+          if (neighbour === player) continue;
+          const deal = wantedTrade(economy, player, neighbour);
+          if (deal === null) continue;
+          emit({
+            kind: CommandKind.Trade,
+            a: neighbour,
+            b: deal.offered,
+            c: deal.wanted,
+            d: deal.amount,
+          });
+          stats.tradesOffered++;
+          break;
+        }
       }
 
       // --- research -------------------------------------------------------

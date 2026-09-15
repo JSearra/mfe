@@ -116,6 +116,31 @@
         gap: 6px;
       }
 
+      /* Trade sits apart from the selection's actions, because it belongs to the
+         village rather than to whatever happens to be selected. */
+      .panel__trade {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #3a3226;
+      }
+
+      .panel__trade:empty {
+        display: none;
+      }
+
+      .panel__trade .panel__button {
+        background: rgba(44, 52, 38, 0.8);
+        border-color: #3f4a2f;
+      }
+
+      .panel__trade .panel__button:hover {
+        background: #3f4a2f;
+        border-color: #9ec86a;
+      }
+
       .panel__button {
         font: inherit;
         color: #e8e0d0;

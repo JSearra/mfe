@@ -24,6 +24,7 @@ const IDLE_PLAYER: PlayerState = {
   grain: 0,
   ammunition: 0,
   wood: 0,
+  offers: [],
   shortfall: 0,
   drought: 0,
   droughtSevere: false,

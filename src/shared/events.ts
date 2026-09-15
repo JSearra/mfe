@@ -24,6 +24,10 @@ export const EventType = {
   UnitTrained: 11,
   VictoryDeclared: 12,
   PlayerEliminated: 13,
+  /** A neighbour agreed a trade. `value` carries what came back. */
+  Traded: 14,
+  /** A neighbour said no. Worth telling the player, who cannot see their books. */
+  TradeRefused: 15,
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];

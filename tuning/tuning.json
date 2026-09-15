@@ -116,6 +116,20 @@
     "maxBand": 4,
     "minSpacing": 1.6
   },
+  "trade": {
+    "weightCattle": 1.0,
+    "weightGrain": 1.3,
+    "weightWood": 0.9,
+    "referenceCattle": 130.0,
+    "referenceGrain": 420.0,
+    "referenceWood": 110.0,
+    "margin": 0.18,
+    "reserveFraction": 0.2,
+    "maxOfferFraction": 0.35,
+    "parcelCattle": 8.0,
+    "parcelGrain": 60.0,
+    "parcelWood": 30.0
+  },
   "vision": {
     "unitRadius": 8.0,
     "cattleRadius": 4.0,
@@ -147,7 +161,8 @@
     "buildSpacing": 4,
     "trainFloor": 120,
     "wantedHomesteads": 2,
-    "builders": 3
+    "builders": 3,
+    "tradeEveryDecisions": 6
   },
   "production": {
     "queueLimit": 5,

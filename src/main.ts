@@ -424,6 +424,9 @@ async function main(options: GameOptions): Promise<void> {
     onResearch(techIndex) {
       sim.sendCommand(CommandKind.Research, techIndex, PLAYER);
     },
+    onTrade(partner, offered, wanted, amount) {
+      sim.sendCommand(CommandKind.Trade, partner, offered, wanted, amount);
+    },
   });
 
   let view: InterpolatedView | null = null;
@@ -735,6 +738,7 @@ async function main(options: GameOptions): Promise<void> {
     if (message !== null) {
       interpolator.push(message.snapshot);
       resourceBar.update(message.player);
+      panel.setOffers(message.player.offers);
       outcomeBanner.update(message.player, PLAYER);
       fog.setFog(message.fog);
       // The wood arrives only when it has changed, which is the upkeep cycle rather

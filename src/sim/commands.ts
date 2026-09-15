@@ -10,6 +10,8 @@ import type { TechState } from './tech.js';
 import type { MovementSystem } from './movement.js';
 import { fell, type Woodland } from './woodland.js';
 import { abandon, plant, type Farmland } from './economy/farmland.js';
+import { trade, TradeResult } from './trade.js';
+import { Resource } from './economy/ledger.js';
 import type { Heightmap } from '../shared/heightmap.js';
 import {
   clearOrderQueue,
@@ -63,6 +65,13 @@ export const CommandKind = {
   Plant: 14,
   /** Give a field up. `a` is its index in the farmland. */
   Abandon: 15,
+  /**
+   * Offer a neighbour `d` of resource `b` for whatever resource `c` they will give.
+   *
+   * `a` is the neighbour. The amount returned is not in the command because only the
+   * neighbour knows it — see src/sim/trade.ts.
+   */
+  Trade: 16,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -225,6 +234,30 @@ export function applyCommand(
 
     case CommandKind.Abandon:
       return abandon(farmland, command.a);
+
+    case CommandKind.Trade: {
+      const result = trade(
+        economy,
+        command.playerId,
+        command.a,
+        command.b as Resource,
+        command.c as Resource,
+        command.d,
+      );
+      // A refusal is news. The player cannot see a neighbour's books, so silence would
+      // be indistinguishable from the command going missing.
+      events.push(
+        makeEvent(
+          world.tick,
+          result === TradeResult.Traded ? EventType.Traded : EventType.TradeRefused,
+          0,
+          0,
+          0,
+          command.a,
+        ),
+      );
+      return result === TradeResult.Traded;
+    }
 
     case CommandKind.Leash:
       return cattle.leash(world, command.a as Handle, command.b as Handle);

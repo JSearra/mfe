@@ -20,6 +20,7 @@ import { FactionId } from '../shared/factions/index.js';
 import { createFog, type FogState } from '../sim/vision/fog.js';
 import { createMovementSystem, type MovementSystem } from '../sim/movement.js';
 import type { World } from '../sim/world.js';
+import { offersFor, type TradeOffer } from '../sim/trade.js';
 
 /**
  * The boundary the renderer talks to.
@@ -61,6 +62,15 @@ export interface PlayerState {
   readonly ammunition: number;
   /** Timber in hand. Buildings need it, and only the woodland supplies it. */
   readonly wood: number;
+  /**
+   * Trades a neighbour would accept right now, and what each returns.
+   *
+   * Carried across the boundary because the rate is the NEIGHBOUR's private
+   * information — their scarcity sets it, and the player cannot see their books. Asking
+   * is free and changes nothing, so the simulation answers on the player's behalf
+   * rather than making them discover it by trying. See src/sim/trade.ts.
+   */
+  readonly offers: readonly TradeOffer[];
   /** Grain owed but unpaid at the last upkeep. Non-zero means troops are starving. */
   readonly shortfall: number;
   /** 0 (wet) to 1 (parched). */
@@ -333,6 +343,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         grain: economy.balance(viewerId, Resource.Grain),
         ammunition: economy.balance(viewerId, Resource.Ammunition),
         wood: economy.balance(viewerId, Resource.Wood),
+        offers: offersFor(economy, viewerId),
         shortfall: economy.shortfall[viewerId] ?? 0,
         drought: droughtNow,
         droughtSevere: droughtNow >= tuning.economy.droughtThreshold,

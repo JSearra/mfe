@@ -524,9 +524,31 @@ band's own ground in the art pipeline, so a field looks like the soil it came ou
 
 ## Phase V4 — trade
 
-*Done when:* a neighbouring settlement will exchange one resource for another at a rate
-that moves with scarcity, the offer can be refused, and the AI values the same trade from
-its own side rather than from the player's.
+**Done.** A neighbour exchanges cattle, grain and timber at a rate set entirely by **its
+own** marginal values, never the asking village's. Value falls as a store fills —
+`weight * reference / (reference + held)` — so the last bag of grain in an empty store is
+worth many times the thousandth in a full one, which is the only property needed to make
+scarcity move a price. A linear valuation would be a fixed exchange rate and there would
+be nothing to think about.
+
+Refusal is real: a neighbour with nothing to give, or who would be worse off by its own
+reckoning, says no and nothing moves. It keeps a reserve of whatever is asked for, and
+caps any single deal, so it cannot be bought out — a village that swallowed any quantity
+at one rate would be a shop.
+
+Because the rate is the neighbour's private information and the player cannot see their
+books, the simulation answers the question on their behalf: `offersFor` returns what each
+trade would return right now, and that crosses with the snapshot. Asking is free and
+changes nothing, which is what makes it the player's only window onto what a neighbour is
+short of.
+
+The AI proposes trades using the same valuation that prices the player's offers, so it
+charges dearly for grain for exactly the reason it goes looking for grain, and the two
+cannot disagree.
+
+Measured live, one trade of 30 timber for 21 grain moved every rate on the board: timber
+offers went from 9 to 10 and 39 to 49 as the neighbour's woodpile filled, and grain offers
+fell from 21 to 18 as their granary emptied.
 
 ## Phase V5 — alliances
 

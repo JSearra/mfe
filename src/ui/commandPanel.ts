@@ -2,6 +2,15 @@ import { BUILDINGS, BuildingType, buildingSpec } from '../shared/buildings/index
 import { TECHS, TECH_IDS, type TechId } from '../shared/tech/index.js';
 import { t, type MessageKey } from '../core/i18n/index.js';
 import type { InterpolatedView } from '../render/interpolation.js';
+import type { TradeOffer } from '../sim/trade.js';
+
+/** Resource index -> its name key. Order matches Resource in the ledger. */
+const RESOURCE_KEYS: readonly MessageKey[] = [
+  'resource.cattle',
+  'resource.grain',
+  'resource.ammunition',
+  'resource.wood',
+];
 
 /**
  * What is selected, and what can be done with it.
@@ -24,11 +33,20 @@ export interface CommandPanelHandlers {
   onTrain(buildingHandle: number, movementClass: number): void;
   onArmBuild(type: BuildingType): void;
   onResearch(techIndex: number): void;
+  onTrade(partner: number, offered: number, wanted: number, amount: number): void;
 }
 
 export interface CommandPanel {
   readonly element: HTMLElement;
   update(view: InterpolatedView | null, selected: ReadonlySet<number>): void;
+  /**
+   * What the neighbours will trade, and at what rate.
+   *
+   * A row of its own, always shown, because trade belongs to the village rather than to
+   * whatever happens to be selected — and because the rate is news: it is the only
+   * window a player has onto what a neighbour is short of.
+   */
+  setOffers(offers: readonly TradeOffer[]): void;
 }
 
 function button(label: string, hint: string, onClick: () => void): HTMLButtonElement {
@@ -56,7 +74,10 @@ export function createCommandPanel(
   const actions = document.createElement('div');
   actions.className = 'panel__actions';
 
-  element.append(heading, detail, actions);
+  const trade = document.createElement('div');
+  trade.className = 'panel__trade';
+
+  element.append(heading, detail, actions, trade);
   parent.appendChild(element);
 
   /**
@@ -106,8 +127,32 @@ export function createCommandPanel(
     }
   }
 
+  /** Rebuilt only when the offers actually change, for the reason the actions are. */
+  let offerSignature = '';
+
   return {
     element,
+
+    setOffers(offers): void {
+      const next = offers
+        .map((o) => `${o.partner}:${o.offered}>${o.wanted}:${Math.round(o.get)}`)
+        .join('|');
+      if (next === offerSignature) return;
+      offerSignature = next;
+
+      trade.replaceChildren();
+      if (offers.length === 0) return;
+
+      for (const offer of offers) {
+        const give = `${Math.round(offer.give)} ${t(RESOURCE_KEYS[offer.offered] ?? 'resource.grain')}`;
+        const get = `${Math.round(offer.get)} ${t(RESOURCE_KEYS[offer.wanted] ?? 'resource.grain')}`;
+        trade.append(
+          button(t('panel.trade', { give, get }), t('panel.tradeHint'), () =>
+            handlers.onTrade(offer.partner, offer.offered, offer.wanted, offer.give),
+          ),
+        );
+      }
+    },
 
     update(view, selected): void {
       if (view === null || selected.size === 0) {

@@ -9,6 +9,7 @@ import { createVictoryState, type VictoryState } from '../../sim/victory.js';
 import { createProductionSystem } from '../../sim/production.js';
 import { createEconomy, Resource, type Economy } from '../../sim/economy/ledger.js';
 import { createWoodland, packWoodland, type Woodland } from '../../sim/woodland.js';
+import { offersFor } from '../../sim/trade.js';
 import { packFarmland, type Farmland } from '../../sim/economy/farmland.js';
 import { createStartingFarmland } from '../../sim/economy/plots.js';
 import { createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../../sim/loop.js';
@@ -141,7 +142,8 @@ function tick(): void {
     cattle: economy.balance(viewerId, Resource.Cattle),
     grain: economy.balance(viewerId, Resource.Grain),
     ammunition: economy.balance(viewerId, Resource.Ammunition),
-        wood: economy.balance(viewerId, Resource.Wood),
+    wood: economy.balance(viewerId, Resource.Wood),
+    offers: offersFor(economy, viewerId),
     shortfall: economy.shortfall[viewerId] ?? 0,
     drought: droughtNow,
     droughtSevere: droughtNow >= tuning.economy.droughtThreshold,

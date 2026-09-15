@@ -77,7 +77,9 @@
     "trainMounted": "Raise horseman",
     "buildHeading": "Build",
     "researchHeading": "Research",
-    "costs": "{grain} grain · {cattle} cattle"
+    "costs": "{grain} grain · {cattle} cattle",
+    "trade": "Offer {give} → {get}",
+    "tradeHint": "What the neighbouring village will give, at their price"
   },
   "alert": {
     "stampede": "The herd has broken",
