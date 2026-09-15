@@ -1,3 +1,4 @@
+import { EventType, makeEvent, type SimEvent } from '../../shared/events.js';
 import { heightAt, type Heightmap } from '../../shared/heightmap.js';
 import { FARMLAND_STRIDE } from '../../shared/farmland.js';
 import { tuning } from '../tuning.js';
@@ -161,8 +162,19 @@ export function abandon(land: Farmland, index: number): boolean {
  * it, and returns nothing — the harvest itself is collected by the ledger, which owns
  * the weather.
  */
-export function updateFarmland(world: World, land: Farmland, players: number): void {
+export function updateFarmland(
+  world: World,
+  land: Farmland,
+  players: number,
+  events?: SimEvent[],
+): void {
   const f = tuning.farmland;
+  // Worst established field per player, and the mean, for the failing-fields warning.
+  const total = new Float64Array(players);
+  const counted = new Float64Array(players);
+  const worst = new Float64Array(players).fill(Infinity);
+  const worstX = new Float64Array(players);
+  const worstY = new Float64Array(players);
   const tendSq = f.tendRadius * f.tendRadius;
   const grazeSq = f.grazeRadius * f.grazeRadius;
   let looksDifferent = false;
@@ -214,6 +226,17 @@ export function updateFarmland(world: World, land: Farmland, players: number): v
     condition += working * f.tendPerUpkeep;
 
     const clamped = condition < 0 ? 0 : condition > 1 ? 1 : condition;
+    if (isEstablished(land, index)) {
+      total[owner] = total[owner]! + clamped;
+      counted[owner] = counted[owner]! + 1;
+      // Strictly worse wins; a tie keeps the earlier field, so the choice does not
+      // depend on iteration order.
+      if (clamped < worst[owner]!) {
+        worst[owner] = clamped;
+        worstX[owner] = centreX;
+        worstY[owner] = centreY;
+      }
+    }
     // Crossing a tenth is roughly where the art changes, so only then is it news.
     if (Math.floor(clamped * 10) !== Math.floor(land.condition[index]! * 10)) {
       looksDifferent = true;
@@ -222,6 +245,31 @@ export function updateFarmland(world: World, land: Farmland, players: number): v
   }
 
   if (looksDifferent) land.version++;
+
+  // A standing condition, not an incident, so it is repeated rather than said once — a
+  // player who missed the first word of it is exactly the player who needs the second.
+  // But every season is nagging, and worse, it buries every other alert: a once-only
+  // warning like a neighbour beginning to hold a full village never got a look in
+  // against something firing every ten seconds. Every fifth season says it often enough.
+  if (events === undefined) return;
+  const every = tuning.farmland.warnEverySeasons;
+  if (every > 1 && Math.round(world.tick / tuning.economy.upkeepIntervalTicks) % every !== 0) {
+    return;
+  }
+  for (let player = 0; player < players; player++) {
+    if (counted[player]! === 0) continue;
+    if (total[player]! / counted[player]! >= f.failingBelow) continue;
+    events.push(
+      makeEvent(
+        world.tick,
+        EventType.FieldsFailing,
+        0,
+        worstX[player]!,
+        worstY[player]!,
+        player,
+      ),
+    );
+  }
 }
 
 /**

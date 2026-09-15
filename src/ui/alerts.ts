@@ -52,6 +52,31 @@ const WATCHED: Readonly<Record<number, MessageKey>> = {
   // It has a real position — the unit going hungry — so the camera can be sent to it.
   [EventType.Starved]: 'alert.starving',
   [EventType.AllianceRelief]: 'alert.relief',
+  // The warning the game most needed and did not have. Carries the worst field's
+  // position, so Space takes the player to the thing that needs hands on it.
+  [EventType.FieldsFailing]: 'alert.fieldsFailing',
+  [EventType.AllianceOffered]: 'alert.allianceOffered',
+  [EventType.NeighbourSettling]: 'alert.neighbourSettling',
+};
+
+/**
+ * The one alert that is about somebody ELSE, so the viewer test runs the other way:
+ * a village beginning to hold its own full size is not news to itself.
+ */
+const ABOUT_OTHERS: ReadonlySet<number> = new Set([EventType.NeighbourSettling]);
+
+/**
+ * Where an event names the village it concerns, for the ones that are not everybody's
+ * business.
+ *
+ * The event stream is global. Another village's fields failing, or an offer of alliance
+ * between two neighbours, is not this player's news — announcing it would tell them
+ * about books they cannot see.
+ */
+const OWNER_FIELD: Readonly<Record<number, 'x' | 'y' | 'payload'>> = {
+  [EventType.AllianceRelief]: 'y',
+  [EventType.FieldsFailing]: 'payload',
+  [EventType.AllianceOffered]: 'y',
 };
 
 /**
@@ -63,7 +88,11 @@ const WATCHED: Readonly<Record<number, MessageKey>> = {
  * camera to them would fly it to the corner of the map, so it is announced and not
  * followed. See src/sim/alliance.ts.
  */
-const PLACELESS: ReadonlySet<number> = new Set([EventType.AllianceRelief]);
+const PLACELESS: ReadonlySet<number> = new Set([
+  EventType.AllianceRelief,
+  EventType.AllianceOffered,
+  EventType.NeighbourSettling,
+]);
 
 export function createAlerts(): Alerts {
   const element = document.createElement('div');
@@ -78,9 +107,9 @@ export function createAlerts(): Alerts {
       for (const event of events) {
         const key = WATCHED[event.type];
         if (key === undefined) continue;
-        // Relief carries the two villages in x/y. Only the one receiving it is being
-        // told something; the giver already knows, and third parties are not owed it.
-        if (event.type === EventType.AllianceRelief && event.y !== viewer) continue;
+        if (ABOUT_OTHERS.has(event.type) && event.x === viewer) continue;
+        const owner = OWNER_FIELD[event.type];
+        if (owner !== undefined && event[owner] !== viewer) continue;
         // One alert per burst. A herd going over produces a StampedeBegan for every
         // beast in it, and twenty identical lines is not a notification, it is noise.
         const last = live[live.length - 1];

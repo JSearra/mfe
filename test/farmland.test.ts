@@ -17,6 +17,7 @@ import { FactionId } from '../src/shared/factions/index.js';
 import { NEUTRAL_FACTION } from '../src/sim/commands.js';
 import { tuning } from '../src/sim/tuning.js';
 import { createWorld, EntityKind, spawn } from '../src/sim/world.js';
+import { EventType, type SimEvent } from '../src/shared/events.js';
 import { flatMap } from './simHarness.js';
 
 const F = tuning.farmland;
@@ -215,5 +216,45 @@ describe('the packed form the renderer reads', () => {
     // The abandoned field is gone, so the second packed entry is slot 2 and not slot 1 —
     // which is exactly why the slot has to be carried.
     expect(fieldSlot(packed, FARMLAND_STRIDE)).toBe(2);
+  });
+});
+
+describe('telling the player the fields are failing', () => {
+  /** A village with fields and, optionally, people standing on them. */
+  function village(tend: boolean) {
+    const map = flatMap(32);
+    const world = createWorld(64, 4);
+    const land = createFarmland();
+    const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], 1);
+    for (const [x, y] of [[8, 8], [11, 8], [14, 8]] as const) {
+      expect(plant(land, economy, map, 0, x, y)).toBe(PlantResult.Planted);
+      land.work[land.count - 1] = tuning.farmland.establishWork;
+    }
+    if (tend) for (const [x, y] of [[8, 8], [11, 8], [14, 8]] as const) spawn(world, x + 0.5, y + 0.5, 0);
+    return { world, land, economy };
+  }
+
+  it('says so, every season, once neglect has taken them below the line', () => {
+    const { world, land } = village(false);
+    const events: SimEvent[] = [];
+    // Far enough for neglect alone to cross the threshold.
+    const seasons = Math.ceil((1 - tuning.farmland.failingBelow) / tuning.farmland.neglectPerUpkeep) + 2;
+    for (let i = 0; i < seasons; i++) updateFarmland(world, land, 2, events);
+
+    const failing = events.filter((e) => e.type === EventType.FieldsFailing);
+    expect(failing.length).toBeGreaterThan(0);
+    // Named for the village it concerns, and pointed at the worst field, so the alert
+    // can be jumped to and is not announced to everybody.
+    expect(failing[0]!.payload).toBe(0);
+    expect(failing[0]!.x).toBeGreaterThan(0);
+  });
+
+  it('stays quiet while somebody is working them', () => {
+    const { world, land } = village(true);
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 60; i++) updateFarmland(world, land, 2, events);
+
+    expect(events.some((e) => e.type === EventType.FieldsFailing)).toBe(false);
+    for (let i = 0; i < land.count; i++) expect(land.condition[i]).toBeCloseTo(1, 5);
   });
 });

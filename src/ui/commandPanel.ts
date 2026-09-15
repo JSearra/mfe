@@ -36,6 +36,7 @@ export interface CommandPanelHandlers {
   onTrade(partner: number, offered: number, wanted: number, amount: number): void;
   onAlly(partner: number): void;
   onBreak(partner: number): void;
+  onCull(): void;
 }
 
 export interface CommandPanel {
@@ -57,6 +58,8 @@ export interface CommandPanel {
    * an offer got worse can see the reason without leaving the panel.
    */
   setRelations(relations: readonly Relation[]): void;
+  /** How many head a slaughter would take, as the simulation reckons it. Zero hides it. */
+  setHerd(head: number): void;
 }
 
 function button(label: string, hint: string, onClick: () => void): HTMLButtonElement {
@@ -90,7 +93,12 @@ export function createCommandPanel(
   const alliance = document.createElement('div');
   alliance.className = 'panel__alliance';
 
-  element.append(heading, detail, actions, trade, alliance);
+  // The herd row sits with trade rather than with the selection, because slaughtering is
+  // the village's decision and not any particular villager's.
+  const herd = document.createElement('div');
+  herd.className = 'panel__herd';
+
+  element.append(heading, detail, actions, herd, trade, alliance);
   parent.appendChild(element);
 
   /**
@@ -143,6 +151,7 @@ export function createCommandPanel(
   /** Rebuilt only when the offers actually change, for the reason the actions are. */
   let offerSignature = '';
   let relationSignature = '';
+  let herdSignature = '';
 
   return {
     element,
@@ -168,12 +177,26 @@ export function createCommandPanel(
       }
     },
 
+    setHerd(head): void {
+      const next = String(head);
+      if (next === herdSignature) return;
+      herdSignature = next;
+
+      herd.replaceChildren();
+      if (head <= 0) return;
+      herd.append(button(t('panel.cull', { head }), t('panel.cullHint'), handlers.onCull));
+    },
+
     setRelations(relations): void {
       // Standing is rounded to whole percent in the signature as well as on screen, so a
       // row that recovers 0.4% a season rebuilds when the number the player reads moves
       // and not on every upkeep.
       const next = relations
-        .map((r) => `${r.partner}:${r.allied ? 1 : 0}${r.wouldAlly ? 1 : 0}:${Math.round(r.standing * 100)}`)
+        .map(
+          (r) =>
+            `${r.partner}:${r.allied ? 1 : 0}${r.wouldAlly ? 1 : 0}${r.asking ? 1 : 0}` +
+            `${r.asked ? 1 : 0}:${Math.round(r.standing * 100)}`,
+        )
         .join('|');
       if (next === relationSignature) return;
       relationSignature = next;
@@ -190,6 +213,42 @@ export function createCommandPanel(
           alliance.append(
             label,
             button(t('panel.breakBond', { village }), t('panel.breakHint'), () =>
+              handlers.onBreak(relation.partner),
+            ),
+          );
+          continue;
+        }
+
+        // Somebody is waiting on an answer. Shown first and as its own line, because a
+        // tie costs cattle every season and used to be entered on this player's behalf
+        // without anyone asking them.
+        if (relation.asking) {
+          const label = document.createElement('div');
+          label.className = 'panel__standing';
+          label.textContent = t('panel.allyAsking', { village });
+          alliance.append(label);
+          if (relation.wouldAlly) {
+            alliance.append(
+              button(t('panel.allyAccept', { village }), t('panel.allyHint'), () =>
+                handlers.onAlly(relation.partner),
+              ),
+            );
+          }
+          alliance.append(
+            button(t('panel.allyWithdraw'), t('panel.allyWithdraw'), () =>
+              handlers.onBreak(relation.partner),
+            ),
+          );
+          continue;
+        }
+
+        if (relation.asked) {
+          const label = document.createElement('div');
+          label.className = 'panel__standing';
+          label.textContent = t('panel.allyWaiting', { village });
+          alliance.append(
+            label,
+            button(t('panel.allyWithdraw'), t('panel.allyWithdraw'), () =>
               handlers.onBreak(relation.partner),
             ),
           );

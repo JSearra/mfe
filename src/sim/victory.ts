@@ -115,6 +115,10 @@ export function createVictoryState(players: number): VictoryState {
         // upkeep collects. `shortfall` is what the last upkeep failed to pay.
         const fed = (economy.shortfall[player] ?? 0) <= 0;
         if (fed && state.households[player]! >= v.householdsToSettle) {
+          // Said once, as the hold begins, rather than every tick of it.
+          if (state.holdTicks[player] === 0) {
+            events.push(makeEvent(world.tick, EventType.NeighbourSettling, 0, player));
+          }
           state.holdTicks[player]!++;
           if (state.holdTicks[player]! >= v.holdTicks) {
             state.outcome = Outcome.Settled;

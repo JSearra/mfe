@@ -6,7 +6,7 @@ import { NO_TILE, pickTileIndex, tileX, tileY } from './shared/picking.js';
 import { BuildingType } from './shared/buildings/index.js';
 import { CommandKind } from './sim/commands.js';
 import { TECH_IDS } from './shared/tech/index.js';
-import { createDirectSimHost, type SimHost } from './host/directHost.js';
+import { createDirectSimHost, type PlayerState, type SimHost } from './host/directHost.js';
 import { createWorkerSimHost } from './host/worker/workerHost.js';
 import { createHeightmap } from './sim/terrain/generate.js';
 import { MAP_SCRIPTS, generateMap, type MapScript } from './sim/terrain/maps.js';
@@ -432,9 +432,14 @@ async function main(options: GameOptions): Promise<void> {
     onBreak(partner) {
       sim.sendCommand(CommandKind.Break, partner);
     },
+    onCull() {
+      sim.sendCommand(CommandKind.Cull);
+    },
   });
 
   let view: InterpolatedView | null = null;
+  /** The last PlayerState that crossed the boundary, for the dev inspection hook. */
+  let lastPlayer: PlayerState | null = null;
   const herdScratch: number[] = [];
 
   /** Viewport point -> the world position of the tile under it. */
@@ -627,6 +632,10 @@ async function main(options: GameOptions): Promise<void> {
       renderTick: () => interpolator.renderTick,
       camera: () => [Math.round(camera.x), Math.round(camera.y)],
       simTick: () => sim.tick,
+      // The PlayerState as it crossed the boundary — render-side state, not a read into
+      // the world. Without it a browser-driven session can see that a match ended but
+      // not what ended it, which cost an afternoon.
+      player: () => lastPlayer,
       count: () => view?.count ?? 0,
       selected: () => [...selection.handles],
       handles: () => (view === null ? [] : Array.from(view.handle.subarray(0, view.count))),
@@ -719,6 +728,8 @@ async function main(options: GameOptions): Promise<void> {
       resourceBar.update(message.player);
       panel.setOffers(message.player.offers);
       panel.setRelations(message.player.relations);
+      panel.setHerd(message.player.cullHead);
+      lastPlayer = message.player;
       outcomeBanner.update(message.player, PLAYER);
       fog.setFog(message.fog);
       // The wood arrives only when it has changed, which is the upkeep cycle rather

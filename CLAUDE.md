@@ -16,9 +16,17 @@ sited, worked and lost (V3); neighbours trade at rates set by their own scarcity
 neighbours enter standing ties that cost cattle a season and send grain to whoever went
 hungry (V5); and combat is gone (V6).
 
-**Starvation is the only failure condition now, and it is a real one** — measured at
-1,530-2,130 starvation events and 90-115 deaths per thirty-minute AI match, none of them
-caused by anybody. It is arguably too harsh; see the note at the end of Phase V6.
+**Starvation is the only failure condition now, and it is a real one** — 1,800-3,000
+starvation events and 50-180 deaths per AI match, none of them caused by anybody. Matches
+decide between year 0.8 and year 2.1.
+
+**The fields are the game, and the game has to SAY so.** A field loses condition every
+season nobody stands on it, and three playthroughs died of that without a word on screen:
+the starting fields sat a median 9.2 tiles out against a vision radius of 8, so half of
+what kept the village alive began outside its own fog. They are sited inside vision now,
+there is a `FieldsFailing` alert, and the resource bar carries harvest against upkeep so
+the decision to raise another household can be made before rather than after. When adding
+a mechanic the village lives or dies by, budget for the telling as well as the rule.
 
 Cattle herding, flocking and stampedes stay — they are the defining mechanic and they are
 better in a subsistence game than a military one. The stampede is a disaster, not a

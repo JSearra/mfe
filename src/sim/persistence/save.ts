@@ -26,6 +26,9 @@ import { worldStateField, worldStateFields } from '../world.js';
  * restored correctly — it has no building types in it — so it is rejected rather than
  * loaded into a game that would look subtly wrong.
  *
+ * 5 adds the standing ties' pending offers, which became state when a tie started
+ * needing both sides to ask for it.
+ *
  * 3 adds the standing ties (src/sim/alliance.ts). A version 2 save has no record of who
  * was allied with whom or what the neighbours made of anyone, and restoring it would
  * silently dissolve every tie and reset every reputation, so it is refused too.
@@ -35,7 +38,7 @@ import { worldStateField, worldStateFields } from '../world.js';
  * 3 save is the wrong length in two places at once. `fromBase64` would catch that as a
  * RangeError, which is a worse way to find out than being told the save is too old.
  */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export interface SaveGame {
   readonly version: number;
@@ -48,6 +51,7 @@ export interface SaveGame {
   /** Who is tied to whom, and what each village thinks of the others. */
   readonly allianceBond: string;
   readonly allianceStanding: string;
+  readonly allianceOffered: string;
   readonly allianceVersion: number;
   readonly fog: string;
   readonly fogVersion: number;
@@ -123,6 +127,7 @@ export function captureState(loop: SimLoop): SaveGame {
     economyShortfall: toBase64(economy.shortfall),
     allianceBond: toBase64(alliance.bond),
     allianceStanding: toBase64(alliance.standing),
+    allianceOffered: toBase64(alliance.offered),
     allianceVersion: alliance.version,
     fog: toBase64(fog.tiles),
     fogVersion: fog.version,
@@ -164,6 +169,7 @@ export function restoreState(loop: SimLoop, save: SaveGame): void {
 
   fromBase64(save.allianceBond, alliance.bond);
   fromBase64(save.allianceStanding, alliance.standing);
+  fromBase64(save.allianceOffered, alliance.offered);
   alliance.version = save.allianceVersion;
 
   fromBase64(save.fog, fog.tiles);

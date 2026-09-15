@@ -94,7 +94,9 @@ describe('save and load', () => {
 
   it('carries who was tied to whom, and what it cost to walk away', () => {
     const original = busyScenario(0x321);
+    // Both sides ask, so there is a real tie to walk out of.
     propose(original.alliance, 0, 1);
+    propose(original.alliance, 1, 0);
     breakBond(original.alliance, 0, 1, [], original.world.tick);
     const save = captureState(original.loop);
 

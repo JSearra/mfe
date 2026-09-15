@@ -15,6 +15,14 @@ import { createFarmland, type Farmland } from './farmland.js';
  * lowest few are marked sheltered, standing for a river bottom or a kloof that keeps
  * producing when the open veld does not. That is the drought's counterplay, and the
  * reason a bad year is a crisis rather than a loss.
+ *
+ * **They must also be where the village can SEE them, and that is not a nicety.** A
+ * field loses condition every season nobody stands on it, so the fields are the thing
+ * the player has to watch; and the search used to be a square of side 2 * radius sorted
+ * purely by height, which put the median field 9.2 tiles out against a vision radius of
+ * 8. Half of what was keeping the village alive started the game outside its own fog.
+ * Three matches were lost to it without the cause ever appearing on screen. The search
+ * is a circle inside vision now, and height only orders what is already close enough.
  */
 /**
  * Returns established fields at full condition, because a village has been farming this
@@ -41,7 +49,11 @@ export function createStartingFarmland(
         const height = heightAt(map, tileX, tileY);
         if (height < 0) continue;
         // Keep a little clear ground around the start for the force to stand on.
-        if (dx * dx + dy * dy < 9) continue;
+        const awaySq = dx * dx + dy * dy;
+        if (awaySq < 9) continue;
+        // A circle, not the corners of a square: the corner of a 9-radius box is 12.7
+        // tiles out, which is half again past what the village can see.
+        if (awaySq > plotSearchRadius * plotSearchRadius) continue;
 
         candidates.push({
           tileX,

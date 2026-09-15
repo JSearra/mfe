@@ -126,6 +126,7 @@ export function runReplay(
       // would otherwise reproduce silently.
       h = hashTypedArray(alliance.bond, h);
       h = hashTypedArray(alliance.standing, h);
+      h = hashTypedArray(alliance.offered, h);
       h = hashTypedArray(loop.tech.status, h);
       checkpoints.push(hashTypedArray(loop.tech.progress, h));
     }

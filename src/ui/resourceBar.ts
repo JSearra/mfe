@@ -26,10 +26,16 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
   const herd = document.createElement('span');
   herd.className = 'resource-bar__herd';
 
+  // What the season cost against what it brought in. Sits beside the totals rather than
+  // in the panel because it is the number that decides whether to raise another
+  // household, and that decision is taken while looking at the map.
+  const margin = document.createElement('span');
+  margin.className = 'resource-bar__margin';
+
   const warning = document.createElement('span');
   warning.className = 'resource-bar__warning';
 
-  element.append(totals, season, herd, warning);
+  element.append(totals, season, margin, herd, warning);
   parent.appendChild(element);
 
   let lastUpdate = -Infinity;
@@ -65,6 +71,19 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
             })
           : t('victory.progress', { held: standing, needed: player.householdsToSettle });
       herd.classList.toggle('is-holding', player.holdProgress > 0);
+
+      // Nothing until the first upkeep has actually been paid, or it reads as a deficit
+      // the village does not have yet.
+      if (player.upkeep > 0) {
+        const net = player.harvest - player.upkeep;
+        margin.textContent = t('resource.margin', {
+          harvest: Math.round(player.harvest),
+          upkeep: Math.round(player.upkeep),
+        });
+        margin.classList.toggle('is-negative', net < 0);
+      } else {
+        margin.textContent = '';
+      }
 
       warning.textContent =
         player.shortfall > 0 ? t('resource.starving', { amount: Math.ceil(player.shortfall) }) : '';

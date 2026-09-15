@@ -448,7 +448,10 @@ Holding 200 cattle is the only goal the game has, and it is the reason the econo
 teeth. Replacing it comes first because everything after it is balanced against it.
 
 **Done.** The objective is to settle `victory.householdsToSettle` households and hold
-them **fed** for `victory.holdTicks`. The fed clause is the load-bearing half: a village
+them **fed** for `victory.holdTicks` — half a year, raised from a fifth of one after
+play showed matches deciding inside the gentle opening season. A village simulator whose
+matches end before the village has been through a hard year is not simulating the thing
+it is about. The fed clause is the load-bearing half: a village
 at full size on a granary that cannot cover the upkeep is a fortnight from empty, and
 without it the objective would reward exactly the population spike the hold timer exists
 to prevent — train to the target, win before the next upkeep collects.
@@ -664,6 +667,34 @@ went into this document as fact. What caught it was an assertion that could not 
 1,500 hungry seasons and zero starvation deaths — rather than any test. `createDirectSimHost`
 does not seed a starting force; `main.ts` does that separately, and a harness that skips it
 is not running the game. Both phases' numbers have been re-measured on a seeded opening.
+
+### What three playthroughs found, and what changed because of them
+
+Played to an end three times in the browser, twice more after fixing, and measured either
+side. Every one of the first three died at the same tick whatever the player did, so the
+player's choices were not the variable — the opening was.
+
+- **Fields decayed invisibly and killed the village.** Condition fell 1.00 to 0.35 in a
+  year with nothing on screen about it; one villager standing on each field is the whole
+  difference between wipe-out and 3,915 grain banked. Starting fields are sited inside
+  vision now (median 5.0 tiles, was 9.2, against a vision radius of 8), a `FieldsFailing`
+  alert names the worst field and can be jumped to, and the hint text says what a field
+  needs. Warning now arrives at 8.3 min against a first death at 24.5 and a wipe-out at
+  27.3, so there is time to act — and ignoring it still loses.
+- **Raising households was a trap with no instrument.** The resource bar carries
+  `Harvest 113 / upkeep 72` now, which is the number that decision turns on.
+- **The herd grew whether the village wanted it or not.** `CommandKind.Cull` slaughters
+  ten head for grain. Verified in play: 120 cattle / 400 grain became 110 / 540.
+- **40% of openings were a first-year drought above 0.85** — some of them a total crop
+  failure against a starting granary of 400. Severity ramps in over three years now: year
+  0 never ruinous, year 1 rarely, year 2 onward at full spread.
+- **A neighbour could tie the player into an alliance they never agreed to.** Both sides
+  have to ask now; see Phase V5.
+- **Matches decided inside the gentle opening season** once the weather ramp let the AI
+  survive year 0 — 5.5 to 11.8 minutes, before the village had been through anything. The
+  hold went from a fifth of a year to half of one; matches now decide at year 0.8-2.1.
+- **Defeat arrived with no warning that anyone was close.** A neighbour beginning to hold
+  a full village is announced, which the half-year hold leaves time to answer.
 
 *Open, and a tuning question rather than a deletion one:* that is arguably too harsh. Peak
 village size reached 41–48 against the 60 needed to settle, and four matches in five ended

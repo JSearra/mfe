@@ -4,7 +4,7 @@ import type { TechState } from '../tech.js';
 import { CommandKind } from '../commands.js';
 import { Resource, type Economy } from '../economy/ledger.js';
 import { wantedTrade } from '../trade.js';
-import { alliesOf, standingOf, type Alliance } from '../alliance.js';
+import { alliesOf, hasOffered, standingOf, type Alliance } from '../alliance.js';
 import { cos, sin, TWO_PI } from '../math/trig.js';
 import { isVisible, type FogState } from '../vision/fog.js';
 import { tuning } from '../tuning.js';
@@ -240,26 +240,46 @@ export function createAi(player: number): AiController {
       // faith whenever the tithe looked expensive would spend its reputation on nothing
       // and trade worse with everybody afterwards, which is exactly the cost the
       // mechanic exists to impose.
-      if (
-        (economy.shortfall[player] ?? 0) > 0 &&
-        alliesOf(alliance, player).length === 0 &&
-        stats.decisions % ai.tradeEveryDecisions === 0
-      ) {
-        let best = -1;
-        let bestStanding = -Infinity;
+      if (alliesOf(alliance, player).length === 0) {
+        // Answering first, and on every decision rather than the slow cadence: somebody
+        // is waiting on it, and a neighbour who takes ten minutes to say yes is a
+        // neighbour the offer expired on. A tie now needs both sides to ask, so without
+        // this the computer never ties itself to anyone.
+        let answered = false;
         for (let neighbour = 0; neighbour < economy.players; neighbour++) {
-          if (neighbour === player) continue;
-          const regard = standingOf(alliance, neighbour, player);
-          // Ties break on the lower index, so two identical neighbours are always
-          // approached in the same order and a replay reproduces.
-          if (regard > bestStanding) {
-            bestStanding = regard;
-            best = neighbour;
-          }
-        }
-        if (best !== -1) {
-          emit({ kind: CommandKind.Ally, a: best, b: 0, c: 0, d: 0 });
+          if (neighbour === player || !hasOffered(alliance, neighbour, player)) continue;
+          // Judged by what IT thinks of them, which is the direction consent runs in.
+          if (standingOf(alliance, player, neighbour) < tuning.alliance.minStandingToAlly) continue;
+          emit({ kind: CommandKind.Ally, a: neighbour, b: 0, c: 0, d: 0 });
           stats.alliancesSought++;
+          answered = true;
+          break;
+        }
+
+        // Asking is the slow half: a village that offered a tie every ten seconds would
+        // be begging, and it only asks at all when it has gone hungry with nobody to
+        // fall back on.
+        if (
+          !answered &&
+          (economy.shortfall[player] ?? 0) > 0 &&
+          stats.decisions % ai.tradeEveryDecisions === 0
+        ) {
+          let best = -1;
+          let bestStanding = -Infinity;
+          for (let neighbour = 0; neighbour < economy.players; neighbour++) {
+            if (neighbour === player || hasOffered(alliance, player, neighbour)) continue;
+            const regard = standingOf(alliance, neighbour, player);
+            // Ties break on the lower index, so two identical neighbours are always
+            // approached in the same order and a replay reproduces.
+            if (regard > bestStanding) {
+              bestStanding = regard;
+              best = neighbour;
+            }
+          }
+          if (best !== -1) {
+            emit({ kind: CommandKind.Ally, a: best, b: 0, c: 0, d: 0 });
+            stats.alliancesSought++;
+          }
         }
       }
 

@@ -165,7 +165,7 @@ export function step(loop: SimLoop): void {
   // The fields are worked before the harvest is taken, so a field broken this cycle can
   // pay this cycle and one trampled this cycle pays less for it.
   if (world.tick !== 0 && world.tick % tuning.economy.upkeepIntervalTicks === 0) {
-    updateFarmland(world, farmland, economy.players);
+    updateFarmland(world, farmland, economy.players, events);
     // Before the ledger, not after: relief is sent on LAST cycle's shortfall, so grain
     // from an ally reaches the granary in time to be eaten this cycle rather than
     // arriving a season after the famine it answers. See src/sim/alliance.ts.

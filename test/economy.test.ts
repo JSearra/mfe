@@ -9,9 +9,10 @@ import {
 import { createEconomy, Resource } from '../src/sim/economy/ledger.js';
 import { createStartingFarmland } from '../src/sim/economy/plots.js';
 import { createFarmland, harvestOf, type Farmland } from '../src/sim/economy/farmland.js';
-import { heightmapFrom } from '../src/shared/heightmap.js';
 import { flatMap } from './simHarness.js';
 import { tuning } from '../src/sim/tuning.js';
+import { cull, cullHead } from '../src/sim/herd.js';
+import { heightmapFrom } from '../src/shared/heightmap.js';
 import {
   createWorld,
   EntityKind,
@@ -438,17 +439,42 @@ describe('can a player survive their own opening position', () => {
     }
   });
 
-  it('still makes the dry season hurt', () => {
+  it('gives the village a first year it can survive', () => {
+    // Severity used to be drawn from the same range every year, so 40% of openings hit a
+    // drought above 0.85 — open fields under 28% — and some were a total crop failure in
+    // year one, against a starting granary of four hundred and no reserves. Those
+    // openings were lost before the player did anything. The opening is a season the
+    // village has already survived now; the ruinous years arrive once there is something
+    // to meet them with.
+    const season = tuning.economy.seasonTicks;
+    let worstOpening = 0;
+    for (let seed = 0; seed < 200; seed++) {
+      const { economy } = opening(seed);
+      for (let tick = 0; tick < season; tick += 50) {
+        worstOpening = Math.max(worstOpening, economy.drought(tick));
+      }
+    }
+    // Below the threshold at which the open veld is called barren.
+    expect(worstOpening).toBeLessThan(tuning.economy.droughtThreshold);
+  });
+
+  it('still makes the dry season hurt, once the ramp is done', () => {
     // The opposite failure: an economy so generous the mechanic stops mattering. At the
     // height of a bad year the harvest must not cover upkeep, or there is nothing to
     // plan around and sheltered ground is worth nothing.
+    //
+    // Measured on a late year rather than the first, because the first is now gentle on
+    // purpose — see the test above. A bad year still has to be a bad year.
     const { economy } = opening(0xbeef);
     const season = tuning.economy.seasonTicks;
 
-    let worst = Infinity;
-    for (let tick = 0; tick < season; tick += 50) worst = Math.min(worst, -economy.drought(tick));
-    const peak = -worst;
-    expect(peak).toBeGreaterThan(0.5);
+    // The worst year this seed throws once the ramp is done, not an arbitrary one: the
+    // claim is about what a bad year does, and not every year is bad.
+    let peak = 0;
+    for (let tick = season * 2; tick < season * 10; tick += 50) {
+      peak = Math.max(peak, economy.drought(tick));
+    }
+    expect(peak).toBeGreaterThan(tuning.economy.droughtThreshold);
 
     const open = 1 - peak * peak;
     const income =
@@ -586,5 +612,80 @@ describe('who pays for a driven herd', () => {
       b - bare.balance(0, Resource.Grain),
       6,
     );
+  });
+});
+
+/** Flat ground with a lower dip off to one side, so height ordering has something to do. */
+function flatMapWithDip(size: number) {
+  return heightmapFrom(
+    Array.from({ length: size }, (_, y) =>
+      Array.from({ length: size }, (_, x) => (x > size / 2 && y > size / 2 ? 1 : 2)),
+    ),
+    8,
+  );
+}
+
+describe('the starting fields', () => {
+  it('sit where the village can see them', () => {
+    // The defect three playthroughs died of: the search was a square sorted purely by
+    // height, so the median field started 9.2 tiles out against a vision radius of 8 and
+    // half of what kept the village alive began outside its own fog. A field nobody can
+    // see is a field nobody tends, and an untended field decays every season.
+    const map = flatMapWithDip(64);
+    const start = { x: 32, y: 32 };
+    const land = createStartingFarmland(map, [start], 5);
+
+    let furthest = 0;
+    let mine = 0;
+    for (let i = 0; i < land.count; i++) {
+      if (land.alive[i] !== 1 || land.owner[i] !== 0) continue;
+      mine++;
+      const dx = land.tileX[i]! - start.x;
+      const dy = land.tileY[i]! - start.y;
+      const away = Math.sqrt(dx * dx + dy * dy);
+      if (away > furthest) furthest = away;
+    }
+
+    expect(mine).toBeGreaterThan(0);
+    expect(furthest).toBeLessThanOrEqual(tuning.vision.unitRadius);
+  });
+});
+
+describe('slaughtering from the herd', () => {
+  const two = () => createEconomy([FactionId.Zulu, FactionId.Sotho], 1);
+
+  it('turns cattle into grain, which is the lever the village lacked', () => {
+    // A herd grows on its own and eats every season whether the village wants it to or
+    // not. Measured in play, one went 120 head to 160 while its people starved to the
+    // last one, and trade moved eight head a parcel at a rate set by a neighbour who
+    // was just as hungry. This is the way out, and it costs the wealth to take it.
+    const economy = two();
+    const cattleBefore = economy.balance(0, Resource.Cattle);
+    const grainBefore = economy.balance(0, Resource.Grain);
+
+    const taken = cull(economy, 0);
+
+    expect(taken).toBe(tuning.herd.cullSize);
+    expect(economy.balance(0, Resource.Cattle)).toBeCloseTo(cattleBefore - taken);
+    expect(economy.balance(0, Resource.Grain)).toBeCloseTo(
+      grainBefore + taken * tuning.herd.grainPerBeast,
+    );
+  });
+
+  it('takes what is left when the herd is smaller than a slaughter', () => {
+    const economy = two();
+    economy.spend(0, Resource.Cattle, economy.balance(0, Resource.Cattle) - 3);
+    expect(cull(economy, 0)).toBe(3);
+    expect(economy.balance(0, Resource.Cattle)).toBeCloseTo(0);
+  });
+
+  it('does nothing at all with no herd, rather than conjuring grain', () => {
+    const economy = two();
+    economy.spend(0, Resource.Cattle, economy.balance(0, Resource.Cattle));
+    const grain = economy.balance(0, Resource.Grain);
+
+    expect(cull(economy, 0)).toBe(0);
+    expect(cullHead(economy, 0)).toBe(0);
+    expect(economy.balance(0, Resource.Grain)).toBe(grain);
   });
 });

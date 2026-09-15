@@ -45,6 +45,16 @@ export interface Economy {
   upkeepCount: number;
   /** Grain shortfall at the last upkeep, per player. */
   readonly shortfall: Float64Array;
+  /**
+   * What the last upkeep cost, and what came in to meet it, per player.
+   *
+   * Recorded so the player can be shown both before deciding to raise more households.
+   * Without it, training is a trap the game springs silently: measured in play, a
+   * village went from 24 mouths to 51 on a granary that could feed 24, and nothing on
+   * screen said so until everyone was dead. `shortfall` only speaks once it is too late.
+   */
+  readonly upkeep: Float64Array;
+  readonly harvested: Float64Array;
 
   balance(player: number, resource: Resource): number;
   add(player: number, resource: Resource, amount: number): void;
@@ -103,6 +113,8 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
   const factions = factionIds.map((id) => FACTIONS[id]);
   const amounts = new Float64Array(players * RESOURCE_COUNT);
   const shortfall = new Float64Array(players);
+  const upkeep = new Float64Array(players);
+  const harvested = new Float64Array(players);
 
   for (let player = 0; player < players; player++) {
     const config = factions[player]!;
@@ -119,6 +131,8 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
     factions,
     upkeepCount: 0,
     shortfall,
+    upkeep,
+    harvested,
 
     balance(player, resource) {
       return amounts[player * RESOURCE_COUNT + resource] ?? 0;
@@ -138,12 +152,21 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
     },
 
     /**
-     * Drought over the year, with a per-year severity.
+     * Drought over the year, with a per-year severity that gets worse as the match ages.
      *
      * Severity is derived by hashing the year index rather than by drawing from the
      * simulation RNG. A query that consumed RNG state would change the sequence every
      * other system sees, turning a pure-looking lookup into a hidden side effect — and
      * it would mean calling drought() twice gave two different answers.
+     *
+     * **The first year is deliberately gentle, and that is a fix rather than a mood.**
+     * Severity used to be drawn from the same range every year, which made 40% of
+     * openings peak above 0.85 — open fields under 28% — and some of them a total crop
+     * failure in year one. A village starts with four hundred grain and no reserves, so
+     * those openings were lost before the player did anything, by weather they could not
+     * see coming and had no instrument against. It ramps in over three years now: the
+     * opening is a season the village has already survived, and the ruinous years arrive
+     * once there is a granary and a herd to meet them with.
      */
     drought(tick) {
       const year = Math.floor(tick / e.seasonTicks);
@@ -151,7 +174,9 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
       // 0 at the start of the year, 1 at its height.
       const curve = (1 - cos(phase * TWO_PI)) / 2;
       // Severity in [0.55, 1.05], so some years are merely dry and some are ruinous.
-      const severity = 0.55 + (mixSeed(seed, year) / 4294967296) * 0.5;
+      const spread = 0.55 + (mixSeed(seed, year) / 4294967296) * 0.5;
+      const mercy = e.firstYearSeverity + year * e.severityRampPerYear;
+      const severity = spread * (mercy > 1 ? 1 : mercy);
       const value = curve * severity;
       return value < 0 ? 0 : value > 1 ? 1 : value;
     },
@@ -161,6 +186,7 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
       if (tick === 0 || tick % e.upkeepIntervalTicks !== 0) return;
 
       economy.upkeepCount++;
+      harvested.fill(0);
       const droughtNow = economy.drought(tick);
 
       /*
@@ -193,11 +219,10 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
           if (field === undefined) break;
           if (field === null) continue;
           if (field.owner >= players) continue;
-          economy.add(
-            field.owner,
-            Resource.Grain,
-            e.plotBaseYield * (field.sheltered ? shelteredFactor : openFactor) * field.share,
-          );
+          const yielded =
+            e.plotBaseYield * (field.sheltered ? shelteredFactor : openFactor) * field.share;
+          economy.add(field.owner, Resource.Grain, yielded);
+          harvested[field.owner] = harvested[field.owner]! + yielded;
         }
       }
 
@@ -207,11 +232,9 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
           const produced = buildingYield(player);
           // A granary full of nothing is still empty: buildings share the drought, on
           // the sheltered curve — they are built structures, not open veld.
-          economy.add(
-            player,
-            Resource.Grain,
-            produced.grain * shelteredFactor * (grainMultiplier?.(player) ?? 1),
-          );
+          const stored = produced.grain * shelteredFactor * (grainMultiplier?.(player) ?? 1);
+          economy.add(player, Resource.Grain, stored);
+          harvested[player] = harvested[player]! + stored;
           economy.add(player, Resource.Cattle, produced.cattle);
         }
       }
@@ -253,6 +276,8 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
         const needed =
           (units[player]! * e.grainPerUnit + totalCattle * e.grainPerCattle) *
           config.upkeepMultiplier;
+
+        upkeep[player] = needed;
 
         const held = economy.balance(player, Resource.Grain);
         if (held >= needed) {

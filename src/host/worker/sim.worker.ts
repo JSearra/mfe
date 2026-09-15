@@ -9,6 +9,7 @@ import { createProductionSystem } from '../../sim/production.js';
 import { createEconomy, Resource, type Economy } from '../../sim/economy/ledger.js';
 import { createWoodland, packWoodland, type Woodland } from '../../sim/woodland.js';
 import { offersFor } from '../../sim/trade.js';
+import { cullHead } from '../../sim/herd.js';
 import { createAlliance, relationsFor, type Alliance } from '../../sim/alliance.js';
 import { packFarmland, type Farmland } from '../../sim/economy/farmland.js';
 import { createStartingFarmland } from '../../sim/economy/plots.js';
@@ -148,6 +149,9 @@ function tick(): void {
     offers: alliance === null ? [] : offersFor(economy, viewerId, alliance),
     relations: alliance === null ? [] : relationsFor(alliance, viewerId),
     shortfall: economy.shortfall[viewerId] ?? 0,
+    upkeep: economy.upkeep[viewerId] ?? 0,
+    harvest: economy.harvested[viewerId] ?? 0,
+    cullHead: cullHead(economy, viewerId),
     drought: droughtNow,
     droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
     households: victory.households[viewerId] ?? 0,

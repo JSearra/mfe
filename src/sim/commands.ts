@@ -10,9 +10,10 @@ import type { MovementSystem } from './movement.js';
 import { fell, type Woodland } from './woodland.js';
 import { abandon, plant, type Farmland } from './economy/farmland.js';
 import { trade, TradeResult } from './trade.js';
-import { AllyResult, breakBond, propose, type Alliance } from './alliance.js';
+import { AllyResult, alliedWith, breakBond, propose, withdraw, type Alliance } from './alliance.js';
 import { Resource } from './economy/ledger.js';
 import type { Heightmap } from '../shared/heightmap.js';
+import { cull } from './herd.js';
 import {
   clearOrderQueue,
   destroy,
@@ -85,6 +86,17 @@ export const CommandKind = {
   Ally: 17,
   /** Walk away from the tie with neighbour `a`, and wear the cost of it. */
   Break: 18,
+  /**
+   * Slaughter part of the standing herd for the meat.
+   *
+   * The lever the game was missing. A herd grows on its own and eats grain every season
+   * whether the village wants it to or not, and until this there was no way to refuse
+   * it: trade moved eight beasts a parcel at a rate set by a neighbour who was usually
+   * as hungry as you. Measured in play, a village went 120 head to 160 while its people
+   * starved. Killing cattle for food is what a village actually does in a bad year, and
+   * it is a real decision because the herd is also the wealth.
+   */
+  Cull: 19,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -255,25 +267,39 @@ export function applyCommand(
     }
 
     case CommandKind.Ally: {
+      // Asks, or takes an offer already on the table — see src/sim/alliance.ts. A tie
+      // needs both sides to have asked, so one command serves for both halves.
       const result = propose(alliance, command.playerId, command.a);
-      // Both outcomes are news for the same reason a refused trade is: the player cannot
-      // see what a neighbour makes of them, so silence would read as a lost command.
-      if (result === AllyResult.Allied || result === AllyResult.Refused) {
-        events.push(
-          makeEvent(
-            world.tick,
-            result === AllyResult.Allied ? EventType.AllianceFormed : EventType.AllianceRefused,
-            0,
-            command.playerId,
-            command.a,
-          ),
-        );
+      const announce =
+        result === AllyResult.Allied
+          ? EventType.AllianceFormed
+          : result === AllyResult.Refused
+            ? EventType.AllianceRefused
+            : result === AllyResult.Offered
+              ? EventType.AllianceOffered
+              : null;
+      // Every outcome that changed anything is news, for the reason a refused trade is:
+      // the player cannot see what a neighbour makes of them, so silence would read as
+      // a lost command.
+      if (announce !== null) {
+        events.push(makeEvent(world.tick, announce, 0, command.playerId, command.a));
       }
-      return result === AllyResult.Allied;
+      return result === AllyResult.Allied || result === AllyResult.Offered;
     }
 
     case CommandKind.Break:
-      return breakBond(alliance, command.playerId, command.a, events, world.tick);
+      // Breaking a tie costs standing; withdrawing an offer nobody took costs nothing.
+      // One command for both, because from the player's side it is the same button.
+      return alliedWith(alliance, command.playerId, command.a)
+        ? breakBond(alliance, command.playerId, command.a, events, world.tick)
+        : withdraw(alliance, command.playerId, command.a);
+
+    case CommandKind.Cull: {
+      const taken = cull(economy, command.playerId);
+      if (taken <= 0) return false;
+      events.push(makeEvent(world.tick, EventType.Culled, 0, command.playerId, 0, taken));
+      return true;
+    }
 
     case CommandKind.Leash:
       return cattle.leash(world, command.a as Handle, command.b as Handle);

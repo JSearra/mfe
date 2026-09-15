@@ -71,12 +71,18 @@
     "cattleGrowthPerHundred": 0.4,
     "starvationDamage": 6,
     "seasonTicks": 12000,
+    "firstYearSeverity": 0.7,
+    "severityRampPerYear": 0.15,
     "droughtThreshold": 0.75,
     "plotBaseYield": 12.0,
     "shelteredYieldFactor": 0.45,
     "plotsPerPlayer": 10,
     "shelteredPerPlayer": 3,
-    "plotSearchRadius": 9
+    "plotSearchRadius": 6.0
+  },
+  "herd": {
+    "cullSize": 10.0,
+    "grainPerBeast": 14.0
   },
   "woodland": {
     "capacity": 1400,
@@ -113,7 +119,9 @@
     "neglectPerUpkeep": 0.012,
     "minBand": 0,
     "maxBand": 4,
-    "minSpacing": 1.6
+    "minSpacing": 1.6,
+    "failingBelow": 0.7,
+    "warnEverySeasons": 5
   },
   "trade": {
     "weightCattle": 1.0,
@@ -173,7 +181,7 @@
   },
   "victory": {
     "householdsToSettle": 60,
-    "holdTicks": 2400,
+    "holdTicks": 6000.0,
     "eliminationGraceTicks": 400
   }
 }

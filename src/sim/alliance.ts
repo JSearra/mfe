@@ -54,18 +54,35 @@ export interface Alliance {
    * regard, not yours of them.
    */
   readonly standing: Float64Array;
+  /**
+   * players x players, row-major. 1 where row has offered a tie to column and is still
+   * waiting to hear back.
+   *
+   * A tie needs both sides to want it. `propose` used to form the bond on the spot if
+   * the partner's regard was high enough, which meant a neighbour could tie the player
+   * into an alliance the player never agreed to — measured in play: the computer
+   * village allied itself to a human who had not touched the panel, and leaving cost
+   * that human half their standing with everybody. Consent is not the partner's opinion
+   * of you; it is the partner saying yes.
+   */
+  readonly offered: Uint8Array;
   /** Bumped whenever any of the above changes, so a host can skip re-sending it. */
   version: number;
 }
 
 export const AllyResult = {
+  /** Both sides have now asked. The tie stands. */
   Allied: 0,
   /** Already tied. */
   Standing: 1,
-  /** They do not trust you enough. */
+  /** They do not trust you enough to take the offer. */
   Refused: 2,
   /** A village cannot ally with itself, or with somebody who is not there. */
   NoSuchVillage: 3,
+  /** Asked, and waiting on them. */
+  Offered: 4,
+  /** Asked again while an offer of yours was already on the table. */
+  AlreadyAsked: 5,
 } as const;
 
 export type AllyResult = (typeof AllyResult)[keyof typeof AllyResult];
@@ -82,7 +99,13 @@ export function createAlliance(players: number): Alliance {
     }
   }
 
-  return { players, bond: new Uint8Array(players * players), standing, version: 0 };
+  return {
+    players,
+    bond: new Uint8Array(players * players),
+    standing,
+    offered: new Uint8Array(players * players),
+    version: 0,
+  };
 }
 
 export function alliedWith(alliance: Alliance, x: number, y: number): boolean {
@@ -110,25 +133,59 @@ export function alliesOf(alliance: Alliance, player: number): number[] {
   return out;
 }
 
+/** Has `player` an offer outstanding to `partner`? */
+export function hasOffered(alliance: Alliance, player: number, partner: number): boolean {
+  if (player === partner || player >= alliance.players || partner >= alliance.players) return false;
+  return alliance.offered[player * alliance.players + partner] === 1;
+}
+
 /**
- * Ask a neighbour for a standing tie.
+ * Ask a neighbour for a standing tie, or take one they have already asked for.
  *
- * They answer from their own regard for you and nothing else. There is no negotiation
- * and no gift that buys a refusal off, because the only currency a broken tie costs is
- * the one being spent here — if standing could be bought, breaking a tie would be free.
+ * **Both sides have to ask.** The first call leaves an offer on the table; the tie forms
+ * on the second, from the other direction. That is the whole of the change made after
+ * play showed a computer village tying itself to a human who never touched the panel —
+ * an alliance costs cattle every season and leaving it costs standing with everybody, so
+ * it is not a thing a neighbour gets to decide for you.
+ *
+ * Standing gates the *acceptance*, not the asking: anyone may ask, and you take the offer
+ * only from somebody you think well enough of. There is no negotiation and no gift that
+ * buys a refusal off, because the only currency a broken tie costs is that same standing
+ * — if it could be bought, breaking a tie would be free.
  */
 export function propose(alliance: Alliance, player: number, partner: number): AllyResult {
   if (player === partner) return AllyResult.NoSuchVillage;
   if (player >= alliance.players || partner >= alliance.players) return AllyResult.NoSuchVillage;
   if (alliedWith(alliance, player, partner)) return AllyResult.Standing;
-  if (standingOf(alliance, partner, player) < tuning.alliance.minStandingToAlly) {
-    return AllyResult.Refused;
+
+  // Taking an offer already on the table. Judged by what the ACCEPTOR thinks of the one
+  // who asked, which is the direction that matters: you decide who you tie yourself to.
+  if (hasOffered(alliance, partner, player)) {
+    if (standingOf(alliance, player, partner) < tuning.alliance.minStandingToAlly) {
+      return AllyResult.Refused;
+    }
+    alliance.offered[partner * alliance.players + player] = 0;
+    alliance.offered[player * alliance.players + partner] = 0;
+    alliance.bond[player * alliance.players + partner] = 1;
+    alliance.bond[partner * alliance.players + player] = 1;
+    alliance.version++;
+    return AllyResult.Allied;
   }
 
-  alliance.bond[player * alliance.players + partner] = 1;
-  alliance.bond[partner * alliance.players + player] = 1;
+  if (hasOffered(alliance, player, partner)) return AllyResult.AlreadyAsked;
+
+  alliance.offered[player * alliance.players + partner] = 1;
   alliance.version++;
-  return AllyResult.Allied;
+  return AllyResult.Offered;
+}
+
+/** Withdraw an offer, or turn one down. Costs nothing either way — no tie was made. */
+export function withdraw(alliance: Alliance, player: number, partner: number): boolean {
+  if (!hasOffered(alliance, player, partner) && !hasOffered(alliance, partner, player)) return false;
+  alliance.offered[player * alliance.players + partner] = 0;
+  alliance.offered[partner * alliance.players + player] = 0;
+  alliance.version++;
+  return true;
 }
 
 /**
@@ -151,6 +208,8 @@ export function breakBond(
 
   alliance.bond[breaker * alliance.players + partner] = 0;
   alliance.bond[partner * alliance.players + breaker] = 0;
+  alliance.offered[breaker * alliance.players + partner] = 0;
+  alliance.offered[partner * alliance.players + breaker] = 0;
 
   setStanding(
     alliance,
@@ -273,6 +332,10 @@ export interface Relation {
   readonly standing: number;
   /** Whether they would take an offer of alliance right now. */
   readonly wouldAlly: boolean;
+  /** They have asked for a tie and are waiting on an answer. */
+  readonly asking: boolean;
+  /** This village has asked them, and is waiting. */
+  readonly asked: boolean;
 }
 
 export function relationsFor(alliance: Alliance, player: number): Relation[] {
@@ -285,7 +348,16 @@ export function relationsFor(alliance: Alliance, player: number): Relation[] {
       partner,
       allied,
       standing,
-      wouldAlly: !allied && standing >= tuning.alliance.minStandingToAlly,
+      // Whether a tie is possible at all, which takes both regards clearing the bar:
+      // the player has to be willing to accept them, and they to accept the player.
+      // `standing` above is theirs of the player, because that is the half the player
+      // cannot influence and therefore the half worth showing.
+      wouldAlly:
+        !allied &&
+        standing >= tuning.alliance.minStandingToAlly &&
+        standingOf(alliance, player, partner) >= tuning.alliance.minStandingToAlly,
+      asking: hasOffered(alliance, partner, player),
+      asked: hasOffered(alliance, player, partner),
     });
   }
   return out;

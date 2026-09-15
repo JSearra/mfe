@@ -74,6 +74,16 @@
         color: #d94a3a;
       }
 
+      /* The season's margin. Neutral while it is positive — it is only worth colouring
+         when it is telling the player not to raise another household. */
+      .resource-bar__margin {
+        color: #9a9382;
+      }
+
+      .resource-bar__margin.is-negative {
+        color: #d9973a;
+      }
+
       .resource-bar__herd {
         color: #c8a86a;
       }
@@ -139,6 +149,29 @@
       .panel__trade .panel__button:hover {
         background: #3f4a2f;
         border-color: #9ec86a;
+      }
+
+      /* The herd row: slaughtering is the village's decision, not a selected unit's. */
+      .panel__herd {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #3a3226;
+      }
+
+      .panel__herd:empty {
+        display: none;
+      }
+
+      .panel__herd .panel__button {
+        background: rgba(72, 42, 34, 0.8);
+        border-color: #6a3f2c;
+      }
+
+      .panel__herd .panel__button:hover {
+        background: #6a3f2c;
+        border-color: #d88a5e;
       }
 
       /* Standing ties, below the rates they price. Warmer than the trade row: a tie is

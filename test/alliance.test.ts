@@ -3,6 +3,7 @@ import {
   alliedWith,
   alliesOf,
   AllyResult,
+  hasOffered,
   breakBond,
   createAlliance,
   propose,
@@ -21,6 +22,12 @@ import { enqueueCommand, step } from '../src/sim/loop.js';
 import { makeSim, type Harness } from './simHarness.js';
 
 const A = tuning.alliance;
+
+/** Both sides ask, which is what a tie now takes. */
+function ally(alliance: ReturnType<typeof createAlliance>, x: number, y: number): AllyResult {
+  propose(alliance, x, y);
+  return propose(alliance, y, x);
+}
 const three = () => createEconomy([FactionId.Zulu, FactionId.Sotho, FactionId.Griqua], 1);
 
 /** Set a player's books to exactly these figures. */
@@ -43,7 +50,7 @@ function books(
 describe('entering a standing tie', () => {
   it('is mutual, or it is not an alliance', () => {
     const alliance = createAlliance(3);
-    expect(propose(alliance, 0, 1)).toBe(AllyResult.Allied);
+    expect(ally(alliance, 0, 1)).toBe(AllyResult.Allied);
     expect(alliedWith(alliance, 0, 1)).toBe(true);
     expect(alliedWith(alliance, 1, 0)).toBe(true);
     // The third village is nobody's ally and did not become one.
@@ -55,7 +62,9 @@ describe('entering a standing tie', () => {
     // Drag 1's regard for 0 below the bar without touching 0's regard for 1.
     alliance.standing[1 * 3 + 0] = A.minStandingToAlly - 0.01;
 
-    expect(propose(alliance, 0, 1)).toBe(AllyResult.Refused);
+    // 0 asks and 1 will not take it, because 1 is the one deciding.
+    expect(propose(alliance, 0, 1)).toBe(AllyResult.Offered);
+    expect(propose(alliance, 1, 0)).toBe(AllyResult.Refused);
     expect(alliedWith(alliance, 0, 1)).toBe(false);
     // Asking and being refused costs nothing but the asking.
     expect(standingOf(alliance, 1, 0)).toBeCloseTo(A.minStandingToAlly - 0.01);
@@ -74,7 +83,7 @@ describe('what a tie costs and what it returns', () => {
     const alliance = createAlliance(3);
     books(economy, 0, { cattle: 1000, grain: 500 });
     books(economy, 1, { cattle: 100, grain: 500 });
-    propose(alliance, 0, 1);
+    ally(alliance, 0, 1);
 
     updateAlliance(alliance, economy, [], 200);
 
@@ -88,7 +97,7 @@ describe('what a tie costs and what it returns', () => {
     const alliance = createAlliance(3);
     books(economy, 0, { cattle: 0, grain: 900 });
     books(economy, 1, { cattle: 0, grain: 10 });
-    propose(alliance, 0, 1);
+    ally(alliance, 0, 1);
     economy.shortfall[1] = 0;
 
     updateAlliance(alliance, economy, [], 200);
@@ -102,7 +111,7 @@ describe('what a tie costs and what it returns', () => {
     const alliance = createAlliance(3);
     books(economy, 0, { cattle: 0, grain: 900 });
     books(economy, 1, { cattle: 0, grain: 10 });
-    propose(alliance, 0, 1);
+    ally(alliance, 0, 1);
     economy.shortfall[1] = 30;
     const events: SimEvent[] = [];
 
@@ -122,7 +131,7 @@ describe('what a tie costs and what it returns', () => {
     const alliance = createAlliance(3);
     books(economy, 0, { cattle: 0, grain: 600 });
     books(economy, 1, { cattle: 0, grain: 0 });
-    propose(alliance, 0, 1);
+    ally(alliance, 0, 1);
     economy.shortfall[1] = 5000;
 
     updateAlliance(alliance, economy, [], 200);
@@ -148,7 +157,7 @@ describe('what a tie costs and what it returns', () => {
 describe('walking away', () => {
   it('costs the partner’s regard and a share of everybody else’s', () => {
     const alliance = createAlliance(3);
-    propose(alliance, 0, 1);
+    ally(alliance, 0, 1);
     const events: SimEvent[] = [];
 
     expect(breakBond(alliance, 0, 1, events, 300)).toBe(true);
@@ -166,10 +175,12 @@ describe('walking away', () => {
 
   it('shuts the door on allying again until the regard comes back', () => {
     const alliance = createAlliance(3);
-    propose(alliance, 0, 1);
+    ally(alliance, 0, 1);
     breakBond(alliance, 0, 1, [], 300);
 
-    expect(propose(alliance, 0, 1)).toBe(AllyResult.Refused);
+    // 0 broke faith, so it is 1 who now refuses 0 — standing is not symmetric.
+    expect(propose(alliance, 0, 1)).toBe(AllyResult.Offered);
+    expect(propose(alliance, 1, 0)).toBe(AllyResult.Refused);
 
     const economy = three();
     const seasons = Math.ceil(
@@ -178,7 +189,7 @@ describe('walking away', () => {
     );
     for (let i = 0; i < seasons; i++) updateAlliance(alliance, economy, [], 200 * (i + 1));
 
-    expect(propose(alliance, 0, 1)).toBe(AllyResult.Allied);
+    expect(ally(alliance, 0, 1)).toBe(AllyResult.Allied);
   });
 
   it('is not a thing you can do to a village you were never tied to', () => {
@@ -201,11 +212,11 @@ describe('what standing does to a price', () => {
     const strangerRate = rate(stranger, 0);
 
     const allied = createAlliance(3);
-    propose(allied, 0, 1);
+    ally(allied, 0, 1);
     const alliedRate = rate(allied, 0);
 
     const broken = createAlliance(3);
-    propose(broken, 0, 1);
+    ally(broken, 0, 1);
     breakBond(broken, 0, 1, [], 300);
     const brokenRate = rate(broken, 0);
 
@@ -215,7 +226,7 @@ describe('what standing does to a price', () => {
 
   it('is felt by villages you never dealt with, because word gets around', () => {
     const broken = createAlliance(3);
-    propose(broken, 0, 1);
+    ally(broken, 0, 1);
     breakBond(broken, 0, 1, [], 300);
 
     const economy = three();
@@ -253,7 +264,7 @@ describe('what standing does to a price', () => {
 describe('what the player is told', () => {
   it('reports every neighbour, tied or not, with the neighbour’s own regard', () => {
     const alliance = createAlliance(3);
-    propose(alliance, 0, 1);
+    ally(alliance, 0, 1);
     alliance.standing[2 * 3 + 0] = 0.2;
 
     const rows = relationsFor(alliance, 0);
@@ -279,12 +290,17 @@ describe('a tie inside a running game', () => {
 
   it('is made by command, and the tithe leaves on the next upkeep', () => {
     const sim = makeSim();
+    // Both sides ask. One command leaves an offer standing and nothing else.
     enqueueCommand(sim.loop, makeCommand(0, 0, 0, CommandKind.Ally, 1));
+    step(sim.loop);
+    expect(alliedWith(sim.alliance, 0, 1)).toBe(false);
+    enqueueCommand(sim.loop, makeCommand(sim.world.tick, 1, 0, CommandKind.Ally, 0));
     step(sim.loop);
 
     expect(alliedWith(sim.alliance, 0, 1)).toBe(true);
+    // The event names whoever closed the tie, which is the side that answered.
     const formed = sim.loop.events.find((e) => e.type === EventType.AllianceFormed);
-    expect(formed).toMatchObject({ x: 0, y: 1 });
+    expect(formed).toMatchObject({ x: 1, y: 0 });
 
     setBooks(sim, 0, 500, 5000);
     setBooks(sim, 1, 0, 5000);
@@ -303,6 +319,7 @@ describe('a tie inside a running game', () => {
   it('relieves an ally in time for them to eat, not a season later', () => {
     const sim = makeSim();
     enqueueCommand(sim.loop, makeCommand(0, 0, 0, CommandKind.Ally, 1));
+    enqueueCommand(sim.loop, makeCommand(0, 1, 0, CommandKind.Ally, 0));
     step(sim.loop);
 
     // 1 goes into the cycle owing grain it has not got; 0 has plenty.
@@ -320,20 +337,53 @@ describe('a tie inside a running game', () => {
     expect(relief?.payload).toBeCloseTo(50);
   });
 
-  it('refuses to be made with a village that has no reason to trust you', () => {
+  it('refuses an offer from a village it has no reason to trust', () => {
     const sim = makeSim();
-    sim.alliance.standing[1 * sim.alliance.players + 0] = 0.1;
-    enqueueCommand(sim.loop, makeCommand(0, 0, 0, CommandKind.Ally, 1));
+    // 1 asks. 0 thinks too little of 1 to take it, and 0 is the one deciding.
+    sim.alliance.standing[0 * sim.alliance.players + 1] = 0.1;
+    enqueueCommand(sim.loop, makeCommand(0, 1, 0, CommandKind.Ally, 0));
+    step(sim.loop);
+    enqueueCommand(sim.loop, makeCommand(sim.world.tick, 0, 0, CommandKind.Ally, 1));
     step(sim.loop);
 
     expect(alliedWith(sim.alliance, 0, 1)).toBe(false);
     expect(sim.loop.events.some((e) => e.type === EventType.AllianceRefused)).toBe(true);
   });
 
+  it('never ties a village in without it having asked', () => {
+    const sim = makeSim();
+    // The neighbour asks and nobody answers. This is the whole of the bug that play
+    // found: the computer village used to tie itself to a human who never touched the
+    // panel, and leaving cost that human half their standing with everybody.
+    enqueueCommand(sim.loop, makeCommand(0, 1, 0, CommandKind.Ally, 0));
+    for (let i = 0; i < 600; i++) step(sim.loop);
+
+    expect(alliedWith(sim.alliance, 0, 1)).toBe(false);
+    expect(hasOffered(sim.alliance, 1, 0)).toBe(true);
+    // And the player is told, rather than finding out from their cattle count.
+    const asked = sim.loop.events.find((e) => e.type === EventType.AllianceOffered);
+    expect(asked).toMatchObject({ x: 1, y: 0 });
+  });
+
+  it('lets an offer be turned down at no cost, unlike breaking a tie', () => {
+    const sim = makeSim();
+    enqueueCommand(sim.loop, makeCommand(0, 1, 0, CommandKind.Ally, 0));
+    step(sim.loop);
+    enqueueCommand(sim.loop, makeCommand(sim.world.tick, 0, 0, CommandKind.Break, 1));
+    step(sim.loop);
+
+    expect(hasOffered(sim.alliance, 1, 0)).toBe(false);
+    expect(alliedWith(sim.alliance, 0, 1)).toBe(false);
+    // No tie was made, so nothing was broken and no regard was spent.
+    expect(standingOf(sim.alliance, 1, 0)).toBeCloseTo(A.startingStanding);
+  });
+
   it('is broken by command, and the cost lands on the one who broke it', () => {
     const sim = makeSim();
     enqueueCommand(sim.loop, makeCommand(0, 0, 0, CommandKind.Ally, 1));
+    enqueueCommand(sim.loop, makeCommand(0, 1, 0, CommandKind.Ally, 0));
     step(sim.loop);
+    expect(alliedWith(sim.alliance, 0, 1)).toBe(true);
     enqueueCommand(sim.loop, makeCommand(sim.world.tick, 0, 1, CommandKind.Break, 1));
     step(sim.loop);
 

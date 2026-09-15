@@ -45,6 +45,32 @@ export const EventType = {
    * much — the one occasion an alliance pays out, so it is worth saying out loud.
    */
   AllianceRelief: 19,
+  /**
+   * A neighbour has asked for a tie and is waiting on an answer. `x` asked, `y` is being
+   * asked. A tie costs cattle every season, so being asked is news the player must see —
+   * it used to just happen to them.
+   */
+  AllianceOffered: 20,
+  /** Cattle slaughtered for the meat. `x` is the village, `payload` the head taken. */
+  Culled: 21,
+  /**
+   * This village's fields are losing condition faster than anyone is tending them.
+   *
+   * `x`/`y` are the worst field, so the alert can be jumped to, and `payload` is the
+   * village. The single most important thing the game failed to say: fields decay every
+   * season nobody stands on them, and three playthroughs died of it without a word on
+   * screen.
+   */
+  FieldsFailing: 22,
+  /**
+   * A neighbour has a full village and has begun holding it. `x` is that village.
+   *
+   * Word of a rival's good year would reach you, and without it the match simply ends:
+   * three playthroughs in a row met Defeat with nothing on screen having suggested
+   * anybody was close. It says who, not how far along — the hold is half a year, which
+   * is time enough to do something about it.
+   */
+  NeighbourSettling: 23,
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];

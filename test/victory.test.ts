@@ -74,6 +74,21 @@ describe('settling a village', () => {
     expect(sim.events.some((e) => e.type === EventType.VictoryDeclared)).toBe(true);
   });
 
+  it('says when a neighbour begins holding a full village', () => {
+    // Three playthroughs in a row met Defeat with nothing on screen having suggested
+    // anybody was close. The hold is half a year; that is time enough to act on.
+    const sim = match(V.householdsToSettle);
+    sim.run(2);
+
+    const word = sim.events.filter((e) => e.type === EventType.NeighbourSettling);
+    expect(word.length).toBe(1);
+    expect(word[0]!.x).toBe(0);
+
+    // Once, as the hold begins, not every tick of it.
+    sim.run(50);
+    expect(sim.events.filter((e) => e.type === EventType.NeighbourSettling).length).toBe(1);
+  });
+
   it('stops updating once decided, so a result cannot be overwritten', () => {
     const sim = match(V.householdsToSettle);
     sim.run(V.holdTicks + 2);

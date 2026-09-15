@@ -20,6 +20,7 @@ import { createFog, type FogState } from '../sim/vision/fog.js';
 import { createMovementSystem, type MovementSystem } from '../sim/movement.js';
 import type { World } from '../sim/world.js';
 import { offersFor, type TradeOffer } from '../sim/trade.js';
+import { cullHead } from '../sim/herd.js';
 import { createAlliance, relationsFor, type Alliance, type Relation } from '../sim/alliance.js';
 
 /**
@@ -78,6 +79,22 @@ export interface PlayerState {
    * a trade comes back at. See src/sim/alliance.ts.
    */
   readonly relations: readonly Relation[];
+  /**
+   * What the last season cost to feed, and what came in to meet it.
+   *
+   * Both, side by side, because the decision the game kept springing on people is
+   * whether to raise another household — and the only honest way to answer it is to see
+   * the margin before committing. `shortfall` says the same thing one season too late.
+   */
+  readonly upkeep: number;
+  readonly harvest: number;
+  /**
+   * Head a slaughter would take right now, or 0 when there is nothing to take.
+   *
+   * The simulation reckons it rather than the panel, because how many beasts a cull
+   * takes is a rule and the UI may not read tuning across the boundary.
+   */
+  readonly cullHead: number;
   /** Grain owed but unpaid at the last upkeep. Non-zero means troops are starving. */
   readonly shortfall: number;
   /** 0 (wet) to 1 (parched). */
@@ -352,6 +369,9 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         offers: offersFor(economy, viewerId, alliance),
         relations: relationsFor(alliance, viewerId),
         shortfall: economy.shortfall[viewerId] ?? 0,
+        upkeep: economy.upkeep[viewerId] ?? 0,
+        harvest: economy.harvested[viewerId] ?? 0,
+        cullHead: cullHead(economy, viewerId),
         drought: droughtNow,
         droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
         households: victory.households[viewerId] ?? 0,
