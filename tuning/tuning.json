@@ -79,6 +79,16 @@
     "shelteredPerPlayer": 3,
     "plotSearchRadius": 9
   },
+  "forage": {
+    "patchCount": 48,
+    "gatherRadius": 2.6,
+    "perGathererPerUpkeep": 3.0,
+    "maxGatherers": 4,
+    "patchStock": 90.0,
+    "regrowthPerUpkeep": 1.6,
+    "minBand": 2,
+    "maxBand": 5
+  },
   "vision": {
     "unitRadius": 8.0,
     "cattleRadius": 4.0,

@@ -7,6 +7,7 @@ import { createVictoryState } from './victory.js';
 import { createProductionSystem } from './production.js';
 import { createConstructionSystem } from './construction.js';
 import { createEconomy } from './economy/ledger.js';
+import { createForage } from './economy/forage.js';
 import { createFog } from './vision/fog.js';
 import { FactionId } from '../shared/factions/index.js';
 import { createMovementSystem } from './movement.js';
@@ -100,6 +101,7 @@ export function runReplay(
       construction: createConstructionSystem(map, movement.pathing),
       production: createProductionSystem(movement),
       economy,
+      forage: createForage(map, seed),
       tech,
       victory,
       fog,
