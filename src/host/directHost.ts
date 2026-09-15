@@ -12,7 +12,7 @@ import { createVictoryState, type VictoryState } from '../sim/victory.js';
 import { createProductionSystem, type ProductionSystem } from '../sim/production.js';
 import { createConstructionSystem, type ConstructionSystem } from '../sim/construction.js';
 import { createEconomy, Resource, type Economy, type GrainPlot } from '../sim/economy/ledger.js';
-import { createWoodland, type Woodland } from '../sim/woodland.js';
+import { createWoodland, packWoodland, type Woodland } from '../sim/woodland.js';
 import { createStartingPlots } from '../sim/economy/plots.js';
 import { tuning } from '../sim/tuning.js';
 import { FactionId } from '../shared/factions/index.js';
@@ -58,6 +58,8 @@ export interface PlayerState {
   readonly cattle: number;
   readonly grain: number;
   readonly ammunition: number;
+  /** Timber in hand. Buildings need it, and only the woodland supplies it. */
+  readonly wood: number;
   /** Grain owed but unpaid at the last upkeep. Non-zero means troops are starving. */
   readonly shortfall: number;
   /** 0 (wet) to 1 (parched). */
@@ -90,6 +92,14 @@ export interface SimMessage {
    * not every tick, so most messages carry nothing here.
    */
   readonly fog: Uint8Array | null;
+  /**
+   * The standing wood, or null when it has not changed since the last message.
+   *
+   * Sent whole rather than as a diff: it changes on the upkeep cycle rather than per
+   * tick, and fourteen hundred trees is seventeen kilobytes — the same trade the fog
+   * makes, and for the same reason.
+   */
+  readonly woodland: Float32Array | null;
 }
 
 /**
@@ -227,6 +237,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
   // until the tab died.
   let pendingSnapshot: ArrayBuffer | null = null;
   let sentFogVersion = -1;
+  let sentWoodVersion = -1;
   let pendingEvents: SimEvent[] = [];
   let droppedEvents = 0;
 
@@ -315,6 +326,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         cattle: economy.balance(viewerId, Resource.Cattle),
         grain: economy.balance(viewerId, Resource.Grain),
         ammunition: economy.balance(viewerId, Resource.Ammunition),
+        wood: economy.balance(viewerId, Resource.Wood),
         shortfall: economy.shortfall[viewerId] ?? 0,
         drought: droughtNow,
         droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
@@ -333,7 +345,13 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         sentFogVersion = fog.version;
       }
 
-      return { snapshot, events, droppedEvents: dropped, player, fog: fogSlice };
+      let trees: Float32Array | null = null;
+      if (woodland.version !== sentWoodVersion) {
+        trees = packWoodland(woodland);
+        sentWoodVersion = woodland.version;
+      }
+
+      return { snapshot, events, droppedEvents: dropped, player, fog: fogSlice, woodland: trees };
     },
 
     dispose(): void {

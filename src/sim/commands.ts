@@ -208,7 +208,7 @@ export function applyCommand(
       // Felling is a command and picking fruit is not, deliberately: standing under a
       // tree to eat is reversible and cutting it down is not. A village should not
       // level a wood by walking through it. See src/sim/woodland.ts.
-      return fell(woodland, economy, command.playerId, command.a) > 0;
+      return fell(world, woodland, economy, command.playerId, command.a) > 0;
 
     case CommandKind.Leash:
       return cattle.leash(world, command.a as Handle, command.b as Handle);

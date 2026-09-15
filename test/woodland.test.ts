@@ -12,6 +12,8 @@ import {
 import { createEconomy, Resource } from '../src/sim/economy/ledger.js';
 import { FactionId } from '../src/shared/factions/index.js';
 import { createRng } from '../src/sim/math/rng.js';
+import { packWoodland } from '../src/sim/woodland.js';
+import { treeSlot, treeSpecies, treeStage, WOODLAND_STRIDE } from '../src/shared/woodland.js';
 import { tuning } from '../src/sim/tuning.js';
 import { createWorld, spawn, type World } from '../src/sim/world.js';
 import { flatMap } from './simHarness.js';
@@ -210,12 +212,38 @@ describe('seeding', () => {
 });
 
 describe('felling', () => {
+  /** An axe-hand standing at the tree, which felling requires. */
+  function withHands(g: ReturnType<typeof grove>, index: number, player = 0) {
+    spawn(g.world, g.wood.x[index]!, g.wood.y[index]!, player);
+  }
+
+  it('needs somebody standing at the tree', () => {
+    // Without this a village could clear a wood it had never walked to, which makes
+    // distance free and the map flat.
+    const g = grove();
+    const tree = bearingTree(g.wood);
+    expect(fell(g.world, g.wood, g.economy, 0, tree)).toBe(0);
+    expect(g.wood.alive[tree]).toBe(1);
+
+    withHands(g, tree);
+    expect(fell(g.world, g.wood, g.economy, 0, tree)).toBe(W.timberMature);
+  });
+
+  it('will not let one village fell what another is standing at', () => {
+    const g = grove();
+    const tree = bearingTree(g.wood);
+    withHands(g, tree, 1);
+    expect(fell(g.world, g.wood, g.economy, 0, tree)).toBe(0);
+  });
+
   it('pays timber for a grown tree and takes it out of the wood', () => {
-    const { economy, wood } = grove();
+    const g = grove();
+    const { economy, wood } = g;
     const tree = bearingTree(wood);
+    withHands(g, tree);
 
     const before = economy.balance(0, Resource.Wood);
-    const taken = fell(wood, economy, 0, tree);
+    const taken = fell(g.world, wood, economy, 0, tree);
 
     expect(taken).toBe(W.timberMature);
     expect(economy.balance(0, Resource.Wood)).toBe(before + W.timberMature);
@@ -223,28 +251,36 @@ describe('felling', () => {
   });
 
   it('pays nothing for a sapling, so nobody cuts one for timber', () => {
-    const { economy, wood } = grove();
+    const g = grove();
+    const { economy, wood } = g;
     const slot = wood.count++;
     wood.x[slot] = 4.5;
     wood.y[slot] = 4.5;
     wood.age[slot] = 0;
     wood.alive[slot] = 1;
 
-    expect(fell(wood, economy, 0, slot)).toBe(0);
+    spawn(g.world, 4.5, 4.5, 0);
+    expect(fell(g.world, wood, economy, 0, slot)).toBe(0);
     // Clearing ground is still allowed; it just is not worth the axe.
     expect(wood.alive[slot]).toBe(0);
   });
 
   it('cannot be felled twice', () => {
-    const { economy, wood } = grove();
-    const tree = bearingTree(wood);
-    fell(wood, economy, 0, tree);
-    expect(fell(wood, economy, 0, tree)).toBe(0);
+    const g = grove();
+    const tree = bearingTree(g.wood);
+    withHands(g, tree);
+    fell(g.world, g.wood, g.economy, 0, tree);
+    expect(fell(g.world, g.wood, g.economy, 0, tree)).toBe(0);
   });
 
   it('gives a felled slot back to a new sapling rather than growing the arrays', () => {
     const { world, economy, wood, rng, map } = grove(64, 15);
-    for (let i = 0; i < wood.count; i++) if (wood.alive[i] === 1) fell(wood, economy, 0, i);
+    // An axe-hand in the middle of the wood; everything here is within reach of it.
+    for (let i = 0; i < wood.count; i++) {
+      if (wood.alive[i] === 0) continue;
+      spawn(world, wood.x[i]!, wood.y[i]!, 0);
+      fell(world, wood, economy, 0, i);
+    }
     // Nothing standing, so nothing can seed; put one mature tree back by hand.
     const seedSlot = 0;
     wood.alive[seedSlot] = 1;
@@ -257,5 +293,60 @@ describe('felling', () => {
     let standing = 0;
     for (let i = 0; i < wood.count; i++) standing += wood.alive[i]!;
     expect(standing).toBeGreaterThan(1);
+  });
+});
+
+describe('felling through a command, as the player does it', () => {
+  /**
+   * The link neither the unit tests nor the browser covered: a click resolves a tree to
+   * an index, that index travels as a command, and the simulation has to cut down the
+   * tree the player pointed at.
+   *
+   * It did not. `packWoodland` drops felled trees, so the renderer's index into the
+   * packed array stopped matching the simulation's slot as soon as anything came down —
+   * the first felling worked and every one after it took the wrong tree. The packed form
+   * carries the slot now; this is what would have caught it.
+   */
+  it('cuts down the tree the packed form points at, after an earlier felling', () => {
+    const g = grove(64, 21);
+    const { world, wood, economy } = g;
+
+    // Fell one tree early, so the packed indices and the real slots diverge.
+    const first = bearingTree(wood);
+    spawn(world, wood.x[first]!, wood.y[first]!, 0);
+    expect(fell(world, wood, economy, 0, first)).toBeGreaterThan(0);
+
+    const packed = packWoodland(wood);
+    // Any tree well past the start of the array, where the shift would show.
+    const at = WOODLAND_STRIDE * 20;
+    const slot = treeSlot(packed, at);
+    const targetX = packed[at]!;
+    const targetY = packed[at + 1]!;
+
+    expect(wood.x[slot]).toBeCloseTo(targetX, 5);
+    expect(wood.y[slot]).toBeCloseTo(targetY, 5);
+
+    spawn(world, targetX, targetY, 0);
+    const before = economy.balance(0, Resource.Wood);
+    fell(world, wood, economy, 0, slot);
+
+    expect(wood.alive[slot]).toBe(0);
+    expect(economy.balance(0, Resource.Wood)).toBeGreaterThan(before);
+  });
+
+  it('describes every packed tree the way the renderer reads it', () => {
+    const { wood } = grove(48, 22);
+    const packed = packWoodland(wood);
+
+    let living = 0;
+    for (let i = 0; i < wood.count; i++) living += wood.alive[i]!;
+    expect(packed.length).toBe(living * WOODLAND_STRIDE);
+
+    for (let at = 0; at < packed.length; at += WOODLAND_STRIDE) {
+      const slot = treeSlot(packed, at);
+      expect(wood.alive[slot]).toBe(1);
+      expect(treeSpecies(packed, at)).toBe(wood.species[slot]);
+      expect(treeStage(packed, at)).toBe(stageOf(wood, slot));
+    }
   });
 });

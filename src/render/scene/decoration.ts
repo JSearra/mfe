@@ -1,13 +1,21 @@
 import type { Heightmap } from '../../shared/heightmap.js';
 
 /**
- * Where the vegetation stands.
+ * Where the undergrowth stands. **Trees are no longer here** — see src/sim/woodland.ts.
  *
- * Render-side and nothing else. Trees do not block movement, do not appear in snapshots
- * and are not entities — which is a deliberate trade rather than an oversight. Making
- * them solid would put them in the simulation, in the pathing cost layers, in the
- * replay hash and in every save, for scenery. Walking through a thorn bush is a smaller
- * lie than that is a risk.
+ * This file used to place the acacias too, and argued that vegetation should stay
+ * render-side because making it solid "would put them in the simulation, in the pathing
+ * cost layers, in the replay hash and in every save, for scenery". That argument was
+ * right about scenery and stopped applying the moment trees became a resource you grow,
+ * pick and fell (ADR-0019): a food supply the simulation cannot see is not a food
+ * supply. Trees moved into the simulation and are handed to the renderer with the
+ * snapshot.
+ *
+ * The expensive half of the old decision survived the move. Trees still do not block
+ * movement and are still not entities — walking through a thorn bush remains a smaller
+ * lie than sixteen thousand obstacles in the pathing grid is a risk.
+ *
+ * What is left here is scrub, aloes and stones: things that are only ever looked at.
  *
  * Placement is derived from the map seed, so it is identical on every machine that
  * builds the same map and costs nothing to store or transmit. It is also stable frame to
@@ -32,9 +40,9 @@ export interface Decoration {
 const BANDS: readonly { readonly density: number; readonly kinds: readonly string[] }[] = [
   { density: 0.0, kinds: [] }, // 0 riverbed — standing water
   { density: 0.012, kinds: ['scrub'] }, // 1 donga floor — scoured
-  { density: 0.05, kinds: ['scrub', 'acacia'] }, // 2 low ground
-  { density: 0.11, kinds: ['scrub', 'scrub', 'acacia'] }, // 3 thornveld — the thickest
-  { density: 0.045, kinds: ['acacia', 'scrub'] }, // 4 grassland
+  { density: 0.04, kinds: ['scrub'] }, // 2 low ground
+  { density: 0.08, kinds: ['scrub'] }, // 3 thornveld — the thickest
+  { density: 0.035, kinds: ['scrub'] }, // 4 grassland
   { density: 0.03, kinds: ['aloe', 'scrub'] }, // 5 high sourveld
   { density: 0.022, kinds: ['aloe'] }, // 6 sandstone
   { density: 0.01, kinds: ['aloe'] }, // 7 ironstone caps

@@ -8,7 +8,7 @@ import { createTechState } from '../../sim/tech.js';
 import { createVictoryState, type VictoryState } from '../../sim/victory.js';
 import { createProductionSystem } from '../../sim/production.js';
 import { createEconomy, Resource, type Economy } from '../../sim/economy/ledger.js';
-import { createWoodland } from '../../sim/woodland.js';
+import { createWoodland, packWoodland, type Woodland } from '../../sim/woodland.js';
 import { createStartingPlots } from '../../sim/economy/plots.js';
 import { createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../../sim/loop.js';
 import { createMovementSystem } from '../../sim/movement.js';
@@ -54,6 +54,8 @@ let pendingEvents: SimEvent[] = [];
 let droppedEvents = 0;
 const flight = createFlightWindow(MAX_UNACKED);
 let sentFogVersion = -1;
+let sentWoodVersion = -1;
+let woodland: Woodland | null = null;
 let timer: ReturnType<typeof setInterval> | null = null;
 let lastTime = 0;
 let accumulator = 0;
@@ -83,7 +85,7 @@ function start(message: InitMessage): void {
     construction: createConstructionSystem(map, movement.pathing),
     production: createProductionSystem(movement),
     economy,
-    woodland: createWoodland(map, message.worldSeed),
+    woodland: (woodland = createWoodland(map, message.worldSeed)),
     tech: createTechState(Math.max(message.factions.length, message.viewerId + 1)),
     victory: (victory = createVictoryState(
       Math.max(message.factions.length, message.viewerId + 1),
@@ -139,6 +141,7 @@ function tick(): void {
     cattle: economy.balance(viewerId, Resource.Cattle),
     grain: economy.balance(viewerId, Resource.Grain),
     ammunition: economy.balance(viewerId, Resource.Ammunition),
+        wood: economy.balance(viewerId, Resource.Wood),
     shortfall: economy.shortfall[viewerId] ?? 0,
     drought: droughtNow,
     droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
@@ -157,6 +160,12 @@ function tick(): void {
     sentFogVersion = fog.version;
   }
 
+  let trees: Float32Array | null = null;
+  if (woodland !== null && woodland.version !== sentWoodVersion) {
+    trees = packWoodland(woodland);
+    sentWoodVersion = woodland.version;
+  }
+
   const snapshot = buildSnapshot(world, viewerId, fog);
   const events = pendingEvents;
   const dropped = droppedEvents;
@@ -172,12 +181,14 @@ function tick(): void {
     droppedEvents: dropped,
     player,
     fog: fogSlice,
+    woodland: trees,
   };
 
   // Transfer rather than copy. The buffers are freshly built each tick and never read
   // again here, so handing over ownership is free.
   const transfer: Transferable[] = [snapshot];
   if (fogSlice !== null) transfer.push(fogSlice.buffer);
+  if (trees !== null) transfer.push(trees.buffer);
   (self as unknown as DedicatedWorkerGlobalScope).postMessage(message, transfer);
 }
 

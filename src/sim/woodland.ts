@@ -1,4 +1,5 @@
 import { heightAt, type Heightmap } from '../shared/heightmap.js';
+import { WOODLAND_STRIDE } from '../shared/woodland.js';
 import { nextFloat, type Rng } from './math/rng.js';
 import { cos, sin, TWO_PI } from './math/trig.js';
 import { tuning } from './tuning.js';
@@ -57,7 +58,16 @@ export interface Woodland {
   /** Fruit standing on the tree, in grain-equivalent. */
   readonly fruit: Float64Array;
   readonly alive: Uint8Array;
-  /** Bumped whenever anything changes, so a host can skip re-sending a still wood. */
+  /**
+   * Bumped when the wood LOOKS different: a tree changed stage, took root, or came
+   * down.
+   *
+   * Not when anything at all changes. Age creeps every upkeep and fruit comes and goes,
+   * and neither is visible — a tree is drawn from its stage. Bumping on those made the
+   * renderer tear down and rebuild fourteen hundred sprites every ten seconds for a
+   * change nobody could see, and Pixi's addChild removes-then-appends, so that is a
+   * linear scan per sprite on a list of fourteen hundred.
+   */
   version: number;
 }
 
@@ -201,8 +211,11 @@ export function updateWoodland(
     // --- growth ----------------------------------------------------------------
     // Slower in a drought but never stopped: a dry year sets a wood back, it does not
     // sterilise it.
+    const was = stageOf(wood, index);
     wood.age[index] = wood.age[index]! + w.growthPerUpkeep * (0.3 + 0.7 * wetness);
     const stage = stageOf(wood, index);
+    // Only a change of stage is visible, so only a change of stage is news.
+    if (stage !== was) moved = true;
 
     // --- bearing ---------------------------------------------------------------
     if (stage === Stage.Mature && wood.species[index] === Species.Marula) {
@@ -211,7 +224,6 @@ export function updateWoodland(
         wood.fruit[index] = Math.min(cap, wood.fruit[index]! + w.fruitPerUpkeep * wetness);
       }
     }
-    moved = true;
 
     // --- gathering -------------------------------------------------------------
     if (wood.fruit[index]! <= 0) continue;
@@ -285,9 +297,32 @@ export function updateWoodland(
  * the opposite of how fruit is gathered and deliberately so: picking is reversible and
  * cutting is not. A player should not level a wood by walking through it.
  */
-export function fell(wood: Woodland, economy: Economy, player: number, index: number): number {
+export function fell(
+  world: World,
+  wood: Woodland,
+  economy: Economy,
+  player: number,
+  index: number,
+): number {
   const w = tuning.woodland;
   if (index < 0 || index >= wood.count || wood.alive[index] === 0) return 0;
+
+  // Somebody has to be standing there with an axe. Without this a village could clear a
+  // wood it had never walked to, which makes distance free and the map flat.
+  const reach = w.gatherRadius * 2;
+  const reachSq = reach * reach;
+  let hasHands = false;
+  for (let i = 0; i < world.capacity; i++) {
+    if (world.alive[i] !== 1 || world.kind[i] !== EntityKind.Unit) continue;
+    if (world.faction[i] !== player) continue;
+    const dx = world.posX[i]! - wood.x[index]!;
+    const dy = world.posY[i]! - wood.y[index]!;
+    if (dx * dx + dy * dy <= reachSq) {
+      hasHands = true;
+      break;
+    }
+  }
+  if (!hasHands) return 0;
 
   const stage = stageOf(wood, index);
   // A sapling is not worth the axe. Cutting one is allowed — clearing ground is a
@@ -299,4 +334,34 @@ export function fell(wood: Woodland, economy: Economy, player: number, index: nu
   wood.version++;
   if (yielded > 0) economy.add(player, Resource.Wood, yielded);
   return yielded;
+}
+
+// The wire format lives in shared/woodland.ts — see the note there about why.
+
+/**
+ * The standing wood, flattened for the renderer.
+ *
+ * Packed rather than sent as objects for the same reason snapshots are: it crosses a
+ * thread boundary, and a transferable Float32Array costs nothing to hand over while an
+ * array of fourteen hundred objects is a structured clone every time a tree grows.
+ *
+ * Dead slots are dropped here rather than at the far end, so the renderer never has to
+ * know that the woodland recycles.
+ */
+export function packWoodland(wood: Woodland): Float32Array {
+  let living = 0;
+  for (let i = 0; i < wood.count; i++) living += wood.alive[i]!;
+
+  const out = new Float32Array(living * WOODLAND_STRIDE);
+  let at = 0;
+  for (let i = 0; i < wood.count; i++) {
+    if (wood.alive[i] === 0) continue;
+    out[at] = wood.x[i]!;
+    out[at + 1] = wood.y[i]!;
+    // species * 4 + stage. Both are tiny and a float holds them exactly.
+    out[at + 2] = wood.species[i]! * 4 + stageOf(wood, i);
+    out[at + 3] = i;
+    at += WOODLAND_STRIDE;
+  }
+  return out;
 }

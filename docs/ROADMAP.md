@@ -474,9 +474,25 @@ The veld is currently scenery with collision. Gathering from it is the cheapest 
 that makes *where* a village sits matter, and it needs no new entity kind — the
 vegetation the decoration layer already places can carry it.
 
-*Done when:* a villager sent to forage returns food, a patch depletes and recovers on a
-seasonal schedule, and the yield is worth less per head than farming but needs no land
-committed in advance.
+**Done, and larger than the phase originally described.** Foraging was going to be
+abstract "patches" of rich veld. It became the trees themselves, on the project owner's
+call: they grow through sapling and young to mature, marula bear fruit that anyone
+standing under them picks, any grown tree can be felled for timber, and a standing wood
+seeds new saplings into ground that will carry them. Every building costs wood as well
+as grain, which is what makes a wood worth keeping near a village rather than felling to
+the last stump.
+
+That **reversed a decision `render/scene/decoration.ts` argued for explicitly** — that
+vegetation is render-side and nothing else. The reasoning there is right about scenery
+and does not survive trees becoming a resource; the two expensive halves of it were kept,
+so trees still do not block movement and are still not entities. Scrub, aloes and stones
+remain pure decoration.
+
+Design notes: picking is proximity and felling is a command, because standing under a
+tree to eat is reversible and cutting it down is not. One tree does not bear three times
+faster for three times as many pickers, which is what keeps foraging worth less per head
+than a field. A drought slows growth and fruiting but never stops them; it stops seeding
+entirely, which is the part a wood takes years to recover from.
 
 ## Phase V3 — farming as a decision
 

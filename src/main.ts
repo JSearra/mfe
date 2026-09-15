@@ -12,6 +12,7 @@ import { createHeightmap } from './sim/terrain/generate.js';
 import { MAP_SCRIPTS, generateMap, type MapScript } from './sim/terrain/maps.js';
 import { FactionId } from './shared/factions/index.js';
 import { createWorld } from './sim/world.js';
+import { treeSlot, WOODLAND_STRIDE } from './shared/woodland.js';
 import { largestRegion, snapToRegion } from './sim/terrain/placement.js';
 import { createRenderer } from './render/app.js';
 import { createAudioEngine } from './render/audio.js';
@@ -181,6 +182,39 @@ function defaultOptions(): GameOptions {
     shieldColour: '#e8e2d4',
     markingColour: '#2b2723',
   };
+}
+
+/**
+ * The tree standing at a world point, as an index into the packed wood, or -1.
+ *
+ * Tested in WORLD space against the ground a tree stands on, not in screen space
+ * against its canopy. The first version measured pixels to the canopy and missed
+ * constantly: a tree is drawn far larger than its footprint, its sprite is anchored at
+ * the foot, and the offset between the two is a property of the art rather than
+ * something the caller knows. Comparing tiles is what the simulation will do with the
+ * index a moment later anyway.
+ *
+ * Tight — about a tile — because this is the one right-click meaning that destroys
+ * something. Clicking bare ground beside a tree must be a move order, not a felling.
+ */
+export function pickTree(wood: Float32Array | null, worldX: number, worldY: number): number {
+  if (wood === null) return -1;
+
+  const reach = 0.9;
+  let best = -1;
+  let bestDistance = reach * reach;
+
+  for (let at = 0; at + WOODLAND_STRIDE - 1 < wood.length; at += WOODLAND_STRIDE) {
+    const dx = wood[at]! - worldX;
+    const dy = wood[at + 1]! - worldY;
+    const distance = dx * dx + dy * dy;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      // The tree's own slot, not its place in the packed array — see WOODLAND_STRIDE.
+      best = treeSlot(wood, at);
+    }
+  }
+  return best;
 }
 
 async function main(options: GameOptions): Promise<void> {
@@ -370,6 +404,8 @@ async function main(options: GameOptions): Promise<void> {
     },
   });
   let latestFog: Uint8Array | null = null;
+  /** The standing wood as last received, for hit-testing a right-click against it. */
+  let standingWood: Float32Array | null = null;
   let armed: BuildingType | null = null;
 
   const panel = createCommandPanel(root, {
@@ -525,6 +561,17 @@ async function main(options: GameOptions): Promise<void> {
       // button, read from what is under it, as the genre expects.
       // Right-click reads what is under it: an enemy is attacked, a cow is herded,
       // bare ground is a move order. One button, three meanings, as the genre expects.
+      // A tree first. Felling is the one right-click meaning that destroys something,
+      // so it is the most specific: a tree on the tile actually clicked, where the
+      // others accept anything within a grab radius.
+      const ground = worldPointAt(x, y);
+      const tree = ground === null ? -1 : pickTree(standingWood, ground.x, ground.y);
+      if (tree !== -1) {
+        audio.acknowledge('move');
+        sim.sendCommand(CommandKind.Fell, tree);
+        return;
+      }
+
       const foe = pickEnemy(view, map, camera, entities, x, y, PLAYER);
       if (foe !== -1) {
         // Answer the click now. The order will not execute for another tick or three,
@@ -674,6 +721,10 @@ async function main(options: GameOptions): Promise<void> {
       resourceBar.update(message.player);
       outcomeBanner.update(message.player, PLAYER);
       fog.setFog(message.fog);
+      // The wood arrives only when it has changed, which is the upkeep cycle rather
+      // than the frame — the same contract the fog beside it uses.
+      entities.setWoodland(message.woodland);
+      if (message.woodland !== null) standingWood = message.woodland;
       if (message.fog !== null) latestFog = message.fog;
       // Sound comes from events, never from diffing snapshots: a death simply stops
       // appearing, and there is nothing in a state diff that says it happened.

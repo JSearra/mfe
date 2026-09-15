@@ -6,6 +6,7 @@ import { presentation } from '../presentation.js';
 import { createDepthOrder } from './depthOrder.js';
 import type { SpriteAtlas } from '../assets.js';
 import type { Decoration } from './decoration.js';
+import { treeSpecies, treeStage, WOODLAND_STRIDE } from '../../shared/woodland.js';
 import type { DamageFlashes } from './damage.js';
 
 /**
@@ -162,6 +163,16 @@ export interface EntityLayer {
   ): void;
   /** Screen position of each drawn entity, for hit-testing against what is on screen. */
   screenPosition(view: InterpolatedView, index: number, map: Heightmap): { x: number; y: number };
+  /**
+   * Replace the standing wood, packed as (x, y, species*4 + stage) triples.
+   *
+   * Trees are simulation state now (ADR-0019, src/sim/woodland.ts) rather than the
+   * static plan the other scenery still uses, because they grow, are picked and are cut
+   * down. Called only when the wood actually changes — which is the upkeep cycle, not
+   * the frame — and it rebuilds the sprites rather than diffing them, because fourteen
+   * hundred sprites rebuilt every ten seconds is nothing and a diff is a bug farm.
+   */
+  setWoodland(packed: Float32Array | null): void;
 }
 
 interface Marker {
@@ -376,26 +387,53 @@ export function createEntityLayer(
    * fixed, and the only per-frame work is where the sort puts them.
    */
   const props: { sprite: Sprite; depth: number; x: number; y: number }[] = [];
+  /** Where the static scenery ends and the trees begin, so only the trees are rebuilt. */
+  let sceneryCount = 0;
+  /** Sprites for the standing wood, replaced wholesale when the wood changes. */
+  const treeSprites: Sprite[] = [];
+
+  function placeProp(kind: string, variant: number, worldX: number, worldY: number, scale = 1): Sprite | null {
+    if (atlas === null) return null;
+    const frame = atlas.frame(kind, 'still', 0, variant);
+    if (frame === null) return null;
+
+    const sprite = new Sprite(frame.texture);
+    sprite.scale.set(frame.scale * scale);
+    const screenX = worldToScreenX(worldX, worldY);
+    const screenY = worldToScreenY(worldX, worldY, 0);
+    sprite.position.set(
+      screenX - frame.anchorX * frame.scale * scale,
+      screenY - frame.anchorY * frame.scale * scale,
+    );
+    bodies.addChild(sprite);
+    props.push({ sprite, depth: worldX + worldY, x: worldX, y: worldY });
+    return sprite;
+  }
+
   if (atlas !== null) {
     for (const decoration of decorations) {
-      const frame = atlas.frame(decoration.kind, 'still', 0, decoration.variant);
-      if (frame === null) continue;
-      const sprite = new Sprite(frame.texture);
-      sprite.scale.set(frame.scale);
-      const screenX = worldToScreenX(decoration.worldX, decoration.worldY);
-      const screenY = worldToScreenY(decoration.worldX, decoration.worldY, 0);
-      sprite.position.set(
-        screenX - frame.anchorX * frame.scale,
-        screenY - frame.anchorY * frame.scale,
-      );
-      bodies.addChild(sprite);
-      props.push({
-        sprite,
-        depth: decoration.worldX + decoration.worldY,
-        x: decoration.worldX,
-        y: decoration.worldY,
-      });
+      placeProp(decoration.kind, decoration.variant, decoration.worldX, decoration.worldY);
     }
+  }
+  sceneryCount = props.length;
+
+  /** Sprite scale per growth stage: a sapling is not a tree yet. */
+  const STAGE_SCALE = [0.42, 0.72, 1] as const;
+  /** Marula run warmer than the thorn trees, so the ones that bear are tellable apart. */
+  const MARULA_TINT = 0xd8e3b4;
+
+  let propHandles = new Uint32Array(0);
+  function rehandle(): void {
+    /*
+     * Prop keys live in the generation-zero range.
+     *
+     * A real handle packs (index u24, generation u8) and the generation occupies the TOP
+     * eight bits — bit 31 included — so "the high bit is free" is false and tagging props
+     * with it collided with real entities. Generation zero is never issued by spawn, so
+     * an index with a zero generation cannot be any entity, however many trees are on it.
+     */
+    if (propHandles.length !== props.length) propHandles = new Uint32Array(props.length);
+    for (let i = 0; i < props.length; i++) propHandles[i] = i & 0x00ffffff;
   }
 
   /**
@@ -415,14 +453,69 @@ export function createEntityLayer(
    * entity can ever hold. A plain index is exactly that, for any map with fewer than 16
    * million trees on it.
    */
-  const propHandles = new Uint32Array(props.length);
-  for (let i = 0; i < props.length; i++) propHandles[i] = i & 0x00ffffff;
+  rehandle();
 
   let handleScratch = new Uint32Array(0);
   let previousOrder = new Int32Array(0);
 
   return {
     container,
+
+    setWoodland(packed: Float32Array | null): void {
+      if (packed === null || atlas === null) return;
+
+      /*
+       * Sprites are reused in place, not torn down and rebuilt.
+       *
+       * A wood is around eight hundred trees and changes when one takes root — about
+       * once every half-minute. Rebuilding meant eight hundred destroys and eight
+       * hundred addChilds for a change of one, and Pixi's addChild removes-then-appends,
+       * so each of those is a linear scan of the child list. Reusing means the cost of a
+       * new sapling is one addChild, and everything else is four field writes.
+       */
+      const wanted = Math.floor(packed.length / WOODLAND_STRIDE);
+      props.length = sceneryCount;
+
+      for (let i = 0; i < wanted; i++) {
+        const at = i * WOODLAND_STRIDE;
+        const worldX = packed[at]!;
+        const worldY = packed[at + 1]!;
+        const species = treeSpecies(packed, at);
+        const stage = treeStage(packed, at);
+        const scale = STAGE_SCALE[stage] ?? 1;
+        // Variant hashed off the position, so a wood is not all one tree and a given
+        // tree does not change shape as it grows.
+        const variant = (((Math.floor(worldX * 7 + worldY * 13) % 3) + 3) % 3);
+
+        let sprite = treeSprites[i];
+        if (sprite === undefined) {
+          const made = placeProp('acacia', variant, worldX, worldY, scale);
+          if (made === null) continue;
+          treeSprites.push(made);
+          sprite = made;
+        } else {
+          const frame = atlas.frame('acacia', 'still', 0, variant);
+          if (frame === null) continue;
+          sprite.visible = true;
+          sprite.texture = frame.texture;
+          sprite.scale.set(frame.scale * scale);
+          sprite.position.set(
+            worldToScreenX(worldX, worldY) - frame.anchorX * frame.scale * scale,
+            worldToScreenY(worldX, worldY, 0) - frame.anchorY * frame.scale * scale,
+          );
+          props.push({ sprite, depth: worldX + worldY, x: worldX, y: worldY });
+        }
+        // One tree model for both species; a marula is told by its tint until it has art
+        // of its own.
+        sprite.tint = species === 1 ? MARULA_TINT : 0xffffff;
+      }
+
+      // Trees that came down. Hidden rather than destroyed, because the wood regrows and
+      // a hidden sprite is a slot the next sapling can have without another addChild.
+      for (let i = wanted; i < treeSprites.length; i++) treeSprites[i]!.visible = false;
+
+      rehandle();
+    },
 
     screenPosition(view: InterpolatedView, index: number, map: Heightmap) {
       const worldX = view.x[index]!;

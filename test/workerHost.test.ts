@@ -20,6 +20,7 @@ const IDLE: PlayerState = {
   cattle: 0,
   grain: 0,
   ammunition: 0,
+  wood: 0,
   shortfall: 0,
   drought: 0,
   droughtSevere: false,
@@ -50,13 +51,17 @@ class StubWorker {
   }
 
   /** Simulate the worker delivering a snapshot. */
-  deliver(tick: number, options: { fog?: Uint8Array | null; events?: number } = {}): void {
+  deliver(
+    tick: number,
+    options: { fog?: Uint8Array | null; woodland?: Float32Array | null; events?: number } = {},
+  ): void {
     const writer = createSnapshotWriter(1, tick, 0);
     writer.handle[0] = 1;
     const message: FromWorker = {
       type: 'snapshot',
       tick,
       snapshot: writer.buffer,
+      woodland: options.woodland ?? null,
       events: Array.from({ length: options.events ?? 0 }, () =>
         makeEvent(tick, EventType.Spawned, 1),
       ),

@@ -44,7 +44,7 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
       totals.textContent = t('resource.bar', {
         cattle: Math.floor(player.cattle),
         grain: Math.floor(player.grain),
-        ammunition: Math.floor(player.ammunition),
+        wood: Math.floor(player.wood),
       });
 
       const pct = Math.round(player.drought * 100);
