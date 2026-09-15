@@ -29,6 +29,7 @@ const IDLE_PLAYER: PlayerState = {
   upkeep: 0,
   harvest: 0,
   cullHead: 0,
+  driving: 0,
   drought: 0,
   droughtSevere: false,
   households: 0,

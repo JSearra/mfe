@@ -145,6 +145,22 @@ export function createCattleSystem(): CattleSystem {
         let threatX = 0;
         let threatY = 0;
         let threatWeight = 0;
+        /**
+         * Who is already driving this beast, if anybody.
+         *
+         * Its own people do not frighten it. Before this, walking a herd home was a
+         * fight against the mechanic: the herders holding the tethers were themselves
+         * the largest source of stress, so the act of driving cattle steadily wound
+         * them toward bolting, and a player who sent a dozen villagers to fetch a herd
+         * reliably stampeded it instead. A beast under somebody's hand is used to that
+         * hand. A STRANGER still frightens it, so raiding is untouched — which is the
+         * half of the mechanic worth protecting (ADR-0014).
+         */
+        const tether = world.tetheredTo[index]!;
+        const driver =
+          tether !== NULL_HANDLE && isAlive(world, tether)
+            ? world.faction[handleIndex(tether)]!
+            : -1;
         /** Proximity-weighted count of neighbours already running. */
         let panicWeight = 0;
 
@@ -203,7 +219,9 @@ export function createCattleSystem(): CattleSystem {
             continue;
           }
 
-          // A person. Herders push cattle away and raise their stress.
+          // A person. Herders push cattle away and raise their stress — unless they are
+          // the people already driving it, who do neither.
+          if (driver !== -1 && world.faction[other] === driver) continue;
           if (distance < c.herderRadius) {
             const strength = (c.herderRadius - distance) / c.herderRadius;
             threatX += (dx / distance) * strength;

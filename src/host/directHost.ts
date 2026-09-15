@@ -20,7 +20,7 @@ import { createFog, type FogState } from '../sim/vision/fog.js';
 import { createMovementSystem, type MovementSystem } from '../sim/movement.js';
 import type { World } from '../sim/world.js';
 import { offersFor, type TradeOffer } from '../sim/trade.js';
-import { cullHead } from '../sim/herd.js';
+import { cullHead, drivenBy } from '../sim/herd.js';
 import { createAlliance, relationsFor, type Alliance, type Relation } from '../sim/alliance.js';
 
 /**
@@ -95,6 +95,8 @@ export interface PlayerState {
    * takes is a rule and the UI may not read tuning across the boundary.
    */
   readonly cullHead: number;
+  /** Cattle this village has a hand on right now, as opposed to standing on its ledger. */
+  readonly driving: number;
   /** Grain owed but unpaid at the last upkeep. Non-zero means troops are starving. */
   readonly shortfall: number;
   /** 0 (wet) to 1 (parched). */
@@ -372,6 +374,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         upkeep: economy.upkeep[viewerId] ?? 0,
         harvest: economy.harvested[viewerId] ?? 0,
         cullHead: cullHead(economy, viewerId),
+        driving: drivenBy(world, viewerId),
         drought: droughtNow,
         droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
         households: victory.households[viewerId] ?? 0,

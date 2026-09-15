@@ -335,3 +335,61 @@ describe('who a command acts for', () => {
     expect(tech.status[0]).toBe(1);
   });
 });
+
+describe('how many hands are on a site', () => {
+  it('builds faster with more people, and records how many', () => {
+    // The mechanic has always scaled this way and nothing ever said so: a site with
+    // nobody on it and a site with six looked identical, and the only observable
+    // difference was that one of them finished.
+    const progressWith = (hands: number): { progress: number; recorded: number } => {
+      const sim = makeSim(128, 9);
+      sim.construction.place(sim.world, sim.economy, 0, BuildingType.Umuzi, 12, 12, []);
+      const site = sim.world.kind.findIndex(
+        (kind, i) => kind === EntityKind.Building && sim.world.alive[i] === 1,
+      );
+      for (let i = 0; i < hands; i++) {
+        const angle = (i / Math.max(1, hands)) * Math.PI * 2;
+        spawn(
+          sim.world,
+          sim.world.posX[site]! + Math.cos(angle) * 1.6,
+          sim.world.posY[site]! + Math.sin(angle) * 1.6,
+          0,
+        );
+      }
+      sim.movement.grid.clear();
+      for (let i = 0; i < sim.world.capacity; i++) {
+        if (sim.world.alive[i] === 1) {
+          sim.movement.grid.insert(i, sim.world.posX[i]!, sim.world.posY[i]!);
+        }
+      }
+      sim.construction.update(sim.world, sim.movement.grid, []);
+      return { progress: sim.world.buildProgress[site]!, recorded: sim.world.builders[site]! };
+    };
+
+    const one = progressWith(1);
+    const four = progressWith(4);
+
+    expect(one.recorded).toBe(1);
+    expect(four.recorded).toBe(4);
+    expect(four.progress).toBeCloseTo(one.progress * 4, 5);
+  });
+
+  it('records nobody on a site nobody is working, which is the state worth showing', () => {
+    const sim = makeSim(128, 9);
+    sim.construction.place(sim.world, sim.economy, 0, BuildingType.Umuzi, 12, 12, []);
+    const site = sim.world.kind.findIndex(
+      (kind, i) => kind === EntityKind.Building && sim.world.alive[i] === 1,
+    );
+    spawn(sim.world, 40, 40, 0); // somebody, but nowhere near it
+    sim.movement.grid.clear();
+    for (let i = 0; i < sim.world.capacity; i++) {
+      if (sim.world.alive[i] === 1) {
+        sim.movement.grid.insert(i, sim.world.posX[i]!, sim.world.posY[i]!);
+      }
+    }
+    sim.construction.update(sim.world, sim.movement.grid, []);
+
+    expect(sim.world.builders[site]).toBe(0);
+    expect(sim.world.buildProgress[site]).toBe(0);
+  });
+});

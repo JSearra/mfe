@@ -91,6 +91,15 @@ export interface World {
   /** Where finished troops are sent. Defaults to just outside the footprint. */
   readonly rallyX: Float64Array;
   readonly rallyY: Float64Array;
+  /**
+   * Hands working this site last tick.
+   *
+   * Recorded rather than recomputed because the player has to be able to SEE it. Build
+   * speed has always scaled with the number of people standing at a site, and nothing
+   * ever said so — a site with nobody on it and a site with six look the same, and the
+   * only difference a player could observe was that one of them finished.
+   */
+  readonly builders: Uint8Array;
 
   // --- orders ---------------------------------------------------------------
   /** One of OrderMode. Plain move unless the order said otherwise. */
@@ -211,6 +220,7 @@ export function createWorld(capacity: number, seed: number): World {
     trainProgress: new Float64Array(capacity),
     rallyX: new Float64Array(capacity),
     rallyY: new Float64Array(capacity),
+    builders: new Uint8Array(capacity),
     orderMode: new Uint8Array(capacity),
     patrolX: new Float64Array(capacity),
     patrolY: new Float64Array(capacity),

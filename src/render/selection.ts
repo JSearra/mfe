@@ -341,3 +341,42 @@ export function drawMarquee(graphics: Graphics, rect: Rect | null): void {
   graphics.fill({ color: MARQUEE, alpha: 0.08 });
   graphics.stroke({ width: 1, color: MARQUEE, alpha: 0.8 });
 }
+
+/**
+ * An unfinished building of this player's under the cursor, or -1.
+ *
+ * Its own picker rather than a flag on `pickOwnBuilding`, because the two answer
+ * different questions: that one asks "what did I click to select", this one asks "is
+ * there work here for the people I have already selected". A finished building is not
+ * work, so it deliberately does not match — right-clicking your own umuzi should not
+ * march your whole village into it.
+ */
+export function pickBuildSite(
+  view: InterpolatedView,
+  map: Heightmap,
+  camera: Camera,
+  layer: EntityLayer,
+  x: number,
+  y: number,
+  faction: number,
+): number {
+  // Generous, because a site is a big flat thing and the player is aiming at the work
+  // rather than at a sprite.
+  const reach = (radius * 3 + 10) * camera.zoom;
+  let bestHandle = -1;
+  let bestDistance = reach * reach;
+
+  for (let i = 0; i < view.count; i++) {
+    if (view.kind[i] !== KIND_BUILDING || view.faction[i] !== faction) continue;
+    if (view.progressPct[i]! >= 255) continue;
+    const position = viewportPosition(view, i, map, camera, layer);
+    const dx = position.x - x;
+    const dy = position.y - radius * camera.zoom - y;
+    const distance = dx * dx + dy * dy;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestHandle = view.handle[i]!;
+    }
+  }
+  return bestHandle;
+}

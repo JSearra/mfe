@@ -32,10 +32,15 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
   const margin = document.createElement('span');
   margin.className = 'resource-bar__margin';
 
+  // Cattle under hand, which is not the same as cattle on the ledger. Shown only while
+  // there are any: taking a herd had no feedback at all outside the debug overlay.
+  const driving = document.createElement('span');
+  driving.className = 'resource-bar__driving';
+
   const warning = document.createElement('span');
   warning.className = 'resource-bar__warning';
 
-  element.append(totals, season, margin, herd, warning);
+  element.append(totals, season, margin, driving, herd, warning);
   parent.appendChild(element);
 
   let lastUpdate = -Infinity;
@@ -84,6 +89,9 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
       } else {
         margin.textContent = '';
       }
+
+      driving.textContent =
+        player.driving > 0 ? t('resource.driving', { head: player.driving }) : '';
 
       warning.textContent =
         player.shortfall > 0 ? t('resource.starving', { amount: Math.ceil(player.shortfall) }) : '';

@@ -660,6 +660,45 @@ Measured over five thirty-minute AI matches on the seeded opening: 1,530–2,130
 events and 90–115 deaths per match, every one of them from hunger, with villages going
 short in 86–132 seasons out of 180. Nobody was killed by anybody.
 
+### Assigning work, and taking a herd
+
+Both mechanics already worked and neither was usable, which is a distinction worth
+keeping separate from "broken".
+
+**Building has always scaled with the number of people standing at a site**, and nothing
+said so: a site with nobody on it and a site with six looked identical, and the only
+observable difference was that one of them finished. Right-clicking one of your own
+unfinished sites now sends the selection to raise it, `world.builders` records how many
+hands are on it, it crosses in the snapshot, and the panel reads either *"umuzi — 33%
+built · 1 building"* or *"nobody working it"* in amber. Two details cost an hour each and
+are worth writing down: the builders have to be ringed **clear of the footprint**, which
+blocks movement from the moment it is placed; and they have to be spread over **three
+concentric arcs** rather than one ring, or a crowd shoves itself tangentially out of
+`buildRadius` — twenty-one people sent to a single ring had one of them building. The
+radius went 2.2 to 3.2 to give them room.
+
+**Herding was a mechanic fighting its own gesture.** Three things were wrong. The people
+holding the tethers were themselves the largest source of stress, so the act of driving
+cattle wound them toward bolting — a beast under somebody's hand is exempt from that hand
+now, and only from that hand, so a stranger still frightens it and raiding is untouched.
+Tethering was round-robin, which tore a herd apart the moment it was taken: twelve cattle
+split between twelve people each walked off after a different one. And the click had to
+land on an animal, in a wood, where the tree answered first.
+
+Now: an animal under the cursor outranks a tree, the click takes the herd around it
+rather than the one beast, each beast goes to its nearest drover, and only a few drovers
+are detailed — sending two dozen people at a herd is precisely the crowding the stress
+curve exists to punish, and it bolted every time. They close from the side they are
+already standing on and stop clear of the herd's **edge**, not its centre; ringing it
+meant walking through the middle, which panicked seventeen of twenty-three. Measured in
+the browser, taking a herd went from a peak stress of 80 to 11, and headless — one herd,
+no neighbours — it is 12 of 12 held with zero stampede ticks over 900, even with the
+drovers standing among the animals.
+
+*Still true, and deliberately:* marching the rest of the village across a herd panics it.
+That is ADR-0014 working, not a defect, and it is why the gesture details four people
+rather than everyone.
+
 *A lesson about measuring, recorded because it cost two phases.* The soak harness used for
 V5 seeded cattle and no people, so every "village" in it was a ledger with a herd and
 nothing that eats grain per head. It produced plausible numbers that were wrong, and they

@@ -14,7 +14,7 @@
  * See docs/ARCHITECTURE.md section 5.
  */
 
-export const SNAPSHOT_VERSION = 5;
+export const SNAPSHOT_VERSION = 6;
 
 export type FieldType = 'u32' | 'f32' | 'u8';
 
@@ -67,6 +67,14 @@ export const SNAPSHOT_FIELDS = [
    * renderer will need movement class to pick a sprite once there are sprites.
    */
   { name: 'subtype', type: 'u8' },
+  /**
+   * Hands working a building site, 0 for anything else.
+   *
+   * Its own field rather than packed with progress, because the two say different
+   * things: progress is how far along the site is, builders is whether anything is
+   * happening at all. A player looking at a stalled site needs the second.
+   */
+  { name: 'builders', type: 'u8' },
 ] as const satisfies readonly FieldSpec[];
 
 type Fields = typeof SNAPSHOT_FIELDS;

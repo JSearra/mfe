@@ -297,6 +297,7 @@ export function createCommandPanel(
         const subtype = view.subtype[buildingSlot]!;
         const handle = view.handle[buildingSlot]!;
         const progress = view.progressPct[buildingSlot]!;
+        const builders = view.builders[buildingSlot]!;
         const spec = buildingSpec(subtype);
         const next = `b:${subtype}:${handle}`;
 
@@ -305,14 +306,24 @@ export function createCommandPanel(
           buildActions(KIND_BUILDING, subtype, handle);
           signature = next;
         }
-        // Progress changes constantly, so it lives outside the rebuild check.
+        // Progress changes constantly, so it lives outside the rebuild check. So does
+        // the builder count, and it is the half that tells the player what to DO: a site
+        // at 12% with nobody on it and a site at 12% with six people on it want opposite
+        // things from them, and until this they looked identical.
         detail.textContent =
           progress >= 255
             ? ''
-            : t('panel.buildingSite', {
-                name: t(spec.nameKey as MessageKey),
-                pct: Math.round((progress / 255) * 100),
-              });
+            : builders === 0
+              ? t('panel.siteIdle', {
+                  name: t(spec.nameKey as MessageKey),
+                  pct: Math.round((progress / 255) * 100),
+                })
+              : t('panel.siteBuilding', {
+                  name: t(spec.nameKey as MessageKey),
+                  pct: Math.round((progress / 255) * 100),
+                  builders,
+                });
+        detail.classList.toggle('panel__detail--idle', progress < 255 && builders === 0);
         return;
       }
 

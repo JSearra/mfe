@@ -43,6 +43,7 @@ import {
   createSelection,
   drawMarquee,
   entitiesNear,
+  pickBuildSite,
   pickEntity,
   type Rect,
 } from './render/selection.js';
@@ -92,7 +93,53 @@ const HERD_LEASHED = 1;
 const HERD_STAMPEDING = 3;
 
 /** Right-clicking one cow leashes the beasts around it, not just that one. */
-const HERD_GRAB_RADIUS = 3.5;
+/**
+ * How much of a herd one click on one animal takes.
+ *
+ * Generous on purpose. At 6.5 a click took five beasts out of nine and left the rest
+ * standing in the middle of the drovers: those four were not under anybody's hand, so
+ * they took the full stress of people arriving, panicked, and pulled the calm five into
+ * it through the contagion. Taking the herd means taking the herd.
+ */
+const HERD_GRAB_RADIUS = 9.0;
+/**
+ * How near a click has to land when it did NOT hit an animal for it to still mean
+ * "gather that herd" rather than "walk there". Forgiving, but not so wide that ordinary
+ * movement near a herd becomes impossible.
+ */
+const HERD_NEAR_MISS = 2.5;
+/**
+ * How many of the selected people actually go and fetch a herd.
+ *
+ * Sending everyone was tried and it is the wrong shape: two dozen people converging on a
+ * herd is exactly the crowding the stress curve exists to punish, and the herd bolted
+ * within fifteen seconds every time. That is the mechanic working, not a bug in it — so
+ * the gesture obeys it instead of fighting it and details a few drovers, nearest first.
+ * The rest of the village carries on with what it was doing, which is also what a player
+ * ordering "go and fetch that herd" means.
+ */
+const HERD_DROVERS = 4;
+/**
+ * How far clear of the OUTERMOST animal the drovers stop.
+ *
+ * Measured from the edge of the herd, not its centre, and that distinction is the whole
+ * of it: a standoff from the centre still put drovers within frightening distance of the
+ * beasts on the near side, so the animals under hand stayed calm and their unleashed
+ * neighbours panicked and took them along through the contagion. Comfortably outside
+ * tuning.cattle.herderRadius, so nothing is frightened at all; the tether does the
+ * gathering, which is what it is for.
+ */
+const HERD_CLEARANCE = 4.8;
+/** Sideways spacing between drovers on the approach, in world units. */
+const HERD_FAN = 1.2;
+/**
+ * How far from a site's centre the builders are told to stand.
+ *
+ * All inside tuning.buildings.buildRadius so everyone standing on them counts as working
+ * the site, and all clear of the footprint so the orders are to ground they can reach —
+ * the foundation blocks movement from the moment it is placed.
+ */
+const BUILD_STAND_ARCS = [2.0, 2.5, 3.0] as const;
 
 /** Herd readout for the debug overlay, counted from what is actually on screen. */
 function herdCounts(view: InterpolatedView | null): {
@@ -581,32 +628,149 @@ async function main(options: GameOptions): Promise<void> {
       // button, read from what is under it, as the genre expects.
       // Right-click reads what is under it: an enemy is attacked, a cow is herded,
       // bare ground is a move order. One button, three meanings, as the genre expects.
-      // A tree first. Felling is the one right-click meaning that destroys something,
-      // so it is the most specific: a tree on the tile actually clicked, where the
-      // others accept anything within a grab radius.
       const ground = worldPointAt(x, y);
-      const tree = ground === null ? -1 : pickTree(standingWood, ground.x, ground.y);
+      // An animal under the cursor outranks everything. A herd standing in a wood used
+      // to be unherdable — the tree on that tile answered first and the click felled it
+      // — and "I am pointing at that cow" is not ambiguous to the person doing it.
+      const cow = pickEntity(view, map, camera, entities, x, y, KIND_CATTLE);
+
+      // Then a tree. Felling is the one right-click meaning that destroys something, so
+      // it is the most specific of what is left: a tree on the tile actually clicked,
+      // where the others accept anything within a grab radius.
+      const tree = cow !== -1 || ground === null ? -1 : pickTree(standingWood, ground.x, ground.y);
       if (tree !== -1) {
         audio.acknowledge('move');
         sim.sendCommand(CommandKind.Fell, tree);
         return;
       }
 
-      const cow = pickEntity(view, map, camera, entities, x, y, KIND_CATTLE);
-      if (cow !== -1) {
-        const slot = view.handle.indexOf(cow);
-        const herd = entitiesNear(
-          view,
-          view.x[slot]!,
-          view.y[slot]!,
-          HERD_GRAB_RADIUS,
-          KIND_CATTLE,
-          herdScratch,
-        );
+      // A site of our own that is not finished: send the selected people to raise it.
+      // Build speed has always scaled with how many hands are standing there; this is
+      // the gesture that lets a player USE that, instead of discovering it by accident.
+      const site = pickBuildSite(view, map, camera, entities, x, y, PLAYER);
+      if (site !== -1) {
+        const slot = view.handle.indexOf(site);
+        audio.acknowledge('move');
+        // Ringed round the footprint, not stacked on its centre: the foundation blocks
+        // movement the moment it is placed, so an order into the middle of it is an
+        // order to a tile nobody can stand on.
+        //
+        // Three concentric arcs rather than one circle. On a single ring a crowd shoves
+        // itself tangentially until most of it is outside the radius that counts as
+        // working the site — measured in play, twenty-one people sent to one ring had
+        // one of them building. Arcs give the same crowd about three times the standing
+        // room inside tuning.buildings.buildRadius, which is what makes "more people
+        // build it faster" true in practice and not just in the arithmetic.
+        const handles = [...selection.handles];
+        const arcs = BUILD_STAND_ARCS;
+        const perArc = Math.ceil(handles.length / arcs.length);
+        for (let i = 0; i < handles.length; i++) {
+          const ring = arcs[i % arcs.length]!;
+          const angle = (Math.floor(i / arcs.length) / perArc) * Math.PI * 2;
+          sim.sendCommand(
+            CommandKind.MoveTo,
+            handles[i]!,
+            view.x[slot]! + Math.cos(angle) * ring,
+            view.y[slot]! + Math.sin(angle) * ring,
+            queued ? 1 : 0,
+          );
+        }
+        return;
+      }
+
+      // Cattle. Pointing at one beast takes the herd around it, because a player aiming
+      // at forty animals is aiming at the herd and not at one of them. Missing the herd
+      // entirely is still a move order — the wide grab is what a click ON an animal
+      // means, not what any click near one means, or right-clicking open ground six
+      // tiles from a herd would gather it instead of walking there.
+      const herdAt =
+        cow !== -1
+          ? { x: view.x[view.handle.indexOf(cow)]!, y: view.y[view.handle.indexOf(cow)]! }
+          : ground;
+      const grab = cow !== -1 ? HERD_GRAB_RADIUS : HERD_NEAR_MISS;
+      const herd =
+        herdAt === null
+          ? []
+          : entitiesNear(view, herdAt.x, herdAt.y, grab, KIND_CATTLE, herdScratch);
+      if (herd.length > 0 && herdAt !== null) {
         audio.acknowledge('herd');
-        const herders = [...selection.handles];
-        for (let i = 0; i < herd.length; i++) {
-          sim.sendCommand(CommandKind.Leash, herders[i % herders.length]!, herd[i]!);
+        // Bound locally: `view` is a reassignable let, so its narrowing does not survive
+        // into a closure.
+        const seen = view;
+        const at = herdAt;
+        // The nearest few of the selection, not all of it.
+        const herders = [...selection.handles]
+          .map((handle) => {
+            const slot = seen.handle.indexOf(handle);
+            if (slot === -1) return { handle, away: Infinity };
+            const dx = seen.x[slot]! - at.x;
+            const dy = seen.y[slot]! - at.y;
+            return { handle, away: dx * dx + dy * dy };
+          })
+          .sort((a, b) => a.away - b.away)
+          .slice(0, HERD_DROVERS)
+          .map((entry) => entry.handle);
+        // Each beast to the NEAREST selected herder, not round-robin. Round-robin tore a
+        // herd apart the moment it was taken: twelve cattle split between twelve people
+        // each walked off after a different one, so the thing the player had just
+        // gathered promptly stopped being a herd. Nearest keeps the animals that were
+        // standing together following the same person, and the flocking does the rest.
+        for (const beast of herd) {
+          const slot = view.handle.indexOf(beast);
+          let best = herders[0]!;
+          let bestDistance = Infinity;
+          for (const handle of herders) {
+            const at = view.handle.indexOf(handle);
+            if (at === -1) continue;
+            const dx = view.x[at]! - view.x[slot]!;
+            const dy = view.y[at]! - view.y[slot]!;
+            const distance = dx * dx + dy * dy;
+            if (distance < bestDistance) {
+              bestDistance = distance;
+              best = handle;
+            }
+          }
+          sim.sendCommand(CommandKind.Leash, best, beast);
+        }
+        // How far out the herd actually reaches, so the standoff clears its edge rather
+        // than its middle.
+        let spread = 0;
+        for (const beast of herd) {
+          const slot = seen.handle.indexOf(beast);
+          if (slot === -1) continue;
+          const dx = seen.x[slot]! - at.x;
+          const dy = seen.y[slot]! - at.y;
+          const away = Math.sqrt(dx * dx + dy * dy);
+          if (away > spread) spread = away;
+        }
+        const standoff = spread + HERD_CLEARANCE;
+
+        // Each drover closes on the edge of the herd NEAREST TO ITSELF and stops there.
+        // Ringing the herd was tried and it is about the worst thing you can do to one:
+        // to reach the far side a drover walks straight through the middle, which is
+        // exactly the crowding that panics cattle — measured, seventeen of twenty-three
+        // bolted. Coming in from the side you are already on touches nothing on the way.
+        for (let i = 0; i < herders.length; i++) {
+          const slot = seen.handle.indexOf(herders[i]!);
+          if (slot === -1) continue;
+          const awayX = seen.x[slot]! - at.x;
+          const awayY = seen.y[slot]! - at.y;
+          const span = Math.sqrt(awayX * awayX + awayY * awayY);
+          // Already standing among them: leave it be rather than shoving it outward.
+          if (span < 1e-3) continue;
+          // Fanned a little, so drovers coming from the same direction do not stack.
+          const fan = ((i - (herders.length - 1) / 2) * HERD_FAN) / standoff;
+          const cosF = Math.cos(fan);
+          const sinF = Math.sin(fan);
+          const unitX = awayX / span;
+          const unitY = awayY / span;
+          sim.sendCommand(
+            CommandKind.MoveTo,
+            herders[i]!,
+            at.x + (unitX * cosF - unitY * sinF) * standoff,
+            at.y + (unitX * sinF + unitY * cosF) * standoff,
+            queued ? 1 : 0,
+          );
         }
         return;
       }
@@ -649,6 +813,29 @@ async function main(options: GameOptions): Promise<void> {
           }
         }
         return { ...counts, maxStress };
+      },
+      /**
+       * Viewport positions of this player's unfinished building sites.
+       *
+       * Through the entity layer's own screen position, which is where the sprite is
+       * DRAWN and therefore where the player clicks — the flat world-to-viewport
+       * transform lands somewhere else for a multi-tile building, and a helper that
+       * disagrees with the picker is worse than no helper: it made a working gesture
+       * look broken for an hour.
+       */
+      siteViewports: () => {
+        if (view === null) return [];
+        const out: [number, number][] = [];
+        for (let i = 0; i < view.count; i++) {
+          if (view.kind[i] !== KIND_BUILDING || view.faction[i] !== PLAYER) continue;
+          if (view.progressPct[i]! >= 255) continue;
+          const at = entities.screenPosition(view, i, map);
+          out.push([
+            (at.x - camera.x) * camera.zoom + camera.viewportWidth / 2,
+            (at.y - camera.y) * camera.zoom + camera.viewportHeight / 2,
+          ]);
+        }
+        return out;
       },
       /** Viewport position of one cow, for driving clicks at something that exists. */
       cowViewport: (n = 0) => {

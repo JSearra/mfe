@@ -33,6 +33,12 @@ better in a subsistence game than a military one. The stampede is a disaster, no
 weapon. The platform stays the browser, and that is a decision rather than an accident:
 ADR-0019 says why.
 
+**A gesture is half a mechanic.** Build speed scaled with the number of builders, and
+herding worked, for months in which neither was usable: nothing sent people to a site,
+nothing said how many were on one, taking a herd tore it apart between drovers, and the
+people doing the driving were the main thing frightening the cattle. When a rule is
+added, budget for the gesture that reaches it and the readout that shows it.
+
 **A soak harness must seed a starting force.** `createDirectSimHost` seeds nothing;
 `main.ts` spawns the units, the enemy and the herds separately. A harness that skips that
 is a ledger with a herd in it, not the game — it produced two phases' worth of plausible
@@ -150,3 +156,12 @@ or output size.
 If `replay` reports a **tuning mismatch**, the tuning file changed: re-record with
 `npm run replay:record` and say why in the commit message. If it reports **divergence at
 tick N**, determinism broke — that is a bug, not a fixture to re-record.
+
+**The one exception, and it has to be proved rather than asserted:** a deliberate change
+to a simulation rule, or a new array in the world, also reports as divergence, because
+the gate can only tell "tuning moved" from "everything else". Before re-recording on that
+basis, show two things: that the build still agrees with ITSELF (run the same scenario
+twice in one process and compare — 100/100 or it is a real bug), and that removing the
+intended change reproduces the old fixture exactly. Both go in the commit message. Adding
+a world array is the common case: `worldStateFields` is derived, so the array is hashed
+the moment it exists, even when nothing has written to it yet.

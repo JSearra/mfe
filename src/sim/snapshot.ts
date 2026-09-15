@@ -67,6 +67,7 @@ export function buildSnapshot(
     // field's worth. The high nibble carries world.flags, which nothing has ever set to
     // anything but zero — this line used to be preceded by a plain `= world.flags[i]`
     // that it immediately overwrote, which read as though the byte carried two things.
+    writer.builders[slot] = world.kind[i] === EntityKind.Building ? world.builders[i]! : 0;
     writer.flags[slot] = (world.flags[i]! & 0xf0) | (world.herdState[i]! & 0x0f);
     slot++;
   }

@@ -14,6 +14,11 @@ import {
   type World,
 } from '../src/sim/world.js';
 
+import { makeSim, flatMap as flatGround } from './simHarness.js';
+import { enqueueCommand, step } from '../src/sim/loop.js';
+import { CommandKind, makeCommand, NEUTRAL_FACTION } from '../src/sim/commands.js';
+import { drivenBy } from '../src/sim/herd.js';
+
 const C = tuning.cattle;
 
 const flat = (width: number, height: number) =>
@@ -179,6 +184,50 @@ describe('herding', () => {
 
     world.herdState[handleIndex(handles[0]!)] = HerdState.Stampeding;
     expect(cattle.leash(world, herder, handles[0]!)).toBe(false);
+  });
+
+  it('does not frighten cattle with the people already driving them', () => {
+    // Walking a herd home used to be a fight against the mechanic: the herders holding
+    // the tethers were themselves the largest source of stress, so the act of driving
+    // cattle wound them steadily toward bolting, and sending a dozen villagers to fetch
+    // a herd reliably stampeded it instead of taking it.
+    const crowd = (leashed: boolean): number => {
+      const { world, cattle, handles, tick } = makeHerd(1);
+      const cow = handles[0]!;
+      const index = handleIndex(cow);
+      world.posX[index] = 20;
+      world.posY[index] = 20;
+      // Six people pressed right up against it, which is what fetching a herd looks like.
+      for (let i = 0; i < 6; i++) {
+        const herder = spawn(world, 20 + (i % 3) * 0.5 - 0.5, 20 + (i < 3 ? -1 : 1), 0);
+        if (leashed && i === 0) cattle.leash(world, herder, cow);
+      }
+      for (let t = 0; t < 40; t++) tick();
+      return world.stress[index]!;
+    };
+
+    const strangers = crowd(false);
+    const ownPeople = crowd(true);
+
+    expect(strangers).toBeGreaterThan(0);
+    // A beast under somebody's hand is used to that hand.
+    expect(ownPeople).toBe(0);
+  });
+
+  it('is still frightened by a stranger, so raiding is untouched', () => {
+    // The exemption is for the faction DRIVING the beast, not for anyone who walks up:
+    // a herd you are holding must still be takeable, or ADR-0014 loses its point.
+    const { world, cattle, handles, tick } = makeHerd(1);
+    const cow = handles[0]!;
+    const index = handleIndex(cow);
+    world.posX[index] = 20;
+    world.posY[index] = 20;
+
+    cattle.leash(world, spawn(world, 21, 20, 0), cow);
+    for (let i = 0; i < 4; i++) spawn(world, 20 + (i % 2) * 0.4 - 0.2, 20 + (i < 2 ? -0.8 : 0.8), 1);
+
+    for (let t = 0; t < 40; t++) tick();
+    expect(world.stress[index]!).toBeGreaterThan(0);
   });
 
   it('drops the tether when the herder dies', () => {
@@ -446,5 +495,103 @@ describe('stampede', () => {
 
     for (let t = 0; t < C.stampedeTicks + 200; t++) tick();
     expect(world.herdState[cow]).toBe(HerdState.Grazing);
+  });
+});
+
+/**
+ * Driving a herd, end to end, through the commands the right-click gesture issues.
+ *
+ * A different harness from the rest of this file on purpose: what broke here was never
+ * one rule, it was the combination — leash, then walk people toward the animals, and
+ * watch the thing you just gathered bolt. Only a whole loop shows that.
+ */
+describe('driving a herd home', () => {
+  const HERD = 12;
+
+  function droveWith(drovers: number, clearance: number) {
+    const sim = makeSim(256, 5, flatGround(64));
+    const hx = 32;
+    const hy = 32;
+    const cattle: number[] = [];
+    for (let i = 0; i < HERD; i++) {
+      const angle = i * 2.399963;
+      const spread = 3.2 * Math.sqrt((i + 0.5) / HERD);
+      cattle.push(
+        spawn(
+          sim.world,
+          hx + Math.cos(angle) * spread,
+          hy + Math.sin(angle) * spread,
+          NEUTRAL_FACTION,
+          1,
+          EntityKind.Cattle,
+        ),
+      );
+    }
+    const people: number[] = [];
+    for (let i = 0; i < 24; i++) {
+      people.push(spawn(sim.world, hx + 14 + (i % 6) * 0.6, hy + 14 + Math.floor(i / 6) * 0.6, 0));
+    }
+    for (let t = 0; t < 40; t++) step(sim.loop);
+
+    let seq = 0;
+    const chosen = people.slice(0, drovers);
+    for (const beast of cattle) {
+      enqueueCommand(
+        sim.loop,
+        makeCommand(sim.world.tick, 0, seq++, CommandKind.Leash, chosen[0]!, beast),
+      );
+    }
+    let reach = 0;
+    for (const beast of cattle) {
+      const at = handleIndex(beast);
+      const away = Math.sqrt((sim.world.posX[at]! - hx) ** 2 + (sim.world.posY[at]! - hy) ** 2);
+      if (away > reach) reach = away;
+    }
+    for (const drover of chosen) {
+      const at = handleIndex(drover);
+      const dx = sim.world.posX[at]! - hx;
+      const dy = sim.world.posY[at]! - hy;
+      const span = Math.sqrt(dx * dx + dy * dy);
+      const standoff = reach + clearance;
+      enqueueCommand(
+        sim.loop,
+        makeCommand(
+          sim.world.tick,
+          0,
+          seq++,
+          CommandKind.MoveTo,
+          drover,
+          hx + (dx / span) * standoff,
+          hy + (dy / span) * standoff,
+        ),
+      );
+    }
+
+    let bolters = 0;
+    for (let t = 0; t < 900; t++) {
+      step(sim.loop);
+      for (const beast of cattle) {
+        if (sim.world.herdState[handleIndex(beast)] === HerdState.Stampeding) {
+          bolters++;
+          break;
+        }
+      }
+    }
+    return { driven: drivenBy(sim.world, 0), bolters };
+  }
+
+  it('holds the whole herd without panicking it', () => {
+    const { driven, bolters } = droveWith(4, 4.8);
+    expect(driven).toBe(HERD);
+    expect(bolters).toBe(0);
+  });
+
+  it('holds it even with the drovers standing right among the animals', () => {
+    // The people holding the tethers are the ones a beast is used to, so crowding by
+    // its OWN drovers is not what sets it off. Before that was true, fetching a herd
+    // with a handful of villagers reliably stampeded it instead of taking it.
+    const { driven, bolters } = droveWith(4, 0);
+    expect(driven).toBe(HERD);
+    expect(bolters).toBe(0);
   });
 });

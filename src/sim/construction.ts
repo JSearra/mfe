@@ -184,7 +184,10 @@ export function createConstructionSystem(
         if (world.alive[index] !== 1 || world.kind[index] !== EntityKind.Building) continue;
 
         const spec = buildingSpec(world.buildingType[index]!);
-        if (world.buildProgress[index]! >= spec.work) continue;
+        if (world.buildProgress[index]! >= spec.work) {
+          world.builders[index] = 0;
+          continue;
+        }
 
         // Work is done by whoever is standing near it. Nobody there, nothing happens —
         // a site does not raise itself.
@@ -208,6 +211,9 @@ export function createConstructionSystem(
           if (dx * dx + dy * dy > reachSq) continue;
           builders++;
         }
+        // Written even when nobody is there, because "nobody is working this" is the
+        // single most useful thing the site can tell the player.
+        world.builders[index] = builders > 255 ? 255 : builders;
         if (builders === 0) continue;
 
         const rate = b.progressPerBuilder * (labour?.(world.faction[index]!) ?? 1);

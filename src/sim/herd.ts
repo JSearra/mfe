@@ -1,5 +1,6 @@
 import { tuning } from './tuning.js';
 import { Resource, type Economy } from './economy/ledger.js';
+import { EntityKind, handleIndex, isAlive, NULL_HANDLE, type World } from './world.js';
 
 /**
  * Slaughtering from the standing herd.
@@ -31,4 +32,23 @@ export function cull(economy: Economy, player: number): number {
   if (!economy.spend(player, Resource.Cattle, taken)) return 0;
   economy.add(player, Resource.Grain, taken * tuning.herd.grainPerBeast);
   return taken;
+}
+
+/**
+ * Cattle this village currently has a hand on.
+ *
+ * Counted through the tether, which is how the ledger and the victory condition both
+ * count a herd — cattle are neutral and belong to whoever is driving them, not to a
+ * faction. Crosses the boundary so the player can see that taking a herd worked: the
+ * only feedback before was a line in the debug overlay.
+ */
+export function drivenBy(world: World, player: number): number {
+  let driven = 0;
+  for (let i = 0; i < world.capacity; i++) {
+    if (world.alive[i] !== 1 || world.kind[i] !== EntityKind.Cattle) continue;
+    const tether = world.tetheredTo[i]!;
+    if (tether === NULL_HANDLE || !isAlive(world, tether)) continue;
+    if (world.faction[handleIndex(tether)] === player) driven++;
+  }
+  return driven;
 }

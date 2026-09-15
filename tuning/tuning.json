@@ -156,7 +156,7 @@
     "intervalTicks": 4
   },
   "buildings": {
-    "buildRadius": 2.2,
+    "buildRadius": 3.2,
     "progressPerBuilder": 1.0
   },
   "ai": {
