@@ -60,13 +60,20 @@ def harmonise(image: Image.Image, target: np.ndarray, strength: float) -> Image.
     luminance = rgb[:, :, 0] * 0.2126 + rgb[:, :, 1] * 0.7152 + rgb[:, :, 2] * 0.0722
 
     band = target.astype(np.float64) / 255.0
-    band_luminance = band[0] * 0.2126 + band[1] * 0.7152 + band[2] * 0.0722
-    if band_luminance < 1e-6:
-        band_luminance = 1e-6
 
-    # Scale the band colour by each pixel's luminance relative to the band's own, so a
-    # bright grain stays bright and a shadow stays dark.
-    scaled = band.reshape(1, 1, 3) * (luminance / band_luminance)[:, :, None]
+    # Scale the band colour by each pixel's luminance relative to THIS TILE'S MEAN, so
+    # the tile's average lands on the band colour and its grain varies around it.
+    #
+    # The divisor used to be the band's own luminance, which preserved each generation's
+    # absolute brightness and so conformed hue without conforming level. One pale
+    # riverbed came out at luminance 182 against its neighbour band's 97 — the right
+    # green, twice as bright as anything it touched, and a ramp is as much about level as
+    # hue. Dividing by the source's mean keeps the grain exactly as it was and moves only
+    # where that grain is centred.
+    mean_luminance = float(luminance.mean())
+    if mean_luminance < 1e-6:
+        mean_luminance = 1e-6
+    scaled = band.reshape(1, 1, 3) * (luminance / mean_luminance)[:, :, None]
     blended = rgb * (1.0 - strength) + scaled * strength
 
     out = np.array(image.convert("RGBA"))
@@ -80,6 +87,48 @@ def diamond_mask(width: int, height: int) -> np.ndarray:
     nx = np.abs((xs + 0.5) - width / 2) / (width / 2)
     ny = np.abs((ys + 0.5) - height / 2) / (height / 2)
     return (nx + ny) <= 1.0
+
+
+def edge_falloff(width: int, height: int, mask: int) -> np.ndarray:
+    """
+    Alpha for a transition tile: opaque against the edges in `mask`, fading inward.
+
+    Terrain used to change ground with a hard diamond edge, and the renderer hid that by
+    having each tile borrow a neighbour's band 38% of the time. Scattering two textures
+    into each other does not read as one ground giving way to another; it reads as
+    static. This is the blend the borrowing was standing in for — the neighbour's ground
+    laid over this tile, opaque where they touch and gone by the far side, so the seam is
+    a gradient rather than a line.
+
+    Distance is measured in the diamond's own metric, |nx| + |ny|, so the falloff runs
+    parallel to the edge it starts from rather than bulging at the corners. Where two
+    edges are both in the mask their falloffs are taken at their maximum, which is what
+    makes a corner read as a corner.
+    """
+    ys, xs = np.mgrid[0:height, 0:width]
+    nx = ((xs + 0.5) - width / 2) / (width / 2)
+    ny = ((ys + 0.5) - height / 2) / (height / 2)
+
+    alpha = np.zeros((height, width), dtype=np.float64)
+    for bit, (sx, sy) in enumerate(TRANSITION_EDGES):
+        if not mask & (1 << bit):
+            continue
+        # 0 on the edge itself, rising to 2 at the opposite corner.
+        inward = 1.0 - (sx * nx + sy * ny)
+        near = np.clip(1.0 - inward / TRANSITION_REACH, 0.0, 1.0)
+        # Smoothstep, so the blend has no visible start or end line.
+        alpha = np.maximum(alpha, near * near * (3.0 - 2.0 * near))
+
+    return alpha
+
+
+def make_transition(tile: Image.Image, mask: int) -> Image.Image:
+    """A tile masked to bleed in from the edges named by `mask`."""
+    pixels = np.array(tile.convert("RGBA"))
+    falloff = edge_falloff(tile.width, tile.height, mask)
+    inside = diamond_mask(tile.width, tile.height)
+    pixels[:, :, 3] = np.where(inside, np.clip(falloff * 255.0, 0, 255).astype(np.uint8), 0)
+    return Image.fromarray(pixels, "RGBA")
 
 
 def make_tile(source: Image.Image, band: np.ndarray, strength: float) -> Image.Image:
@@ -126,16 +175,40 @@ def tileability(image: Image.Image) -> float:
 # koppie. The ordering is an elevation gradient — river channel, erosion gully, dry
 # plain, scrub, grass, sourveld, plateau rim, ironstone cap — and it is what makes the
 # height ramp legible as terrain rather than as shading.
+# Height band per subject, low ground first.
+#
+# This was scrambled, and the map showed it: donga-floor — an erosion gully, which is by
+# definition low ground — sat at band 1 between the riverbed and the low savanna, while
+# savanna-mid sat at 4 ABOVE thornveld and savanna-high at 5 above that. Read up the
+# ramp, the ground went green, red, red, olive, green, olive, orange, brown. No amount of
+# per-tile blending rescues an order like that, because the two grounds either side of
+# any boundary have no reason to resemble each other.
+#
+# Now it climbs the way the country does: water at the bottom, grass drying as it rises,
+# scrub, then soil and stone where nothing holds. savanna low/mid/high finally ascend in
+# that order, which is what their names have claimed all along.
 TERRAIN_BANDS = {
     "riverbed": 0,
-    "donga-floor": 1,
-    "savanna-low": 2,
-    "thornveld": 3,
-    "savanna-mid": 4,
-    "savanna-high": 5,
+    "savanna-low": 1,
+    "savanna-mid": 2,
+    "savanna-high": 3,
+    "thornveld": 4,
+    "donga-floor": 5,
     "sandstone": 6,
     "rock": 7,
 }
+
+# Which diamond edge each bit of a transition mask refers to, as the sign of (nx, ny) in
+# normalised tile space. Clockwise from the upper right, matching the neighbour order the
+# renderer uses: (x, y-1), (x+1, y), (x, y+1), (x-1, y).
+#
+# Isometric puts tile +x down-RIGHT and tile +y down-LEFT, which is why "north" in tile
+# space is the upper-right edge on screen and not the top corner.
+TRANSITION_EDGES = ((1, -1), (1, 1), (-1, 1), (-1, -1))
+
+# How far across a tile a neighbour's ground bleeds. Most of the way: a narrow band reads
+# as a drawn outline rather than as one ground giving way to another.
+TRANSITION_REACH = 0.85
 
 TILE_PAD = 2
 
@@ -222,6 +295,37 @@ def command_tile(args: argparse.Namespace) -> int:
             }
         )
         print(f"  {path.name}: seam {seam:.3f}")
+
+    # --- transitions -------------------------------------------------------------
+    #
+    # One set per band, built from that band's first tile rather than from all of them.
+    # Fifteen masks against every variant would be a few hundred tiles for variety the
+    # player cannot see: a transition is a thin fringe along a seam, and its grain is
+    # read as the neighbouring ground's, which the base tile under it already supplies.
+    first_of_band: dict[int, tuple[str, Image.Image]] = {}
+    for entry, (name, tile) in zip(manifest, packed):
+        first_of_band.setdefault(entry["band"], (name, tile))
+
+    for band_index in sorted(first_of_band):
+        _, tile = first_of_band[band_index]
+        for mask in range(1, 16):
+            name = f"transition-{band_index}-{mask}.png"
+            blended = make_transition(tile, mask)
+            blended.save(target / name)
+            packed.append((name, blended))
+            manifest.append(
+                {
+                    "file": name,
+                    "subject": "transition",
+                    "width": TILE_W,
+                    "height": TILE_H,
+                    "band": band_index,
+                    "mask": mask,
+                    "averageColour": average_colour(blended),
+                    "seam": 0.0,
+                }
+            )
+    print(f"  {15 * len(first_of_band)} transition tiles over {len(first_of_band)} bands")
 
     placement = pack_tiles(packed, target)
     for entry in manifest:

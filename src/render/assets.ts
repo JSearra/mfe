@@ -148,6 +148,12 @@ interface TerrainTileEntry {
   readonly file: string;
   readonly subject: string;
   readonly band: number;
+  /**
+   * Set on transition tiles only: which of the four diamond edges this one bleeds in
+   * from, as a bitmask. Clockwise from the upper right, matching the neighbour order
+   * the terrain renderer walks.
+   */
+  readonly mask?: number;
   readonly averageColour: string;
   readonly x: number;
   readonly y: number;
@@ -170,7 +176,19 @@ export interface TerrainTile {
 export interface TerrainTiles {
   /** Variants available for a height level, nearest band if that level has none. */
   variants(level: number): readonly TerrainTile[];
+  /**
+   * A band's ground, masked to bleed in from the edges in `mask`, or null.
+   *
+   * Laid over the tile BELOW it in the ramp, so a boundary reads as the higher ground
+   * spilling downhill rather than as a diamond edge. Null when the pipeline has not
+   * produced a set for that band, which simply leaves the seam hard rather than
+   * failing to draw the map.
+   */
+  transition(band: number, mask: number): TerrainTile | null;
 }
+
+/** Edge bits of the four orthogonal neighbours, clockwise from the upper right. */
+export const TRANSITION_MASKS = 16;
 
 /**
  * Load the terrain tile page.
@@ -192,6 +210,9 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
     page.source.scaleMode = 'nearest';
 
     const byBand: TerrainTile[][] = [];
+    // band -> mask -> tile. Dense and small: sixteen slots a band, fifteen of them used.
+    const transitions: (TerrainTile | null)[][] = [];
+
     for (const entry of manifest.tiles) {
       const tile: TerrainTile = {
         texture: new Texture({
@@ -200,6 +221,14 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
         }),
         colour: Number.parseInt(entry.averageColour.slice(1), 16),
       };
+
+      if (entry.mask !== undefined) {
+        const row = (transitions[entry.band] ??= new Array<TerrainTile | null>(
+          TRANSITION_MASKS,
+        ).fill(null));
+        row[entry.mask] = tile;
+        continue;
+      }
       (byBand[entry.band] ??= []).push(tile);
     }
     if (byBand.length === 0) return null;
@@ -217,6 +246,10 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
           if (above && above.length > 0) return above;
         }
         return [];
+      },
+
+      transition(band: number, mask: number) {
+        return transitions[band]?.[mask] ?? null;
       },
     };
   } catch {

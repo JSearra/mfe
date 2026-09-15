@@ -4,6 +4,7 @@ import {
   ELEV_STEP,
   HALF_TILE_H,
   HALF_TILE_W,
+  isCliff,
   worldToScreenX,
   worldToScreenY,
 } from '../../shared/iso.js';
@@ -96,33 +97,62 @@ function tileHash(tileX: number, tileY: number, salt: number): number {
   return (hash ^ (hash >>> 13)) >>> 0;
 }
 
-/** How often a tile borrows a neighbour's ground instead of its own. */
-const BLEND_CHANCE = 0.38;
-
 /**
- * Which height band's art to draw a tile with.
+ * Which height band's art to draw a tile with. Its own, now.
  *
- * Not simply its own. Every tile taking the texture of its own level draws the boundary
- * between two grounds as a clean run of diamond edges — a hard zigzag line across the
- * map wherever the height changes, which is the thing that stops the set reading as
- * terrain rather than as tiles.
+ * It was not. A tile took a random neighbour's band 38% of the time, which scattered
+ * each ground a tile or two into the other along every boundary. That was standing in
+ * for a blend, and it does not read as one: two textures interleaved at random read as
+ * static, not as ground giving way to ground — and it moved the art off the tile whose
+ * height the geometry was drawn at, so a patch of high ground appeared in a hollow.
  *
- * So a tile sometimes borrows the band of one of its four neighbours. Inside a region
- * of constant height the neighbour is the same band and nothing happens; only at a
- * boundary does it do anything, and there it scatters each ground a tile into the other
- * so the two interlock. It costs one hash and no extra geometry — a blend mask per
- * boundary edge would be the thorough version, and would put several thousand more
- * sprites on screen for a frame budget that is already the tightest thing here.
+ * The seam is handled properly now, by `transitionsFor` below, and this can be honest.
  */
 function bandFor(map: Heightmap, tileX: number, tileY: number): number {
-  const own = map.data[tileY * map.width + tileX]!;
-  if (tileHash(tileX, tileY, 1) / 0xffffffff >= BLEND_CHANCE) return own;
+  return map.data[tileY * map.width + tileX]!;
+}
 
-  const pick = tileHash(tileX, tileY, 2) & 3;
-  const neighbourX = tileX + (pick === 0 ? 1 : pick === 1 ? -1 : 0);
-  const neighbourY = tileY + (pick === 2 ? 1 : pick === 3 ? -1 : 0);
-  const neighbour = heightAt(map, neighbourX, neighbourY);
-  return neighbour < 0 ? own : neighbour;
+/**
+ * The four orthogonal neighbours, clockwise from the upper right.
+ *
+ * Isometric puts tile +x down-RIGHT and tile +y down-LEFT, so the tile-space neighbour
+ * (x, y-1) is the diamond's upper-right EDGE rather than its top corner. The order here
+ * is the bit order the transition masks were baked with; changing one without the other
+ * paints the blend on the wrong side.
+ */
+const NEIGHBOUR_DX = [0, 1, 0, -1] as const;
+const NEIGHBOUR_DY = [-1, 0, 1, 0] as const;
+
+/**
+ * Masks of the higher grounds bleeding onto this tile, indexed by band.
+ *
+ * The higher band always spills onto the lower, never the reverse, so each seam is
+ * drawn exactly once — from the uphill side — and two tiles never both try to blend
+ * into each other and double the alpha along the join.
+ *
+ * Returned as a sparse array so the common case, a tile with no boundary at all, costs
+ * four height lookups and no allocation beyond it.
+ */
+function transitionsFor(map: Heightmap, tileX: number, tileY: number, out: number[]): number {
+  const own = map.data[tileY * map.width + tileX]!;
+  let found = 0;
+
+  for (let bit = 0; bit < 4; bit++) {
+    const neighbour = heightAt(map, tileX + NEIGHBOUR_DX[bit]!, tileY + NEIGHBOUR_DY[bit]!);
+    if (neighbour <= own) continue;
+    // Only where the two grounds actually meet. Across a cliff they do not: there is a
+    // face between them, the upper surface is metres above and behind, and bleeding its
+    // texture onto the floor below reads as a smear down the drop rather than as a
+    // transition. A cliff is meant to be a hard edge — that is the whole of ADR-0006 —
+    // and softening it would undo the one boundary that should be legible at a glance.
+    if (isCliff(neighbour, own)) continue;
+    if (out[neighbour] === undefined) {
+      out[neighbour] = 0;
+      found++;
+    }
+    out[neighbour]! |= 1 << bit;
+  }
+  return found;
 }
 
 function variantFor(tiles: readonly TerrainTile[], tileX: number, tileY: number): TerrainTile {
@@ -183,13 +213,22 @@ function drawFace(
   graphics.stroke({ width: 1, color: shade(base, 1.18), alpha: 0.7 });
 }
 
+/**
+ * Draw one tile's faces into the chunk geometry and append its sprites to `out`.
+ *
+ * Appends rather than returns, because a boundary tile is a base sprite plus one
+ * overlay per higher ground touching it, and a per-tile array would allocate sixteen
+ * thousand of them to hold one element each.
+ */
 function drawTile(
   graphics: Graphics,
   map: Heightmap,
   tileX: number,
   tileY: number,
   tiles: TerrainTiles | null,
-): Sprite | null {
+  out: Sprite[],
+  bleed: number[],
+): void {
   const level = map.data[tileY * map.width + tileX]!;
   const centreX = worldToScreenX(tileX + 0.5, tileY + 0.5);
   const centreY = worldToScreenY(tileX + 0.5, tileY + 0.5, level);
@@ -227,10 +266,10 @@ function drawTile(
   graphics.lineTo(centreX, southY);
   graphics.lineTo(westX, centreY);
   graphics.closePath();
-  if (tile === null) {
+  if (tile === null || tiles === null) {
     graphics.fill({ color: base });
     graphics.stroke({ width: 1, color: 0x000000, alpha: gridAlpha });
-    return null;
+    return;
   }
 
   // Untextured, the diamond is only needed to close the path the faces were drawn with;
@@ -240,7 +279,22 @@ function drawTile(
 
   const sprite = new Sprite(tile.texture);
   sprite.position.set(westX, northY);
-  return sprite;
+  out.push(sprite);
+
+  // Higher ground bleeding over the seam. Same page as the tile under it, so these cost
+  // sprites but not a draw call, and only boundary tiles have any.
+  bleed.length = 0;
+  if (transitionsFor(map, tileX, tileY, bleed) > 0) {
+    for (let band = 0; band < bleed.length; band++) {
+      const mask = bleed[band];
+      if (mask === undefined) continue;
+      const blend = tiles.transition(band, mask);
+      if (blend === null) continue;
+      const overlay = new Sprite(blend.texture);
+      overlay.position.set(westX, northY);
+      out.push(overlay);
+    }
+  }
 }
 
 function buildChunk(
@@ -251,6 +305,9 @@ function buildChunk(
 ): Chunk {
   const graphics = new Graphics();
   const tops = new Container();
+  // Reused across every tile in the chunk; drawTile appends and we drain.
+  const sprites: Sprite[] = [];
+  const bleed: number[] = [];
   const startX = chunkX * chunkSize;
   const startY = chunkY * chunkSize;
   const endX = Math.min(startX + chunkSize, map.width);
@@ -262,8 +319,9 @@ function buildChunk(
     for (let tileX = startX; tileX < endX; tileX++) {
       const tileY = sum - tileX;
       if (tileY < startY || tileY >= endY) continue;
-      const sprite = drawTile(graphics, map, tileX, tileY, tiles);
-      if (sprite !== null) tops.addChild(sprite);
+      sprites.length = 0;
+      drawTile(graphics, map, tileX, tileY, tiles, sprites, bleed);
+      for (const sprite of sprites) tops.addChild(sprite);
     }
   }
 
