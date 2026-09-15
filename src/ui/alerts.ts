@@ -30,8 +30,14 @@ interface Alert {
 
 export interface Alerts {
   readonly element: HTMLElement;
-  /** Collect alerts from a tick's events. */
-  handle(events: readonly SimEvent[], now: number): void;
+  /**
+   * Collect alerts from a tick's events.
+   *
+   * `viewer` is needed because the event stream is global: relief between two other
+   * villages is not this village's news, and announcing it would tell the player about
+   * books they cannot see.
+   */
+  handle(events: readonly SimEvent[], now: number, viewer: number): void;
   /** Centre the camera on the most recent live alert. True if there was one. */
   jump(camera: Camera, now: number): boolean;
   update(now: number): void;
@@ -42,7 +48,19 @@ const WATCHED: Readonly<Record<number, MessageKey>> = {
   [EventType.StampedeBegan]: 'alert.stampede',
   [EventType.BuildingCompleted]: 'alert.buildingComplete',
   [EventType.TechCompleted]: 'alert.research',
+  [EventType.AllianceRelief]: 'alert.relief',
 };
+
+/**
+ * Alerts that did not happen anywhere.
+ *
+ * An ally sending grain is worth saying out loud — it is the one occasion a standing tie
+ * pays out, and the alternative is a number in the granary that moved for no visible
+ * reason. It has no position, though: its `x`/`y` carry the two villages. Jumping the
+ * camera to them would fly it to the corner of the map, so it is announced and not
+ * followed. See src/sim/alliance.ts.
+ */
+const PLACELESS: ReadonlySet<number> = new Set([EventType.AllianceRelief]);
 
 export function createAlerts(): Alerts {
   const element = document.createElement('div');
@@ -53,10 +71,13 @@ export function createAlerts(): Alerts {
   const alerts: Alerts = {
     element,
 
-    handle(events, now): void {
+    handle(events, now, viewer): void {
       for (const event of events) {
         const key = WATCHED[event.type];
         if (key === undefined) continue;
+        // Relief carries the two villages in x/y. Only the one receiving it is being
+        // told something; the giver already knows, and third parties are not owed it.
+        if (event.type === EventType.AllianceRelief && event.y !== viewer) continue;
         // One alert per burst. A herd going over produces a StampedeBegan for every
         // beast in it, and twenty identical lines is not a notification, it is noise.
         const last = live[live.length - 1];
@@ -69,6 +90,7 @@ export function createAlerts(): Alerts {
       for (let i = live.length - 1; i >= 0; i--) {
         const alert = live[i]!;
         if (now - alert.at > LIFETIME_MS) break;
+        if (PLACELESS.has(alert.type)) continue;
         camera.x = worldToScreenX(alert.worldX, alert.worldY);
         camera.y = worldToScreenY(alert.worldX, alert.worldY, 0);
         return true;
@@ -86,7 +108,9 @@ export function createAlerts(): Alerts {
         return;
       }
       element.hidden = false;
-      element.textContent = `${t(WATCHED[newest.type]!)} — ${t('alert.jump')}`;
+      element.textContent = PLACELESS.has(newest.type)
+        ? t(WATCHED[newest.type]!)
+        : `${t(WATCHED[newest.type]!)} — ${t('alert.jump')}`;
     },
   };
 

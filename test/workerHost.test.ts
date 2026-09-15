@@ -22,6 +22,7 @@ const IDLE: PlayerState = {
   ammunition: 0,
   wood: 0,
   offers: [],
+  relations: [],
   shortfall: 0,
   drought: 0,
   droughtSevere: false,

@@ -1,4 +1,5 @@
 import { tuning } from './tuning.js';
+import { alliedWith, standingOf, type Alliance } from './alliance.js';
 import { Resource, type Economy } from './economy/ledger.js';
 
 /**
@@ -15,6 +16,13 @@ import { Resource, type Economy } from './economy/ledger.js';
  * for grain — and will part with grain cheaply once the harvest is in, whatever your own
  * position. You cannot see their books either, which is why the quote exists: it is the
  * answer they would give, and asking is free.
+ *
+ * **Who is asking changes the rate.** A neighbour who trusts you deals at a finer
+ * margin, an ally at a finer one again, and somebody you walked out on marks you up and
+ * keeps marking you up for a hundred seasons (src/sim/alliance.ts). That is what makes
+ * a broken tie cost something without a battle: the price of everything you buy moves.
+ * Regard is optional here, and a caller who omits it gets the stranger's rate — which is
+ * what the AI soaks and the unit tests want.
  *
  * Value is marginal and falls as stock rises: `weight * reference / (reference + held)`.
  * The last bag of grain in an empty store is worth far more than the thousandth in a
@@ -62,6 +70,30 @@ export function marginalValue(economy: Economy, player: number, resource: Resour
   return (weightOf(resource) * reference) / (reference + (held < 0 ? 0 : held));
 }
 
+/** Who is asking, and the standing they ask from. */
+export interface Regard {
+  readonly alliance: Alliance;
+  /** The village making the offer. The standing consulted is the partner's, toward it. */
+  readonly asker: number;
+}
+
+/**
+ * The margin the partner adds, given what they make of whoever is asking.
+ *
+ * Distrust widens it and a standing tie narrows it, both off the same base — so trade
+ * terms are the channel through which an alliance and a betrayal are actually felt, and
+ * a player who never opens the alliance panel still sees their rates move.
+ */
+function marginFor(regard: Regard | undefined, partner: number): number {
+  const base = tuning.trade.margin;
+  if (regard === undefined) return base;
+
+  const a = tuning.alliance;
+  const trust = standingOf(regard.alliance, partner, regard.asker);
+  const marked = base * (1 + a.distrustMargin * (1 - trust));
+  return alliedWith(regard.alliance, partner, regard.asker) ? marked * (1 - a.allyMargin) : marked;
+}
+
 /**
  * How much of `wanted` a neighbour will give for `amount` of `offered`, or 0.
  *
@@ -79,6 +111,7 @@ export function quote(
   offered: Resource,
   wanted: Resource,
   amount: number,
+  regard?: Regard,
 ): number {
   const t = tuning.trade;
   if (amount <= 0 || offered === wanted) return 0;
@@ -94,7 +127,7 @@ export function quote(
   const lossPerUnit = marginalValue(economy, partner, wanted);
   if (lossPerUnit <= 0) return 0;
 
-  const affordable = (amount * gainPerUnit) / (lossPerUnit * (1 + t.margin));
+  const affordable = (amount * gainPerUnit) / (lossPerUnit * (1 + marginFor(regard, partner)));
   const capped = Math.min(affordable, available, theirs * t.maxOfferFraction);
   return capped > 0 ? capped : 0;
 }
@@ -113,13 +146,21 @@ export function trade(
   offered: Resource,
   wanted: Resource,
   amount: number,
+  alliance?: Alliance,
 ): TradeResult {
   if (player === partner) return TradeResult.SameVillage;
   if (player >= economy.players || partner >= economy.players) return TradeResult.SameVillage;
   if (amount <= 0 || offered === wanted) return TradeResult.Empty;
   if (economy.balance(player, offered) < amount) return TradeResult.Empty;
 
-  const returned = quote(economy, partner, offered, wanted, amount);
+  const returned = quote(
+    economy,
+    partner,
+    offered,
+    wanted,
+    amount,
+    alliance === undefined ? undefined : { alliance, asker: player },
+  );
   if (returned <= 0) return TradeResult.Refused;
 
   // Both sides move together or neither does.
@@ -145,6 +186,7 @@ export function wantedTrade(
   economy: Economy,
   player: number,
   partner: number,
+  alliance?: Alliance,
 ): { offered: Resource; wanted: Resource; amount: number } | null {
   const t = tuning.trade;
   const kinds: Resource[] = [Resource.Cattle, Resource.Grain, Resource.Wood];
@@ -172,7 +214,8 @@ export function wantedTrade(
   const spare = economy.balance(player, plentiful) * (1 - t.reserveFraction);
   const amount = spare * t.maxOfferFraction;
   if (amount <= 0) return null;
-  if (quote(economy, partner, plentiful, scarcest, amount) <= 0) return null;
+  const regard = alliance === undefined ? undefined : { alliance, asker: player };
+  if (quote(economy, partner, plentiful, scarcest, amount, regard) <= 0) return null;
 
   return { offered: plentiful, wanted: scarcest, amount };
 }
@@ -205,7 +248,8 @@ export interface TradeOffer {
  * rather than shown greyed: a list of six things of which four are impossible is worse
  * than a list of two that work.
  */
-export function offersFor(economy: Economy, player: number): TradeOffer[] {
+export function offersFor(economy: Economy, player: number, alliance?: Alliance): TradeOffer[] {
+  const regard = alliance === undefined ? undefined : { alliance, asker: player };
   const kinds: Resource[] = [Resource.Cattle, Resource.Grain, Resource.Wood];
   const out: TradeOffer[] = [];
 
@@ -216,7 +260,7 @@ export function offersFor(economy: Economy, player: number): TradeOffer[] {
       if (economy.balance(player, offered) < give) continue;
       for (const wanted of kinds) {
         if (wanted === offered) continue;
-        const get = quote(economy, partner, offered, wanted, give);
+        const get = quote(economy, partner, offered, wanted, give, regard);
         if (get <= 0) continue;
         out.push({ partner, offered, wanted, give, get });
       }

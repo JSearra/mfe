@@ -130,6 +130,18 @@
     "parcelGrain": 60.0,
     "parcelWood": 30.0
   },
+  "alliance": {
+    "startingStanding": 1.0,
+    "minStandingToAlly": 0.8,
+    "tithePerUpkeep": 0.004,
+    "reliefFraction": 0.1,
+    "reliefCap": 140.0,
+    "standingLossOnBreak": 0.5,
+    "gossipFraction": 0.5,
+    "standingRecoveryPerUpkeep": 0.004,
+    "distrustMargin": 2.0,
+    "allyMargin": 0.5
+  },
   "vision": {
     "unitRadius": 8.0,
     "cattleRadius": 4.0,

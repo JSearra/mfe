@@ -427,6 +427,12 @@ async function main(options: GameOptions): Promise<void> {
     onTrade(partner, offered, wanted, amount) {
       sim.sendCommand(CommandKind.Trade, partner, offered, wanted, amount);
     },
+    onAlly(partner) {
+      sim.sendCommand(CommandKind.Ally, partner);
+    },
+    onBreak(partner) {
+      sim.sendCommand(CommandKind.Break, partner);
+    },
   });
 
   let view: InterpolatedView | null = null;
@@ -739,6 +745,7 @@ async function main(options: GameOptions): Promise<void> {
       interpolator.push(message.snapshot);
       resourceBar.update(message.player);
       panel.setOffers(message.player.offers);
+      panel.setRelations(message.player.relations);
       outcomeBanner.update(message.player, PLAYER);
       fog.setFog(message.fog);
       // The wood arrives only when it has changed, which is the upkeep cycle rather
@@ -753,7 +760,7 @@ async function main(options: GameOptions): Promise<void> {
       // Same event stream, different consumer: a stampede that starts off-screen is
       // exactly the thing a player needs told about, and it cannot be seen in a snapshot
       // diff any more than a death can.
-      alerts.handle(message.events, performance.now());
+      alerts.handle(message.events, performance.now(), PLAYER);
       // Same stream again. A blow that lands and leaves a unit standing is an event, not
       // a state change worth diffing for — and one that kills removes the entity from the
       // next snapshot entirely, so a diff would show nothing at all.

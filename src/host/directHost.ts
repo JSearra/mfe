@@ -21,6 +21,7 @@ import { createFog, type FogState } from '../sim/vision/fog.js';
 import { createMovementSystem, type MovementSystem } from '../sim/movement.js';
 import type { World } from '../sim/world.js';
 import { offersFor, type TradeOffer } from '../sim/trade.js';
+import { createAlliance, relationsFor, type Alliance, type Relation } from '../sim/alliance.js';
 
 /**
  * The boundary the renderer talks to.
@@ -71,6 +72,14 @@ export interface PlayerState {
    * rather than making them discover it by trying. See src/sim/trade.ts.
    */
   readonly offers: readonly TradeOffer[];
+  /**
+   * Every neighbour, what they are to this village and what they make of it.
+   *
+   * Standing is their regard for the viewer rather than the viewer's for them, because
+   * that is the number that decides whether an offer of alliance is taken and what rate
+   * a trade comes back at. See src/sim/alliance.ts.
+   */
+  readonly relations: readonly Relation[];
   /** Grain owed but unpaid at the last upkeep. Non-zero means troops are starving. */
   readonly shortfall: number;
   /** 0 (wet) to 1 (parched). */
@@ -194,6 +203,7 @@ export interface DirectSimHost extends SimHost {
   readonly economy: Economy;
   readonly woodland: Woodland;
   readonly farmland: Farmland;
+  readonly alliance: Alliance;
   readonly tech: TechState;
   readonly victory: VictoryState;
   readonly fog: FogState;
@@ -227,6 +237,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
   const tech = createTechState(Math.max(factions.length, viewerId + 1));
   const victory = createVictoryState(Math.max(factions.length, viewerId + 1));
   const fog = createFog(Math.max(factions.length, viewerId + 1), map);
+  const alliance = createAlliance(Math.max(factions.length, viewerId + 1));
   const loop: SimLoop = createLoop({
     world,
     movement,
@@ -237,6 +248,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     economy,
     woodland,
     farmland,
+    alliance,
     tech,
     victory,
     fog,
@@ -278,6 +290,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     economy,
     woodland,
     farmland,
+    alliance,
     tech,
     victory,
     fog,
@@ -343,7 +356,8 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         grain: economy.balance(viewerId, Resource.Grain),
         ammunition: economy.balance(viewerId, Resource.Ammunition),
         wood: economy.balance(viewerId, Resource.Wood),
-        offers: offersFor(economy, viewerId),
+        offers: offersFor(economy, viewerId, alliance),
+        relations: relationsFor(alliance, viewerId),
         shortfall: economy.shortfall[viewerId] ?? 0,
         drought: droughtNow,
         droughtSevere: droughtNow >= tuning.economy.droughtThreshold,

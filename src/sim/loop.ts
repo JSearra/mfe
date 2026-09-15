@@ -10,6 +10,7 @@ import { Modifier } from '../shared/tech/index.js';
 import type { TechState } from './tech.js';
 import type { Economy } from './economy/ledger.js';
 import { updateWoodland, type Woodland } from './woodland.js';
+import { updateAlliance, type Alliance } from './alliance.js';
 import { harvestOf, updateFarmland, type Farmland } from './economy/farmland.js';
 import { tuning } from './tuning.js';
 import { updateFog, type FogState } from './vision/fog.js';
@@ -31,6 +32,7 @@ export interface SimLoop {
   readonly economy: Economy;
   readonly woodland: Woodland;
   readonly farmland: Farmland;
+  readonly alliance: Alliance;
   readonly tech: TechState;
   readonly victory: VictoryState;
   readonly fog: FogState;
@@ -66,6 +68,7 @@ export interface SimSystems {
   economy: Economy;
   woodland: Woodland;
   farmland: Farmland;
+  alliance: Alliance;
   tech: TechState;
   victory: VictoryState;
   fog: FogState;
@@ -100,14 +103,14 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
  * survives until the boundary.
  */
 export function step(loop: SimLoop): void {
-  const { world, movement, cattle, combat, construction, production, economy, woodland, farmland, tech, victory, fog, map, pending, events } =
+  const { world, movement, cattle, combat, construction, production, economy, woodland, farmland, alliance, tech, victory, fog, map, pending, events } =
     loop;
 
   // Computer players act first, through exactly the same queue a human's clicks use.
   // Nothing here reaches into world state — that invariant is what made an AI a day's
   // work rather than a second mutation path to keep in step.
   for (const { player, controller } of loop.ai) {
-    controller.decide(world, fog, economy, tech, (command) => {
+    controller.decide(world, fog, economy, alliance, tech, (command) => {
       enqueueCommand(loop, {
         tick: world.tick,
         playerId: player,
@@ -142,6 +145,7 @@ export function step(loop: SimLoop): void {
       construction,
       production,
       economy,
+      alliance,
       tech,
     });
     loop.cursor++;
@@ -161,6 +165,10 @@ export function step(loop: SimLoop): void {
   // pay this cycle and one trampled this cycle pays less for it.
   if (world.tick !== 0 && world.tick % tuning.economy.upkeepIntervalTicks === 0) {
     updateFarmland(world, farmland, economy.players);
+    // Before the ledger, not after: relief is sent on LAST cycle's shortfall, so grain
+    // from an ally reaches the granary in time to be eaten this cycle rather than
+    // arriving a season after the famine it answers. See src/sim/alliance.ts.
+    updateAlliance(alliance, economy, events, world.tick);
   }
   economy.update(
     world,

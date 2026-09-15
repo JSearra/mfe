@@ -4,6 +4,7 @@ import type { TechState } from '../tech.js';
 import { CommandKind } from '../commands.js';
 import { Resource, type Economy } from '../economy/ledger.js';
 import { wantedTrade } from '../trade.js';
+import { alliesOf, standingOf, type Alliance } from '../alliance.js';
 import { cos, sin, TWO_PI } from '../math/trig.js';
 import { isVisible, type FogState } from '../vision/fog.js';
 import { tuning } from '../tuning.js';
@@ -45,6 +46,7 @@ export interface AiStats {
   herdsOrdered: number;
   troopsOrdered: number;
   tradesOffered: number;
+  alliancesSought: number;
 }
 
 export interface AiController {
@@ -54,6 +56,7 @@ export interface AiController {
     world: World,
     fog: FogState,
     economy: Economy,
+    alliance: Alliance,
     tech: TechState,
     emit: (command: AiCommand) => void,
   ): void;
@@ -75,6 +78,7 @@ export function createAi(player: number): AiController {
     herdsOrdered: 0,
     troopsOrdered: 0,
     tradesOffered: 0,
+    alliancesSought: 0,
   };
 
   /** Where the next building goes. Walked outward so sites do not pile up. */
@@ -83,7 +87,7 @@ export function createAi(player: number): AiController {
   return {
     stats,
 
-    decide(world, fog, economy, tech, emit): void {
+    decide(world, fog, economy, alliance, tech, emit): void {
       const ai = tuning.ai;
       if (world.tick % ai.decideEveryTicks !== 0) return;
       stats.decisions++;
@@ -218,7 +222,7 @@ export function createAi(player: number): AiController {
       if (stats.decisions % ai.tradeEveryDecisions === 0) {
         for (let neighbour = 0; neighbour < economy.players; neighbour++) {
           if (neighbour === player) continue;
-          const deal = wantedTrade(economy, player, neighbour);
+          const deal = wantedTrade(economy, player, neighbour, alliance);
           if (deal === null) continue;
           emit({
             kind: CommandKind.Trade,
@@ -229,6 +233,39 @@ export function createAi(player: number): AiController {
           });
           stats.tradesOffered++;
           break;
+        }
+      }
+
+      // --- alliances --------------------------------------------------------
+      //
+      // Sought when it went hungry and has nobody to fall back on, which is the only
+      // circumstance in which a village would part with cattle every season for a
+      // promise. It asks whoever thinks best of it, since that is who will say yes.
+      //
+      // It never walks out on a tie. Breaking one is a player's move: an AI that broke
+      // faith whenever the tithe looked expensive would spend its reputation on nothing
+      // and trade worse with everybody afterwards, which is exactly the cost the
+      // mechanic exists to impose.
+      if (
+        (economy.shortfall[player] ?? 0) > 0 &&
+        alliesOf(alliance, player).length === 0 &&
+        stats.decisions % ai.tradeEveryDecisions === 0
+      ) {
+        let best = -1;
+        let bestStanding = -Infinity;
+        for (let neighbour = 0; neighbour < economy.players; neighbour++) {
+          if (neighbour === player) continue;
+          const regard = standingOf(alliance, neighbour, player);
+          // Ties break on the lower index, so two identical neighbours are always
+          // approached in the same order and a replay reproduces.
+          if (regard > bestStanding) {
+            bestStanding = regard;
+            best = neighbour;
+          }
+        }
+        if (best !== -1) {
+          emit({ kind: CommandKind.Ally, a: best, b: 0, c: 0, d: 0 });
+          stats.alliancesSought++;
         }
       }
 

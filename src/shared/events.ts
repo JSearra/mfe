@@ -28,6 +28,17 @@ export const EventType = {
   Traded: 14,
   /** A neighbour said no. Worth telling the player, who cannot see their books. */
   TradeRefused: 15,
+  /** A standing tie was made. `x` is the proposer, `y` the neighbour. */
+  AllianceFormed: 16,
+  /** A neighbour would not have you. `x` is the proposer, `y` the neighbour. */
+  AllianceRefused: 17,
+  /** Somebody walked away. `x` is who broke it, `y` who was left. */
+  AllianceBroken: 18,
+  /**
+   * An ally sent grain to one who went short. `x` gave, `y` received, `payload` is how
+   * much — the one occasion an alliance pays out, so it is worth saying out loud.
+   */
+  AllianceRelief: 19,
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];

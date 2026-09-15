@@ -141,6 +141,37 @@
         border-color: #9ec86a;
       }
 
+      /* Standing ties, below the rates they price. Warmer than the trade row: a tie is
+         not a transaction and should not read as one. */
+      .panel__alliance {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #3a3226;
+      }
+
+      .panel__alliance:empty {
+        display: none;
+      }
+
+      .panel__alliance .panel__button {
+        background: rgba(60, 44, 34, 0.8);
+        border-color: #5a4029;
+      }
+
+      .panel__alliance .panel__button:hover {
+        background: #5a4029;
+        border-color: #d8a35e;
+      }
+
+      .panel__standing {
+        color: #b8ab92;
+        font-size: 12px;
+      }
+
       .panel__button {
         font: inherit;
         color: #e8e0d0;

@@ -3,6 +3,7 @@ import { TECHS, TECH_IDS, type TechId } from '../shared/tech/index.js';
 import { t, type MessageKey } from '../core/i18n/index.js';
 import type { InterpolatedView } from '../render/interpolation.js';
 import type { TradeOffer } from '../sim/trade.js';
+import type { Relation } from '../sim/alliance.js';
 
 /** Resource index -> its name key. Order matches Resource in the ledger. */
 const RESOURCE_KEYS: readonly MessageKey[] = [
@@ -34,6 +35,8 @@ export interface CommandPanelHandlers {
   onArmBuild(type: BuildingType): void;
   onResearch(techIndex: number): void;
   onTrade(partner: number, offered: number, wanted: number, amount: number): void;
+  onAlly(partner: number): void;
+  onBreak(partner: number): void;
 }
 
 export interface CommandPanel {
@@ -47,6 +50,14 @@ export interface CommandPanel {
    * window a player has onto what a neighbour is short of.
    */
   setOffers(offers: readonly TradeOffer[]): void;
+  /**
+   * The neighbours, and where this village stands with each.
+   *
+   * Beside the trade row rather than inside it, because the two are the same
+   * conversation: standing sets the rate on the row above, so a player who wonders why
+   * an offer got worse can see the reason without leaving the panel.
+   */
+  setRelations(relations: readonly Relation[]): void;
 }
 
 function button(label: string, hint: string, onClick: () => void): HTMLButtonElement {
@@ -77,7 +88,10 @@ export function createCommandPanel(
   const trade = document.createElement('div');
   trade.className = 'panel__trade';
 
-  element.append(heading, detail, actions, trade);
+  const alliance = document.createElement('div');
+  alliance.className = 'panel__alliance';
+
+  element.append(heading, detail, actions, trade, alliance);
   parent.appendChild(element);
 
   /**
@@ -129,6 +143,7 @@ export function createCommandPanel(
 
   /** Rebuilt only when the offers actually change, for the reason the actions are. */
   let offerSignature = '';
+  let relationSignature = '';
 
   return {
     element,
@@ -151,6 +166,52 @@ export function createCommandPanel(
             handlers.onTrade(offer.partner, offer.offered, offer.wanted, offer.give),
           ),
         );
+      }
+    },
+
+    setRelations(relations): void {
+      // Standing is rounded to whole percent in the signature as well as on screen, so a
+      // row that recovers 0.4% a season rebuilds when the number the player reads moves
+      // and not on every upkeep.
+      const next = relations
+        .map((r) => `${r.partner}:${r.allied ? 1 : 0}${r.wouldAlly ? 1 : 0}:${Math.round(r.standing * 100)}`)
+        .join('|');
+      if (next === relationSignature) return;
+      relationSignature = next;
+
+      alliance.replaceChildren();
+      for (const relation of relations) {
+        const village = t('panel.village', { index: relation.partner + 1 });
+        const standing = Math.round(relation.standing * 100);
+
+        if (relation.allied) {
+          const label = document.createElement('div');
+          label.className = 'panel__standing';
+          label.textContent = t('panel.allied', { village, standing });
+          alliance.append(
+            label,
+            button(t('panel.breakBond', { village }), t('panel.breakHint'), () =>
+              handlers.onBreak(relation.partner),
+            ),
+          );
+          continue;
+        }
+
+        if (relation.wouldAlly) {
+          alliance.append(
+            button(t('panel.ally', { village }), t('panel.allyHint'), () =>
+              handlers.onAlly(relation.partner),
+            ),
+          );
+          continue;
+        }
+
+        // Shown rather than hidden: a neighbour who will not have you is the whole cost
+        // of having broken faith, and a row that vanished would read as a bug.
+        const refused = document.createElement('div');
+        refused.className = 'panel__standing';
+        refused.textContent = t('panel.allyRefused', { village, standing });
+        alliance.append(refused);
       }
     },
 

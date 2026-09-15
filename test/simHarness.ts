@@ -8,6 +8,7 @@ import { createProductionSystem, type ProductionSystem } from '../src/sim/produc
 import { createConstructionSystem, type ConstructionSystem } from '../src/sim/construction.js';
 import { createEconomy, type Economy } from '../src/sim/economy/ledger.js';
 import { createWoodland, type Woodland } from '../src/sim/woodland.js';
+import { createAlliance, type Alliance } from '../src/sim/alliance.js';
 import { createStartingFarmland } from '../src/sim/economy/plots.js';
 import type { Farmland } from '../src/sim/economy/farmland.js';
 
@@ -35,6 +36,7 @@ export interface Harness {
   economy: Economy;
   woodland: Woodland;
   farmland: Farmland;
+  alliance: Alliance;
   tech: TechState;
   victory: VictoryState;
   fog: FogState;
@@ -60,6 +62,7 @@ export function makeSim(
   const tech = createTechState(2);
   const victory = createVictoryState(2);
   const fog = createFog(2, map);
+  const alliance = createAlliance(2);
   return {
     world,
     movement,
@@ -70,11 +73,12 @@ export function makeSim(
     economy,
     woodland,
     farmland,
+    alliance,
     tech,
     victory,
     fog,
     loop: createLoop(
-      { world, movement, cattle, combat, construction, production, economy, woodland, farmland, tech, victory, fog, map },
+      { world, movement, cattle, combat, construction, production, economy, woodland, farmland, alliance, tech, victory, fog, map },
       commands,
     ),
     map,

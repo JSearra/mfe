@@ -8,6 +8,7 @@ import { createProductionSystem } from './production.js';
 import { createConstructionSystem } from './construction.js';
 import { createEconomy } from './economy/ledger.js';
 import { createWoodland } from './woodland.js';
+import { createAlliance } from './alliance.js';
 import { createStartingFarmland } from './economy/plots.js';
 import { createFog } from './vision/fog.js';
 import { FactionId } from '../shared/factions/index.js';
@@ -92,6 +93,7 @@ export function runReplay(
   const tech = createTechState(2);
   const victory = createVictoryState(2);
   const fog = createFog(2, map);
+  const alliance = createAlliance(2);
   const movement = createMovementSystem(map);
   const loop = createLoop(
     {
@@ -104,6 +106,7 @@ export function runReplay(
       economy,
       woodland: createWoodland(map, seed),
       farmland: createStartingFarmland(map, [], seed),
+      alliance,
       tech,
       victory,
       fog,
@@ -121,6 +124,10 @@ export function runReplay(
       let h = hashWorld(world);
       h = hashTypedArray(economy.amounts, h);
       h = hashTypedArray(fog.tiles, h);
+      // Standing ties are simulation state and price every trade, so a drift in them
+      // would otherwise reproduce silently.
+      h = hashTypedArray(alliance.bond, h);
+      h = hashTypedArray(alliance.standing, h);
       h = hashTypedArray(loop.tech.status, h);
       checkpoints.push(hashTypedArray(loop.tech.progress, h));
     }

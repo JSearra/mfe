@@ -10,6 +10,7 @@ import { createProductionSystem } from '../../sim/production.js';
 import { createEconomy, Resource, type Economy } from '../../sim/economy/ledger.js';
 import { createWoodland, packWoodland, type Woodland } from '../../sim/woodland.js';
 import { offersFor } from '../../sim/trade.js';
+import { createAlliance, relationsFor, type Alliance } from '../../sim/alliance.js';
 import { packFarmland, type Farmland } from '../../sim/economy/farmland.js';
 import { createStartingFarmland } from '../../sim/economy/plots.js';
 import { createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../../sim/loop.js';
@@ -58,6 +59,7 @@ const flight = createFlightWindow(MAX_UNACKED);
 let sentFogVersion = -1;
 let sentWoodVersion = -1;
 let sentFieldVersion = -1;
+let alliance: Alliance | null = null;
 let woodland: Woodland | null = null;
 let farmland: Farmland | null = null;
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -87,6 +89,9 @@ function start(message: InitMessage): void {
     economy,
     woodland: (woodland = createWoodland(map, message.worldSeed)),
     farmland: (farmland = createStartingFarmland(map, message.starts, message.worldSeed)),
+    alliance: (alliance = createAlliance(
+      Math.max(message.factions.length, message.viewerId + 1),
+    )),
     tech: createTechState(Math.max(message.factions.length, message.viewerId + 1)),
     victory: (victory = createVictoryState(
       Math.max(message.factions.length, message.viewerId + 1),
@@ -143,7 +148,8 @@ function tick(): void {
     grain: economy.balance(viewerId, Resource.Grain),
     ammunition: economy.balance(viewerId, Resource.Ammunition),
     wood: economy.balance(viewerId, Resource.Wood),
-    offers: offersFor(economy, viewerId),
+    offers: alliance === null ? [] : offersFor(economy, viewerId, alliance),
+    relations: alliance === null ? [] : relationsFor(alliance, viewerId),
     shortfall: economy.shortfall[viewerId] ?? 0,
     drought: droughtNow,
     droughtSevere: droughtNow >= tuning.economy.droughtThreshold,

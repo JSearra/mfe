@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { breakBond, propose, standingOf } from '../src/sim/alliance.js';
 import { CommandKind, makeCommand } from '../src/sim/commands.js';
 import { runTicks, step } from '../src/sim/loop.js';
 import {
@@ -89,6 +90,26 @@ describe('save and load', () => {
     );
     expect(restored.economy.upkeepCount).toBe(original.economy.upkeepCount);
     expect(Array.from(restored.fog.tiles)).toEqual(Array.from(original.fog.tiles));
+  });
+
+  it('carries who was tied to whom, and what it cost to walk away', () => {
+    const original = busyScenario(0x321);
+    propose(original.alliance, 0, 1);
+    breakBond(original.alliance, 0, 1, [], original.world.tick);
+    const save = captureState(original.loop);
+
+    const restored = busyScenario(0x321);
+    // Prove the fresh simulation does not already look like the saved one, or this
+    // asserts nothing — which is exactly how a save that dropped nine world arrays
+    // passed for as long as it did.
+    expect(standingOf(restored.alliance, 1, 0)).not.toBeCloseTo(
+      standingOf(original.alliance, 1, 0),
+    );
+
+    restoreState(restored.loop, save);
+
+    expect(standingOf(restored.alliance, 1, 0)).toBeCloseTo(standingOf(original.alliance, 1, 0));
+    expect(Array.from(restored.alliance.bond)).toEqual(Array.from(original.alliance.bond));
   });
 
   it('carries research, including the multipliers derived from it', () => {

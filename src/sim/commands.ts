@@ -11,6 +11,7 @@ import type { MovementSystem } from './movement.js';
 import { fell, type Woodland } from './woodland.js';
 import { abandon, plant, type Farmland } from './economy/farmland.js';
 import { trade, TradeResult } from './trade.js';
+import { AllyResult, breakBond, propose, type Alliance } from './alliance.js';
 import { Resource } from './economy/ledger.js';
 import type { Heightmap } from '../shared/heightmap.js';
 import {
@@ -72,6 +73,13 @@ export const CommandKind = {
    * neighbour knows it — see src/sim/trade.ts.
    */
   Trade: 16,
+  /**
+   * Ask neighbour `a` for a standing tie. They answer from their own regard for you;
+   * see src/sim/alliance.ts.
+   */
+  Ally: 17,
+  /** Walk away from the tie with neighbour `a`, and wear the cost of it. */
+  Break: 18,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -129,6 +137,7 @@ export interface CommandContext {
   readonly construction: ConstructionSystem;
   readonly production: ProductionSystem;
   readonly economy: Economy;
+  readonly alliance: Alliance;
   readonly tech: TechState;
 }
 
@@ -138,7 +147,7 @@ export function applyCommand(
   events: SimEvent[],
   context: CommandContext,
 ): boolean {
-  const { movement, cattle, combat, construction, production, economy, woodland, farmland, map, tech } =
+  const { movement, cattle, combat, construction, production, economy, woodland, farmland, map, alliance, tech } =
     context;
   switch (command.kind) {
     case CommandKind.Spawn: {
@@ -243,6 +252,7 @@ export function applyCommand(
         command.b as Resource,
         command.c as Resource,
         command.d,
+        alliance,
       );
       // A refusal is news. The player cannot see a neighbour's books, so silence would
       // be indistinguishable from the command going missing.
@@ -258,6 +268,27 @@ export function applyCommand(
       );
       return result === TradeResult.Traded;
     }
+
+    case CommandKind.Ally: {
+      const result = propose(alliance, command.playerId, command.a);
+      // Both outcomes are news for the same reason a refused trade is: the player cannot
+      // see what a neighbour makes of them, so silence would read as a lost command.
+      if (result === AllyResult.Allied || result === AllyResult.Refused) {
+        events.push(
+          makeEvent(
+            world.tick,
+            result === AllyResult.Allied ? EventType.AllianceFormed : EventType.AllianceRefused,
+            0,
+            command.playerId,
+            command.a,
+          ),
+        );
+      }
+      return result === AllyResult.Allied;
+    }
+
+    case CommandKind.Break:
+      return breakBond(alliance, command.playerId, command.a, events, world.tick);
 
     case CommandKind.Leash:
       return cattle.leash(world, command.a as Handle, command.b as Handle);

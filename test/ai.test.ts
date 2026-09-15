@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { propose } from '../src/sim/alliance.js';
 import { createAi } from '../src/sim/ai/opponent.js';
 import { CommandKind } from '../src/sim/commands.js';
 import { runTicks, step } from '../src/sim/loop.js';
@@ -34,7 +35,7 @@ describe('ai as a command source', () => {
     const before = hashWorld(sim.world);
 
     const emitted: unknown[] = [];
-    ai.decide(sim.world, sim.fog, sim.economy, sim.tech, (command) => emitted.push(command));
+    ai.decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (command) => emitted.push(command));
 
     expect(hashWorld(sim.world)).toBe(before);
     expect(emitted.length).toBeGreaterThan(0);
@@ -45,11 +46,11 @@ describe('ai as a command source', () => {
     const ai = createAi(0);
 
     sim.world.tick = AI.decideEveryTicks + 1;
-    ai.decide(sim.world, sim.fog, sim.economy, sim.tech, () => {});
+    ai.decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, () => {});
     expect(ai.stats.decisions).toBe(0);
 
     sim.world.tick = AI.decideEveryTicks * 2;
-    ai.decide(sim.world, sim.fog, sim.economy, sim.tech, () => {});
+    ai.decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, () => {});
     expect(ai.stats.decisions).toBe(1);
   });
 
@@ -63,7 +64,7 @@ describe('ai as a command source', () => {
 
     const ai = createAi(0);
     const kinds: number[] = [];
-    ai.decide(sim.world, sim.fog, sim.economy, sim.tech, (c) => kinds.push(c.kind));
+    ai.decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) => kinds.push(c.kind));
 
     // An enemy it cannot see draws no attack order — it scouts or builds instead.
     expect(kinds).not.toContain(CommandKind.Attack);
@@ -80,7 +81,7 @@ describe('ai as a command source', () => {
     sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
 
     const attacks: number[] = [];
-    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.tech, (c) => {
+    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) => {
       if (c.kind === CommandKind.Attack) attacks.push(c.b);
     });
 
@@ -98,7 +99,7 @@ describe('ai as a command source', () => {
     sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
 
     const kinds: number[] = [];
-    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.tech, (c) => kinds.push(c.kind));
+    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) => kinds.push(c.kind));
     expect(kinds).toContain(CommandKind.MoveTo);
     expect(kinds).not.toContain(CommandKind.Attack);
   });
@@ -117,7 +118,7 @@ describe('ai as a command source', () => {
     sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
 
     const moves: { x: number; y: number }[] = [];
-    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.tech, (c) => {
+    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) => {
       if (c.kind === CommandKind.MoveTo) moves.push({ x: c.b, y: c.c });
     });
 
@@ -140,7 +141,7 @@ describe('ai as a command source', () => {
     sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
 
     const moves: string[] = [];
-    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.tech, (c) => {
+    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) => {
       if (c.kind === CommandKind.MoveTo) moves.push(`${c.b.toFixed(3)},${c.c.toFixed(3)}`);
     });
 
@@ -175,7 +176,7 @@ describe('ai as a command source', () => {
     expect(AI.grainFloor + 5).toBeLessThan(AI.trainFloor + cost.grain);
 
     const kinds: number[] = [];
-    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.tech, (c) => kinds.push(c.kind));
+    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) => kinds.push(c.kind));
 
     expect(kinds).not.toContain(CommandKind.Build);
   });
@@ -196,7 +197,7 @@ describe('ai as a command source', () => {
     sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
 
     const moves: { x: number; y: number }[] = [];
-    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.tech, (c) => {
+    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) => {
       if (c.kind === CommandKind.MoveTo) moves.push({ x: c.b, y: c.c });
     });
 
@@ -217,7 +218,7 @@ describe('ai as a command source', () => {
     sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
 
     const kinds: number[] = [];
-    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.tech, (c) => kinds.push(c.kind));
+    createAi(0).decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) => kinds.push(c.kind));
     // Cattle are what the war is about.
     expect(kinds.some((k) => k === CommandKind.Leash || k === CommandKind.MoveTo)).toBe(true);
   });
@@ -276,5 +277,47 @@ describe('ai soak', () => {
       step(second.loop);
       expect(hashWorld(second.world), `diverged at tick ${tick}`).toBe(hashWorld(first.world));
     }
+  });
+
+  it('asks a neighbour for a tie when it has gone hungry and has nobody', () => {
+    const sim = makeSim(128, 5, undefined, []);
+    for (let i = 0; i < 3; i++) spawn(sim.world, 10 + i * 0.5, 10, 0);
+
+    updateFog(sim.world, sim.map, sim.fog);
+    sim.world.tick = AI.decideEveryTicks;
+    sim.economy.shortfall[0] = 40;
+
+    // Alliances are considered on the same slow cadence as trades: a village that
+    // proposed one every ten seconds would be begging, not allying.
+    const kinds: number[] = [];
+    const ai = createAi(0);
+    for (let i = 0; i < AI.tradeEveryDecisions; i++) {
+      ai.decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) =>
+        kinds.push(c.kind),
+      );
+    }
+    expect(kinds).toContain(CommandKind.Ally);
+  });
+
+  it('does not ask again once it has an ally, and never walks out on one', () => {
+    const sim = makeSim(128, 5, undefined, []);
+    for (let i = 0; i < 3; i++) spawn(sim.world, 10 + i * 0.5, 10, 0);
+
+    updateFog(sim.world, sim.map, sim.fog);
+    sim.world.tick = AI.decideEveryTicks;
+    sim.economy.shortfall[0] = 40;
+    propose(sim.alliance, 0, 1);
+
+    const kinds: number[] = [];
+    const ai = createAi(0);
+    for (let i = 0; i < AI.tradeEveryDecisions; i++) {
+      ai.decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) =>
+        kinds.push(c.kind),
+      );
+    }
+    expect(kinds).not.toContain(CommandKind.Ally);
+    // Breaking faith is a player's move. An AI that did it would spend a reputation it
+    // has no way to value and trade worse with everybody afterwards.
+    expect(kinds).not.toContain(CommandKind.Break);
   });
 });

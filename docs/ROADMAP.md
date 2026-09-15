@@ -552,9 +552,45 @@ fell from 21 to 18 as their granary emptied.
 
 ## Phase V5 — alliances
 
-*Done when:* a neighbour can be brought into a standing relationship that costs something
-per season and returns something conditional — refuge in a bad year, cattle on loan, a
-claim on labour — and breaking it has a cost that is not a battle.
+**Done.** A neighbour can be brought into a standing tie. Trade settles and both sides
+walk away owing nothing; a tie does not settle, and that is the whole difference. It
+costs cattle every season for as long as it stands, and what it returns arrives only if
+something goes wrong — so entering one is a bet on the weather and on the other village,
+not a price comparison.
+
+**The tithe is symmetric in rule and asymmetric in effect.** Both sides send the same
+*fraction* of their own herd each upkeep, so the larger herd pays more and the net flow
+runs from the big herd to the small one. That is what *ukusisa* was — cattle placed out
+with a poorer household, which bought the lender a claim and the borrower a living — and
+it falls out of one rule rather than needing a patron and a client modelled separately.
+
+**What comes back is conditional.** An ally who went hungry at the last upkeep is sent
+grain, capped at a tenth of the giver's store; an ally who ate is sent nothing. Relief
+runs *before* the ledger charges upkeep, on last cycle's shortfall, so grain from an ally
+reaches the granary in time to be eaten rather than arriving a season after the famine it
+answers. A test pins that ordering, and moving the call after `economy.update` fails it.
+
+**Breaking it costs standing, not blood.** Standing is what a village thinks of you, it
+is not symmetric, and it prices every trade: an oath-breaker is marked up by everybody,
+including villages that only heard about it, because word gets around. It starts at 1 —
+so the no-regard path in `trade.ts` is the genuinely neutral rate — falls by half on a
+break, and returns at 0.004 a season, which is seventy-five seasons before anyone will
+have you again.
+
+Measured over five seeds, twenty minutes each, one village allied and the other not:
+seasons spent hungry fell 11→7, 2→0, 4→0, 7→2 and 21→18. Relief fired only in the bad
+runs — 130 grain over six seasons on one seed, 336 over seventeen on another, and nothing
+at all on the two comfortable ones. That is the design working rather than a gap in it: a
+year where everybody eats is a year the tie costs cattle for no visible return.
+
+The price of walking out, measured on identical books one tick apart: 8 cattle bought
+19.1 grain as an ally, 17.6 as a stranger and 15.6 after the break; 30 timber bought 56.7,
+52.3 and 46.4. So a tie is worth about 8% on every deal and breaking one costs about 11%
+against the stranger's rate, for seventy-five seasons, from everyone.
+
+The AI asks for a tie when it has gone hungry and has nobody, approaching whoever thinks
+best of it. It never walks out on one: an AI that broke faith whenever the tithe looked
+expensive would spend a reputation it has no way to value.
 
 ## Phase V6 — retire combat
 

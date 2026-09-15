@@ -25,8 +25,12 @@ import { worldStateField, worldStateFields } from '../world.js';
  * 2 adds the nine world arrays version 1 silently dropped. A version 1 save cannot be
  * restored correctly — it has no building types in it — so it is rejected rather than
  * loaded into a game that would look subtly wrong.
+ *
+ * 3 adds the standing ties (src/sim/alliance.ts). A version 2 save has no record of who
+ * was allied with whom or what the neighbours made of anyone, and restoring it would
+ * silently dissolve every tie and reset every reputation, so it is refused too.
  */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 export interface SaveGame {
   readonly version: number;
@@ -36,6 +40,10 @@ export interface SaveGame {
   readonly economy: string;
   readonly economyScalars: { upkeepCount: number };
   readonly economyShortfall: string;
+  /** Who is tied to whom, and what each village thinks of the others. */
+  readonly allianceBond: string;
+  readonly allianceStanding: string;
+  readonly allianceVersion: number;
   readonly fog: string;
   readonly fogVersion: number;
   readonly techStatus: string;
@@ -86,7 +94,7 @@ function fromBase64(text: string, target: ArrayBufferView): void {
 }
 
 export function captureState(loop: SimLoop): SaveGame {
-  const { world, economy, fog, movement } = loop;
+  const { world, economy, fog, movement, alliance } = loop;
 
   const fields: Record<string, string> = {};
   for (const name of worldStateFields(world)) {
@@ -108,6 +116,9 @@ export function captureState(loop: SimLoop): SaveGame {
     economy: toBase64(economy.amounts),
     economyScalars: { upkeepCount: economy.upkeepCount },
     economyShortfall: toBase64(economy.shortfall),
+    allianceBond: toBase64(alliance.bond),
+    allianceStanding: toBase64(alliance.standing),
+    allianceVersion: alliance.version,
     fog: toBase64(fog.tiles),
     fogVersion: fog.version,
     techStatus: toBase64(loop.tech.status),
@@ -128,7 +139,7 @@ export class SaveVersionError extends Error {
 export function restoreState(loop: SimLoop, save: SaveGame): void {
   if (save.version !== SAVE_VERSION) throw new SaveVersionError(save.version);
 
-  const { world, economy, fog, movement } = loop;
+  const { world, economy, fog, movement, alliance } = loop;
 
   for (const name of worldStateFields(world)) {
     const encoded = save.world[name];
@@ -145,6 +156,10 @@ export function restoreState(loop: SimLoop, save: SaveGame): void {
   fromBase64(save.economy, economy.amounts);
   fromBase64(save.economyShortfall, economy.shortfall);
   economy.upkeepCount = save.economyScalars.upkeepCount;
+
+  fromBase64(save.allianceBond, alliance.bond);
+  fromBase64(save.allianceStanding, alliance.standing);
+  alliance.version = save.allianceVersion;
 
   fromBase64(save.fog, fog.tiles);
   fog.version = save.fogVersion;
