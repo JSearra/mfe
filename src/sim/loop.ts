@@ -11,6 +11,7 @@ import type { TechState } from './tech.js';
 import type { Economy } from './economy/ledger.js';
 import { updateWoodland, type Woodland } from './woodland.js';
 import { updateAlliance, type Alliance } from './alliance.js';
+import { reap } from './mortality.js';
 import { harvestOf, updateFarmland, type Farmland } from './economy/farmland.js';
 import { tuning } from './tuning.js';
 import { updateFog, type FogState } from './vision/fog.js';
@@ -161,6 +162,9 @@ export function step(loop: SimLoop): void {
   construction.update(world, movement.grid, events);
   production.update(world, events);
   combat.update(world, movement.grid, economy, tech, events);
+  // After everything that can take health away, and in one place, because dying is not
+  // a rule any of them owns. See src/sim/mortality.ts.
+  reap(world, events);
   // The fields are worked before the harvest is taken, so a field broken this cycle can
   // pay this cycle and one trampled this cycle pays less for it.
   if (world.tick !== 0 && world.tick % tuning.economy.upkeepIntervalTicks === 0) {

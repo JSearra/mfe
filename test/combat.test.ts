@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { reap } from '../src/sim/mortality.js';
 import { EventType, type SimEvent } from '../src/shared/events.js';
 import { createCombatSystem, weaponOf, Weapon } from '../src/sim/combat.js';
 import { createEconomy, Resource } from '../src/sim/economy/ledger.js';
@@ -35,6 +36,9 @@ function arena() {
   const tick = () => {
     rebuild(world, grid);
     combat.update(world, grid, economy, tech, events);
+    // Dying is no longer combat's business — the loop reaps after every source of
+    // damage has had its turn. See src/sim/mortality.ts.
+    reap(world, events);
     flushDestroys(world);
     world.tick++;
   };

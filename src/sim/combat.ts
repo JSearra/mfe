@@ -9,7 +9,6 @@ import { tuning } from './tuning.js';
 import {
   EntityKind,
   NULL_HANDLE,
-  destroy,
   handleIndex,
   isAlive,
   OrderMode,
@@ -35,7 +34,6 @@ export const Weapon = {
 
 export interface CombatStats {
   strikes: number;
-  kills: number;
   shotsWithheld: number;
 }
 
@@ -63,7 +61,7 @@ export function weaponOf(movementClass: number): number {
 }
 
 export function createCombatSystem(): CombatSystem {
-  const stats: CombatStats = { strikes: 0, kills: 0, shotsWithheld: 0 };
+  const stats: CombatStats = { strikes: 0, shotsWithheld: 0 };
   const neighbours: number[] = [];
 
   /**
@@ -190,43 +188,6 @@ export function createCombatSystem(): CombatSystem {
         );
       }
 
-      reap(world, stats, events);
     },
   };
-}
-
-/**
- * Remove anything whose health has run out.
- *
- * Deliberately separate from whatever did the damage. Crushing, starvation and combat
- * all reduce health and none of them should each carry their own copy of the rules for
- * dying — before this existed, a starved unit sat at zero health indefinitely.
- */
-function reap(world: World, stats: CombatStats, events: SimEvent[]): void {
-  let died = false;
-
-  for (let index = 0; index < world.capacity; index++) {
-    if (world.alive[index] !== 1 || world.hp[index]! > 0) continue;
-    if (world.destroyPending[index] === 1) continue;
-
-    const handle = packHandle(index, world.generation[index]!);
-    events.push(
-      makeEvent(world.tick, EventType.Died, handle, world.posX[index]!, world.posY[index]!),
-    );
-    destroy(world, handle);
-    stats.kills++;
-    died = true;
-  }
-
-  if (!died) return;
-
-  // Clear targets that just died, so the invariant "no unit ends a tick holding a dead
-  // target" holds. Leaving it to the next tick works, but it means a save taken between
-  // the two restores a unit aiming at a corpse.
-  for (let index = 0; index < world.capacity; index++) {
-    if (world.alive[index] !== 1) continue;
-    const target = world.attackTarget[index]!;
-    if (target === NULL_HANDLE) continue;
-    if (world.destroyPending[handleIndex(target)] === 1) world.attackTarget[index] = NULL_HANDLE;
-  }
 }
