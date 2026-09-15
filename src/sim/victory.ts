@@ -1,28 +1,32 @@
 import type { SimEvent } from '../shared/events.js';
 import { EventType, makeEvent } from '../shared/events.js';
 import type { Economy } from './economy/ledger.js';
-import { Resource } from './economy/ledger.js';
 import { tuning } from './tuning.js';
-import { EntityKind, HerdState, handleIndex, isAlive, type World } from './world.js';
+import { EntityKind, type World } from './world.js';
 
 /**
  * How a match ends.
  *
- * Victory is measured in cattle, not in corpses. In this setting cattle are wealth,
- * standing and the reason to fight, so making the herd the objective puts the game's
- * distinctive mechanic at the centre of it rather than beside it — a player who ignores
- * herding cannot win by being good at everything else.
+ * A village is judged by whether it stands, not by what it has taken. The objective is
+ * to settle a given number of households and keep them fed long enough that the village
+ * is established rather than briefly crowded — see ADR-0019.
  *
- * Holding is what counts, not touching: the threshold has to be held for a stretch, so
- * a raid that takes the herd and immediately loses it takes nothing. That gives the
- * losing side a window to answer, which is the difference between a climax and a
- * cutscene.
+ * This used to be measured in cattle: hold two hundred head and win. That put the herd
+ * at the centre of the game, which was right, but it made the herd an end rather than a
+ * means, and it meant a village could win by accumulating and never by enduring. Worse,
+ * upkeep scales with cattle, so the objective actively worked against the economy that
+ * had to sustain it.
+ *
+ * Holding is still what counts, and for a stronger reason than before. Population is
+ * trivially spiked — train until the granary is empty — and a village that doubles in a
+ * minute and starves in the next has not settled anything. The hold is what separates a
+ * village from a crowd.
  */
 
 export const Outcome = {
   Ongoing: 0,
-  /** Somebody held the herd long enough. */
-  CattleVictory: 1,
+  /** A village reached its full size and kept it there. */
+  Settled: 1,
   /** Everyone else is gone. */
   LastStanding: 2,
 } as const;
@@ -36,8 +40,8 @@ export interface VictoryState {
   winner: number;
   /** Consecutive ticks each player has been at or above the threshold. */
   readonly holdTicks: Float64Array;
-  /** Cattle each player held at the last check, for the UI. */
-  readonly cattleHeld: Float64Array;
+  /** Households standing at the last check, for the UI. */
+  readonly households: Float64Array;
   readonly eliminated: Uint8Array;
   /** Ticks each player has been without means, before being counted out. */
   readonly graceTicks: Float64Array;
@@ -51,7 +55,7 @@ export function createVictoryState(players: number): VictoryState {
     outcome: Outcome.Ongoing,
     winner: -1,
     holdTicks: new Float64Array(players),
-    cattleHeld: new Float64Array(players),
+    households: new Float64Array(players),
     eliminated: new Uint8Array(players),
     graceTicks: new Float64Array(players),
 
@@ -62,31 +66,19 @@ export function createVictoryState(players: number): VictoryState {
       const units = new Float64Array(players);
       const buildings = new Float64Array(players);
 
-      state.cattleHeld.fill(0);
-      for (let player = 0; player < players; player++) {
-        state.cattleHeld[player] = economy.balance(player, Resource.Cattle);
-      }
-
       for (let index = 0; index < world.capacity; index++) {
         if (world.alive[index] !== 1) continue;
-
-        if (world.kind[index] === EntityKind.Cattle) {
-          // Cattle on the map count for whoever holds the tether. That is what makes a
-          // raid worth mounting: the herd changes hands by being driven off, not by
-          // being killed.
-          if (world.herdState[index] !== HerdState.Leashed) continue;
-          const tether = world.tetheredTo[index]!;
-          if (!isAlive(world, tether)) continue;
-          const owner = world.faction[handleIndex(tether)]!;
-          if (owner < players) state.cattleHeld[owner]!++;
-          continue;
-        }
+        // Cattle belong to nobody's headcount. They are food and wealth, counted by the
+        // ledger and eaten by the upkeep; a village's size is the people in it.
+        if (world.kind[index] === EntityKind.Cattle) continue;
 
         const owner = world.faction[index]!;
         if (owner >= players) continue;
         if (world.kind[index] === EntityKind.Unit) units[owner]!++;
         else if (world.kind[index] === EntityKind.Building) buildings[owner]!++;
       }
+
+      for (let player = 0; player < players; player++) state.households[player] = units[player]!;
 
       for (let player = 0; player < players; player++) {
         if (state.eliminated[player] === 1) continue;
@@ -106,18 +98,26 @@ export function createVictoryState(players: number): VictoryState {
           state.graceTicks[player] = 0;
         }
 
-        // --- cattle ----------------------------------------------------------
-        if (state.cattleHeld[player]! >= v.cattleToWin) {
+        // --- settled ---------------------------------------------------------
+        //
+        // At full size AND feeding itself. A village holding forty households on a
+        // granary that cannot cover the upkeep is not settled, it is a fortnight from
+        // empty — and without this clause the objective would reward exactly the spike
+        // the hold timer exists to prevent: train to the target, win before the next
+        // upkeep collects. `shortfall` is what the last upkeep failed to pay.
+        const fed = (economy.shortfall[player] ?? 0) <= 0;
+        if (fed && state.households[player]! >= v.householdsToSettle) {
           state.holdTicks[player]!++;
           if (state.holdTicks[player]! >= v.holdTicks) {
-            state.outcome = Outcome.CattleVictory;
+            state.outcome = Outcome.Settled;
             state.winner = player;
             events.push(makeEvent(world.tick, EventType.VictoryDeclared, 0, 0, 0, player));
             return;
           }
         } else {
-          // Reset rather than decay. Holding is the requirement, so dropping below the
-          // threshold for one tick means starting the count again.
+          // Reset rather than decay. Holding is the requirement, so a village that falls
+          // below its full size for one tick starts the count again — which is what a
+          // hard winter is supposed to cost.
           state.holdTicks[player] = 0;
         }
       }

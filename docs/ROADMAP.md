@@ -447,13 +447,26 @@ failure condition at all, and a village simulator with nothing to fear is a spre
 Holding 200 cattle is the only goal the game has, and it is the reason the economy has
 teeth. Replacing it comes first because everything after it is balanced against it.
 
-*Done when:* a match can be won and lost on terms that never mention an opponent, the
-losing condition is reachable through the player's own choices rather than only through a
-timer, and the soak in `test/economy.test.ts` still holds both ways — a player who does
-nothing survives an ordinary year, and the worst of a bad one still does not pay for
-itself.
+**Done.** The objective is to settle `victory.householdsToSettle` households and hold
+them **fed** for `victory.holdTicks`. The fed clause is the load-bearing half: a village
+at full size on a granary that cannot cover the upkeep is a fortnight from empty, and
+without it the objective would reward exactly the population spike the hold timer exists
+to prevent — train to the target, win before the next upkeep collects.
 
-*Not in this phase:* removing combat, the AI, or any command.
+The number was chosen against the economy rather than picked. Starting plots yield about
+92 grain a cycle averaged over a median year; a herd of 148 eats 41 of it. So 40
+households (85) is sustainable on the opening position alone — measured, it won in five
+minutes with nothing built. 60 needs about 15 more a cycle than the land gives, which is
+two granaries and the work to raise them. Measured with both sides played by the AI: 41
+households at 2.5 minutes, 58 at ten, settled around seventeen.
+
+Cattle stopped being the objective and did not stop mattering — they are food, wealth and
+the thing that eats every ten seconds. The herd-growth guard in `test/economy.test.ts`
+was rewritten rather than deleted: a runaway herd no longer wins the game, but it is still
+upkeep the player did not plan for.
+
+*Not in this phase, and deliberately:* combat, the AI, and every command survive
+untouched.
 
 ## Phase V2 — foraging
 
@@ -497,6 +510,39 @@ damage-flash and health-bar render paths, and four commands.
 *Done when:* `src/sim/combat.ts` is gone, no world field exists only for it, the golden
 replay has been re-recorded deliberately with the reason in the commit, and nothing in
 `src/render` draws a health bar.
+
+**Hazards, surveyed 2026-09-15 before any of it was touched.** Ranked by how badly each
+would bite a session that started deleting from the obvious end:
+
+1. **`reap()` lives inside `combat.ts`** and is private to it. It destroys anything at
+   zero health and emits `Died` — for *starvation* and *stampede crush* as much as for a
+   spear. Deleting combat without rehoming it leaves starved villagers alive at zero
+   health forever, which the file's own comment records as having happened once already.
+   Rehome first, delete second.
+2. **`movement.ts` lines ~448-483** hold the stand-and-fight branch, inside the hot
+   per-unit loop and ahead of ordinary steering. Removing it changes every unit's
+   trajectory, so it forces a golden re-record on its own.
+3. **Any world array deletion changes the replay hash and the save format**, because
+   `worldStateFields()` derives both from `Object.keys` — see ADR-0018. Deliberate, and
+   it must be said in the commit.
+4. **`Resource.Ammunition` is orphaned by the removal** and it is the Griqua faction's
+   entire identity (`startingAmmunition: 160`, mounted gunmen). It needs a new purpose or
+   the faction needs a new trait; the resource column and its HUD readout go with it.
+5. **`Modifier.CombatDamage` leaves `Amabutho` with no effect at all**, which
+   `validateTechTree()` reports as a problem and `test/tech.test.ts` asserts on. The
+   advance needs repurposing, not deleting.
+6. **`orderMode` is dual-purpose.** `AttackMove` and `Patrol` are combat; the field itself
+   is also the mode slot in the shift-click waypoint queue, which is not. Keep the field.
+7. **`EventType.Died` is not combat-only** — it fires for starvation and crush too. `Hit`
+   is the only combat-only event. Command and event enum values cross the worker boundary
+   and sit in recorded command logs, so retire values by leaving gaps rather than
+   renumbering.
+8. `damage.ts` and the `impact` sample key on `Crushed` as well as `Hit`; the stampede
+   keeps both. Attack animation frames already exist in the atlas and are already unused
+   — no `ANIM_` constant references them.
+
+*Kept deliberately:* the stampede. It is a disaster now rather than a weapon — see
+ADR-0014 and ADR-0017, neither of which is superseded.
 
 *Kept deliberately:* the stampede. It is a disaster now rather than a weapon — see
 ADR-0014 and ADR-0017, neither of which is superseded.

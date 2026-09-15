@@ -3,15 +3,15 @@ import { EventType, type SimEvent } from '../src/shared/events.js';
 import { Resource } from '../src/sim/economy/ledger.js';
 import { Outcome } from '../src/sim/victory.js';
 import { tuning } from '../src/sim/tuning.js';
-import { EntityKind, HerdState, spawn } from '../src/sim/world.js';
+import { spawn } from '../src/sim/world.js';
 import { makeSim } from './simHarness.js';
 
 const V = tuning.victory;
 
-function match() {
+function match(households = 3) {
   const sim = makeSim(256, 11);
-  // Both sides have something, so nobody is eliminated by default.
-  for (let i = 0; i < 3; i++) spawn(sim.world, 5 + i, 5, 0);
+  // Both sides have somebody, so nobody is eliminated by default.
+  for (let i = 0; i < households; i++) spawn(sim.world, 5 + (i % 8) * 0.6, 5 + (i / 8 | 0) * 0.6, 0);
   for (let i = 0; i < 3; i++) spawn(sim.world, 25 + i, 25, 1);
 
   const events: SimEvent[] = [];
@@ -24,7 +24,16 @@ function match() {
   return { ...sim, events, run };
 }
 
-describe('cattle victory', () => {
+describe('settling a village', () => {
+  /**
+   * The objective stopped being cattle on 2026-09-15 — see ADR-0019. It is now the
+   * village itself: settle a given number of households and keep them fed long enough
+   * that the place is established rather than briefly crowded.
+   *
+   * Holding matters more than it did under the old condition, not less. Population is
+   * trivially spiked — train until the granary is empty — and a village that doubles in
+   * a minute and starves in the next has settled nothing.
+   */
   it('does not end a match that nobody is winning', () => {
     const sim = match();
     sim.run(V.holdTicks * 2);
@@ -32,82 +41,44 @@ describe('cattle victory', () => {
     expect(sim.victory.winner).toBe(-1);
   });
 
-  it('needs the herd HELD, not merely touched', () => {
-    const sim = match();
-    sim.economy.add(0, Resource.Cattle, V.cattleToWin);
+  it('counts the people, not the herd', () => {
+    const sim = match(V.householdsToSettle);
+    // A vast herd is wealth and does not settle anybody.
+    sim.economy.add(0, Resource.Cattle, 5000);
+    sim.run(1);
+    expect(sim.victory.households[0]).toBe(V.householdsToSettle);
+  });
+
+  it('needs the village HELD at size, not merely reached', () => {
+    const sim = match(V.householdsToSettle);
 
     sim.run(V.holdTicks - 10);
     expect(sim.victory.outcome).toBe(Outcome.Ongoing);
 
-    // Lose the herd one tick before the clock runs out.
-    sim.economy.spend(0, Resource.Cattle, sim.economy.balance(0, Resource.Cattle));
+    // One household lost, a few ticks short of established.
+    sim.world.alive[0] = 0;
     sim.run(1);
     expect(sim.victory.holdTicks[0]).toBe(0);
 
-    // A raid that takes the herd and immediately loses it takes nothing.
     sim.run(V.holdTicks * 2);
     expect(sim.victory.outcome).toBe(Outcome.Ongoing);
   });
 
-  it('declares a winner once the herd is held long enough', () => {
-    const sim = match();
-    sim.economy.add(0, Resource.Cattle, V.cattleToWin);
+  it('declares a winner once the village has stood long enough', () => {
+    const sim = match(V.householdsToSettle);
 
     sim.run(V.holdTicks + 2);
-    expect(sim.victory.outcome).toBe(Outcome.CattleVictory);
+    expect(sim.victory.outcome).toBe(Outcome.Settled);
     expect(sim.victory.winner).toBe(0);
     expect(sim.events.some((e) => e.type === EventType.VictoryDeclared)).toBe(true);
   });
 
-  it('counts cattle held on the map, not only on the ledger', () => {
-    const sim = match();
-    const herder = spawn(sim.world, 10, 10, 0);
-    const cow = spawn(sim.world, 10.5, 10, 2, 1, EntityKind.Cattle);
-    const cowIndex = cow & 0xffffff;
-    sim.world.herdState[cowIndex] = HerdState.Leashed;
-    sim.world.tetheredTo[cowIndex] = herder;
-
-    const ledger = sim.economy.balance(0, Resource.Cattle);
-    sim.run(1);
-    // Driving a herd off is how it changes hands, so a driven beast counts.
-    expect(sim.victory.cattleHeld[0]).toBe(ledger + 1);
-  });
-
-  it('credits a stolen beast to whoever holds the tether now', () => {
-    const sim = match();
-    const thief = spawn(sim.world, 10, 10, 1);
-    const cow = spawn(sim.world, 10.5, 10, 2, 1, EntityKind.Cattle);
-    const cowIndex = cow & 0xffffff;
-    sim.world.herdState[cowIndex] = HerdState.Leashed;
-    sim.world.tetheredTo[cowIndex] = thief;
-
-    const ledgerZero = sim.economy.balance(0, Resource.Cattle);
-    sim.run(1);
-    expect(sim.victory.cattleHeld[0]).toBe(ledgerZero);
-    expect(sim.victory.cattleHeld[1]).toBe(sim.economy.balance(1, Resource.Cattle) + 1);
-  });
-
-  it('ignores a beast whose herder has died', () => {
-    const sim = match();
-    const herder = spawn(sim.world, 10, 10, 0);
-    const cow = spawn(sim.world, 10.5, 10, 2, 1, EntityKind.Cattle);
-    const cowIndex = cow & 0xffffff;
-    sim.world.herdState[cowIndex] = HerdState.Leashed;
-    sim.world.tetheredTo[cowIndex] = herder;
-    sim.world.alive[herder & 0xffffff] = 0;
-
-    const ledger = sim.economy.balance(0, Resource.Cattle);
-    sim.run(1);
-    expect(sim.victory.cattleHeld[0]).toBe(ledger);
-  });
-
   it('stops updating once decided, so a result cannot be overwritten', () => {
-    const sim = match();
-    sim.economy.add(0, Resource.Cattle, V.cattleToWin);
+    const sim = match(V.householdsToSettle);
     sim.run(V.holdTicks + 2);
     expect(sim.victory.winner).toBe(0);
 
-    sim.economy.add(1, Resource.Cattle, V.cattleToWin * 2);
+    for (let i = 0; i < V.householdsToSettle * 2; i++) spawn(sim.world, 40 + (i % 8) * 0.6, 40, 1);
     sim.run(V.holdTicks * 2);
     expect(sim.victory.winner).toBe(0);
   });

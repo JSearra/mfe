@@ -430,22 +430,30 @@ describe('the herd does not grow into a victory on its own', () => {
   const upkeeps = (minutes: number) =>
     Math.floor((minutes * 60 * 1000) / (TICK_MS * tuning.economy.upkeepIntervalTicks));
 
-  it('cannot reach the victory threshold inside a long match', () => {
-    // Twenty-five minutes is already a long match for this game; the winning playthrough
-    // took eight and a half.
+  it('does not compound into a herd nobody husbanded', () => {
+    // This guard was written when cattle WERE the victory condition and an idle herd
+    // reached the winning two hundred in eight minutes. The objective is the village now
+    // (ADR-0019), so a runaway herd no longer wins — but it still matters, and the reason
+    // inverted rather than went away: every beast eats, so growth the player did not earn
+    // is upkeep the player did not plan for. Wealth that accrues on its own is not
+    // wealth, it is weather.
+    //
+    // Twenty-five minutes is already a long match; the last playthrough took eight.
     for (const seed of [1, 7, 0xbeef]) {
       const economy = idleHerd(seed);
       const world = worldWithTroops(0);
+      const before = economy.balance(0, Resource.Cattle);
 
       for (let i = 1; i <= upkeeps(25); i++) {
         world.tick = i * tuning.economy.upkeepIntervalTicks;
         economy.update(world, []);
       }
 
-      expect(
-        economy.balance(0, Resource.Cattle),
-        `seed ${seed}: an idle herd reached the win threshold`,
-      ).toBeLessThan(tuning.victory.cattleToWin);
+      // Not doubling in twenty-five minutes is the property; the measured figure is
+      // about 1.64, and a bound set at the measurement would be a knife edge rather
+      // than a statement.
+      const grown = economy.balance(0, Resource.Cattle) / before;
+      expect(grown, `seed ${seed}: an idle herd ran away with itself`).toBeLessThan(2);
     }
   });
 

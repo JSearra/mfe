@@ -123,8 +123,8 @@
     "mountedTicks": 260
   },
   "victory": {
-    "cattleToWin": 200,
-    "holdTicks": 1200,
+    "householdsToSettle": 60,
+    "holdTicks": 2400,
     "eliminationGraceTicks": 400
   }
 }

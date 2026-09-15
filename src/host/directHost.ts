@@ -63,9 +63,9 @@ export interface PlayerState {
   readonly drought: number;
   readonly droughtSevere: boolean;
 
-  /** Cattle this player holds, ledger plus driven herd. */
-  readonly cattleHeld: number;
-  readonly cattleToWin: number;
+  /** Households standing in this player's village. */
+  readonly households: number;
+  readonly householdsToSettle: number;
   /** 0 to 1: how much of the hold requirement has elapsed. */
   readonly holdProgress: number;
   /** 0 ongoing, 1 cattle victory, 2 last standing. */
@@ -313,8 +313,8 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         shortfall: economy.shortfall[viewerId] ?? 0,
         drought: droughtNow,
         droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
-        cattleHeld: victory.cattleHeld[viewerId] ?? 0,
-        cattleToWin: tuning.victory.cattleToWin,
+        households: victory.households[viewerId] ?? 0,
+        householdsToSettle: tuning.victory.householdsToSettle,
         holdProgress: Math.min(1, (victory.holdTicks[viewerId] ?? 0) / tuning.victory.holdTicks),
         outcome: victory.outcome,
         winner: victory.winner,

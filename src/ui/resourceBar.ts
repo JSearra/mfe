@@ -55,15 +55,15 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
 
       // The victory track, always visible. A win condition the player cannot see the
       // progress of is one they cannot play toward.
-      const held = Math.floor(player.cattleHeld);
+      const standing = Math.floor(player.households);
       herd.textContent =
         player.holdProgress > 0
           ? t('victory.holding', {
-              held,
-              needed: player.cattleToWin,
+              held: standing,
+              needed: player.householdsToSettle,
               pct: Math.round(player.holdProgress * 100),
             })
-          : t('victory.progress', { held, needed: player.cattleToWin });
+          : t('victory.progress', { held: standing, needed: player.householdsToSettle });
       herd.classList.toggle('is-holding', player.holdProgress > 0);
 
       warning.textContent =

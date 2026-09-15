@@ -59,9 +59,9 @@
     "mountedCommando": "Mounted commando"
   },
   "victory": {
-    "progress": "Herd {held}/{needed}",
-    "holding": "Herd {held}/{needed} — holding {pct}%",
-    "won": "Victory — the herd is yours",
+    "progress": "Village {held}/{needed}",
+    "holding": "Village {held}/{needed} — settling {pct}%",
+    "won": "Your village is settled",
     "lost": "Defeat",
     "eliminated": "You have nothing left",
     "again": "Play again"
