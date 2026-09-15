@@ -12,6 +12,7 @@ import { createHeightmap } from './sim/terrain/generate.js';
 import { MAP_SCRIPTS, generateMap, type MapScript } from './sim/terrain/maps.js';
 import { FactionId } from './shared/factions/index.js';
 import { createWorld } from './sim/world.js';
+import { largestRegion, snapToRegion } from './sim/terrain/placement.js';
 import { createRenderer } from './render/app.js';
 import { createAudioEngine } from './render/audio.js';
 import {
@@ -236,30 +237,37 @@ async function main(options: GameOptions): Promise<void> {
         starts,
       });
 
+  /**
+   * Everything a match places goes through here first.
+   *
+   * A generated map is not one walkable surface, and a position chosen by arithmetic
+   * lands wherever the terrain happens to put it. On the Magaliesberg that dropped the
+   * player's whole force onto a ridge flank in a contour ribbon of eighty tiles it could
+   * never leave — it could not reach the one herd in the game, so the map could not be
+   * won. See src/sim/terrain/placement.ts.
+   *
+   * On an unbroken map — the default veld, thaba-bosiu — this changes nothing at all.
+   */
+  const walkable = largestRegion(map);
+  const place = (x: number, y: number): { x: number; y: number } =>
+    snapToRegion(map, walkable, x, y);
+
   // Seed a small force near the centre. Spawning through commands rather than touching
   // the world directly keeps the invariant that commands are the only mutation path.
+  const home = place(centre - 2, centre);
   for (let i = 0; i < STARTING_UNITS; i++) {
     const column = i % 6;
     const row = Math.floor(i / 6);
-    sim.sendCommand(
-      CommandKind.Spawn,
-      centre + column * 1.4 - 4,
-      centre + row * 1.4 - 2,
-      PLAYER,
-      KIND_UNIT,
-    );
+    const at = place(home.x + column * 1.4 - 4, home.y + row * 1.4 - 2);
+    sim.sendCommand(CommandKind.Spawn, at.x, at.y, PLAYER, KIND_UNIT);
   }
 
   // An opposing force, far enough off that first contact is something the player walks
   // into rather than something that happens to them at load.
+  const enemyHome = place(centre + 34, centre + 26);
   for (let i = 0; i < ENEMY_UNITS; i++) {
-    sim.sendCommand(
-      CommandKind.Spawn,
-      centre + 34 + (i % 4) * 1.3,
-      centre + 26 + Math.floor(i / 4) * 1.3,
-      ENEMY,
-      KIND_UNIT,
-    );
+    const at = place(enemyHome.x + (i % 4) * 1.3, enemyHome.y + Math.floor(i / 4) * 1.3);
+    sim.sendCommand(CommandKind.Spawn, at.x, at.y, ENEMY, KIND_UNIT);
   }
 
   // Where the herds graze, as offsets from the centre of the map.
@@ -288,7 +296,8 @@ async function main(options: GameOptions): Promise<void> {
     [46, 2], // out in open country, enemy's side
   ];
 
-  for (const [herdX, herdY] of HERD_SITES) {
+  for (const [rawX, rawY] of HERD_SITES) {
+    const anchor = place(centre + rawX, centre + rawY);
     // A cluster, not a ring: cattle graze together, and a hollow ring has no centre to
     // click on or drive into. The radius follows the separation distance — at 1.5 units
     // apart a dozen beasts need about three units of room, and spawning them tighter
@@ -296,11 +305,8 @@ async function main(options: GameOptions): Promise<void> {
     for (let i = 0; i < HERD_SIZE; i++) {
       const angle = i * 2.399963; // golden angle, so the blob fills evenly
       const spread = 3.2 * Math.sqrt((i + 0.5) / HERD_SIZE);
-      sim.sendCommand(
-        CommandKind.SpawnCattle,
-        centre + herdX + Math.cos(angle) * spread,
-        centre + herdY + Math.sin(angle) * spread,
-      );
+      const at = place(anchor.x + Math.cos(angle) * spread, anchor.y + Math.sin(angle) * spread);
+      sim.sendCommand(CommandKind.SpawnCattle, at.x, at.y);
     }
   }
 

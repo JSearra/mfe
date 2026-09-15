@@ -150,7 +150,7 @@ Still open, and all of them decisions rather than defects:
   building, and buildings or techs that cannot be afforded. The click does nothing and
   says nothing.
 
-## G. Two of the four named maps wall the player in
+## G. Two of the four named maps wall the player in — FIXED
 
 Found while checking that the six new herds are reachable, and **not caused by that
 change** — measured with eight-way A* from the player's start on each map, counting how
@@ -170,13 +170,21 @@ cannot walk the eleven tiles to its own doorstep herd. That doorstep site is exa
 where the game's *only* herd sat before there were six, so **magaliesberg has never been
 winnable**: the cattle victory is the objective and the cattle were behind a wall.
 
-Every movement class has `maxClimb: 1`, so the poorts that are supposed to pierce the
-ridges are steeper than anything can climb. The fix belongs in the map scripts — carve
-the passes to a single height step — or in the class profiles, and it wants a
-connectivity assertion in the generator itself rather than only at these six points.
+**The maps were not the problem.** Measuring connected components rather than reachable
+points showed the Magaliesberg's valleys form a single walkable region covering 89% of
+the map, and the Karoo 98%. What was wrong was that a start position chosen by
+arithmetic — "the centre", "nine tiles east of that" — lands wherever the terrain puts
+it, and on the Magaliesberg that was a ridge flank: an 80-tile contour ribbon with the
+poort's floor four levels below and unreachable. Umfolozi genuinely is cut in three by
+its river (53/42/5) and the start sat in the 5%.
 
-`test/herds.test.ts` pins the reachable maps and records these two as broken, in a way
-that fails once they are fixed so the exclusion cannot rot.
+Fixed in `src/sim/terrain/placement.ts`: everything a match places — both forces and all
+six herds — is first pulled onto the largest walkable region. No map script is changed;
+every mesa, ridge and river survives as generated. On an unbroken map it is a no-op, and
+a test asserts that.
+
+`test/herds.test.ts` now requires every herd to be reachable by BOTH sides on every named
+script, with no exclusions.
 
 ## H. The event stream is not filtered by fog
 
