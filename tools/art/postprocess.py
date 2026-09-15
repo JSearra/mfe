@@ -122,6 +122,47 @@ def edge_falloff(width: int, height: int, mask: int) -> np.ndarray:
     return alpha
 
 
+def make_field(tile: Image.Image, broken: bool) -> Image.Image:
+    """
+    A tile of ground turned over into furrows.
+
+    Drawn from the terrain tile beneath it rather than generated on its own, so a field
+    still looks like the ground it was broken out of — the soil of the Karoo is not the
+    soil of the thornveld and a field that ignored that would read as a decal.
+
+    Two states, because the player has to be able to tell them apart at a glance: broken
+    ground, which is bare and dark and pays nothing yet, and a standing crop, which is
+    greener and lighter than the veld around it. Condition is a tint applied at draw
+    time; only these two shapes are baked.
+    """
+    pixels = np.array(tile.convert("RGBA"), dtype=np.float64)
+    height, width = pixels.shape[0], pixels.shape[1]
+
+    ys, xs = np.mgrid[0:height, 0:width]
+    # Furrows run along the tile's own axis, so they read as ploughed rather than as
+    # scanlines: in a 2:1 diamond that is two across for one down.
+    ridge = np.sin((xs * 0.5 + ys) * (np.pi / 3.0))
+    shade = 1.0 + ridge * (0.16 if broken else 0.10)
+
+    if broken:
+        # Turned earth: darker than the veld, and the colour of what is under it.
+        pixels[:, :, 0] *= 0.82
+        pixels[:, :, 1] *= 0.70
+        pixels[:, :, 2] *= 0.58
+    else:
+        # A standing crop: greener and lighter than the ground it grows on.
+        pixels[:, :, 0] *= 0.92
+        pixels[:, :, 1] *= 1.16
+        pixels[:, :, 2] *= 0.72
+
+    for channel in range(3):
+        pixels[:, :, channel] *= shade
+
+    pixels[:, :, :3] = np.clip(pixels[:, :, :3], 0, 255)
+    pixels[:, :, 3] = np.where(diamond_mask(width, height), 255, 0)
+    return Image.fromarray(pixels.astype(np.uint8), "RGBA")
+
+
 def make_transition(tile: Image.Image, mask: int) -> Image.Image:
     """A tile masked to bleed in from the edges named by `mask`."""
     pixels = np.array(tile.convert("RGBA"))
@@ -326,6 +367,31 @@ def command_tile(args: argparse.Namespace) -> int:
                 }
             )
     print(f"  {15 * len(first_of_band)} transition tiles over {len(first_of_band)} bands")
+
+    # --- fields ------------------------------------------------------------------
+    #
+    # One pair per band, from the same representative tile, so a field looks like the
+    # ground it was broken out of.
+    for band_index in sorted(first_of_band):
+        _, tile = first_of_band[band_index]
+        for state, broken in (("broken", True), ("crop", False)):
+            name = f"field-{band_index}-{state}.png"
+            field = make_field(tile, broken)
+            field.save(target / name)
+            packed.append((name, field))
+            manifest.append(
+                {
+                    "file": name,
+                    "subject": "field",
+                    "width": TILE_W,
+                    "height": TILE_H,
+                    "band": band_index,
+                    "field": state,
+                    "averageColour": average_colour(field),
+                    "seam": 0.0,
+                }
+            )
+    print(f"  {2 * len(first_of_band)} field tiles")
 
     placement = pack_tiles(packed, target)
     for entry in manifest:

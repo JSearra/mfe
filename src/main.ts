@@ -32,6 +32,7 @@ import { installPerfHarness } from './render/perfHarness.js';
 import { createEntityLayer } from './render/scene/entities.js';
 import { planDecorations } from './render/scene/decoration.js';
 import { createDamageFlashes } from './render/scene/damage.js';
+import { createFieldLayer } from './render/scene/fields.js';
 import { loadSpriteAtlas, loadTerrainTiles } from './render/assets.js';
 import { presentation } from './render/presentation.js';
 import { createTileCursor, placeTileCursor } from './render/scene/cursor.js';
@@ -369,7 +370,10 @@ async function main(options: GameOptions): Promise<void> {
     faction: PLAYER,
   });
   const damage = createDamageFlashes();
+  const fields = createFieldLayer(map, terrainTiles);
   const fog = createFogRenderer(map);
+  // Above the ground and below everything that stands on it.
+  terrain.container.addChild(fields.container);
   terrain.container.addChild(cursor);
   terrain.container.addChild(entities.container);
   // Fog goes on top of everything in the world layer: it hides terrain as well as what
@@ -407,6 +411,8 @@ async function main(options: GameOptions): Promise<void> {
   /** The standing wood as last received, for hit-testing a right-click against it. */
   let standingWood: Float32Array | null = null;
   let armed: BuildingType | null = null;
+  /** Planting mode: the next left-click breaks ground rather than selecting. */
+  let planting = false;
 
   const panel = createCommandPanel(root, {
     onTrain(buildingHandle, movementClass) {
@@ -507,6 +513,7 @@ async function main(options: GameOptions): Promise<void> {
       attackMoveArmed = false;
       patrolArmed = false;
       armed = null;
+      planting = false;
       return;
     }
     // R cycles through the tree, starting whatever is next available. A proper
@@ -530,19 +537,28 @@ async function main(options: GameOptions): Promise<void> {
     }
 
     const type = buildKeys[event.key];
-    if (type !== undefined) armed = type;
+    if (type !== undefined) {
+      armed = type;
+      planting = false;
+    }
+    if (event.key === 'f' || event.key === 'F') {
+      planting = true;
+      armed = null;
+    }
   }, { signal });
 
   const boundInput = bindInput(app.canvas, camera, input, {
     onClickSelect(x, y, additive) {
-      if (armed !== null) {
+      if (armed !== null || planting) {
         const isoX = (x - camera.viewportWidth / 2) / camera.zoom + camera.x;
         const isoY = (y - camera.viewportHeight / 2) / camera.zoom + camera.y;
         const index = pickTileIndex(map, isoX, isoY);
         if (index !== NO_TILE) {
-          sim.sendCommand(CommandKind.Build, tileX(map, index), tileY(map, index), armed, PLAYER);
+          if (planting) sim.sendCommand(CommandKind.Plant, tileX(map, index), tileY(map, index));
+          else sim.sendCommand(CommandKind.Build, tileX(map, index), tileY(map, index), armed!, PLAYER);
         }
         armed = null;
+        planting = false;
         return;
       }
       if (view !== null) selection.selectAt(view, map, camera, entities, x, y, PLAYER, additive);
@@ -725,6 +741,7 @@ async function main(options: GameOptions): Promise<void> {
       // than the frame — the same contract the fog beside it uses.
       entities.setWoodland(message.woodland);
       if (message.woodland !== null) standingWood = message.woodland;
+      fields.setFarmland(message.farmland);
       if (message.fog !== null) latestFog = message.fog;
       // Sound comes from events, never from diffing snapshots: a death simply stops
       // appearing, and there is nothing in a state diff that says it happened.

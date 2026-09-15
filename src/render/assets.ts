@@ -154,6 +154,8 @@ interface TerrainTileEntry {
    * the terrain renderer walks.
    */
   readonly mask?: number;
+  /** Set on field tiles: 'broken' for turned earth, 'crop' for a standing crop. */
+  readonly field?: string;
   readonly averageColour: string;
   readonly x: number;
   readonly y: number;
@@ -185,6 +187,13 @@ export interface TerrainTiles {
    * failing to draw the map.
    */
   transition(band: number, mask: number): TerrainTile | null;
+  /**
+   * A field on this band's ground, either broken earth or a standing crop.
+   *
+   * Drawn from the band's own tile so a field looks like the ground it came out of —
+   * the soil of the Karoo is not the soil of the thornveld.
+   */
+  field(band: number, crop: boolean): TerrainTile | null;
 }
 
 /** Edge bits of the four orthogonal neighbours, clockwise from the upper right. */
@@ -212,6 +221,8 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
     const byBand: TerrainTile[][] = [];
     // band -> mask -> tile. Dense and small: sixteen slots a band, fifteen of them used.
     const transitions: (TerrainTile | null)[][] = [];
+    // band -> [broken, crop]
+    const fields: (TerrainTile | null)[][] = [];
 
     for (const entry of manifest.tiles) {
       const tile: TerrainTile = {
@@ -222,6 +233,11 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
         colour: Number.parseInt(entry.averageColour.slice(1), 16),
       };
 
+      if (entry.field !== undefined) {
+        const row = (fields[entry.band] ??= [null, null]);
+        row[entry.field === 'crop' ? 1 : 0] = tile;
+        continue;
+      }
       if (entry.mask !== undefined) {
         const row = (transitions[entry.band] ??= new Array<TerrainTile | null>(
           TRANSITION_MASKS,
@@ -250,6 +266,10 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
 
       transition(band: number, mask: number) {
         return transitions[band]?.[mask] ?? null;
+      },
+
+      field(band: number, crop: boolean) {
+        return fields[band]?.[crop ? 1 : 0] ?? null;
       },
     };
   } catch {

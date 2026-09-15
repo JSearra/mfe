@@ -500,9 +500,27 @@ Grain plots are laid out once at map generation and yield forever. They become s
 the player places, tends and loses: land committed ahead of a season whose weather is not
 yet known.
 
-*Done when:* a plot is placed by command, takes work to establish, yields on the seasonal
-curve from ADR-0019's economy, and competes with grazing for the same ground — which is
-where the first self-inflicted scarcity comes from.
+**Done.** A field is sited by command, costs seed grain at siting, takes work before it
+pays anything, and loses condition if nobody tends it. The seed is not refunded when a
+field is abandoned, which is what stops committing land being a free option.
+
+**Cattle and crops want the same ground.** A beast standing in a field eats and tramples
+it; a villager standing there brings it back; a field that is both worked and grazed nets
+the two against each other rather than taking the better, or the herd could simply be
+parked in the crops and more people added. The drought treats everyone alike and arrives
+on a timer — where the herd grazes is a choice, and it is the first scarcity in this game
+the player makes rather than inherits.
+
+The ledger stopped owning the fields with this: it took a static array and yielded from
+it forever, and now asks a callback what each field has. The weather stays with the
+ledger, the condition stays with the fields, and neither has to learn the other's
+business. The old plots were a closure nobody could serialise; fields are saved and
+hashed.
+
+Fields are drawn, because a decision whose result the player cannot see is not a
+decision: broken earth reads dark and bare, a standing crop reads green, and condition
+dims the crop toward the colour of the dirt under it. The tiles are generated from each
+band's own ground in the art pipeline, so a field looks like the soil it came out of.
 
 ## Phase V4 — trade
 
