@@ -11,9 +11,10 @@ import { createTechState, type TechState } from '../sim/tech.js';
 import { createVictoryState, type VictoryState } from '../sim/victory.js';
 import { createProductionSystem, type ProductionSystem } from '../sim/production.js';
 import { createConstructionSystem, type ConstructionSystem } from '../sim/construction.js';
-import { createEconomy, Resource, type Economy, type GrainPlot } from '../sim/economy/ledger.js';
+import { createEconomy, Resource, type Economy } from '../sim/economy/ledger.js';
 import { createWoodland, packWoodland, type Woodland } from '../sim/woodland.js';
-import { createStartingPlots } from '../sim/economy/plots.js';
+import { packFarmland, type Farmland } from '../sim/economy/farmland.js';
+import { createStartingFarmland } from '../sim/economy/plots.js';
 import { tuning } from '../sim/tuning.js';
 import { FactionId } from '../shared/factions/index.js';
 import { createFog, type FogState } from '../sim/vision/fog.js';
@@ -100,6 +101,8 @@ export interface SimMessage {
    * makes, and for the same reason.
    */
   readonly woodland: Float32Array | null;
+  /** The fields, or null when unchanged. Same contract as the wood beside it. */
+  readonly farmland: Float32Array | null;
 }
 
 /**
@@ -136,7 +139,6 @@ export interface DirectSimHostOptions {
   factions?: readonly FactionId[];
   /** Players driven by the computer. Each is simply another command source. */
   aiPlayers?: readonly number[];
-  plots?: readonly GrainPlot[];
   /** Where each player begins. Arable land is laid out around these. */
   starts?: readonly { readonly x: number; readonly y: number }[];
   seed?: number;
@@ -181,6 +183,7 @@ export interface DirectSimHost extends SimHost {
   readonly production: ProductionSystem;
   readonly economy: Economy;
   readonly woodland: Woodland;
+  readonly farmland: Farmland;
   readonly tech: TechState;
   readonly victory: VictoryState;
   readonly fog: FogState;
@@ -197,7 +200,6 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     maxPendingEvents = DEFAULT_MAX_PENDING_EVENTS,
     factions = [FactionId.Zulu, FactionId.Sotho],
     aiPlayers = [],
-    plots,
     starts = [],
     seed = 0,
   } = options;
@@ -209,8 +211,9 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
   const production = createProductionSystem(movement);
   // Explicit plots win; otherwise lay them out around the starts. Without either,
   // grain income is zero and every player starves — see sim/economy/plots.ts.
-  const economy = createEconomy(factions, seed, plots ?? createStartingPlots(map, starts, seed));
+  const economy = createEconomy(factions, seed);
   const woodland = createWoodland(map, seed);
+  const farmland = createStartingFarmland(map, starts, seed);
   const tech = createTechState(Math.max(factions.length, viewerId + 1));
   const victory = createVictoryState(Math.max(factions.length, viewerId + 1));
   const fog = createFog(Math.max(factions.length, viewerId + 1), map);
@@ -223,6 +226,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     production,
     economy,
     woodland,
+    farmland,
     tech,
     victory,
     fog,
@@ -238,6 +242,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
   let pendingSnapshot: ArrayBuffer | null = null;
   let sentFogVersion = -1;
   let sentWoodVersion = -1;
+  let sentFieldVersion = -1;
   let pendingEvents: SimEvent[] = [];
   let droppedEvents = 0;
 
@@ -262,6 +267,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     production,
     economy,
     woodland,
+    farmland,
     tech,
     victory,
     fog,
@@ -351,7 +357,21 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         sentWoodVersion = woodland.version;
       }
 
-      return { snapshot, events, droppedEvents: dropped, player, fog: fogSlice, woodland: trees };
+      let fields: Float32Array | null = null;
+      if (farmland.version !== sentFieldVersion) {
+        fields = packFarmland(farmland);
+        sentFieldVersion = farmland.version;
+      }
+
+      return {
+        snapshot,
+        events,
+        droppedEvents: dropped,
+        player,
+        fog: fogSlice,
+        woodland: trees,
+        farmland: fields,
+      };
     },
 
     dispose(): void {

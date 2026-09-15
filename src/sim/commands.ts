@@ -9,6 +9,8 @@ import { TECH_IDS } from '../shared/tech/index.js';
 import type { TechState } from './tech.js';
 import type { MovementSystem } from './movement.js';
 import { fell, type Woodland } from './woodland.js';
+import { abandon, plant, type Farmland } from './economy/farmland.js';
+import type { Heightmap } from '../shared/heightmap.js';
 import {
   clearOrderQueue,
   destroy,
@@ -57,6 +59,10 @@ export const CommandKind = {
   Patrol: 12,
   /** Cut a standing tree for its timber. `a` is the index into the woodland. */
   Fell: 13,
+  /** Break new ground for a field. `a`/`b` are the tile. */
+  Plant: 14,
+  /** Give a field up. `a` is its index in the farmland. */
+  Abandon: 15,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -106,6 +112,9 @@ export function compareCommands(x: Command, y: Command): number {
 export interface CommandContext {
   readonly movement: MovementSystem;
   readonly woodland: Woodland;
+  readonly farmland: Farmland;
+  /** Terrain, for siting decisions a command makes. */
+  readonly map: Heightmap;
   readonly cattle: CattleSystem;
   readonly combat: CombatSystem;
   readonly construction: ConstructionSystem;
@@ -120,7 +129,8 @@ export function applyCommand(
   events: SimEvent[],
   context: CommandContext,
 ): boolean {
-  const { movement, cattle, combat, construction, production, economy, woodland, tech } = context;
+  const { movement, cattle, combat, construction, production, economy, woodland, farmland, map, tech } =
+    context;
   switch (command.kind) {
     case CommandKind.Spawn: {
       const handle = spawn(world, command.a, command.b, command.c, command.d);
@@ -209,6 +219,12 @@ export function applyCommand(
       // tree to eat is reversible and cutting it down is not. A village should not
       // level a wood by walking through it. See src/sim/woodland.ts.
       return fell(world, woodland, economy, command.playerId, command.a) > 0;
+
+    case CommandKind.Plant:
+      return plant(farmland, economy, map, command.playerId, command.a, command.b) === 0;
+
+    case CommandKind.Abandon:
+      return abandon(farmland, command.a);
 
     case CommandKind.Leash:
       return cattle.leash(world, command.a as Handle, command.b as Handle);

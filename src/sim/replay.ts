@@ -8,6 +8,7 @@ import { createProductionSystem } from './production.js';
 import { createConstructionSystem } from './construction.js';
 import { createEconomy } from './economy/ledger.js';
 import { createWoodland } from './woodland.js';
+import { createStartingFarmland } from './economy/plots.js';
 import { createFog } from './vision/fog.js';
 import { FactionId } from '../shared/factions/index.js';
 import { createMovementSystem } from './movement.js';
@@ -102,6 +103,7 @@ export function runReplay(
       production: createProductionSystem(movement),
       economy,
       woodland: createWoodland(map, seed),
+      farmland: createStartingFarmland(map, [], seed),
       tech,
       victory,
       fog,

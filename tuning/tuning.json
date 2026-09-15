@@ -100,6 +100,22 @@
     "timberMature": 34.0,
     "timberYoung": 12.0
   },
+  "farmland": {
+    "capacity": 160,
+    "seedGrain": 35.0,
+    "establishWork": 7.0,
+    "workPerHandPerUpkeep": 1.0,
+    "maxHands": 3,
+    "tendRadius": 1.6,
+    "grazeRadius": 1.6,
+    "tendPerUpkeep": 0.06,
+    "grazedPerBeastPerUpkeep": 0.05,
+    "maxTramplers": 6,
+    "neglectPerUpkeep": 0.012,
+    "minBand": 0,
+    "maxBand": 4,
+    "minSpacing": 1.6
+  },
   "vision": {
     "unitRadius": 8.0,
     "cattleRadius": 4.0,

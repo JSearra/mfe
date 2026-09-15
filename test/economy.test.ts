@@ -6,8 +6,9 @@ import {
   validateAllFactions,
   validateFaction,
 } from '../src/shared/factions/index.js';
-import { createEconomy, Resource, type GrainPlot } from '../src/sim/economy/ledger.js';
-import { createStartingPlots } from '../src/sim/economy/plots.js';
+import { createEconomy, Resource } from '../src/sim/economy/ledger.js';
+import { createStartingFarmland } from '../src/sim/economy/plots.js';
+import { createFarmland, harvestOf, type Farmland } from '../src/sim/economy/farmland.js';
 import { heightmapFrom } from '../src/shared/heightmap.js';
 import { flatMap } from './simHarness.js';
 import { tuning } from '../src/sim/tuning.js';
@@ -31,6 +32,35 @@ function worldWithTroops(units: number, faction = 0): World {
   for (let i = 0; i < units; i++) spawn(world, i, 0, faction);
   return world;
 }
+
+/**
+ * Fields as the ledger now sees them: asked what they have rather than owned.
+ *
+ * Plots used to be a static array handed to createEconomy and yielded forever. Fields
+ * are placed, worked and lost now (Phase V3), so the ledger takes a callback and a test
+ * that wants fields builds them. Everything here is established and in full condition,
+ * which is what the old static plots effectively were.
+ */
+function harvestFrom(land: Farmland) {
+  return (index: number) => (index >= land.count ? undefined : harvestOf(land, index));
+}
+
+/** A field on given ground, established and whole. */
+function fieldsAt(specs: readonly { x: number; y: number; owner: number; sheltered: boolean }[]) {
+  const land = createFarmland(Math.max(1, specs.length));
+  for (const spec of specs) {
+    const slot = land.count++;
+    land.tileX[slot] = spec.x;
+    land.tileY[slot] = spec.y;
+    land.owner[slot] = spec.owner;
+    land.sheltered[slot] = spec.sheltered ? 1 : 0;
+    land.work[slot] = tuning.farmland.establishWork;
+    land.condition[slot] = 1;
+    land.alive[slot] = 1;
+  }
+  return harvestFrom(land);
+}
+
 
 describe('factions', () => {
   it('ships four valid configurations', () => {
@@ -174,15 +204,13 @@ describe('drought', () => {
   });
 
   it('dries open plots out gradually and keeps sheltered ones above a floor', () => {
-    const plots: GrainPlot[] = [
-      { tileX: 1, tileY: 1, owner: 0, sheltered: false },
-      { tileX: 2, tileY: 2, owner: 0, sheltered: true },
-    ];
+    const open = fieldsAt([{ x: 1, y: 1, owner: 0, sheltered: false }]);
+    const kloof = fieldsAt([{ x: 2, y: 2, owner: 0, sheltered: true }]);
 
     // Find a tick deep enough into a bad year that open ground has dried well below
     // the sheltered floor. There is no threshold to cross any more — yield falls with
     // the drought rather than off a cliff — so this looks for severity instead.
-    const probe = createEconomy(PLAYERS, 3, plots);
+    const probe = createEconomy(PLAYERS, 3);
     let parchedTick = -1;
     for (let tick = E.upkeepIntervalTicks; tick < E.seasonTicks * 4; tick += E.upkeepIntervalTicks) {
       const drought = probe.drought(tick);
@@ -195,24 +223,26 @@ describe('drought', () => {
 
     // Three economies differing only in their plots, so upkeep — which draws grain
     // whatever the plots do — cancels out and the harvest is isolated.
-    const noPlots = createEconomy(PLAYERS, 3, []);
-    const openOnly = createEconomy(PLAYERS, 3, [plots[0]!]);
-    const shelteredOnly = createEconomy(PLAYERS, 3, [plots[1]!]);
+    const noPlots = createEconomy(PLAYERS, 3);
+    const openOnly = createEconomy(PLAYERS, 3);
+    const shelteredOnly = createEconomy(PLAYERS, 3);
     const world = worldWithTroops(0);
     world.tick = parchedTick;
 
-    for (const economy of [noPlots, openOnly, shelteredOnly]) economy.update(world, []);
+    noPlots.update(world, []);
+    openOnly.update(world, [], undefined, undefined, open);
+    shelteredOnly.update(world, [], undefined, undefined, kloof);
 
     const control = noPlots.balance(0, Resource.Grain);
-    const open = openOnly.balance(0, Resource.Grain) - control;
+    const openYield = openOnly.balance(0, Resource.Grain) - control;
     const shelteredYield = shelteredOnly.balance(0, Resource.Grain) - control;
 
     // Open savanna is nearly spent, but not switched off: the player watching the
     // number fall can still see it falling, which is what makes it plannable.
-    expect(open).toBeGreaterThan(0);
-    expect(open).toBeLessThan(E.plotBaseYield * E.shelteredYieldFactor);
+    expect(openYield).toBeGreaterThan(0);
+    expect(openYield).toBeLessThan(E.plotBaseYield * E.shelteredYieldFactor);
     // A river bottom or a kloof holds its floor, which is the counterplay.
-    expect(shelteredYield).toBeGreaterThan(open);
+    expect(shelteredYield).toBeGreaterThan(openYield);
     expect(shelteredYield).toBeCloseTo(E.plotBaseYield * E.shelteredYieldFactor, 6);
   });
 });
@@ -278,18 +308,37 @@ describe('arable land', () => {
   // Nothing created plots until this existed, and the consequence only showed up in a
   // long AI-vs-AI match: grain income was zero, every player starved by tick 1000, and
   // the drought withered a harvest that was not there.
-  it('lays plots around each start, some sheltered', () => {
+  /** Every field a starting layout produced, as plain records. */
+  const fieldsIn = (land: Farmland) =>
+    Array.from({ length: land.count }, (_, i) => ({
+      tileX: land.tileX[i]!,
+      tileY: land.tileY[i]!,
+      owner: land.owner[i]!,
+      sheltered: land.sheltered[i] === 1,
+    }));
+
+  it('lays fields around each start, some sheltered', () => {
     const map = flatMap(48);
-    const plots = createStartingPlots(map, [{ x: 10, y: 10 }, { x: 38, y: 38 }], 7);
+    const plots = fieldsIn(createStartingFarmland(map, [{ x: 10, y: 10 }, { x: 38, y: 38 }], 7));
 
     expect(plots.filter((p) => p.owner === 0)).toHaveLength(E.plotsPerPlayer);
     expect(plots.filter((p) => p.owner === 1)).toHaveLength(E.plotsPerPlayer);
     expect(plots.filter((p) => p.owner === 0 && p.sheltered)).toHaveLength(E.shelteredPerPlayer);
   });
 
+  it('starts them established, because a village has farmed this ground for years', () => {
+    // Everything broken after the first tick has to be worked; what a match begins with
+    // does not, or the opening position would be a famine.
+    const land = createStartingFarmland(flatMap(48), [{ x: 10, y: 10 }], 7);
+    for (let i = 0; i < land.count; i++) {
+      expect(harvestOf(land, i)).not.toBeNull();
+      expect(land.condition[i]).toBe(1);
+    }
+  });
+
   it('keeps them near their owner and clear of the start itself', () => {
     const map = flatMap(48);
-    for (const plot of createStartingPlots(map, [{ x: 10, y: 10 }], 7)) {
+    for (const plot of fieldsIn(createStartingFarmland(map, [{ x: 10, y: 10 }], 7))) {
       const dx = plot.tileX - 10;
       const dy = plot.tileY - 10;
       expect(Math.abs(dx)).toBeLessThanOrEqual(E.plotSearchRadius);
@@ -301,10 +350,10 @@ describe('arable land', () => {
 
   it('is deterministic, and does not consume simulation RNG state', () => {
     const map = flatMap(48);
-    const a = createStartingPlots(map, [{ x: 10, y: 10 }], 3);
-    const b = createStartingPlots(map, [{ x: 10, y: 10 }], 3);
+    const a = fieldsIn(createStartingFarmland(map, [{ x: 10, y: 10 }], 3));
+    const b = fieldsIn(createStartingFarmland(map, [{ x: 10, y: 10 }], 3));
     expect(b).toEqual(a);
-    expect(createStartingPlots(map, [{ x: 10, y: 10 }], 4)).not.toEqual(a);
+    expect(fieldsIn(createStartingFarmland(map, [{ x: 10, y: 10 }], 4))).not.toEqual(a);
   });
 
   it('prefers low ground, which is where a field belongs', () => {
@@ -312,19 +361,22 @@ describe('arable land', () => {
       Array.from({ length: 24 }, () => (y < 12 ? 5 : 0)),
     );
     const map = heightmapFrom(rows, 8);
-    const plots = createStartingPlots(map, [{ x: 12, y: 12 }], 1);
-    for (const plot of plots) expect(map.data[plot.tileY * 24 + plot.tileX]).toBe(0);
+    const land = createStartingFarmland(map, [{ x: 12, y: 12 }], 1);
+    expect(land.count).toBeGreaterThan(0);
+    for (let i = 0; i < land.count; i++) {
+      expect(map.data[land.tileY[i]! * 24 + land.tileX[i]!]).toBe(0);
+    }
   });
 
   it('turns a harvest into an income that can carry an army', () => {
     const map = flatMap(48);
-    const plots = createStartingPlots(map, [{ x: 10, y: 10 }], 1);
-    const withPlots = createEconomy(PLAYERS, 1, plots);
-    const barren = createEconomy(PLAYERS, 1, []);
+    const land = createStartingFarmland(map, [{ x: 10, y: 10 }], 1);
+    const withPlots = createEconomy(PLAYERS, 1);
+    const barren = createEconomy(PLAYERS, 1);
     const world = worldWithTroops(10);
     world.tick = E.upkeepIntervalTicks;
 
-    withPlots.update(world, []);
+    withPlots.update(world, [], undefined, undefined, harvestFrom(land));
     barren.update(world, []);
 
     expect(withPlots.balance(0, Resource.Grain)).toBeGreaterThan(
@@ -357,25 +409,22 @@ describe('can a player survive their own opening position', () => {
     for (let i = 0; i < 28; i++) {
       spawn(world, 26 + (i % 7) * 0.5, 26 + (i / 7 | 0) * 0.5, NEUTRAL_FACTION, 1, EntityKind.Cattle);
     }
-    const economy = createEconomy(
-      [FactionId.Zulu, FactionId.Sotho],
-      seed,
-      createStartingPlots(map, [{ x: 20, y: 20 }, { x: 40, y: 40 }], seed),
-    );
-    return { world, economy };
+    const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], seed);
+    const land = createStartingFarmland(map, [{ x: 20, y: 20 }, { x: 40, y: 40 }], seed);
+    return { world, economy, harvest: harvestFrom(land) };
   }
 
   it('does not starve standing still through a whole year', () => {
     // Every seed is a different drought severity, so this covers mild years and ruinous
     // ones alike.
     for (const seed of [1, 7, 42, 0x51ee, 0xbeef]) {
-      const { world, economy } = opening(seed);
+      const { world, economy, harvest } = opening(seed);
       const events: SimEvent[] = [];
       let lowest = Infinity;
 
       for (let tick = 1; tick <= tuning.economy.seasonTicks; tick++) {
         world.tick = tick;
-        economy.update(world, events);
+        economy.update(world, events, undefined, undefined, harvest);
         lowest = Math.min(lowest, economy.balance(0, Resource.Grain));
       }
 
@@ -419,7 +468,7 @@ describe('the herd does not grow into a victory on its own', () => {
    * cattle are just a score. These two pin both sides of that.
    */
   function idleHerd(seed: number, cattle = 120) {
-    const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], seed, []);
+    const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], seed);
     economy.add(0, Resource.Cattle, cattle - economy.balance(0, Resource.Cattle));
     // Grain enough that upkeep is always paid: this isolates growth from starvation.
     economy.add(0, Resource.Grain, 1_000_000);

@@ -70,6 +70,8 @@ export interface SnapshotMessage {
   readonly fog: Uint8Array | null;
   /** The standing wood, or null when unchanged. See SimMessage. */
   readonly woodland: Float32Array | null;
+  /** The fields, or null when unchanged. See SimMessage. */
+  readonly farmland: Float32Array | null;
 }
 
 export type FromWorker = SnapshotMessage;

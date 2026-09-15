@@ -8,7 +8,9 @@ import { createProductionSystem, type ProductionSystem } from '../src/sim/produc
 import { createConstructionSystem, type ConstructionSystem } from '../src/sim/construction.js';
 import { createEconomy, type Economy } from '../src/sim/economy/ledger.js';
 import { createWoodland, type Woodland } from '../src/sim/woodland.js';
-import { createStartingPlots } from '../src/sim/economy/plots.js';
+import { createStartingFarmland } from '../src/sim/economy/plots.js';
+import type { Farmland } from '../src/sim/economy/farmland.js';
+
 import { createFog, type FogState } from '../src/sim/vision/fog.js';
 import { FactionId } from '../src/shared/factions/index.js';
 import { createMovementSystem, type MovementSystem } from '../src/sim/movement.js';
@@ -32,6 +34,7 @@ export interface Harness {
   production: ProductionSystem;
   economy: Economy;
   woodland: Woodland;
+  farmland: Farmland;
   tech: TechState;
   victory: VictoryState;
   fog: FogState;
@@ -52,11 +55,8 @@ export function makeSim(
   const construction = createConstructionSystem(map, movement.pathing);
   const production = createProductionSystem(movement);
   const woodland = createWoodland(map, seed);
-  const economy = createEconomy(
-    [FactionId.Zulu, FactionId.Sotho],
-    seed,
-    createStartingPlots(map, [{ x: 8, y: 8 }, { x: 24, y: 24 }], seed),
-  );
+  const farmland = createStartingFarmland(map, [{ x: 8, y: 8 }, { x: 24, y: 24 }], seed);
+  const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], seed);
   const tech = createTechState(2);
   const victory = createVictoryState(2);
   const fog = createFog(2, map);
@@ -69,11 +69,12 @@ export function makeSim(
     production,
     economy,
     woodland,
+    farmland,
     tech,
     victory,
     fog,
     loop: createLoop(
-      { world, movement, cattle, combat, construction, production, economy, woodland, tech, victory, fog, map },
+      { world, movement, cattle, combat, construction, production, economy, woodland, farmland, tech, victory, fog, map },
       commands,
     ),
     map,

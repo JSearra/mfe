@@ -62,6 +62,7 @@ class StubWorker {
       tick,
       snapshot: writer.buffer,
       woodland: options.woodland ?? null,
+      farmland: null,
       events: Array.from({ length: options.events ?? 0 }, () =>
         makeEvent(tick, EventType.Spawned, 1),
       ),

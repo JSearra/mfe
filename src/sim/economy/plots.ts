@@ -1,7 +1,7 @@
 import { heightAt, type Heightmap } from '../../shared/heightmap.js';
 import { mixSeed } from '../math/rng.js';
 import { tuning } from '../tuning.js';
-import type { GrainPlot } from './ledger.js';
+import { createFarmland, type Farmland } from './farmland.js';
 
 /**
  * Arable land, laid out around each player's start.
@@ -16,13 +16,19 @@ import type { GrainPlot } from './ledger.js';
  * producing when the open veld does not. That is the drought's counterplay, and the
  * reason a bad year is a crisis rather than a loss.
  */
-export function createStartingPlots(
+/**
+ * Returns established fields at full condition, because a village has been farming this
+ * ground for years before the first tick. Everything after this is broken by hand —
+ * sited by command, worked until it takes, and kept or lost (Phase V3).
+ */
+export function createStartingFarmland(
   map: Heightmap,
   starts: readonly { readonly x: number; readonly y: number }[],
   seed: number,
-): GrainPlot[] {
+): Farmland {
   const { plotsPerPlayer, shelteredPerPlayer, plotSearchRadius } = tuning.economy;
-  const plots: GrainPlot[] = [];
+  const land = createFarmland();
+  const established = tuning.farmland.establishWork;
 
   for (let owner = 0; owner < starts.length; owner++) {
     const start = starts[owner]!;
@@ -54,14 +60,16 @@ export function createStartingPlots(
 
     for (let i = 0; i < Math.min(plotsPerPlayer, candidates.length); i++) {
       const candidate = candidates[i]!;
-      plots.push({
-        tileX: candidate.tileX,
-        tileY: candidate.tileY,
-        owner,
-        sheltered: i < shelteredPerPlayer,
-      });
+      const slot = land.count++;
+      land.tileX[slot] = candidate.tileX;
+      land.tileY[slot] = candidate.tileY;
+      land.owner[slot] = owner;
+      land.sheltered[slot] = i < shelteredPerPlayer ? 1 : 0;
+      land.work[slot] = established;
+      land.condition[slot] = 1;
+      land.alive[slot] = 1;
     }
   }
 
-  return plots;
+  return land;
 }

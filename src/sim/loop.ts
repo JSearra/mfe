@@ -10,6 +10,7 @@ import { Modifier } from '../shared/tech/index.js';
 import type { TechState } from './tech.js';
 import type { Economy } from './economy/ledger.js';
 import { updateWoodland, type Woodland } from './woodland.js';
+import { harvestOf, updateFarmland, type Farmland } from './economy/farmland.js';
 import { tuning } from './tuning.js';
 import { updateFog, type FogState } from './vision/fog.js';
 import type { Heightmap } from '../shared/heightmap.js';
@@ -29,6 +30,7 @@ export interface SimLoop {
   readonly ai: { player: number; controller: AiController }[];
   readonly economy: Economy;
   readonly woodland: Woodland;
+  readonly farmland: Farmland;
   readonly tech: TechState;
   readonly victory: VictoryState;
   readonly fog: FogState;
@@ -63,6 +65,7 @@ export interface SimSystems {
   production: ProductionSystem;
   economy: Economy;
   woodland: Woodland;
+  farmland: Farmland;
   tech: TechState;
   victory: VictoryState;
   fog: FogState;
@@ -97,7 +100,7 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
  * survives until the boundary.
  */
 export function step(loop: SimLoop): void {
-  const { world, movement, cattle, combat, construction, production, economy, woodland, tech, victory, fog, map, pending, events } =
+  const { world, movement, cattle, combat, construction, production, economy, woodland, farmland, tech, victory, fog, map, pending, events } =
     loop;
 
   // Computer players act first, through exactly the same queue a human's clicks use.
@@ -134,6 +137,8 @@ export function step(loop: SimLoop): void {
       cattle,
       combat,
       woodland,
+      farmland,
+      map,
       construction,
       production,
       economy,
@@ -152,11 +157,17 @@ export function step(loop: SimLoop): void {
   construction.update(world, movement.grid, events);
   production.update(world, events);
   combat.update(world, movement.grid, economy, tech, events);
+  // The fields are worked before the harvest is taken, so a field broken this cycle can
+  // pay this cycle and one trampled this cycle pays less for it.
+  if (world.tick !== 0 && world.tick % tuning.economy.upkeepIntervalTicks === 0) {
+    updateFarmland(world, farmland, economy.players);
+  }
   economy.update(
     world,
     events,
     (owner) => construction.yieldFor(world, owner),
     (player) => tech.modifier(player, Modifier.GrainYield),
+    (index) => (index >= farmland.count ? undefined : harvestOf(farmland, index)),
   );
   // On the upkeep cycle and immediately after it, so the veld pays into the same ledger
   // the harvest does and under the same weather. `drought` is a pure function of the

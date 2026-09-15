@@ -53,10 +53,22 @@ export interface Economy {
     events: SimEvent[],
     buildingYield?: BuildingYield,
     grainMultiplier?: (player: number) => number,
+    harvest?: Harvest,
   ): void;
 }
 
 export type BuildingYield = (owner: number) => { grain: number; cattle: number };
+
+/**
+ * What one field offers this cycle, `null` for a field that offers nothing, and
+ * `undefined` once the caller has run off the end of them.
+ *
+ * Indexed rather than passed as an array so the ledger never holds a reference into the
+ * farmland's arrays, which would make it a second owner of that state.
+ */
+export type Harvest = (
+  index: number,
+) => { owner: number; sheltered: boolean; share: number } | null | undefined;
 
 export interface GrainPlot {
   readonly tileX: number;
@@ -70,11 +82,15 @@ export interface GrainPlot {
   readonly sheltered: boolean;
 }
 
-export function createEconomy(
-  factionIds: readonly FactionId[],
-  seed: number,
-  plots: readonly GrainPlot[] = [],
-): Economy {
+/**
+ * The ledger no longer holds the fields.
+ *
+ * It used to take a static `GrainPlot[]` laid out at map generation and yield from it
+ * forever, which made arable land a property of the map. Fields are placed, worked and
+ * lost now (src/sim/economy/farmland.ts), so the ledger asks what they have rather than
+ * owning them — two owners of the same state is how a save comes back wrong.
+ */
+export function createEconomy(factionIds: readonly FactionId[], seed: number): Economy {
   const players = factionIds.length;
   const factions = factionIds.map((id) => FACTIONS[id]);
   const amounts = new Float64Array(players * RESOURCE_COUNT);
@@ -133,7 +149,7 @@ export function createEconomy(
       return value < 0 ? 0 : value > 1 ? 1 : value;
     },
 
-    update(world, events, buildingYield, grainMultiplier) {
+    update(world, events, buildingYield, grainMultiplier, harvest) {
       const tick = world.tick;
       if (tick === 0 || tick % e.upkeepIntervalTicks !== 0) return;
 
@@ -159,13 +175,23 @@ export function createEconomy(
         openFactor < e.shelteredYieldFactor ? e.shelteredYieldFactor : openFactor;
 
       // --- harvest ----------------------------------------------------------
-      for (const plot of plots) {
-        if (plot.owner >= players) continue;
-        economy.add(
-          plot.owner,
-          Resource.Grain,
-          e.plotBaseYield * (plot.sheltered ? shelteredFactor : openFactor),
-        );
+      //
+      // The fields are asked what they have rather than read directly, so the ledger
+      // keeps owning the weather and the fields keep owning their own condition. A
+      // field that is not yet established, or has been grazed to nothing, offers
+      // nothing and the ledger does not need to know which.
+      if (harvest !== undefined) {
+        for (let index = 0; ; index++) {
+          const field = harvest(index);
+          if (field === undefined) break;
+          if (field === null) continue;
+          if (field.owner >= players) continue;
+          economy.add(
+            field.owner,
+            Resource.Grain,
+            e.plotBaseYield * (field.sheltered ? shelteredFactor : openFactor) * field.share,
+          );
+        }
       }
 
       // --- buildings --------------------------------------------------------

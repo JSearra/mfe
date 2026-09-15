@@ -26,7 +26,7 @@ function grove(size = 48, seed = 3) {
   return {
     map,
     world: createWorld(64, seed),
-    economy: createEconomy([FactionId.Zulu, FactionId.Sotho], seed, []),
+    economy: createEconomy([FactionId.Zulu, FactionId.Sotho], seed),
     wood: createWoodland(map, seed),
     rng: createRng(seed),
   };

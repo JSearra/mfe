@@ -58,6 +58,7 @@ export function createWorkerSimHost(options: WorkerSimHostOptions): SimHost {
   let pendingSnapshot: ArrayBuffer | null = null;
   let pendingFog: Uint8Array | null = null;
   let pendingWoodland: Float32Array | null = null;
+  let pendingFarmland: Float32Array | null = null;
   let pendingPlayer: PlayerState = IDLE_PLAYER;
   let pendingEvents: SimEvent[] = [];
   let droppedEvents = 0;
@@ -75,6 +76,7 @@ export function createWorkerSimHost(options: WorkerSimHostOptions): SimHost {
     // Same rule as the fog: a newer message carrying no wood must not erase a wood we
     // have not handed over yet.
     if (message.woodland !== null) pendingWoodland = message.woodland;
+    if (message.farmland !== null) pendingFarmland = message.farmland;
     pendingEvents = pendingEvents.concat(message.events);
     droppedEvents += message.droppedEvents;
   };
@@ -129,11 +131,13 @@ export function createWorkerSimHost(options: WorkerSimHostOptions): SimHost {
         player: pendingPlayer,
         fog: pendingFog,
         woodland: pendingWoodland,
+        farmland: pendingFarmland,
       };
 
       pendingSnapshot = null;
       pendingFog = null;
       pendingWoodland = null;
+      pendingFarmland = null;
       pendingEvents = [];
       droppedEvents = 0;
 

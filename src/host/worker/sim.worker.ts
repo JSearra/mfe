@@ -9,7 +9,8 @@ import { createVictoryState, type VictoryState } from '../../sim/victory.js';
 import { createProductionSystem } from '../../sim/production.js';
 import { createEconomy, Resource, type Economy } from '../../sim/economy/ledger.js';
 import { createWoodland, packWoodland, type Woodland } from '../../sim/woodland.js';
-import { createStartingPlots } from '../../sim/economy/plots.js';
+import { packFarmland, type Farmland } from '../../sim/economy/farmland.js';
+import { createStartingFarmland } from '../../sim/economy/plots.js';
 import { createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../../sim/loop.js';
 import { createMovementSystem } from '../../sim/movement.js';
 import { buildSnapshot } from '../../sim/snapshot.js';
@@ -55,7 +56,9 @@ let droppedEvents = 0;
 const flight = createFlightWindow(MAX_UNACKED);
 let sentFogVersion = -1;
 let sentWoodVersion = -1;
+let sentFieldVersion = -1;
 let woodland: Woodland | null = null;
+let farmland: Farmland | null = null;
 let timer: ReturnType<typeof setInterval> | null = null;
 let lastTime = 0;
 let accumulator = 0;
@@ -67,11 +70,7 @@ function start(message: InitMessage): void {
       ? createHeightmap(message.mapSize, message.mapSize, message.mapSeed)
       : generateMap(message.mapScript, message.mapSize, message.mapSize, message.mapSeed);
   world = createWorld(message.capacity, message.worldSeed);
-  economy = createEconomy(
-    message.factions,
-    message.worldSeed,
-    createStartingPlots(map, message.starts, message.worldSeed),
-  );
+  economy = createEconomy(message.factions, message.worldSeed);
   fog = createFog(Math.max(message.factions.length, message.viewerId + 1), map);
   viewerId = message.viewerId;
   playerId = message.playerId;
@@ -86,6 +85,7 @@ function start(message: InitMessage): void {
     production: createProductionSystem(movement),
     economy,
     woodland: (woodland = createWoodland(map, message.worldSeed)),
+    farmland: (farmland = createStartingFarmland(map, message.starts, message.worldSeed)),
     tech: createTechState(Math.max(message.factions.length, message.viewerId + 1)),
     victory: (victory = createVictoryState(
       Math.max(message.factions.length, message.viewerId + 1),
@@ -166,6 +166,12 @@ function tick(): void {
     sentWoodVersion = woodland.version;
   }
 
+  let fields: Float32Array | null = null;
+  if (farmland !== null && farmland.version !== sentFieldVersion) {
+    fields = packFarmland(farmland);
+    sentFieldVersion = farmland.version;
+  }
+
   const snapshot = buildSnapshot(world, viewerId, fog);
   const events = pendingEvents;
   const dropped = droppedEvents;
@@ -182,6 +188,7 @@ function tick(): void {
     player,
     fog: fogSlice,
     woodland: trees,
+    farmland: fields,
   };
 
   // Transfer rather than copy. The buffers are freshly built each tick and never read
@@ -189,6 +196,7 @@ function tick(): void {
   const transfer: Transferable[] = [snapshot];
   if (fogSlice !== null) transfer.push(fogSlice.buffer);
   if (trees !== null) transfer.push(trees.buffer);
+  if (fields !== null) transfer.push(fields.buffer);
   (self as unknown as DedicatedWorkerGlobalScope).postMessage(message, transfer);
 }
 
