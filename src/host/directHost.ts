@@ -12,7 +12,7 @@ import { createVictoryState, type VictoryState } from '../sim/victory.js';
 import { createProductionSystem, type ProductionSystem } from '../sim/production.js';
 import { createConstructionSystem, type ConstructionSystem } from '../sim/construction.js';
 import { createEconomy, Resource, type Economy, type GrainPlot } from '../sim/economy/ledger.js';
-import { createForage, type ForageState } from '../sim/economy/forage.js';
+import { createWoodland, type Woodland } from '../sim/woodland.js';
 import { createStartingPlots } from '../sim/economy/plots.js';
 import { tuning } from '../sim/tuning.js';
 import { FactionId } from '../shared/factions/index.js';
@@ -170,7 +170,7 @@ export interface DirectSimHost extends SimHost {
   readonly construction: ConstructionSystem;
   readonly production: ProductionSystem;
   readonly economy: Economy;
-  readonly forage: ForageState;
+  readonly woodland: Woodland;
   readonly tech: TechState;
   readonly victory: VictoryState;
   readonly fog: FogState;
@@ -200,7 +200,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
   // Explicit plots win; otherwise lay them out around the starts. Without either,
   // grain income is zero and every player starves — see sim/economy/plots.ts.
   const economy = createEconomy(factions, seed, plots ?? createStartingPlots(map, starts, seed));
-  const forage = createForage(map, seed);
+  const woodland = createWoodland(map, seed);
   const tech = createTechState(Math.max(factions.length, viewerId + 1));
   const victory = createVictoryState(Math.max(factions.length, viewerId + 1));
   const fog = createFog(Math.max(factions.length, viewerId + 1), map);
@@ -212,7 +212,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     construction,
     production,
     economy,
-    forage,
+    woodland,
     tech,
     victory,
     fog,
@@ -250,7 +250,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     construction,
     production,
     economy,
-    forage,
+    woodland,
     tech,
     victory,
     fog,

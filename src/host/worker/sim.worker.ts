@@ -8,7 +8,7 @@ import { createTechState } from '../../sim/tech.js';
 import { createVictoryState, type VictoryState } from '../../sim/victory.js';
 import { createProductionSystem } from '../../sim/production.js';
 import { createEconomy, Resource, type Economy } from '../../sim/economy/ledger.js';
-import { createForage } from '../../sim/economy/forage.js';
+import { createWoodland } from '../../sim/woodland.js';
 import { createStartingPlots } from '../../sim/economy/plots.js';
 import { createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../../sim/loop.js';
 import { createMovementSystem } from '../../sim/movement.js';
@@ -83,7 +83,7 @@ function start(message: InitMessage): void {
     construction: createConstructionSystem(map, movement.pathing),
     production: createProductionSystem(movement),
     economy,
-    forage: createForage(map, message.worldSeed),
+    woodland: createWoodland(map, message.worldSeed),
     tech: createTechState(Math.max(message.factions.length, message.viewerId + 1)),
     victory: (victory = createVictoryState(
       Math.max(message.factions.length, message.viewerId + 1),

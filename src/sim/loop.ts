@@ -9,7 +9,7 @@ import type { AiController } from './ai/opponent.js';
 import { Modifier } from '../shared/tech/index.js';
 import type { TechState } from './tech.js';
 import type { Economy } from './economy/ledger.js';
-import { updateForage, type ForageState } from './economy/forage.js';
+import { updateWoodland, type Woodland } from './woodland.js';
 import { tuning } from './tuning.js';
 import { updateFog, type FogState } from './vision/fog.js';
 import type { Heightmap } from '../shared/heightmap.js';
@@ -28,7 +28,7 @@ export interface SimLoop {
   /** Computer players, each simply another source of commands. */
   readonly ai: { player: number; controller: AiController }[];
   readonly economy: Economy;
-  readonly forage: ForageState;
+  readonly woodland: Woodland;
   readonly tech: TechState;
   readonly victory: VictoryState;
   readonly fog: FogState;
@@ -62,7 +62,7 @@ export interface SimSystems {
   construction: ConstructionSystem;
   production: ProductionSystem;
   economy: Economy;
-  forage: ForageState;
+  woodland: Woodland;
   tech: TechState;
   victory: VictoryState;
   fog: FogState;
@@ -97,7 +97,7 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
  * survives until the boundary.
  */
 export function step(loop: SimLoop): void {
-  const { world, movement, cattle, combat, construction, production, economy, forage, tech, victory, fog, map, pending, events } =
+  const { world, movement, cattle, combat, construction, production, economy, woodland, tech, victory, fog, map, pending, events } =
     loop;
 
   // Computer players act first, through exactly the same queue a human's clicks use.
@@ -133,6 +133,7 @@ export function step(loop: SimLoop): void {
       movement,
       cattle,
       combat,
+      woodland,
       construction,
       production,
       economy,
@@ -161,7 +162,7 @@ export function step(loop: SimLoop): void {
   // the harvest does and under the same weather. `drought` is a pure function of the
   // tick, so asking it again here cannot disagree with what the harvest just used.
   if (world.tick !== 0 && world.tick % tuning.economy.upkeepIntervalTicks === 0) {
-    updateForage(world, forage, economy, 1 - economy.drought(world.tick));
+    updateWoodland(world, woodland, economy, world.rng, map, 1 - economy.drought(world.tick));
   }
   tech.update(world.tick, events);
   victory.update(world, economy, events);

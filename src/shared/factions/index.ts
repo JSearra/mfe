@@ -23,6 +23,12 @@ export interface FactionConfig {
   readonly nameKey: string;
   readonly startingCattle: number;
   readonly startingGrain: number;
+  /**
+   * Timber in hand at the first tick. A village already stands when a match begins, so
+   * it has some cut wood; not enough to build out of, which is what sends people to the
+   * trees.
+   */
+  readonly startingWood: number;
   readonly startingAmmunition: number;
   /** Multiplier on grain consumed per upkeep. */
   readonly upkeepMultiplier: number;
@@ -40,6 +46,7 @@ export const FACTIONS: Readonly<Record<FactionId, FactionConfig>> = {
     nameKey: 'faction.zulu',
     startingCattle: 120,
     startingGrain: 400,
+    startingWood: 90,
     startingAmmunition: 0,
     upkeepMultiplier: 1.1,
     herdGrowthMultiplier: 1.0,
@@ -51,6 +58,7 @@ export const FACTIONS: Readonly<Record<FactionId, FactionConfig>> = {
     nameKey: 'faction.sotho',
     startingCattle: 90,
     startingGrain: 560,
+    startingWood: 110,
     startingAmmunition: 20,
     upkeepMultiplier: 0.9,
     herdGrowthMultiplier: 0.95,
@@ -62,6 +70,7 @@ export const FACTIONS: Readonly<Record<FactionId, FactionConfig>> = {
     nameKey: 'faction.ndebele',
     startingCattle: 150,
     startingGrain: 300,
+    startingWood: 80,
     startingAmmunition: 0,
     upkeepMultiplier: 1.15,
     herdGrowthMultiplier: 1.15,
@@ -73,6 +82,7 @@ export const FACTIONS: Readonly<Record<FactionId, FactionConfig>> = {
     nameKey: 'faction.griqua',
     startingCattle: 60,
     startingGrain: 340,
+    startingWood: 70,
     startingAmmunition: 160,
     upkeepMultiplier: 1.0,
     herdGrowthMultiplier: 0.85,

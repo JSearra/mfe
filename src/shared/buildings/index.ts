@@ -40,6 +40,11 @@ export interface BuildingSpec {
   /** Square footprint, in tiles. Kept square so depth sorting stays unambiguous. */
   readonly footprint: number;
   readonly grainCost: number;
+  /**
+   * Timber, cut from the woodland. Every building needs some: it is what makes a wood
+   * worth keeping near a village rather than felling to the last stump.
+   */
+  readonly woodCost: number;
   readonly cattleCost: number;
   /** Builder-ticks of work needed. */
   readonly work: number;
@@ -59,6 +64,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     nameKey: 'building.isibaya',
     footprint: 2,
     grainCost: 120,
+    woodCost: 40,
     cattleCost: 0,
     work: 600,
     grainYield: 0,
@@ -78,6 +84,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     nameKey: 'building.umuzi',
     footprint: 2,
     grainCost: 90,
+    woodCost: 55,
     cattleCost: 2,
     work: 480,
     grainYield: 4,
@@ -97,6 +104,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     // much ground it occupies is this number; they were never the same thing.
     footprint: 2,
     grainCost: 200,
+    woodCost: 90,
     cattleCost: 4,
     work: 900,
     // It feeds nobody: an ikhanda consumes the countryside around it rather than
@@ -111,6 +119,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     nameKey: 'building.indlunkulu',
     footprint: 2,
     grainCost: 150,
+    woodCost: 70,
     cattleCost: 3,
     work: 700,
     grainYield: 2,
@@ -126,6 +135,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     nameKey: 'building.grainStore',
     footprint: 1,
     grainCost: 60,
+    woodCost: 30,
     cattleCost: 0,
     work: 300,
     grainYield: 9,

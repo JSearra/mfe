@@ -8,6 +8,7 @@ import type { BuildingType } from '../shared/buildings/index.js';
 import { TECH_IDS } from '../shared/tech/index.js';
 import type { TechState } from './tech.js';
 import type { MovementSystem } from './movement.js';
+import { fell, type Woodland } from './woodland.js';
 import {
   clearOrderQueue,
   destroy,
@@ -54,6 +55,8 @@ export const CommandKind = {
   SetStance: 11,
   /** Walk between here and there until told otherwise. */
   Patrol: 12,
+  /** Cut a standing tree for its timber. `a` is the index into the woodland. */
+  Fell: 13,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -102,6 +105,7 @@ export function compareCommands(x: Command, y: Command): number {
 /** The systems a command may act on. Named for the same reason SimSystems is. */
 export interface CommandContext {
   readonly movement: MovementSystem;
+  readonly woodland: Woodland;
   readonly cattle: CattleSystem;
   readonly combat: CombatSystem;
   readonly construction: ConstructionSystem;
@@ -116,7 +120,7 @@ export function applyCommand(
   events: SimEvent[],
   context: CommandContext,
 ): boolean {
-  const { movement, cattle, combat, construction, production, economy, tech } = context;
+  const { movement, cattle, combat, construction, production, economy, woodland, tech } = context;
   switch (command.kind) {
     case CommandKind.Spawn: {
       const handle = spawn(world, command.a, command.b, command.c, command.d);
@@ -199,6 +203,12 @@ export function applyCommand(
       world.postY[index] = world.posY[index]!;
       return true;
     }
+
+    case CommandKind.Fell:
+      // Felling is a command and picking fruit is not, deliberately: standing under a
+      // tree to eat is reversible and cutting it down is not. A village should not
+      // level a wood by walking through it. See src/sim/woodland.ts.
+      return fell(woodland, economy, command.playerId, command.a) > 0;
 
     case CommandKind.Leash:
       return cattle.leash(world, command.a as Handle, command.b as Handle);

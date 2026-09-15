@@ -79,15 +79,26 @@
     "shelteredPerPlayer": 3,
     "plotSearchRadius": 9
   },
-  "forage": {
-    "patchCount": 48,
-    "gatherRadius": 2.6,
-    "perGathererPerUpkeep": 3.0,
-    "maxGatherers": 4,
-    "patchStock": 90.0,
-    "regrowthPerUpkeep": 1.6,
+  "woodland": {
+    "capacity": 1400,
+    "startingDensity": 0.055,
+    "marulaShare": 0.35,
     "minBand": 2,
-    "maxBand": 5
+    "maxBand": 5,
+    "youngAge": 30.0,
+    "matureAge": 90.0,
+    "growthPerUpkeep": 1.0,
+    "fruitPerUpkeep": 1.1,
+    "fruitCapacity": 26.0,
+    "pickedPerUpkeep": 2.4,
+    "maxGatherers": 3,
+    "gatherRadius": 1.9,
+    "seedChancePerUpkeep": 0.55,
+    "seedAttemptsPerUpkeep": 3,
+    "seedRadius": 4.5,
+    "minSpacing": 1.7,
+    "timberMature": 34.0,
+    "timberYoung": 12.0
   },
   "vision": {
     "unitRadius": 8.0,

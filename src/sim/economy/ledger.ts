@@ -20,11 +20,13 @@ export const Resource = {
   Cattle: 0,
   Grain: 1,
   Ammunition: 2,
+  /** Timber, cut from the woodland. See src/sim/woodland.ts. */
+  Wood: 3,
 } as const;
 
 export type Resource = (typeof Resource)[keyof typeof Resource];
 
-export const RESOURCE_COUNT = 3;
+export const RESOURCE_COUNT = 4;
 
 export interface Economy {
   readonly players: number;
@@ -83,6 +85,7 @@ export function createEconomy(
     amounts[player * RESOURCE_COUNT + Resource.Cattle] = config.startingCattle;
     amounts[player * RESOURCE_COUNT + Resource.Grain] = config.startingGrain;
     amounts[player * RESOURCE_COUNT + Resource.Ammunition] = config.startingAmmunition;
+    amounts[player * RESOURCE_COUNT + Resource.Wood] = config.startingWood;
   }
 
   const e = tuning.economy;

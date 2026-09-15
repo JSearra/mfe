@@ -118,6 +118,10 @@ export function createConstructionSystem(
       }
       if (
         economy.balance(owner, Resource.Grain) < spec.grainCost ||
+        // Timber as well as grain. A village that has felled its wood to the last stump
+        // cannot build, which is the whole point of the wood being a resource rather
+        // than scenery — see src/sim/woodland.ts.
+        economy.balance(owner, Resource.Wood) < spec.woodCost ||
         economy.balance(owner, Resource.Cattle) < spec.cattleCost
       ) {
         stats.refused++;
@@ -138,6 +142,7 @@ export function createConstructionSystem(
       }
 
       economy.spend(owner, Resource.Grain, spec.grainCost);
+      economy.spend(owner, Resource.Wood, spec.woodCost);
       economy.spend(owner, Resource.Cattle, spec.cattleCost);
 
       const index = handleIndex(handle);

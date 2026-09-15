@@ -7,7 +7,7 @@ import { createVictoryState, type VictoryState } from '../src/sim/victory.js';
 import { createProductionSystem, type ProductionSystem } from '../src/sim/production.js';
 import { createConstructionSystem, type ConstructionSystem } from '../src/sim/construction.js';
 import { createEconomy, type Economy } from '../src/sim/economy/ledger.js';
-import { createForage, type ForageState } from '../src/sim/economy/forage.js';
+import { createWoodland, type Woodland } from '../src/sim/woodland.js';
 import { createStartingPlots } from '../src/sim/economy/plots.js';
 import { createFog, type FogState } from '../src/sim/vision/fog.js';
 import { FactionId } from '../src/shared/factions/index.js';
@@ -31,7 +31,7 @@ export interface Harness {
   construction: ConstructionSystem;
   production: ProductionSystem;
   economy: Economy;
-  forage: ForageState;
+  woodland: Woodland;
   tech: TechState;
   victory: VictoryState;
   fog: FogState;
@@ -51,7 +51,7 @@ export function makeSim(
   const combat = createCombatSystem();
   const construction = createConstructionSystem(map, movement.pathing);
   const production = createProductionSystem(movement);
-  const forage = createForage(map, seed);
+  const woodland = createWoodland(map, seed);
   const economy = createEconomy(
     [FactionId.Zulu, FactionId.Sotho],
     seed,
@@ -68,12 +68,12 @@ export function makeSim(
     construction,
     production,
     economy,
-    forage,
+    woodland,
     tech,
     victory,
     fog,
     loop: createLoop(
-      { world, movement, cattle, combat, construction, production, economy, forage, tech, victory, fog, map },
+      { world, movement, cattle, combat, construction, production, economy, woodland, tech, victory, fog, map },
       commands,
     ),
     map,
