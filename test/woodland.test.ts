@@ -3,6 +3,7 @@ import {
   canRoot,
   createWoodland,
   fell,
+  inSeason,
   Species,
   Stage,
   stageOf,
@@ -19,6 +20,8 @@ import { createWorld, spawn, type World } from '../src/sim/world.js';
 import { flatMap } from './simHarness.js';
 
 const W = tuning.woodland;
+/** The common tree's own numbers; each species has its own row now. */
+const ACACIA = W.species[0]!;
 const wooded = (size = 48) => flatMap(size, W.minBand + 1);
 
 function grove(size = 48, seed = 3) {
@@ -32,14 +35,27 @@ function grove(size = 48, seed = 3) {
   };
 }
 
-/** The first mature marula, which is the only kind that bears. */
-function bearingTree(wood: Woodland): number {
+/** The first mature tree of a bearing kind, and a tick at which it is in season. */
+function bearingTree(wood: Woodland, kind: Species = Species.Marula): number {
   for (let i = 0; i < wood.count; i++) {
-    if (wood.alive[i] === 1 && wood.species[i] === Species.Marula && stageOf(wood, i) === Stage.Mature) {
+    if (wood.alive[i] === 1 && wood.species[i] === kind && stageOf(wood, i) === Stage.Mature) {
       return i;
     }
   }
-  throw new Error('no bearing tree in the grove');
+  throw new Error(`no mature ${kind} in the grove`);
+}
+
+/** A tick inside a species' fruiting window, so a bearing test is not at the mercy of
+ * where the year happens to start. */
+function inSeasonTick(kind: Species): number {
+  const spec = W.species[kind]!;
+  const year = tuning.economy.seasonTicks;
+  const mid = spec.fruitFrom < spec.fruitTo
+    ? (spec.fruitFrom + spec.fruitTo) / 2
+    : (spec.fruitFrom + spec.fruitTo + 1) / 2;
+  const at = Math.floor((mid % 1) * year);
+  // Upkeep lands on exact multiples, and updateWoodland runs with it.
+  return Math.max(1, Math.round(at / tuning.economy.upkeepIntervalTicks)) * tuning.economy.upkeepIntervalTicks;
 }
 
 function sendPickers(world: World, wood: Woodland, index: number, count: number, player = 0) {
@@ -109,9 +125,12 @@ describe('growing', () => {
 });
 
 describe('bearing and picking', () => {
-  it('only the marula bears', () => {
+  it('never bears on the thorn, whatever the season', () => {
     const { world, economy, wood, rng, map } = grove();
-    for (let i = 0; i < 30; i++) updateWoodland(world, wood, economy, rng, map, 1);
+    for (const kind of [Species.Marula, Species.Baobab]) {
+      world.tick = inSeasonTick(kind);
+      for (let i = 0; i < 30; i++) updateWoodland(world, wood, economy, rng, map, 1);
+    }
 
     for (let i = 0; i < wood.count; i++) {
       if (wood.alive[i] === 0) continue;
@@ -119,8 +138,36 @@ describe('bearing and picking', () => {
     }
   });
 
+  it('bears only inside its own season', () => {
+    // The four are staggered across the year on purpose, so a village that wants to eat
+    // from the veld all year has to reach more than one kind of country.
+    const { world, economy, wood, rng, map } = grove();
+    world.tick = inSeasonTick(Species.Marula);
+    for (let i = 0; i < 40; i++) updateWoodland(world, wood, economy, rng, map, 1);
+    const tree = bearingTree(wood);
+    expect(wood.fruit[tree]!).toBeGreaterThan(0);
+
+    // Strip it, then run on through a stretch of the year it does not bear in.
+    wood.fruit[tree] = 0;
+    world.tick = inSeasonTick(Species.Baobab);
+    for (let i = 0; i < 40; i++) updateWoodland(world, wood, economy, rng, map, 1);
+    expect(wood.fruit[tree]!).toBe(0);
+  });
+
+  it('gives the dry months to the baobab, when nothing else is carrying anything', () => {
+    expect(inSeason(Species.Baobab, inSeasonTick(Species.Baobab))).toBe(true);
+    expect(inSeason(Species.Marula, inSeasonTick(Species.Baobab))).toBe(false);
+    expect(inSeason(Species.Marula, inSeasonTick(Species.Marula))).toBe(true);
+    expect(inSeason(Species.Yellowwood, inSeasonTick(Species.Yellowwood))).toBe(true);
+    // The thorn never bears at any point in the year.
+    for (let t = 0; t < tuning.economy.seasonTicks; t += 200) {
+      expect(inSeason(Species.Acacia, t)).toBe(false);
+    }
+  });
+
   it('feeds whoever stands under the tree, and takes it off the branch', () => {
     const { world, economy, wood, rng, map } = grove();
+    world.tick = inSeasonTick(Species.Marula);
     for (let i = 0; i < 40; i++) updateWoodland(world, wood, economy, rng, map, 1);
 
     const tree = bearingTree(wood);
@@ -137,6 +184,7 @@ describe('bearing and picking', () => {
 
   it('pays nothing to a village that sent nobody', () => {
     const { world, economy, wood, rng, map } = grove();
+    world.tick = inSeasonTick(Species.Marula);
     for (let i = 0; i < 40; i++) updateWoodland(world, wood, economy, rng, map, 1);
     const before = economy.balance(0, Resource.Grain);
     updateWoodland(world, wood, economy, rng, map, 0);
@@ -145,6 +193,7 @@ describe('bearing and picking', () => {
 
   it('gives a crowd under one tree diminishing returns', () => {
     const ripen = (g: ReturnType<typeof grove>) => {
+      g.world.tick = inSeasonTick(Species.Marula);
       for (let i = 0; i < 40; i++) updateWoodland(g.world, g.wood, g.economy, g.rng, g.map, 1);
       return bearingTree(g.wood);
     };
@@ -221,17 +270,17 @@ describe('felling', () => {
     // Without this a village could clear a wood it had never walked to, which makes
     // distance free and the map flat.
     const g = grove();
-    const tree = bearingTree(g.wood);
+    const tree = bearingTree(g.wood, Species.Acacia);
     expect(fell(g.world, g.wood, g.economy, 0, tree)).toBe(0);
     expect(g.wood.alive[tree]).toBe(1);
 
     withHands(g, tree);
-    expect(fell(g.world, g.wood, g.economy, 0, tree)).toBe(W.timberMature);
+    expect(fell(g.world, g.wood, g.economy, 0, tree)).toBe(ACACIA.timberMature);
   });
 
   it('will not let one village fell what another is standing at', () => {
     const g = grove();
-    const tree = bearingTree(g.wood);
+    const tree = bearingTree(g.wood, Species.Acacia);
     withHands(g, tree, 1);
     expect(fell(g.world, g.wood, g.economy, 0, tree)).toBe(0);
   });
@@ -239,15 +288,34 @@ describe('felling', () => {
   it('pays timber for a grown tree and takes it out of the wood', () => {
     const g = grove();
     const { economy, wood } = g;
-    const tree = bearingTree(wood);
+    const tree = bearingTree(wood, Species.Acacia);
     withHands(g, tree);
 
     const before = economy.balance(0, Resource.Wood);
     const taken = fell(g.world, wood, economy, 0, tree);
 
-    expect(taken).toBe(W.timberMature);
-    expect(economy.balance(0, Resource.Wood)).toBe(before + W.timberMature);
+    expect(taken).toBe(ACACIA.timberMature);
+    expect(economy.balance(0, Resource.Wood)).toBe(before + ACACIA.timberMature);
     expect(wood.alive[tree]).toBe(0);
+  });
+
+  it('pays what the species is worth, and a baobab is worth nothing', () => {
+    // Its wood is fibrous and useless, so the table gives it nothing to yield. Felling
+    // one is still allowed — a refusal the player cannot see coming is worse — it simply
+    // buys them nothing, which is its own kind of lesson.
+    const g = grove();
+    const yellowwood = W.species[Species.Yellowwood]!;
+    expect(yellowwood.timberMature).toBeGreaterThan(ACACIA.timberMature);
+    expect(W.species[Species.Marula]!.timberMature).toBeLessThan(ACACIA.timberMature);
+    expect(W.species[Species.Baobab]!.timberMature).toBe(0);
+
+    const baobab = bearingTree(g.wood, Species.Baobab);
+    withHands(g, baobab);
+    const before = g.economy.balance(0, Resource.Wood);
+    expect(fell(g.world, g.wood, g.economy, 0, baobab)).toBe(0);
+    expect(g.economy.balance(0, Resource.Wood)).toBe(before);
+    // It still comes down. It just pays for nothing.
+    expect(g.wood.alive[baobab]).toBe(0);
   });
 
   it('pays nothing for a sapling, so nobody cuts one for timber', () => {
@@ -347,6 +415,55 @@ describe('felling through a command, as the player does it', () => {
       expect(wood.alive[slot]).toBe(1);
       expect(treeSpecies(packed, at)).toBe(wood.species[slot]);
       expect(treeStage(packed, at)).toBe(stageOf(wood, slot));
+    }
+  });
+});
+
+describe('where each kind grows', () => {
+  it('puts the timber tree in the high kloofs and the baobab on the flats', () => {
+    // The species root in different country on purpose: a village cannot have the best
+    // timber and the dry-season fruit within walking distance of one kraal.
+    const high = createWoodland(flatMap(48, W.species[Species.Yellowwood]!.minBand), 3);
+    const low = createWoodland(flatMap(48, W.species[Species.Baobab]!.minBand), 3);
+
+    const kindsIn = (wood: Woodland) => {
+      const seen = new Set<number>();
+      for (let i = 0; i < wood.count; i++) if (wood.alive[i] === 1) seen.add(wood.species[i]!);
+      return seen;
+    };
+
+    expect(kindsIn(high).has(Species.Yellowwood)).toBe(true);
+    expect(kindsIn(high).has(Species.Baobab)).toBe(false);
+    expect(kindsIn(low).has(Species.Baobab)).toBe(true);
+    expect(kindsIn(low).has(Species.Yellowwood)).toBe(false);
+  });
+
+  it('grows a mix rather than one species everywhere', () => {
+    /*
+     * The bug this pins was live and invisible. The density filter keeps a tile only
+     * when its low sixteen bits are small, and the species roll was drawn from bits
+     * inside that same range — so after the filter it could only ever come out at the
+     * bottom of its scale, and every tree on every starting map was one kind. Two
+     * fields drawn from one range are correlated whether or not anyone meant them to be.
+     */
+    const wood = createWoodland(flatMap(48, W.species[Species.Marula]!.minBand), 3);
+    const counts = new Map<number, number>();
+    for (let i = 0; i < wood.count; i++) {
+      if (wood.alive[i] === 1) counts.set(wood.species[i]!, (counts.get(wood.species[i]!) ?? 0) + 1);
+    }
+    expect(wood.count).toBeGreaterThan(40);
+    expect(counts.size).toBeGreaterThan(1);
+
+    // And age must not be correlated with species either, which was the same bug a
+    // second time: the commonest kind had not one mature tree among it.
+    for (const [kind] of counts) {
+      let mature = 0;
+      for (let i = 0; i < wood.count; i++) {
+        if (wood.alive[i] === 1 && wood.species[i] === kind && stageOf(wood, i) === Stage.Mature) {
+          mature++;
+        }
+      }
+      expect(mature, `no mature trees of species ${kind}`).toBeGreaterThan(0);
     }
   });
 });

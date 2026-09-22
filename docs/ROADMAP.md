@@ -660,6 +660,35 @@ Measured over five thirty-minute AI matches on the seeded opening: 1,530–2,130
 events and 90–115 deaths per match, every one of them from hunger, with villages going
 short in 86–132 seasons out of 180. Nobody was killed by anybody.
 
+### Four trees instead of two
+
+Marula, yellowwood and baobab join the umbrella thorn, each with art of its own rather
+than a tint over one model, because the differences a player acts on have to be visible
+across a map. The silhouettes are as unlike each other as the real ones are: a flat plate,
+a round crown on a stout bole, a tall narrow dark tier, and a pale barrel under bare
+twigs.
+
+Each takes root in its own country — `tuning.woodland.species` gives every one a height
+band — so a village cannot have the best timber and the dry-season fruit within walking
+distance of one kraal. The yellowwood is up in the kloofs and is far and away the best
+timber; the baobab is down on the hot flats and yields **nothing** to an axe, its wood
+being fibrous and useless, which is also why the real ones still stand. Marula is poor
+timber and heavy fruit, which is roughly why it was left alone when ground was cleared.
+
+**Fruit is seasonal and the seasons are staggered.** Marula bears at the end of the wet,
+yellowwood through the autumn, baobab across the dry months when nothing else is carrying
+anything. A village that wants to eat from the veld all year has to have reached more than
+one kind of country, which is what makes the bands matter rather than being flavour.
+
+*A bug this uncovered, and it was live:* the starting wood was **entirely one species on
+every map ever generated**. Tile placement keeps a tile only when the low sixteen bits of
+its hash are small — under 0.055 of the range — and the species roll was drawn from bits
+inside that same range, so after the filter it could only ever land at the bottom of its
+scale. It was invisible while there were two species and one tint between them. The first
+fix had the same shape a second time: species from bits 0-15 and age from bits 8-15, which
+share a byte, so the commonest kind had not one mature tree in it. Every field now takes
+its own disjoint slice, and a test pins both halves.
+
 ### The win path, and the fog
 
 Five browser playthroughs had never once moved the household count off its starting 24,

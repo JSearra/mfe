@@ -6,7 +6,7 @@ import { presentation } from '../presentation.js';
 import { createDepthOrder } from './depthOrder.js';
 import type { SpriteAtlas } from '../assets.js';
 import type { Decoration } from './decoration.js';
-import { treeSpecies, treeStage, WOODLAND_STRIDE } from '../../shared/woodland.js';
+import { TREE_KINDS, treeSpecies, treeStage, WOODLAND_STRIDE } from '../../shared/woodland.js';
 import type { DamageFlashes } from './damage.js';
 
 /**
@@ -430,8 +430,6 @@ export function createEntityLayer(
 
   /** Sprite scale per growth stage: a sapling is not a tree yet. */
   const STAGE_SCALE = [0.42, 0.72, 1] as const;
-  /** Marula run warmer than the thorn trees, so the ones that bear are tellable apart. */
-  const MARULA_TINT = 0xd8e3b4;
 
   let propHandles = new Uint32Array(0);
   function rehandle(): void {
@@ -498,14 +496,21 @@ export function createEntityLayer(
         // tree does not change shape as it grows.
         const variant = (((Math.floor(worldX * 7 + worldY * 13) % 3) + 3) % 3);
 
+        // Each species is its own model now, not one tree under a tint. A marula is a
+        // round crown on a stout bole, a yellowwood is tall and narrow and dark, a
+        // baobab is a barrel — the differences a player acts on are the ones that have
+        // to be visible from across the map, and tinting one silhouette could not carry
+        // them.
+        const kind = TREE_KINDS[species] ?? TREE_KINDS[0]!;
+
         let sprite = treeSprites[i];
         if (sprite === undefined) {
-          const made = placeProp('acacia', variant, worldX, worldY, scale);
+          const made = placeProp(kind, variant, worldX, worldY, scale);
           if (made === null) continue;
           treeSprites.push(made);
           sprite = made;
         } else {
-          const frame = atlas.frame('acacia', 'still', 0, variant);
+          const frame = atlas.frame(kind, 'still', 0, variant);
           if (frame === null) continue;
           sprite.visible = true;
           sprite.texture = frame.texture;
@@ -516,9 +521,10 @@ export function createEntityLayer(
           );
           props.push({ sprite, depth: worldX + worldY, x: worldX, y: worldY });
         }
-        // One tree model for both species; a marula is told by its tint until it has art
-        // of its own.
-        sprite.tint = species === 1 ? MARULA_TINT : 0xffffff;
+        // A slot is reused when a tree comes down and another takes root, and the new
+        // one is often a different kind — so the tint has to be cleared as well as the
+        // texture, or a felled marula leaves its colour on the acacia that replaces it.
+        sprite.tint = 0xffffff;
       }
 
       // Trees that came down. Hidden rather than destroyed, because the wood regrows and

@@ -29,11 +29,38 @@ import { Resource, type Economy } from './economy/ledger.js';
  * Scrub, aloes and rocks stay pure decoration. Only what bears or burns is here.
  */
 
+/**
+ * What grows here, and why these four.
+ *
+ * Each is a real tree of the region with a real use, and the four are deliberately
+ * unalike in the two things a player acts on — when they bear and whether they are worth
+ * an axe — so that where a wood stands changes what a village can do with it. The bands
+ * they take root in do the rest: the timber tree is up in the kloofs, the fruit tree of
+ * the dry country is down on the flats, and a village cannot have everything within
+ * walking distance of one kraal.
+ *
+ * Numbers live in `tuning.woodland.species`, indexed by these codes; the sprite names
+ * live in shared/woodland.ts, because the renderer needs those and may not read tuning.
+ */
 export const Species = {
-  /** Umbrella thorn. Timber, no fruit. */
+  /** Umbrella thorn. The common tree, good timber, bears nothing. */
   Acacia: 0,
-  /** Marula. Bears heavily in the wet, and the reason to leave one standing. */
+  /**
+   * Marula. Bears heavily at the end of the wet season and is poor timber — which is
+   * roughly why the real ones were left standing when the ground around them was cleared.
+   */
   Marula: 1,
+  /**
+   * Yellowwood. The forest tree of the high kloofs: the best timber here by a distance,
+   * and a light crop of fruit in the autumn. Grows where nothing else in this list will.
+   */
+  Yellowwood: 2,
+  /**
+   * Baobab. Fruit through the dry season, when nothing else is bearing, and no timber at
+   * all — the wood is fibrous and useless. Cutting one yields NOTHING, which is both true
+   * and the point: it is the one tree a village cannot turn into a building.
+   */
+  Baobab: 3,
 } as const;
 
 export type Species = (typeof Species)[keyof typeof Species];
@@ -79,11 +106,77 @@ export function stageOf(wood: Woodland, index: number): Stage {
   return Stage.Sapling;
 }
 
-/** Ground a tree will take root on: not the wet bottom, not bare stone. */
+/** Ground SOME tree will take root on: not the wet bottom, not bare stone. */
 export function canRoot(map: Heightmap, tileX: number, tileY: number): boolean {
   const w = tuning.woodland;
   const level = heightAt(map, tileX, tileY);
   return level >= w.minBand && level <= w.maxBand;
+}
+
+/** Ground THIS species will take. Each has its own country; see Species. */
+export function canRootSpecies(map: Heightmap, species: Species, tileX: number, tileY: number): boolean {
+  const spec = tuning.woodland.species[species];
+  if (spec === undefined) return false;
+  const level = heightAt(map, tileX, tileY);
+  return level >= spec.minBand && level <= spec.maxBand;
+}
+
+/**
+ * Which tree comes up on this ground, given a roll in [0, 1).
+ *
+ * Weighted among the species that will actually grow there, so the mix is a property of
+ * the country rather than of the map as a whole — a kloof comes up yellowwood and a hot
+ * flat comes up baobab, without either being placed by hand. Returns -1 where nothing
+ * will take, which is how a caller knows to skip the tile rather than force a tree onto
+ * ground that cannot hold it.
+ */
+export function speciesFor(map: Heightmap, tileX: number, tileY: number, roll: number): number {
+  const species = tuning.woodland.species;
+  const level = heightAt(map, tileX, tileY);
+
+  let total = 0;
+  for (const spec of species) {
+    if (level >= spec.minBand && level <= spec.maxBand) total += spec.weight;
+  }
+  if (total <= 0) return -1;
+
+  let mark = roll * total;
+  for (let i = 0; i < species.length; i++) {
+    const spec = species[i]!;
+    if (level < spec.minBand || level > spec.maxBand) continue;
+    mark -= spec.weight;
+    if (mark < 0) return i;
+  }
+  // Rounding only; the last eligible species takes it.
+  for (let i = species.length - 1; i >= 0; i--) {
+    const spec = species[i]!;
+    if (level >= spec.minBand && level <= spec.maxBand) return i;
+  }
+  return -1;
+}
+
+/**
+ * Is this species bearing at this point in the year?
+ *
+ * Fruit is seasonal, and the four seasons are staggered on purpose: marula at the end of
+ * the wet, yellowwood through the autumn, baobab across the dry months when nothing else
+ * is carrying anything. So a village that wants to eat from the veld all year has to have
+ * reached more than one kind of country — which is the whole reason the species root in
+ * different bands.
+ *
+ * A window may wrap past the year's end, and the comparison handles that rather than
+ * forbidding it: a tree that bears from November to February is an ordinary tree.
+ */
+export function inSeason(species: Species, tick: number): boolean {
+  const spec = tuning.woodland.species[species];
+  if (spec === undefined || spec.fruitPerUpkeep <= 0) return false;
+  if (spec.fruitFrom === spec.fruitTo) return false;
+
+  const year = tuning.economy.seasonTicks;
+  const phase = (tick % year) / year;
+  return spec.fruitFrom < spec.fruitTo
+    ? phase >= spec.fruitFrom && phase < spec.fruitTo
+    : phase >= spec.fruitFrom || phase < spec.fruitTo;
 }
 
 /**
@@ -168,19 +261,46 @@ export function createWoodland(map: Heightmap, seed: number): Woodland {
       hash = (hash ^ (hash >>> 13)) >>> 0;
       if ((hash & 0xffff) / 0x10000 >= w.startingDensity) continue;
 
-      // Jittered off the tile centre, or a wood comes out on a grid and reads as an
-      // orchard — the same reason the decoration layer jitters.
-      const jitterX = (((hash >>> 16) & 0xff) / 255) * 0.8 + 0.1;
-      const jitterY = (((hash >>> 24) & 0xff) / 255) * 0.8 + 0.1;
-      const species = ((hash >>> 8) & 0xff) / 255 < w.marulaShare ? Species.Marula : Species.Acacia;
+      /*
+       * Everything else comes from a SECOND hash, and that is a bug fix rather than
+       * tidying.
+       *
+       * The density test above keeps a tile only when its low sixteen bits are small —
+       * under 0.055 of the range — so every tree that exists has bits 0 to 15 below
+       * about 3,600. Drawing anything else from those same bits therefore draws from a
+       * range that has already been narrowed to its bottom edge: the species roll was
+       * `(hash >>> 8) & 0xff`, which after the filter can only be 0 to 13, so it always
+       * came out under 0.055. Every tree on every starting map was one species. It was
+       * invisible while there were two of them and one tint between them, and it would
+       * have quietly thrown away three of the four now.
+       */
+      let detail = Math.imul(hash ^ 0x9e3779b9, 0x85ebca6b);
+      detail = Math.imul(detail ^ (detail >>> 13), 0xc2b2ae35);
+      detail = (detail ^ (detail >>> 16)) >>> 0;
+
+      /*
+       * Each field takes its OWN slice of those bits, none of them overlapping.
+       *
+       * The first attempt at the fix above drew the species from bits 0-15 and the age
+       * from bits 8-15, which share a byte — so the species picked for a low roll, which
+       * is the first in the weighted list, also got a low age, and not one tree of the
+       * commonest kind on the map was ever mature. Two fields drawn from one range are
+       * correlated whether or not that was the intention.
+       */
+      const species = speciesFor(map, tileX, tileY, (detail & 0xfff) / 0x1000);
+      if (species === -1) continue;
       // A standing wood is not all one age. Starting everything mature would make the
       // first felling free and the second impossible.
-      const age = w.matureAge * (0.35 + (((hash >>> 4) & 0xf) / 15) * 1.1);
+      const age = w.matureAge * (0.35 + (((detail >>> 12) & 0xff) / 255) * 1.1);
+      // Jittered off the tile centre, or a wood comes out on a grid and reads as an
+      // orchard — the same reason the decoration layer jitters.
+      const jitterX = (((detail >>> 20) & 0x3f) / 63) * 0.8 + 0.1;
+      const jitterY = (((detail >>> 26) & 0x3f) / 63) * 0.8 + 0.1;
 
       const x = tileX + jitterX;
       const y = tileY + jitterY;
       if (tooClose(wood, x, y)) continue;
-      if (add(wood, x, y, species, age) === -1) return wood;
+      if (add(wood, x, y, species as Species, age) === -1) return wood;
     }
   }
   return wood;
@@ -218,10 +338,14 @@ export function updateWoodland(
     if (stage !== was) moved = true;
 
     // --- bearing ---------------------------------------------------------------
-    if (stage === Stage.Mature && wood.species[index] === Species.Marula) {
+    // Only a grown tree, only a species that bears, and only in its own season. Fruit
+    // already on the tree stays there out of season — it is picked or it is not.
+    const kind = wood.species[index]! as Species;
+    const spec = w.species[kind];
+    if (stage === Stage.Mature && spec !== undefined && inSeason(kind, world.tick)) {
       const cap = w.fruitCapacity;
       if (wood.fruit[index]! < cap) {
-        wood.fruit[index] = Math.min(cap, wood.fruit[index]! + w.fruitPerUpkeep * wetness);
+        wood.fruit[index] = Math.min(cap, wood.fruit[index]! + spec.fruitPerUpkeep * wetness);
       }
     }
 
@@ -278,12 +402,17 @@ export function updateWoodland(
       const y = wood.y[parent]! + sin(angle) * distance;
       if (!canRoot(map, Math.floor(x), Math.floor(y))) continue;
 
+      // A seedling is its parent's kind, and only takes where that kind will grow: a
+      // marula seeded uphill into the yellowwood band simply does not come up. That is
+      // what keeps each species in its own country as a wood spreads.
+      const seedling = wood.species[parent]! as Species;
+      if (!canRootSpecies(map, seedling, Math.floor(x), Math.floor(y))) continue;
+
       // Not into a thicket. A wood that seeds without limit becomes a solid mat and the
       // ground under it stops being worth walking to.
       if (tooClose(wood, x, y)) continue;
 
-      const species = nextFloat(rng) < w.marulaShare ? Species.Marula : Species.Acacia;
-      if (add(wood, x, y, species, 0) !== -1) moved = true;
+      if (add(wood, x, y, seedling, 0) !== -1) moved = true;
     }
   }
 
@@ -325,9 +454,15 @@ export function fell(
   if (!hasHands) return 0;
 
   const stage = stageOf(wood, index);
+  const spec = w.species[wood.species[index]!];
   // A sapling is not worth the axe. Cutting one is allowed — clearing ground is a
   // legitimate thing to want — but it yields nothing, so nobody does it for timber.
-  const yielded = stage === Stage.Mature ? w.timberMature : stage === Stage.Young ? w.timberYoung : 0;
+  //
+  // Neither is a baobab, at any age: its wood is fibrous and useless, so the species
+  // table gives it nothing to yield. Felling one is still permitted, because forbidding
+  // it would need a refusal the player cannot see coming; it simply buys nothing.
+  const yielded =
+    spec === undefined ? 0 : stage === Stage.Mature ? spec.timberMature : stage === Stage.Young ? spec.timberYoung : 0;
 
   wood.alive[index] = 0;
   wood.fruit[index] = 0;
