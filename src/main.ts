@@ -84,7 +84,7 @@ const STARTING_UNITS = 24;
 const HERD_SIZE = 12;
 /** How far the ring of dwellings stands from the cattle enclosure at the centre. */
 const VILLAGE_RADIUS = 6.5;
-const VILLAGE_HUTS = 9;
+const VILLAGE_HUTS = 5;
 const ENEMY = 1;
 const ENEMY_UNITS = 16;
 
@@ -388,15 +388,19 @@ async function main(options: GameOptions): Promise<void> {
         1,
       );
     }
-    // And the grain standing apart from the dwellings, as it does.
-    const store = place(at.x + VILLAGE_RADIUS * 0.9, at.y + VILLAGE_RADIUS * 0.75);
-    sim.sendCommand(
-      CommandKind.Build,
-      Math.floor(store.x),
-      Math.floor(store.y),
-      BuildingType.GrainStore,
-      1,
-    );
+    /*
+     * No grain store. The village a match begins in is SHELTER, not production.
+     *
+     * Founding one was tried and it gave the game away: a full ring of dwellings plus a
+     * granary yields about 39 grain a season, and the opening went from feeding 61
+     * households to feeding 116 against a target of 60. That is the entire economic arc
+     * handed over at tick zero — and it is exactly the investment the objective was
+     * calibrated against, which Phase V1 costed as "about 15 more a cycle than the land
+     * gives, which is two granaries and the work to raise them".
+     *
+     * So the homestead starts small and growing it is the game: a kraal, a great house
+     * and a few dwellings. The granary is still the first thing worth building.
+     */
     void owner;
   }
 
