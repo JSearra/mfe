@@ -171,8 +171,10 @@ describe('placement', () => {
 describe('navigation', () => {
   // The obligation ADR-0013 warned about, collected on.
   it('blocks the footprint in every movement class at once', () => {
+    // A umuzi rather than the kraal, which is deliberately porous to cattle: an
+    // enclosure is a thing you put a herd inside. See "a kraal is an enclosure" below.
     const { map, world, movement, construction, economy } = site();
-    construction.place(world, economy, 0, BuildingType.Isibaya, 5, 5, []);
+    construction.place(world, economy, 0, BuildingType.Umuzi, 5, 5, []);
 
     for (const movementClass of [MovementClass.Infantry, MovementClass.Cattle, MovementClass.Mounted]) {
       const layer = movement.pathing.layer(movementClass);
@@ -391,5 +393,31 @@ describe('how many hands are on a site', () => {
 
     expect(sim.world.builders[site]).toBe(0);
     expect(sim.world.buildProgress[site]).toBe(0);
+  });
+});
+
+describe('a kraal is an enclosure', () => {
+  it('lets cattle walk in where people cannot', () => {
+    // Blocking the footprint for every movement class made the kraal a solid block that
+    // the herd it exists to hold stood awkwardly beside — a pen with no inside to it.
+    const sim = makeSim(128, 11);
+    sim.construction.place(sim.world, sim.economy, 0, BuildingType.Isibaya, 20, 20, [], true);
+
+    const cattle = sim.movement.pathing.layer(MovementClass.Cattle);
+    const infantry = sim.movement.pathing.layer(MovementClass.Infantry);
+    const at = 20 * sim.map.width + 20;
+
+    expect(cattle.tileCost[at]).not.toBe(IMPASSABLE);
+    expect(infantry.tileCost[at]).toBe(IMPASSABLE);
+  });
+
+  it('still walls every other building against everything', () => {
+    const sim = makeSim(128, 11);
+    sim.construction.place(sim.world, sim.economy, 0, BuildingType.Umuzi, 20, 20, [], true);
+
+    const at = 20 * sim.map.width + 20;
+    for (const movementClass of [MovementClass.Infantry, MovementClass.Cattle, MovementClass.Mounted]) {
+      expect(sim.movement.pathing.layer(movementClass).tileCost[at]).toBe(IMPASSABLE);
+    }
   });
 });

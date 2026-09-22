@@ -63,7 +63,11 @@
     "crushDamage": 34,
     "knockback": 0.55,
     "panicRadius": 3.4,
-    "panicGain": 95.0
+    "panicGain": 95.0,
+    "pennedCalm": 2.5,
+    "pennedSettle": 0.5,
+    "pennedReach": 3.0,
+    "pennedCrowd": 0.5
   },
   "economy": {
     "upkeepIntervalTicks": 200,

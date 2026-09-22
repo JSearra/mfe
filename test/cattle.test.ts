@@ -18,6 +18,7 @@ import { makeSim, flatMap as flatGround } from './simHarness.js';
 import { enqueueCommand, step } from '../src/sim/loop.js';
 import { CommandKind, makeCommand, NEUTRAL_FACTION } from '../src/sim/commands.js';
 import { drivenBy } from '../src/sim/herd.js';
+import { BuildingType } from '../src/shared/buildings/index.js';
 
 const C = tuning.cattle;
 
@@ -593,5 +594,52 @@ describe('driving a herd home', () => {
     const { driven, bolters } = droveWith(4, 0);
     expect(driven).toBe(HERD);
     expect(bolters).toBe(0);
+  });
+});
+
+describe('a kraal holds a herd', () => {
+  /** A pen with a dozen beasts standing in it, and nobody near them. */
+  function penned(withKraal: boolean) {
+    const sim = makeSim(256, 7, flatGround(64));
+    const hx = 32;
+    const hy = 32;
+    if (withKraal) {
+      sim.construction.place(sim.world, sim.economy, 0, BuildingType.Isibaya, 31, 31, [], true);
+    }
+    const herd: number[] = [];
+    for (let i = 0; i < 12; i++) {
+      const angle = i * 2.399963;
+      const spread = 0.9 * Math.sqrt((i + 0.5) / 12);
+      herd.push(
+        spawn(
+          sim.world,
+          hx + Math.cos(angle) * spread,
+          hy + Math.sin(angle) * spread,
+          NEUTRAL_FACTION,
+          1,
+          EntityKind.Cattle,
+        ),
+      );
+    }
+    for (let t = 0; t < 900; t++) step(sim.loop);
+
+    let furthest = 0;
+    for (const beast of herd) {
+      const at = handleIndex(beast);
+      const away = Math.sqrt((sim.world.posX[at]! - hx) ** 2 + (sim.world.posY[at]! - hy) ** 2);
+      if (away > furthest) furthest = away;
+    }
+    return furthest;
+  }
+
+  it('keeps cattle in it, where open ground does not', () => {
+    // Opening the footprint so cattle CAN walk in is only half of it: with nothing to
+    // hold them they wandered straight out the far side, which looks worse than not
+    // being able to get in at all. A penned beast has no reason of its own to leave.
+    const inPen = penned(true);
+    const loose = penned(false);
+
+    expect(inPen).toBeLessThan(2.5);
+    expect(loose).toBeGreaterThan(inPen);
   });
 });

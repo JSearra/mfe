@@ -178,7 +178,14 @@ export function createConstructionSystem(
 
       // The foundation blocks immediately, not on completion: units should walk around
       // a building site, and a half-built kraal is still a wall.
+      //
+      // Except to the cattle it is built for. An enclosure is a thing you put a herd
+      // INSIDE, and blocking the footprint for every movement class made the kraal a
+      // solid block that the herd stood awkwardly beside — a pen with no inside to it.
+      // The wall stays a wall to anyone on two legs, so it still reads as an enclosure
+      // and still shapes where people walk.
       for (const movementClass of [MovementClass.Infantry, MovementClass.Cattle, MovementClass.Mounted]) {
+        if (spec.holdsCattle && movementClass === MovementClass.Cattle) continue;
         const layer = pathing.layer(movementClass);
         for (let dy = 0; dy < size; dy++) {
           for (let dx = 0; dx < size; dx++) blockTile(layer, tileX + dx, tileY + dy);

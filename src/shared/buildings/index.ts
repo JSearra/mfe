@@ -56,6 +56,16 @@ export interface BuildingSpec {
   readonly maxHeightVariation: number;
   /** Whether troops can be raised here. */
   readonly trains: boolean;
+  /**
+   * Cattle may walk into it; people may not.
+   *
+   * An enclosure is a thing you put a herd INSIDE. Blocking the footprint for every
+   * movement class made the kraal a solid block that the cattle it exists to hold stood
+   * awkwardly beside — a pen you cannot put anything in. The wall is still a wall to
+   * anyone on two legs, which is what keeps it reading as an enclosure rather than as
+   * open ground with a fence drawn on it.
+   */
+  readonly holdsCattle: boolean;
 }
 
 export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
@@ -77,6 +87,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
      */
     cattleYield: 0.5,
     maxHeightVariation: 0,
+    holdsCattle: true,
     trains: false,
   },
   [BuildingType.Umuzi]: {
@@ -106,6 +117,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     cattleYield: 0,
     maxHeightVariation: 0,
     // A homestead is where people come from, so this is where troops are raised.
+    holdsCattle: false,
     trains: true,
   },
   [BuildingType.Ikhanda]: {
@@ -127,6 +139,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     grainYield: 0,
     cattleYield: 0,
     maxHeightVariation: 0,
+    holdsCattle: false,
     trains: true,
   },
   [BuildingType.Indlunkulu]: {
@@ -143,6 +156,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     // building actually named for cattle would be the wrong thing to build.
     cattleYield: 0.15,
     maxHeightVariation: 0,
+    holdsCattle: false,
     trains: false,
   },
   [BuildingType.GrainStore]: {
@@ -156,6 +170,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     grainYield: 9,
     cattleYield: 0,
     maxHeightVariation: 0,
+    holdsCattle: false,
     trains: false,
   },
 };
