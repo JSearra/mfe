@@ -3,7 +3,6 @@ import { TECH_IDS } from '../../shared/tech/index.js';
 import type { TechState } from '../tech.js';
 import { CommandKind } from '../commands.js';
 import { Resource, type Economy } from '../economy/ledger.js';
-import { wantedTrade } from '../trade.js';
 import { alliesOf, hasOffered, standingOf, type Alliance } from '../alliance.js';
 import { cos, sin, TWO_PI } from '../math/trig.js';
 import { isVisible, type FogState } from '../vision/fog.js';
@@ -44,7 +43,6 @@ export interface AiStats {
   techsOrdered: number;
   herdsOrdered: number;
   troopsOrdered: number;
-  tradesOffered: number;
   alliancesSought: number;
 }
 
@@ -75,7 +73,6 @@ export function createAi(player: number): AiController {
     techsOrdered: 0,
     herdsOrdered: 0,
     troopsOrdered: 0,
-    tradesOffered: 0,
     alliancesSought: 0,
   };
 
@@ -206,29 +203,21 @@ export function createAi(player: number): AiController {
 
       // --- trade ------------------------------------------------------------
       //
-      // A neighbour rather than only an enemy (ADR-0019). It asks for whatever it is
-      // shortest of and offers whatever it has most of, judged by exactly the valuation
-      // that prices the player's offers — so it charges dearly for grain for the same
-      // reason it goes looking for grain, and the two cannot disagree.
+      // A village no longer proposes trades, and that is a fix rather than a cut.
       //
-      // On its own cadence rather than every decision, because a village that proposed
-      // a trade every ten seconds would be a market stall.
-      if (stats.decisions % ai.tradeEveryDecisions === 0) {
-        for (let neighbour = 0; neighbour < economy.players; neighbour++) {
-          if (neighbour === player) continue;
-          const deal = wantedTrade(economy, player, neighbour, alliance);
-          if (deal === null) continue;
-          emit({
-            kind: CommandKind.Trade,
-            a: neighbour,
-            b: deal.offered,
-            c: deal.wanted,
-            d: deal.amount,
-          });
-          stats.tradesOffered++;
-          break;
-        }
-      }
+      // A Trade command does not just give — it TAKES from the other side's stores, at a
+      // rate their own books set but without their agreeing to the moment. Measured in
+      // play, a neighbour executed 173 trades in one match against a player who never
+      // touched the panel, and timber left that player's stores while they were looking
+      // elsewhere. It is the same consent gap that let a neighbour tie somebody into an
+      // alliance they never asked for, sitting one branch away from it.
+      //
+      // The cheap and complete answer, now that trade is a side mechanic rather than the
+      // centre of the game: only a village that ASKS may trade. The player still has the
+      // whole panel — `offersFor` publishes what each neighbour will give, and clicking
+      // one takes them up on it — and nothing can reach into a village that did not act.
+      // An offer-and-accept protocol would close the same gap and cost a round trip on
+      // every deal, which is a lot of machinery for a mechanic being de-emphasised.
 
       // --- alliances --------------------------------------------------------
       //

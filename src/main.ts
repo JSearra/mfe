@@ -82,6 +82,9 @@ const STARTING_UNITS = 24;
  * from breeding or from the enemy.
  */
 const HERD_SIZE = 12;
+/** How far the ring of dwellings stands from the cattle enclosure at the centre. */
+const VILLAGE_RADIUS = 6.5;
+const VILLAGE_HUTS = 9;
 const ENEMY = 1;
 const ENEMY_UNITS = 16;
 
@@ -333,21 +336,93 @@ async function main(options: GameOptions): Promise<void> {
   const place = (x: number, y: number): { x: number; y: number } =>
     snapToRegion(map, walkable, x, y);
 
-  // Seed a small force near the centre. Spawning through commands rather than touching
-  // the world directly keeps the invariant that commands are the only mutation path.
+  /*
+   * The village each side begins in, rather than a crowd standing in a field.
+   *
+   * Laid out as an umuzi actually is: the cattle enclosure at the centre, the great
+   * house at its head, the dwellings in a ring around both. That shape is not decoration
+   * — it is the whole social and defensive logic of the form, the herd kept in the
+   * middle where it can be watched, and it gives the opening a centre to read from the
+   * first frame. A player who starts among their own buildings knows what they are
+   * looking at; a player who starts in open veld does not.
+   *
+   * Founded rather than built: these are the huts the village already lives in, so they
+   * cost nothing and stand from tick one. Same reasoning as the starting fields coming
+   * back established and the starting wood not being all saplings.
+   */
   const home = place(centre - 2, centre);
+
+  function foundVillage(at: { x: number; y: number }, owner: number): void {
+    // The isibaya at the centre, which is where the cattle live and where the eye goes.
+    sim.sendCommand(
+      CommandKind.Build,
+      Math.floor(at.x),
+      Math.floor(at.y),
+      BuildingType.Isibaya,
+      1,
+    );
+    // The indlunkulu stands at the head of the homestead, opposite the entrance.
+    const head = place(at.x, at.y - VILLAGE_RADIUS);
+    sim.sendCommand(
+      CommandKind.Build,
+      Math.floor(head.x),
+      Math.floor(head.y),
+      BuildingType.Indlunkulu,
+      1,
+    );
+    // Dwellings around the ring, with a gap left at the foot for the way in and out.
+    for (let i = 0; i < VILLAGE_HUTS; i++) {
+      // Skipping the southern arc leaves the entrance clear rather than walling the
+      // village in — a ring with no gate is a pen.
+      const angle = (i / VILLAGE_HUTS) * Math.PI * 2 + Math.PI * 0.18;
+      if (Math.sin(angle) > 0.78) continue;
+      const hutAt = place(
+        at.x + Math.cos(angle) * VILLAGE_RADIUS,
+        at.y + Math.sin(angle) * VILLAGE_RADIUS,
+      );
+      sim.sendCommand(
+        CommandKind.Build,
+        Math.floor(hutAt.x),
+        Math.floor(hutAt.y),
+        BuildingType.Umuzi,
+        1,
+      );
+    }
+    // And the grain standing apart from the dwellings, as it does.
+    const store = place(at.x + VILLAGE_RADIUS * 0.9, at.y + VILLAGE_RADIUS * 0.75);
+    sim.sendCommand(
+      CommandKind.Build,
+      Math.floor(store.x),
+      Math.floor(store.y),
+      BuildingType.GrainStore,
+      1,
+    );
+    void owner;
+  }
+
+  foundVillage(home, PLAYER);
+
+  // The people stand out by their own dwellings, NOT in among the cattle.
+  //
+  // Ringed at 0.45 of the village radius first, which put two dozen of them inside the
+  // kraal with the herd: twenty beasts were bolting by tick 142, before the player had
+  // touched anything. That is the stress curve working exactly as designed — crowding
+  // panics cattle — and the opening has no business demonstrating it.
   for (let i = 0; i < STARTING_UNITS; i++) {
-    const column = i % 6;
-    const row = Math.floor(i / 6);
-    const at = place(home.x + column * 1.4 - 4, home.y + row * 1.4 - 2);
+    const angle = (i / STARTING_UNITS) * Math.PI * 2;
+    const ring = VILLAGE_RADIUS * (0.86 + ((i % 3) * 0.1));
+    const at = place(home.x + Math.cos(angle) * ring, home.y + Math.sin(angle) * ring);
     sim.sendCommand(CommandKind.Spawn, at.x, at.y, PLAYER, KIND_UNIT);
   }
 
-  // An opposing force, far enough off that first contact is something the player walks
-  // into rather than something that happens to them at load.
+  // The neighbouring village, laid out the same way. It is a village and not a war
+  // party: the same form, the same ring, a day's walk off.
   const enemyHome = place(centre + 34, centre + 26);
+  foundVillage(enemyHome, ENEMY);
   for (let i = 0; i < ENEMY_UNITS; i++) {
-    const at = place(enemyHome.x + (i % 4) * 1.3, enemyHome.y + Math.floor(i / 4) * 1.3);
+    const angle = (i / ENEMY_UNITS) * Math.PI * 2;
+    const ring = VILLAGE_RADIUS * (0.86 + ((i % 3) * 0.1));
+    const at = place(enemyHome.x + Math.cos(angle) * ring, enemyHome.y + Math.sin(angle) * ring);
     sim.sendCommand(CommandKind.Spawn, at.x, at.y, ENEMY, KIND_UNIT);
   }
 
@@ -369,7 +444,7 @@ async function main(options: GameOptions): Promise<void> {
   // Measured rather than eyeballed: with the player at the centre and the enemy at
   // (+36, +28), these sit at 10.8 / 12.2 / 27.9 tiles from each start respectively.
   const HERD_SITES: readonly (readonly [number, number])[] = [
-    [9, 6], // the player's doorstep
+    [0, 0], // in the isibaya at the centre of the player's own village
     [27, 22], // the enemy's, its mirror
     [2, -12], // near the player
     [34, 40], // near the enemy, its mirror
@@ -385,7 +460,10 @@ async function main(options: GameOptions): Promise<void> {
     // than they will stand just makes them shove each other apart on tick one.
     for (let i = 0; i < HERD_SIZE; i++) {
       const angle = i * 2.399963; // golden angle, so the blob fills evenly
-      const spread = 3.2 * Math.sqrt((i + 0.5) / HERD_SIZE);
+      // Tighter for the herd in the kraal than for the ones out on the veld: a pen is a
+      // pen. Keeps them clear of the dwellings ringing it, too.
+      const penned = rawX === 0 && rawY === 0;
+      const spread = (penned ? 1.9 : 3.2) * Math.sqrt((i + 0.5) / HERD_SIZE);
       const at = place(anchor.x + Math.cos(angle) * spread, anchor.y + Math.sin(angle) * spread);
       sim.sendCommand(CommandKind.SpawnCattle, at.x, at.y);
     }

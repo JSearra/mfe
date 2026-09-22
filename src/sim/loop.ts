@@ -11,6 +11,7 @@ import type { Economy } from './economy/ledger.js';
 import { updateWoodland, type Woodland } from './woodland.js';
 import { updateAlliance, type Alliance } from './alliance.js';
 import { reap } from './mortality.js';
+import { updateRoles } from './roles.js';
 import { harvestOf, updateFarmland, type Farmland } from './economy/farmland.js';
 import { tuning } from './tuning.js';
 import { updateFog, type FogState } from './vision/fog.js';
@@ -184,6 +185,9 @@ export function step(loop: SimLoop): void {
   if (world.tick !== 0 && world.tick % tuning.economy.upkeepIntervalTicks === 0) {
     updateWoodland(world, woodland, economy, world.rng, map, 1 - economy.drought(world.tick));
   }
+  // What everyone is doing, for the renderer to draw them doing it. Reads state; the
+  // only thing it writes is a nibble nothing else reads. See src/sim/roles.ts.
+  updateRoles(world, farmland, world.tick);
   tech.update(world.tick, events);
   victory.update(world, economy, events);
   updateFog(world, map, fog, tech);

@@ -104,7 +104,105 @@ MOUNTED = {
     "commando": ((0.16, 0.095, 0.055), (0.115, 0.10, 0.082)),
 }
 
-KINDS = {**BIPEDS, **CATTLE, **MOUNTED}
+# Villagers: the people the game actually counts.
+#
+# The game counts households, and every figure on the map was the same soldier, so a
+# village of sixty read as a barracks. These exist to break that, and they are built to
+# ONE rule: they are told apart by silhouette, never by colour. At fifty pixels a recolour
+# is not a variant, it is the same sprite. So each of these changes the outline in a way
+# that survives being half the size of this paragraph's line height:
+#
+#   herd-boy    two thirds the height of a man, thin, one long vertical stick
+#   field-hand  bent almost double, a low horizontal wedge with the head at a man's hip
+#   carrier     a man's height plus a wide load on top, on a bell of a skirt
+#   elder       broad cloaked shoulders and a diagonal staff planted ahead of the feet
+#
+# Grounding, per docs/CONTENT.md: herding is boys' work and a herd-boy carries a switch
+# rather than a weapon; cultivation is hoe culture and it is women's work, with a
+# short-handled iron hoe (isiZulu *igeja*); loads travel on the head over a coiled grass
+# pad (*inkatha*); married women wear the *isidwaba*, a heavy pleated leather skirt, which
+# is where the bell comes from; a married man wears the *isicoco*, a sewn headring. None
+# of these names is user-facing here, so nothing is translated — the geometry is just
+# geometry and the naming decision stays in CONTENT.md where it belongs.
+#
+# `stoop` is structural rather than animated, and that is a legibility decision over a
+# realistic one. A field-hand who straightens up to walk to the next field is, for those
+# seconds, a generic figure — and identity that switches off is not identity. She is
+# always bent, and she is instantly hers at any moment of any frame.
+VILLAGERS = {
+    "herd-boy": {
+        # A boy, not a small man: the head barely shrinks while the body does, which is
+        # most of what the eye uses to read a child at any size.
+        "stature": 0.70,
+        "head_scale": 1.34,
+        "build": 1.02,
+        "stoop": 4.0,
+        "skin": (0.20, 0.110, 0.068),
+        "cloth": (0.115, 0.085, 0.060),
+        "skirt": None,
+        "prop": "stick",
+        "stride": 26.0,
+        "free_arm": "l",
+        "ortho": 2.2,
+        "target": 0.72,
+    },
+    "field-hand": {
+        "stature": 0.96,
+        "head_scale": 1.0,
+        "build": 0.94,
+        # Deep. A real hoeing stoop is nearer forty-five degrees, and at forty-five this
+        # figure read as a man leaning, which is not a silhouette. Fifty-eight puts the
+        # head at the height of an impi's hip and the spine near horizontal, and that
+        # reads at any size.
+        "stoop": 58.0,
+        "skin": (0.20, 0.110, 0.068),
+        "cloth": (0.075, 0.062, 0.055),
+        # (hem radius, waist radius, length) of the isidwaba.
+        "skirt": (0.27, 0.16, 0.50),
+        "prop": "hoe",
+        "stride": 16.0,
+        "free_arm": None,
+        "ortho": 2.5,
+        "target": 0.55,
+    },
+    "carrier": {
+        "stature": 0.97,
+        "head_scale": 1.0,
+        "build": 0.92,
+        # Leaning back, because the load is in front of the spine's line and a carrier
+        # who does not counterweight it falls over.
+        "stoop": -6.0,
+        "skin": (0.20, 0.110, 0.068),
+        "cloth": (0.075, 0.062, 0.055),
+        "skirt": (0.29, 0.17, 0.54),
+        "prop": "headload",
+        "stride": 13.0,
+        "free_arm": "r",
+        "ortho": 2.45,
+        # The one kind that needs its own framing. A head-load tops out above two metres
+        # and the figure camera holds 2.12 before it starts cutting heads off — which is
+        # a defect this project has already shipped once. Aiming higher costs nothing:
+        # `pixelsPerUnit` comes from the ortho scale alone, so raising the target moves
+        # the recorded origin and not the drawn size.
+        "target": 1.15,
+    },
+    "elder": {
+        "stature": 0.92,
+        "head_scale": 1.0,
+        "build": 1.04,
+        "stoop": 22.0,
+        "skin": (0.19, 0.105, 0.066),
+        "cloth": (0.105, 0.080, 0.058),
+        "skirt": None,
+        "prop": "staff",
+        "stride": 11.0,
+        "free_arm": "l",
+        "ortho": 2.2,
+        "target": 0.76,
+    },
+}
+
+KINDS = {**BIPEDS, **CATTLE, **MOUNTED, **VILLAGERS}
 
 # Horse proportions, metres. Longer in the leg and shallower in the barrel than a cow,
 # which is most of what separates the two silhouettes at tile size.
@@ -124,12 +222,43 @@ COW_LEG = 0.62
 # looks wrong next to one, so bipeds get it too.
 ANIMATIONS = {"idle": 8, "walk": 12, "attack": 10, "run": 10}
 
-# Which animations make sense for which kind. A cow does not thrust a spear.
+# Villagers cost a third of what a soldier costs, deliberately.
+#
+# A soldier is four animations at eight directions plus two tinted overlay passes: 960
+# frames of atlas for one man. A villager stands and walks and that is all, with no
+# livery to overlay, which is 128 — and four villagers together still cost half of one
+# impi. The saving is in the frame COUNT and in the animation LIST, not in the direction
+# count, and the difference matters:
+#
+#   Frame counts are per kind in the atlas (`kinds[kind][anim]`), so cutting walk from
+#   twelve frames to eight needs no renderer change at all. Eight frames at 1.25 ticks
+#   each is a ten-tick stride, which is the same cadence as the impi's twelve-frame walk
+#   read at the same speed — it is a coarser cycle, not a faster one.
+#
+#   The direction count is GLOBAL to the atlas (`pack_atlas` takes the maximum, and
+#   entities.ts indexes every kind by it), so a four-direction villager would return a
+#   null frame on the four directions it does not have and simply not draw. Four
+#   directions is a renderer change, not an art one, and it is not worth making: these
+#   walk across open ground at arbitrary angles and quarter-turn facing on a 2:1 diamond
+#   reads as sliding sideways. Eight stays. `--mirror` still halves the RENDER, which is
+#   the cost that is actually being paid on a laptop.
+VILLAGER_ANIMATIONS = {"idle": 8, "walk": 8}
+
+# Which animations make sense for which kind. A cow does not thrust a spear, and a woman
+# carrying a season's grain on her head does not break into a stampede.
 KIND_ANIMATIONS = (
     {name: ("idle", "walk", "attack", "run") for name in BIPEDS}
     | {name: ("idle", "walk", "run") for name in CATTLE}
     | {name: ("idle", "walk", "attack", "run") for name in MOUNTED}
+    | {name: ("idle", "walk") for name in VILLAGERS}
 )
+
+
+def frame_count(kind: str, anim: str) -> int:
+    """How many frames this kind's cycle runs for. Villagers run shorter cycles."""
+    if kind in VILLAGERS:
+        return VILLAGER_ANIMATIONS[anim]
+    return ANIMATIONS[anim]
 
 
 def parse_args() -> argparse.Namespace:
@@ -521,12 +650,306 @@ def animate_quadruped(limbs: dict, anim: str, frames: int) -> None:
             pivot.keyframe_insert("rotation_euler", frame=frame)
 
 
+def build_villager(kind: str):
+    """A villager standing on the origin, facing +X.
+
+    Separate from `build` rather than folded into it with flags. The impi's builder is
+    dense with impi — shield, patches, laces, spear, amashoba — and threading four
+    postures through it would have made one long function that nobody can read and that
+    breaks the soldier every time a villager changes. The primitives are shared; the
+    assembly is not.
+
+    The one piece of structure a soldier does not have is a SPINE pivot. Everything from
+    the waist up hangs off it, so one rotation bends the whole upper body — which is the
+    entire silhouette of the field-hand and most of the elder's. Arms counter-rotate by
+    the same angle, because an arm hangs under gravity whatever the back is doing; a
+    stooped figure whose arms stick out forward at the angle of the spine reads as a
+    zombie, and that was the first version.
+    """
+    spec = VILLAGERS[kind]
+    stature = spec["stature"]
+    build_ratio = spec["build"]
+    stoop = math.radians(spec["stoop"])
+
+    skin = material("skin", spec["skin"])
+    cloth = material("cloth", spec["cloth"])
+    # Pale grass, for the head-ring, the basket and the herding stick. These are the only
+    # light values on a villager, and they are placed where they help the outline: on top
+    # of the head, and along a vertical line beside the body.
+    grass = material("grass", (0.40, 0.32, 0.155))
+    iron = material("iron", (0.22, 0.20, 0.19))
+
+    root = bpy.data.objects.new("villager", None)
+    bpy.context.scene.collection.objects.link(root)
+
+    hip_z = HIP_HEIGHT * stature
+    torso = TORSO * stature
+    arm = ARM * stature
+    leg = hip_z
+    neck = NECK * stature
+    head_d = HEAD * spec["head_scale"] * stature
+    shoulders = SHOULDER_WIDTH * stature * build_ratio
+    girth = stature * build_ratio
+
+    # The spine: an empty at the hip. Local Z is measured up from the hip from here on.
+    spine = bpy.data.objects.new("spine", None)
+    bpy.context.scene.collection.objects.link(spine)
+    spine.location = (0, 0, hip_z)
+    spine.rotation_euler = (0, stoop, 0)
+    spine.parent = root
+
+    facet = {"smooth": False, "segments": 8, "rings": 5}
+    limb = {"smooth": False, "verts": 7}
+
+    chest = blob("chest", (0.32 * girth, shoulders, 0.33 * stature), (0, 0, torso - 0.12), **facet)
+    chest.data.materials.append(skin)
+    chest.parent = spine
+
+    waist = blob("waist", (0.25 * girth, 0.27 * girth, 0.25 * stature),
+                 (0, 0, torso * 0.34), **facet)
+    waist.data.materials.append(skin)
+    waist.parent = spine
+
+    pelvis = blob("pelvis", (0.28 * girth, 0.31 * girth, 0.23 * stature), (0, 0, 0.05), **facet)
+    pelvis.data.materials.append(skin)
+    pelvis.parent = root
+
+    throat = taper("neck", 0.052 * girth, 0.046 * girth, neck * 1.6, (0, 0, torso + neck * 0.35))
+    throat.data.materials.append(skin)
+    throat.parent = spine
+
+    head = blob("head", (head_d * 0.82, head_d * 0.80, head_d),
+                (0, 0, torso + neck + head_d / 2), **facet)
+    head.data.materials.append(skin)
+    head.parent = spine
+
+    if spec["skirt"] is not None:
+        # The isidwaba: a heavy pleated leather skirt, hem near the calf. It hangs from
+        # the hips whatever the back is doing, so it parents to the ROOT and not to the
+        # spine — a skirt that pitches with the shoulders reads as a tail.
+        #
+        # This is also the single most useful thing in the set for legibility. It ends the
+        # figure in a solid bell instead of two legs, and two legs is what every other
+        # sprite in this game ends in.
+        hem, waist_r, length = spec["skirt"]
+        skirt = taper("skirt", hem, waist_r, length, (0, 0, hip_z - length / 2 + 0.10), verts=14)
+        skirt.data.materials.append(cloth)
+        skirt.parent = root
+    else:
+        # The umutsha: a hide belt and apron, the same dress the impi wears, because a
+        # herd-boy and an elder are wearing what men wear.
+        belt = blob("belt", (0.27 * girth, 0.30 * girth, 0.08 * stature), (0, 0, hip_z + 0.02))
+        belt.data.materials.append(cloth)
+        belt.parent = root
+
+        apron = blob("umutsha_front", (0.09, 0.21 * girth, 0.26 * stature),
+                     (0.10, 0, hip_z - 0.08 * stature))
+        apron.data.materials.append(cloth)
+        apron.parent = root
+
+        rear = blob("ibheshu", (0.11, 0.26 * girth, 0.28 * stature),
+                    (-0.10, 0, hip_z - 0.09 * stature))
+        rear.data.materials.append(cloth)
+        rear.parent = root
+
+    if kind == "elder":
+        # The ingubo: a hide cloak over the shoulders. Its job in the silhouette is width
+        # at the top — it makes the elder the broadest figure on the map from the neck
+        # down to the ribs, which is the opposite of the boy and reads before the staff
+        # does.
+        # The ingubo: a hide cloak worn over the shoulders and hanging down the BACK.
+        #
+        # Two earlier versions were a single wide ellipsoid over the chest, and both read
+        # as a balloon strapped to the man — first swallowing his head, then, once it was
+        # lowered clear of the neck, hanging off him like a shell. The mistake was depth:
+        # anything 0.3m thick at chest height is a body, not a garment. A cloak is a flat
+        # panel that falls from the shoulders, so this one is thin in X, offset behind
+        # him, and long enough to reach the hips.
+        #
+        # A cone rather than an ellipsoid, and that is the whole of what made it work.
+        # Every ellipsoid version read as a large oval mass carried beside the body —
+        # which is precisely the impi's isihlangu, the one silhouette in this game a
+        # villager must not borrow. A cone narrow at the neck and wide at the hem follows
+        # the body instead of hanging off it, and what it produces is the outline of a
+        # draped man: wider at the bottom, no separate lump anywhere.
+        # Smooth, and the one place in a human figure where that is right. Ten flat
+        # facets on a cone this size are 36 degrees apart, and what they produced was a
+        # plank strapped to his back. Cloth is the exception the cattle already prove.
+        cloak = taper("cloak", 0.225, 0.14, 0.56 * stature, (-0.045, 0, torso - 0.30),
+                      smooth=True, verts=18)
+        cloak.data.materials.append(cloth)
+        cloak.parent = spine
+
+        # The isicoco: the sewn headring of a married man. A ring, so it widens the skull
+        # rather than raising it, which at this size is the difference between "an old
+        # man" and "a man in a hat".
+        ring = blob("isicoco", (head_d * 1.12, head_d * 1.10, head_d * 0.17),
+                    (0, 0, torso + neck + head_d * 0.62))
+        ring.data.materials.append(cloth)
+        ring.parent = spine
+
+    limbs = {"spine": spine}
+    for side, y in (("l", 1.0), ("r", -1.0)):
+        hip_y = y * 0.090 * girth
+        shoulder_y = y * (shoulders / 2 - 0.03)
+
+        leg_pivot = bpy.data.objects.new(f"hip_{side}", None)
+        bpy.context.scene.collection.objects.link(leg_pivot)
+        leg_pivot.location = (0, hip_y, hip_z)
+        leg_pivot.parent = root
+        limbs[f"hip_{side}"] = leg_pivot
+
+        thigh = taper(f"thigh_{side}", 0.072 * girth, 0.048 * girth, leg * 0.52,
+                      (0, 0, -leg * 0.26), **limb)
+        thigh.data.materials.append(skin)
+        thigh.parent = leg_pivot
+
+        knee = blob(f"knee_{side}", (0.09 * girth, 0.09 * girth, 0.085 * girth),
+                    (0.012, 0, -leg * 0.5), **facet)
+        knee.data.materials.append(skin)
+        knee.parent = leg_pivot
+
+        calf = taper(f"calf_{side}", 0.056 * girth, 0.028 * girth, leg * 0.50,
+                     (-0.012, 0, -leg * 0.76), **limb)
+        calf.data.materials.append(skin)
+        calf.parent = leg_pivot
+
+        foot = blob(f"foot_{side}", (0.17 * stature, 0.085, 0.065), (0.033, 0, -leg + 0.033),
+                    **facet)
+        foot.data.materials.append(skin)
+        foot.parent = leg_pivot
+
+        # Shoulders hang off the SPINE, so they travel when the back bends.
+        arm_pivot = bpy.data.objects.new(f"shoulder_{side}", None)
+        bpy.context.scene.collection.objects.link(arm_pivot)
+        arm_pivot.location = (0, shoulder_y, torso - 0.03)
+        arm_pivot.parent = spine
+        limbs[f"shoulder_{side}"] = arm_pivot
+
+        deltoid = blob(f"deltoid_{side}", (0.135 * girth, 0.125 * girth, 0.14 * girth),
+                       (0, 0, -0.02), **facet)
+        deltoid.data.materials.append(skin)
+        deltoid.parent = arm_pivot
+
+        upper = taper(f"upper_arm_{side}", 0.054 * girth, 0.037 * girth, arm * 0.48,
+                      (0, 0, -arm * 0.26), **limb)
+        upper.data.materials.append(skin)
+        upper.parent = arm_pivot
+
+        elbow = blob(f"elbow_{side}", (0.078 * girth, 0.078 * girth, 0.074 * girth),
+                     (0.01, 0, -arm * 0.49), **facet)
+        elbow.data.materials.append(skin)
+        elbow.parent = arm_pivot
+
+        fore = taper(f"forearm_{side}", 0.044 * girth, 0.028 * girth, arm * 0.46,
+                     (-0.01, 0, -arm * 0.72), **limb)
+        fore.data.materials.append(skin)
+        fore.parent = arm_pivot
+
+        hand = blob(f"hand_{side}", (0.085, 0.055, 0.095), (0, 0, -arm * 0.98), **facet)
+        hand.data.materials.append(skin)
+        hand.parent = arm_pivot
+
+    build_villager_prop(kind, spec, limbs, root, {
+        "arm": arm, "torso": torso, "neck": neck, "head_d": head_d,
+        "hip_z": hip_z, "stature": stature, "grass": grass, "iron": iron, "cloth": cloth,
+    })
+
+    return root, limbs
+
+
+def build_villager_prop(kind: str, spec: dict, limbs: dict, root, size: dict) -> None:
+    """The thing in the villager's hands, which is half of what tells them apart.
+
+    Props parent to the right shoulder pivot, not to the root. That means the animation
+    decides whether a prop travels: a hoe parented to the arm that swings IS the hoe
+    stroke and needs no separate rigging, while a staff parented to an arm the animation
+    holds still stays planted. One attachment, two behaviours, chosen in the cycle.
+    """
+    arm = size["arm"]
+    hand_z = -arm * 0.95
+    right = limbs["shoulder_r"]
+    grass, iron, cloth = size["grass"], size["iron"], size["cloth"]
+
+    if spec["prop"] == "stick":
+        # A herding switch, not a weapon. Long, thin, near vertical, and it rises well
+        # above the boy's head — which is the point. He is the shortest figure on the map
+        # with the tallest single line coming out of him, and no other sprite has that
+        # combination.
+        # Offset to his own right and leaned back, not straight up through the middle
+        # of him. Centred and vertical it ran through the skull in half the directions
+        # and read as a flagpole growing out of his head rather than as something held.
+        # Thicker, too: at thirteen millimetres it resolved to a single pixel and looked
+        # like a scratch on the atlas.
+        stick = cylinder("stick", 0.022, 1.46, (-0.02, -0.02, hand_z + 0.44))
+        stick.data.materials.append(grass)
+        stick.rotation_euler = (0, math.radians(-13), 0)
+        stick.parent = right
+        return
+
+    if spec["prop"] == "hoe":
+        # The igeja: a short haft and a broad iron blade, worked with the back bent
+        # rather than with the arms. Short — a long handle is a European hoe and would
+        # put the stoop out of a job.
+        # A positive Y rotation tips the TOP of a cylinder toward +X, which sent the
+        # haft's lower end backward and left the blade floating a third of a metre in
+        # front of it. Negative plants the blade ahead of her, which is where a hoe goes.
+        haft = cylinder("hoe_haft", 0.024, 0.58, (0.10, 0, hand_z - 0.17))
+        haft.data.materials.append(cloth)
+        haft.rotation_euler = (0, math.radians(-24), 0)
+        haft.parent = right
+
+        # Broad. The first blade was 0.15 across, which is under three pixels at play
+        # zoom: the hoe read as a golf club and the one detail that says "cultivation"
+        # rather than "holding a stick" was not there at all.
+        blade = blob("hoe_blade", (0.26, 0.22, 0.07), (0.205, 0, hand_z - 0.425))
+        blade.data.materials.append(iron)
+        blade.parent = right
+        return
+
+    if spec["prop"] == "headload":
+        # A grain basket on a coiled grass pad, carried on the head. The mass goes to the
+        # TOP of the figure, which is the reverse of every other sprite in the game — the
+        # impi's weight is a shield at mid-height, the cow's is a barrel at knee height.
+        # Top-heavy is a silhouette nothing else here occupies.
+        spine = limbs["spine"]
+        crown = size["torso"] + size["neck"] + size["head_d"] * 0.95
+
+        # The inkatha: the grass coil that goes between skull and load. Small, but it
+        # separates two pale masses that would otherwise fuse into one lump.
+        pad = blob("inkatha", (size["head_d"] * 0.78, size["head_d"] * 0.78, 0.055),
+                   (0, 0, crown + 0.02))
+        pad.data.materials.append(grass)
+        pad.parent = spine
+
+        basket = taper("headload", 0.235, 0.20, 0.22, (0, 0, crown + 0.16), verts=14)
+        basket.data.materials.append(grass)
+        basket.parent = spine
+
+        rim = blob("headload_rim", (0.42, 0.42, 0.10), (0, 0, crown + 0.27))
+        rim.data.materials.append(iron)
+        rim.parent = spine
+        return
+
+    if spec["prop"] == "staff":
+        # A long staff planted ahead of the feet. Parented to an arm the walk cycle holds
+        # still, so it stays a fixed diagonal — and a diagonal is the one line nothing
+        # else in this set draws. The boy's stick is vertical; this is not.
+        staff = cylinder("staff", 0.024, 1.74, (0.14, -0.05, hand_z + 0.10))
+        staff.data.materials.append(grass)
+        staff.rotation_euler = (0, math.radians(-13), 0)
+        staff.parent = right
+        return
+
+
 def build(kind: str):
     """A figure standing on the origin, facing +X."""
     if kind in CATTLE:
         return build_cattle(kind)
     if kind in MOUNTED:
         return build_mounted(kind)
+    if kind in VILLAGERS:
+        return build_villager(kind)
     skin_colour, cloth_colour, has_shield, has_spear = BIPEDS[kind]
     skin = material("skin", skin_colour)
     cloth = material("cloth", cloth_colour)
@@ -737,15 +1160,132 @@ def build(kind: str):
     return root, limbs
 
 
-def animate(limbs: dict, anim: str) -> int:
+def animate_villager(kind: str, limbs: dict, anim: str, frames: int) -> None:
+    """Keyframe a villager cycle.
+
+    Three departures from the soldier's cycle.
+
+    **Limbs swing about Y, not about X.** A figure built facing +X has its fore-and-aft
+    axis on X and its left-right axis on Y, so rotating a hip about X does not take a
+    step — it lifts the leg sideways. `animate()` above rotates about X, which means the
+    shipped impi and commando do not walk, they splay; it is not visible at fifty pixels,
+    which is why it has survived, and it is not fixed here because fixing it re-renders
+    every soldier frame in the atlas. Measured, not guessed: rotating (0, 0, -0.92) about
+    X by 24 degrees gives (0, +0.374, -0.84) — displacement in Y, which is sideways.
+
+    **Every pose is REST PLUS DELTA**, because a villager's rest pose is not zero: the
+    spine carries the stoop and each shoulder carries its negation. Keyframing an absolute
+    zero on a shoulder would stand the arms out at the angle of the back on frame one and
+    leave them there — which is exactly what the first version looked like.
+
+    **`idle` is not idling.** A villager at rest is a villager AT WORK — a stooped figure
+    hoeing, a carrier shifting a load, a boy leaning on his stick. That is deliberate, and
+    it is what makes this batch usable without touching the simulation: the sim already
+    plays `idle` for anything that has stopped moving, so a field-hand who has reached her
+    field hoes for free, with no new animation state and no new enum.
+    """
+    spec = VILLAGERS[kind]
+    stoop = math.radians(spec["stoop"])
+    free = spec["free_arm"]
+    carry = spec["prop"] == "headload"
+    scene = bpy.context.scene
+
+    for frame in range(1, frames + 1):
+        phase = (frame - 1) / frames * math.tau
+        scene.frame_set(frame)
+
+        # The rest pose. Arms counter the spine so they hang under gravity.
+        pitch = stoop
+        arm_l = arm_r = 0.0
+        hip_l = hip_r = 0.0
+        # Lateral abduction, about X. Used for one thing only: lifting the steadying arm
+        # of a carrier out and up the side of her head, which is a sideways motion and
+        # the one place the X axis is the right one.
+        raise_l = 0.0
+
+        if carry:
+            # A hand to the load. It opens a triangle of sky between arm and head, and
+            # that triangle is the clearest single statement in the whole batch that this
+            # figure is carrying something rather than wearing a hat.
+            # High and angled in toward the load. The arm is one rigid segment with no
+            # elbow, so the angle is a compromise: at 126 degrees the hand ends up half a
+            # metre out to her side holding nothing, and at 168 it is a vertical line
+            # beside a vertical body, which at play size is indistinguishable from the
+            # herd-boy's stick. 155 leaves a clear diagonal and a triangle of sky under
+            # it, and that triangle is what says "carrying" rather than "wearing".
+            raise_l = math.radians(155.0)
+
+        if anim == "walk":
+            swing = math.radians(spec["stride"]) * math.sin(phase)
+            hip_l, hip_r = swing, -swing
+            # Only the free arm swings, and not if it is holding the load up. An arm that
+            # swings a planted staff or a balanced basket reads as a mistake, not motion.
+            if free == "l" and not carry:
+                arm_l = -swing * 0.65
+            elif free == "r":
+                arm_r = swing * 0.65
+            # The whole body rises and falls a little over a stride. On the carrier this
+            # is the only thing that says the load is heavy.
+            pitch += math.radians(2.0) * math.sin(phase * 2)
+        elif kind == "field-hand":
+            # The hoe stroke. Asymmetric on purpose: a slow lift and a fast chop, which
+            # is what a stroke is. `lift` runs 0 -> 1 -> 0 over the cycle and is squared
+            # on the way back down so the blade drops faster than it rose.
+            #
+            # Backward, not forward. A positive Y rotation takes the hand behind her,
+            # which draws the hoe up and back along the line of her own body and keeps
+            # the whole stroke inside her silhouette. Swinging it forward instead threw
+            # the blade a metre out in front and off the edge of the render.
+            lift = (1.0 - math.cos(phase)) / 2.0
+            drive = lift if phase < math.pi else lift * lift
+            arm_l = arm_r = math.radians(34.0) * drive
+            # The back straightens as she draws up and folds again as she drives down.
+            pitch -= math.radians(11.0) * drive
+            hip_l = math.radians(3.0) * drive
+            hip_r = math.radians(-2.0) * drive
+        elif kind == "carrier":
+            # A weight shift from foot to foot, and the spine rocking a couple of degrees
+            # under the load. Small: a carrier balancing twenty kilos on her head does not
+            # move much, and that stillness is itself characterful beside a hoeing figure.
+            sway = math.radians(2.5) * math.sin(phase)
+            hip_l, hip_r = sway, -sway
+            pitch += math.radians(1.6) * math.sin(phase)
+        elif kind == "herd-boy":
+            # Leaning on the stick, weight on one hip, looking at nothing in particular.
+            sway = math.radians(4.5) * math.sin(phase)
+            hip_l, hip_r = sway, -sway
+            arm_l = math.radians(7.0) * math.sin(phase)
+        else:  # elder
+            sway = math.radians(2.0) * math.sin(phase)
+            hip_l, hip_r = sway, -sway
+            pitch += math.radians(1.2) * math.sin(phase)
+
+        limbs["spine"].rotation_euler = (0, pitch, 0)
+        limbs["hip_l"].rotation_euler = (0, hip_l, 0)
+        limbs["hip_r"].rotation_euler = (0, hip_r, 0)
+        # The shoulder's parent is the spine, which already carries +pitch, so subtracting
+        # it here leaves the arm hanging vertically in the world whatever the back does.
+        # Both terms are about the same axis, so they simply add.
+        limbs["shoulder_l"].rotation_euler = (raise_l, arm_l - pitch, 0)
+        limbs["shoulder_r"].rotation_euler = (0.0, arm_r - pitch, 0)
+
+        for pivot in limbs.values():
+            pivot.keyframe_insert("rotation_euler", frame=frame)
+
+
+def animate(kind: str, limbs: dict, anim: str) -> int:
     """Keyframe a cycle. Returns the frame count."""
-    frames = ANIMATIONS[anim]
+    frames = frame_count(kind, anim)
     scene = bpy.context.scene
     scene.frame_start = 1
     scene.frame_end = frames
 
     if "fore_l" in limbs:
         animate_quadruped(limbs, anim, frames)
+        return frames
+
+    if kind in VILLAGERS:
+        animate_villager(kind, limbs, anim, frames)
         return frames
 
     for frame in range(1, frames + 1):
@@ -822,7 +1362,7 @@ def render_kind(renderer, kind: str, anim: str, args: argparse.Namespace) -> int
     """Build, animate and render one kind/animation pair into args.render."""
     bpy.ops.wm.read_factory_settings(use_empty=True)
     root, limbs = build(kind)
-    frames = animate(limbs, anim)
+    frames = animate(kind, limbs, anim)
 
     # Cattle need their own framing: longer than a man is tall and lower at the
     # shoulder, so the figure camera clips a nose or a rump depending on rotation.
@@ -830,6 +1370,12 @@ def render_kind(renderer, kind: str, anim: str, args: argparse.Namespace) -> int
         ortho, target = 2.9, 0.62
     elif kind in MOUNTED:
         ortho, target = 3.1, 0.95
+    elif kind in VILLAGERS:
+        # Same ortho scale as the impi, so a villager and a soldier agree about how big a
+        # metre is without the renderer having to reconcile them. Only the aim changes:
+        # a stooped figure wastes the top of a frame framed for a standing one, and a
+        # head-load walks straight out of the top of it.
+        ortho, target = VILLAGERS[kind]["ortho"], VILLAGERS[kind]["target"]
     else:
         ortho, target = renderer.ORTHO_SCALE, renderer.TARGET_HEIGHT
     renderer.setup_camera(args.size, scale=ortho, target=target)
@@ -949,7 +1495,7 @@ def main() -> None:
     if not args.render:
         bpy.ops.wm.read_factory_settings(use_empty=True)
         root, limbs = build(args.kind)
-        animate(limbs, args.anim)
+        animate(args.kind, limbs, args.anim)
         if args.save:
             bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(args.save))
             print(f"[make_unit] saved {args.save}")

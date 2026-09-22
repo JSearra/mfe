@@ -319,6 +319,9 @@ export function applyCommand(
           command.a,
           command.b,
           events,
+          // `d` non-zero founds it already standing and free. Used only when laying out
+          // the village a match begins with — see the note on `founded`.
+          command.d !== 0,
         ) === 0
       );
 

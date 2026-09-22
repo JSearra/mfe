@@ -68,11 +68,22 @@ const TAU = Math.PI * 2;
  * as a texture rather than as animals, and the alternation is by handle rather than by
  * slot so a given beast does not change colour when the draw order shuffles.
  */
-function spriteKind(kind: number, subtype: number, handle: number): string {
+function spriteKind(kind: number, subtype: number, handle: number, role = 0): string {
   if (kind === KIND_CATTLE) return (handle & 1) === 0 ? 'nguni' : 'nguni-dark';
   if (kind === KIND_BUILDING) return BUILDING_KINDS[subtype] ?? BUILDING_KINDS[0];
-  return subtype === CLASS_MOUNTED ? 'commando' : 'impi';
+  if (subtype === CLASS_MOUNTED) return 'commando';
+  // A villager is drawn as whatever she is doing. The role rides in the high nibble of
+  // the flags byte the snapshot already carries — see src/sim/roles.ts.
+  return VILLAGER_KINDS[role] ?? 'impi';
 }
+
+/**
+ * Role code to sprite, indexed by Role in src/sim/roles.ts.
+ *
+ * Anything without a figure of its own falls back to the default one rather than
+ * vanishing, which is what an unknown role would otherwise do.
+ */
+const VILLAGER_KINDS: readonly string[] = ['impi', 'herd-boy', 'field-hand', 'carrier', 'elder'];
 
 /**
  * Ground decoration: the shadow that stops a sprite floating, the selection ring, and
@@ -699,9 +710,19 @@ export function createEntityLayer(
 
         if (!textured) continue;
 
-        const name = spriteKind(kind, view.subtype[index]!, handle);
-        const anim = isBuilding ? 'build' : (ANIM_NAME[view.animState[index]!] ?? 'idle');
-        const frames = atlas!.frameCount(name, anim);
+        const name = spriteKind(kind, view.subtype[index]!, handle, view.flags[index]! >> 4);
+        const wanted = isBuilding ? 'build' : (ANIM_NAME[view.animState[index]!] ?? 'idle');
+        // A villager has no `run` — only the fighting figures were ever given one — and
+        // an entity whose animation has no frames drew NOTHING at all. Falling back to
+        // the walk rather than skipping the draw: a villager who breaks into a run is
+        // still a villager, and an invisible unit is the worst possible way to say she
+        // has no animation for it.
+        let anim = wanted;
+        let frames = atlas!.frameCount(name, anim);
+        if (frames === 0 && !isBuilding) {
+          anim = 'walk';
+          frames = atlas!.frameCount(name, anim);
+        }
         if (frames === 0) continue;
 
         // Facing is a world angle about +Z from +X, and so is the sprite's direction

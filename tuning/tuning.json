@@ -222,5 +222,9 @@
     "householdsToSettle": 60,
     "holdTicks": 6000.0,
     "eliminationGraceTicks": 400
+  },
+  "roles": {
+    "intervalTicks": 20,
+    "buildingRadius": 2.6
   }
 }

@@ -183,3 +183,17 @@ describe('what a neighbour asks for', () => {
     expect(wantedTrade(a, 0, 1)).toEqual(wantedTrade(b, 0, 1));
   });
 });
+
+describe('who may reach into a village', () => {
+  it('lets a village trade away its own goods', () => {
+    // The player's half is untouched: the panel publishes what each neighbour will give
+    // and clicking one takes them up on it.
+    const economy = two();
+    books(economy, 0, { wood: 200 });
+    books(economy, 1, { cattle: 300, grain: 300, wood: 40 });
+    const before = economy.balance(0, Resource.Grain);
+
+    expect(trade(economy, 0, 1, Resource.Wood, Resource.Grain, 30)).toBe(TradeResult.Traded);
+    expect(economy.balance(0, Resource.Grain)).toBeGreaterThan(before);
+  });
+});

@@ -55,6 +55,17 @@ export interface ConstructionSystem {
     tileX: number,
     tileY: number,
     events: SimEvent[],
+    /**
+     * Found it already standing, and free.
+     *
+     * For laying out the village a match STARTS with, which is a fact about the map
+     * rather than a thing anybody built — the same reason the starting fields come back
+     * established and the starting wood is not all saplings. A player who begins in an
+     * empty field is not beginning in a village. Costs are skipped with it: charging a
+     * village for the huts it already lives in would just be a different opening
+     * balance.
+     */
+    founded?: boolean,
   ): PlacementResult;
   /**
    * `labour` is injected rather than imported, the way the ledger takes its grain
@@ -110,7 +121,7 @@ export function createConstructionSystem(
   return {
     stats,
 
-    place(world, economy, owner, type, tileX, tileY, events): PlacementResult {
+    place(world, economy, owner, type, tileX, tileY, events, founded): PlacementResult {
       const spec = buildingSpec(type);
       const size = spec.footprint;
 
@@ -134,8 +145,10 @@ export function createConstructionSystem(
         economy.balance(owner, Resource.Wood) < spec.woodCost ||
         economy.balance(owner, Resource.Cattle) < spec.cattleCost
       ) {
-        stats.refused++;
-        return PlacementResult.Unaffordable;
+        if (founded !== true) {
+          stats.refused++;
+          return PlacementResult.Unaffordable;
+        }
       }
 
       const handle = spawn(
@@ -151,13 +164,16 @@ export function createConstructionSystem(
         return PlacementResult.NoRoom;
       }
 
-      economy.spend(owner, Resource.Grain, spec.grainCost);
-      economy.spend(owner, Resource.Wood, spec.woodCost);
-      economy.spend(owner, Resource.Cattle, spec.cattleCost);
+      if (founded !== true) {
+        economy.spend(owner, Resource.Grain, spec.grainCost);
+        economy.spend(owner, Resource.Wood, spec.woodCost);
+        economy.spend(owner, Resource.Cattle, spec.cattleCost);
+      }
 
       const index = handleIndex(handle);
       world.buildingType[index] = type;
-      world.buildProgress[index] = 0;
+      // A founded building is already standing; anything else starts as bare ground.
+      world.buildProgress[index] = founded === true ? spec.work : 0;
       world.hasTarget[index] = 0;
 
       // The foundation blocks immediately, not on completion: units should walk around
