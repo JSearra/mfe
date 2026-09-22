@@ -184,6 +184,22 @@ export interface EntityLayer {
    * hundred sprites rebuilt every ten seconds is nothing and a diff is a bug farm.
    */
   setWoodland(packed: Float32Array | null): void;
+  /**
+   * Goats and chickens around the dwellings of a village.
+   *
+   * Derived entirely from the buildings already in the view: no simulation state, no
+   * snapshot field, nothing saved and nothing hashed. They are the life of a homestead
+   * rather than anything a player commands, and `decoration.ts` has the argument for
+   * why a thing that is only ever looked at should stay on this side of the boundary —
+   * the argument trees outgrew the moment you could pick and fell them, and that small
+   * stock do not.
+   *
+   * Placed from the building's own handle, so a given hut keeps its own goats in the
+   * same spots for the life of the match. They do not move, for the reason the scrub
+   * does not: the depth sort keys off position, and scenery that wandered would churn
+   * the draw order of everything near it every frame.
+   */
+  setLivestock(view: InterpolatedView): void;
 }
 
 interface Marker {
@@ -413,6 +429,9 @@ export function createEntityLayer(
   let sceneryCount = 0;
   /** Sprites for the standing wood, replaced wholesale when the wood changes. */
   const treeSprites: Sprite[] = [];
+  /** Trees currently in `props`, so livestock can be appended after them. */
+  let treeCount = 0;
+  const stockSprites: Sprite[] = [];
 
   function placeProp(kind: string, variant: number, worldX: number, worldY: number, scale = 1): Sprite | null {
     if (atlas === null) return null;
@@ -438,6 +457,14 @@ export function createEntityLayer(
     }
   }
   sceneryCount = props.length;
+
+  /** Dwellings only, and these are their subtype codes. See shared/buildings. */
+  const BUILDING_UMUZI = 1;
+  const BUILDING_INDLUNKULU = 4;
+  /** How much life a hut supports, and how far out it wanders. */
+  const STOCK_PER_DWELLING = 4;
+  const STOCK_GOATS = 2;
+  const STOCK_RING = 1.5;
 
   /** Sprite scale per growth stage: a sapling is not a tree yet. */
   const STAGE_SCALE = [0.42, 0.72, 1] as const;
@@ -542,6 +569,59 @@ export function createEntityLayer(
       // a hidden sprite is a slot the next sapling can have without another addChild.
       for (let i = wanted; i < treeSprites.length; i++) treeSprites[i]!.visible = false;
 
+      treeCount = props.length - sceneryCount;
+      rehandle();
+    },
+
+    setLivestock(view: InterpolatedView): void {
+      if (atlas === null) return;
+      // Everything after the scenery and the trees is ours to rewrite.
+      props.length = sceneryCount + treeCount;
+
+      let placed = 0;
+      for (let i = 0; i < view.count; i++) {
+        if (view.kind[i] !== KIND_BUILDING) continue;
+        // Only a finished dwelling. A building site has nobody living at it yet, and a
+        // granary or a kraal is not where the chickens are.
+        if (view.progressPct[i]! < 255) continue;
+        const subtype = view.subtype[i]!;
+        if (subtype !== BUILDING_UMUZI && subtype !== BUILDING_INDLUNKULU) continue;
+
+        const handle = view.handle[i]!;
+        for (let n = 0; n < STOCK_PER_DWELLING; n++) {
+          // Hashed off the handle so a hut keeps its own animals in its own spots.
+          const hash = Math.imul(handle ^ (n * 0x9e3779b9), 0x85ebca6b) >>> 0;
+          const angle = ((hash & 0xffff) / 0x10000) * Math.PI * 2;
+          const reach = STOCK_RING + (((hash >>> 16) & 0xff) / 255) * 0.7;
+          const kind = n < STOCK_GOATS ? 'goat' : 'chicken';
+          const variant = (hash >>> 24) % 3;
+          const worldX = view.x[i]! + Math.cos(angle) * reach;
+          const worldY = view.y[i]! + Math.sin(angle) * reach;
+
+          const frame = atlas.frame(kind, 'still', 0, variant);
+          // No art for them yet is not an error: the sprites simply are not drawn until
+          // the atlas has them, and everything else carries on.
+          if (frame === null) continue;
+
+          let sprite = stockSprites[placed];
+          if (sprite === undefined) {
+            sprite = new Sprite();
+            bodies.addChild(sprite);
+            stockSprites.push(sprite);
+          }
+          sprite.visible = true;
+          sprite.texture = frame.texture;
+          sprite.scale.set(frame.scale);
+          sprite.position.set(
+            worldToScreenX(worldX, worldY) - frame.anchorX * frame.scale,
+            worldToScreenY(worldX, worldY, 0) - frame.anchorY * frame.scale,
+          );
+          props.push({ sprite, depth: worldX + worldY, x: worldX, y: worldY });
+          placed++;
+        }
+      }
+
+      for (let i = placed; i < stockSprites.length; i++) stockSprites[i]!.visible = false;
       rehandle();
     },
 

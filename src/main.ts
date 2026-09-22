@@ -1036,6 +1036,9 @@ async function main(options: GameOptions): Promise<void> {
       // Casualties leave the selection. Everything downstream — the panel, the readout,
       // the order dispatch — reads this set, so it has to mean what it says.
       selection.retain(view);
+      // Before update, which is what runs the depth sort: the stock have to be in the
+      // prop list by the time draw order is decided or they sort against a stale set.
+      entities.setLivestock(view);
       entities.update(view, map, selection.handles, damage, at);
       // What the field sounds like, as opposed to what just happened. Read from the same
       // interpolated view the renderer draws, so the audio agrees with the picture.
