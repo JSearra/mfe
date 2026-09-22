@@ -87,7 +87,22 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     woodCost: 55,
     cattleCost: 2,
     work: 480,
-    grainYield: 4,
+    /*
+     * A dwelling is shelter, not a granary.
+     *
+     * This was 4, which made a hut a small farm: a village that begins as a village
+     * rather than as a crowd in a field founds several of them, and the opening went
+     * from feeding 61 households to feeding 104 against a settle target of 60 — the
+     * whole economic arc handed over before the player had done anything. The target
+     * was costed in Phase V1 as "about 15 more a cycle than the land gives, which is
+     * two granaries and the work to raise them", and dwellings quietly paying that
+     * bill is what broke it.
+     *
+     * A umuzi still earns its cost several times over, because what it produces is
+     * PEOPLE — `trains` below is the whole point of it. Food comes from the land and
+     * from the granary that stores what the land gives.
+     */
+    grainYield: 1,
     cattleYield: 0,
     maxHeightVariation: 0,
     // A homestead is where people come from, so this is where troops are raised.
