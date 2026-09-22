@@ -41,7 +41,7 @@
     "droughtSevere": "Drought {pct}% — open plots barren",
     "starving": "Starving: {amount} grain short",
     "wood": "Timber",
-    "margin": "Harvest {harvest} / upkeep {upkeep}",
+    "margin": "Harvest {harvest} / upkeep {upkeep} · land feeds {feeds}",
     "driving": "Driving {head}"
   },
   "building": {

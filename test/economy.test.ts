@@ -483,6 +483,36 @@ describe('can a player survive their own opening position', () => {
     const upkeep = (24 * tuning.economy.grainPerUnit + 148 * tuning.economy.grainPerCattle) * 1.1;
     expect(income, 'the worst of a bad year should not pay for itself').toBeLessThan(upkeep);
   });
+
+  describe('what the land can carry', () => {
+    /** Run one upkeep cycle and read back what the land would feed. */
+    function afterOneSeason(extraCattle = 0) {
+      const { world, economy, harvest } = opening(0x5eed);
+      if (extraCattle > 0) economy.add(0, Resource.Cattle, extraCattle);
+      world.tick = tuning.economy.upkeepIntervalTicks;
+      economy.update(world, [], undefined, undefined, harvest);
+      return economy;
+    }
+
+    it('reports the households the harvest would feed, not the ones it is feeding', () => {
+      // The number the objective was missing. A village starts able to feed about 38 and
+      // is asked to settle 60, and nothing connected those two facts — so a player
+      // watching "Village 24/60" had no way to know the answer was more fields rather
+      // than more people.
+      const economy = afterOneSeason();
+      expect(economy.feeds[0]!).toBeGreaterThan(0);
+      // It is what the LAND carries, so it is not simply the headcount standing on it.
+      expect(economy.feeds[0]!).not.toBe(24);
+    });
+
+    it('counts the herd first, because cattle eat whether anyone planned for them', () => {
+      expect(afterOneSeason(400).feeds[0]!).toBeLessThan(afterOneSeason().feeds[0]!);
+    });
+
+    it('is zero when the herd alone eats the whole harvest', () => {
+      expect(afterOneSeason(100_000).feeds[0]!).toBe(0);
+    });
+  });
 });
 
 describe('the herd does not grow into a victory on its own', () => {
@@ -549,6 +579,7 @@ describe('the herd does not grow into a victory on its own', () => {
     const grown = economy.balance(0, Resource.Cattle);
     expect(grown / before, 'a herd held for fifteen minutes barely grew').toBeGreaterThan(1.15);
   });
+
 });
 
 describe('who pays for a driven herd', () => {

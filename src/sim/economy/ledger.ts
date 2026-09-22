@@ -55,6 +55,16 @@ export interface Economy {
    */
   readonly upkeep: Float64Array;
   readonly harvested: Float64Array;
+  /**
+   * Households the last harvest would feed, alongside the herd this village already has.
+   *
+   * The number the objective is missing. A village starts able to feed about 38 and is
+   * asked to settle 60, and nothing on screen connected those two facts — so a player
+   * watching "Village 24/60" had no way to know that the answer was more fields rather
+   * than more people. Ten untended fields feed 8; ten tended feed 38; fourteen tended
+   * feed 69. That is the whole of the win path and it was invisible.
+   */
+  readonly feeds: Float64Array;
 
   balance(player: number, resource: Resource): number;
   add(player: number, resource: Resource, amount: number): void;
@@ -115,6 +125,7 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
   const shortfall = new Float64Array(players);
   const upkeep = new Float64Array(players);
   const harvested = new Float64Array(players);
+  const feeds = new Float64Array(players);
 
   for (let player = 0; player < players; player++) {
     const config = factions[player]!;
@@ -133,6 +144,7 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
     shortfall,
     upkeep,
     harvested,
+    feeds,
 
     balance(player, resource) {
       return amounts[player * RESOURCE_COUNT + resource] ?? 0;
@@ -278,6 +290,11 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
           config.upkeepMultiplier;
 
         upkeep[player] = needed;
+        // What the land could carry, as opposed to what it is carrying. The herd is
+        // counted first because it eats whether or not anybody plans for it.
+        const forHerd = totalCattle * e.grainPerCattle * config.upkeepMultiplier;
+        const spare = (harvested[player]! - forHerd) / (e.grainPerUnit * config.upkeepMultiplier);
+        feeds[player] = spare > 0 ? Math.floor(spare) : 0;
 
         const held = economy.balance(player, Resource.Grain);
         if (held >= needed) {

@@ -150,8 +150,9 @@
     "allyMargin": 0.5
   },
   "vision": {
-    "unitRadius": 8.0,
-    "cattleRadius": 4.0,
+    "revealAll": 1.0,
+    "unitRadius": 18.0,
+    "cattleRadius": 9.0,
     "eyeHeight": 1.5,
     "intervalTicks": 4
   },

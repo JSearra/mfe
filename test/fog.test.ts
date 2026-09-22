@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { heightmapFrom } from '../src/shared/heightmap.js';
 import { decodeSnapshot } from '../src/shared/snapshot.js';
 import { buildSnapshot } from '../src/sim/snapshot.js';
@@ -8,6 +8,38 @@ import { createWorld, spawn } from '../src/sim/world.js';
 import { flatMap } from './simHarness.js';
 
 const V = tuning.vision;
+
+/**
+ * Play has the fog switched off (`vision.revealAll`), so these run with it switched on.
+ *
+ * The mechanic is not gone — it is one flag, kept because the per-viewer snapshot path
+ * it drives is what lockstep multiplayer needs and is the most expensive thing in the
+ * project to retrofit. A switched-off system that nothing tests is a system that quietly
+ * rots, so everything below turns it back on for its own duration.
+ */
+const revealAll = V.revealAll;
+beforeAll(() => {
+  (V as { revealAll: number }).revealAll = 0;
+});
+afterAll(() => {
+  (V as { revealAll: number }).revealAll = revealAll;
+});
+
+describe('the switch that turns it off', () => {
+  it('shows the whole map to everybody', () => {
+    (V as { revealAll: number }).revealAll = 1;
+    const map = flatMap(32);
+    const world = createWorld(16, 1);
+    const fog = createFog(2, map);
+    spawn(world, 4, 4, 0);
+    updateFog(world, map, fog);
+    (V as { revealAll: number }).revealAll = 0;
+
+    expect(Array.from(fog.tiles).every((t) => t === Fog.Visible)).toBe(true);
+    // Including ground nobody has been anywhere near, and for the other player too.
+    expect(fogAt(fog, 1, 31, 31)).toBe(Fog.Visible);
+  });
+});
 
 describe('fog of war', () => {
   it('starts entirely unexplored', () => {

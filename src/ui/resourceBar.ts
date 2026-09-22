@@ -84,8 +84,15 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
         margin.textContent = t('resource.margin', {
           harvest: Math.round(player.harvest),
           upkeep: Math.round(player.upkeep),
+          feeds: Math.round(player.feeds),
         });
-        margin.classList.toggle('is-negative', net < 0);
+        // Amber while the land cannot carry the village it is being asked for. That is
+        // not an emergency — it is the standing reason to break more ground — so it is
+        // a colour on a readout rather than an alert that interrupts.
+        margin.classList.toggle(
+          'is-negative',
+          net < 0 || player.feeds < player.householdsToSettle,
+        );
       } else {
         margin.textContent = '';
       }

@@ -14,6 +14,14 @@ import { EntityKind, type World } from '../world.js';
  *
  * Three states per tile, which is the minimum that supports "I remember a kraal being
  * here": unexplored, explored (remembered, not currently seen), and visible.
+ *
+ * **`vision.revealAll` turns it off**, and it is a switch rather than a deletion. Play
+ * kept running into the same wall: a village cannot tend fields it cannot see, and
+ * hunting for one's own herd through a radius of eight tiles is not the interesting part
+ * of a game about herding. Deleting the system would also throw away the thing
+ * ARCHITECTURE calls the highest-retrofit-cost omission in the brief — the per-viewer
+ * snapshot path that lockstep multiplayer still needs — for no gain over one flag. With
+ * it set, everyone sees everything, symmetrically, including the computer players.
  */
 
 export const Fog = {
@@ -116,6 +124,15 @@ export function updateFog(
   if (world.tick % v.intervalTicks !== 0) return;
 
   const tiles = fog.width * fog.height;
+
+  // Fog off: everything visible to everybody, once, and nothing to recompute after.
+  if (v.revealAll !== 0) {
+    if (fog.tiles[0] !== Fog.Visible) {
+      fog.tiles.fill(Fog.Visible);
+      fog.version++;
+    }
+    return;
+  }
 
   // Everything currently visible drops to remembered; what is still seen is restored
   // below. Explored never reverts to unexplored — that is the memory.

@@ -89,6 +89,12 @@ export interface PlayerState {
   readonly upkeep: number;
   readonly harvest: number;
   /**
+   * Households the land would feed. Shown beside the settle target, because those two
+   * numbers together are the whole of what a player needs to plan growth: a village
+   * that feeds 38 and is asked for 60 needs more fields, not more people.
+   */
+  readonly feeds: number;
+  /**
    * Head a slaughter would take right now, or 0 when there is nothing to take.
    *
    * The simulation reckons it rather than the panel, because how many beasts a cull
@@ -373,6 +379,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         shortfall: economy.shortfall[viewerId] ?? 0,
         upkeep: economy.upkeep[viewerId] ?? 0,
         harvest: economy.harvested[viewerId] ?? 0,
+        feeds: economy.feeds[viewerId] ?? 0,
         cullHead: cullHead(economy, viewerId),
         driving: drivenBy(world, viewerId),
         drought: droughtNow,

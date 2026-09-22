@@ -151,6 +151,7 @@ function tick(): void {
     shortfall: economy.shortfall[viewerId] ?? 0,
     upkeep: economy.upkeep[viewerId] ?? 0,
     harvest: economy.harvested[viewerId] ?? 0,
+    feeds: economy.feeds[viewerId] ?? 0,
     cullHead: cullHead(economy, viewerId),
     driving: drivenBy(world, viewerId),
     drought: droughtNow,

@@ -660,6 +660,33 @@ Measured over five thirty-minute AI matches on the seeded opening: 1,530–2,130
 events and 90–115 deaths per match, every one of them from hunger, with villages going
 short in 86–132 seasons out of 180. Nobody was killed by anybody.
 
+### The win path, and the fog
+
+Five browser playthroughs had never once moved the household count off its starting 24,
+against an objective of 60. The economy was not the obstacle and neither was the UI: the
+obstacle was that **nothing on screen connected the two numbers that decide the game.**
+
+A village starts able to feed about 38 households. Ten untended fields feed 8; ten tended
+feed 38; fourteen tended feed 69. The objective asks for 60. So the answer is always more
+LAND — tend what you have, break more ground — and never more people, which is the move
+the HUD's "Village 24/60" invites. The resource bar now reads
+`Harvest 117 / upkeep 73 · land feeds 63`, in amber whenever the land cannot carry the
+village being asked for. That one figure is the whole of the strategy made visible.
+
+Played that way, measured over five seeds: peak households 73, 24, 40, 79 and 89, with
+the village winning two outright — seed 11 settling at 11.6 minutes, seed 3 by the
+neighbour starving. The computer takes the other three. That is a race rather than a
+walk-over, which is the point.
+
+**The fog is off** (`vision.revealAll`), at the project owner's call, and it is a switch
+rather than a deletion. A village cannot tend fields it cannot see, and hunting for one's
+own herd through a radius of eight tiles is not the interesting part of a game about
+herding. The per-viewer snapshot path stays — ARCHITECTURE calls it the highest-retrofit-
+cost omission in the brief and lockstep multiplayer still needs it — and `test/fog.test.ts`
+switches the fog back on for its own duration, so a system the game no longer uses cannot
+quietly rot. The radii went 8 to 18 and 4 to 9 besides, so switching it back on is still a
+far wider view than before.
+
 ### Assigning work, and taking a herd
 
 Both mechanics already worked and neither was usable, which is a distinction worth
