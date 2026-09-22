@@ -48,6 +48,7 @@ const MAP_LABELS: Readonly<Record<string, MessageKey>> = {
   umfolozi: 'setup.mapUmfolozi',
   karoo: 'setup.mapKaroo',
   magaliesberg: 'setup.mapMagaliesberg',
+  coast: 'setup.mapCoast',
 };
 
 const FACTION_LABELS: Readonly<Record<FactionId, MessageKey>> = {

@@ -122,6 +122,7 @@
     "liveryWhite": "White, black marking",
     "liveryBlack": "Black, white marking",
     "liveryRed": "Red, white marking",
-    "liveryDun": "Dun, dark marking"
+    "liveryDun": "Dun, dark marking",
+    "mapCoast": "Coast"
   }
 }

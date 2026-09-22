@@ -16,6 +16,8 @@ export const MapScript = {
   Karoo: 'karoo',
   /** Parallel ridge lines pierced by narrow poorts. */
   Magaliesberg: 'magaliesberg',
+  /** A coastal plain running down to the sea, with a river reaching it. */
+  Coast: 'coast',
 } as const;
 
 export type MapScript = (typeof MapScript)[keyof typeof MapScript];

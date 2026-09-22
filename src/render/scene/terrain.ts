@@ -1,5 +1,5 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
-import { heightAt, type Heightmap } from '../../shared/heightmap.js';
+import { heightAt, isWater, type Heightmap } from '../../shared/heightmap.js';
 import {
   ELEV_STEP,
   HALF_TILE_H,
@@ -33,6 +33,9 @@ import type { TerrainTile, TerrainTiles } from '../assets.js';
  */
 
 const { chunkSize, palette, eastFaceShade, southFaceShade, gridAlpha } = presentation.terrain;
+/** Open water, and the lighter margin where it meets a bank. */
+const waterColour = Number.parseInt(presentation.terrain.water.slice(1), 16);
+const waterEdgeColour = Number.parseInt(presentation.terrain.waterEdge.slice(1), 16);
 
 interface Chunk {
   readonly graphics: Graphics;
@@ -238,6 +241,29 @@ function drawTile(
   const southY = centreY + HALF_TILE_H;
   const eastX = centreX + HALF_TILE_W;
   const westX = centreX - HALF_TILE_W;
+
+  /*
+   * Water is painted, not textured.
+   *
+   * Every terrain band has generated art behind it; water has none, and inventing a
+   * riverbed texture for it would be worse than a flat colour — at this scale a river
+   * reads as a colour and a shape, and a textured one would read as more dry ground.
+   * Shallows at the margin so a bank has an edge rather than a hard seam against it.
+   */
+  if (isWater(map, tileX, tileY)) {
+    const shallow =
+      isWater(map, tileX + 1, tileY) &&
+      isWater(map, tileX - 1, tileY) &&
+      isWater(map, tileX, tileY + 1) &&
+      isWater(map, tileX, tileY - 1);
+    graphics.moveTo(centreX, northY);
+    graphics.lineTo(eastX, centreY);
+    graphics.lineTo(centreX, southY);
+    graphics.lineTo(westX, centreY);
+    graphics.closePath();
+    graphics.fill({ color: shallow ? waterColour : waterEdgeColour });
+    return;
+  }
 
   // Drawn with a possibly-borrowed band, but the geometry still uses the tile's real
   // level: borrowing art must not move the ground a unit walks on.

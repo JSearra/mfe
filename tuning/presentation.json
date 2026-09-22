@@ -22,7 +22,9 @@
     "eastFaceShade": 0.62,
     "southFaceShade": 0.46,
     "gridAlpha": 0.16,
-    "cursorColour": "#e8d9a8"
+    "cursorColour": "#e8d9a8",
+    "water": "#2f5a6e",
+    "waterEdge": "#3d7288"
   },
   "debug": {
     "showChunkBounds": false

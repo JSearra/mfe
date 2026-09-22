@@ -21,7 +21,8 @@
     "octaves": 5,
     "lacunarity": 2.0,
     "gain": 0.5,
-    "flatten": 2
+    "flatten": 2,
+    "driftEvery": 14
   },
   "unit": {
     "maxHp": 100
@@ -226,5 +227,9 @@
   "roles": {
     "intervalTicks": 20,
     "buildingRadius": 2.6
+  },
+  "fishing": {
+    "catchPerUpkeep": 3.0,
+    "maxAnglers": 2
   }
 }

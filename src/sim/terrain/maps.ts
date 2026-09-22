@@ -1,5 +1,6 @@
 import type { Heightmap } from '../../shared/heightmap.js';
 import { MapScript } from '../../shared/maps.js';
+import { carveCoast, carveRiver } from './water.js';
 import { createRng, nextInt, nextU32 } from '../math/rng.js';
 import { cos, sin, TWO_PI } from '../math/trig.js';
 import { buildPermutation, fbm, smoothstep } from './noise.js';
@@ -25,7 +26,8 @@ const LEVELS = 8;
 
 function make(width: number, height: number): { data: Uint8Array; map: Heightmap } {
   const data = new Uint8Array(width * height);
-  return { data, map: { width, height, levels: LEVELS, data } };
+  const water = new Uint8Array(width * height);
+  return { data, map: { width, height, levels: LEVELS, data, water } };
 }
 
 function clampLevel(value: number): number {
@@ -95,6 +97,35 @@ function thabaBosiu(width: number, height: number, seed: number): Heightmap {
 }
 
 /**
+ * Coast: the land running down to the sea.
+ *
+ * The one landscape here bounded by water rather than merely crossed by it. A coastline
+ * costs no connectivity — everything inland stays joined — so the shoreline can be as
+ * long as it likes, and a village sited on it has a food supply the drought cannot
+ * touch. That is the point of it: every other source of food on this map answers to the
+ * weather.
+ */
+function coast(width: number, height: number, seed: number): Heightmap {
+  const { data, map } = make(width, height);
+  const perm = buildPermutation(seed ^ 0x36ea);
+  const rng = createRng(seed);
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      // Rising away from the sea: a coastal plain behind the strand, hills at the back.
+      const inland = x / width;
+      const base = fbm(perm, x * 0.03, y * 0.03, 4, 2, 0.5);
+      data[y * width + x] = clampLevel((base * 0.55 + inland * 0.75) * 6.2);
+    }
+  }
+
+  carveCoast(map, rng, Math.max(4, Math.round(width * 0.11)));
+  // And a river reaching the sea, because a coast without one is a wall of water.
+  carveRiver(map, rng, 13);
+  return map;
+}
+
+/**
  * Umfolozi: rolling spurs cut by a braided river.
  *
  * The river is a sunken channel rather than a separate water tile type, so it blocks and
@@ -125,7 +156,12 @@ function umfolozi(width: number, height: number, seed: number): Heightmap {
     for (let x = centre - halfWidth; x <= centre + halfWidth; x++) {
       if (x < 0 || x >= width) continue;
       // A drift: the bed rises to bank level and can be waded.
-      data[y * width + x] = y % driftEvery === 0 ? 1 : 0;
+      const drift = y % driftEvery === 0;
+      data[y * width + x] = drift ? 1 : 0;
+      // And everywhere it does not rise, there is water in it. The channel was already
+      // impassable by height; marking it wet is what makes it fishable, and what stops
+      // the renderer drawing a river as dry ground.
+      map.water[y * width + x] = drift ? 0 : 1;
     }
   }
   return map;
@@ -237,6 +273,7 @@ const GENERATORS: Readonly<Record<MapScript, (w: number, h: number, seed: number
   [MapScript.Umfolozi]: umfolozi,
   [MapScript.Karoo]: karoo,
   [MapScript.Magaliesberg]: magaliesberg,
+  [MapScript.Coast]: coast,
 };
 
 export function generateMap(

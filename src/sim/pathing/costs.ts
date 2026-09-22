@@ -112,6 +112,18 @@ export function buildCostLayer(
       const index = tileY * map.width + tileX;
       const here = map.data[index]!;
 
+      // Standing water stops everything on land. Nobody in this game swims, and cattle
+      // driven into a river would be a worse lie than cattle walking through a thorn
+      // bush. A tile marked wet is impassable and has no edges out of it, exactly as a
+      // building footprint does — see blockTile, which this mirrors so that the two
+      // cannot drift apart.
+      if (map.water.length !== 0 && map.water[index] === 1) {
+        tileCost[index] = IMPASSABLE;
+        dirs8[index] = 0;
+        edges[index] = 0;
+        continue;
+      }
+
       tileCost[index] = profile.baseCost;
 
       let mask = 0;
@@ -119,6 +131,11 @@ export function buildCostLayer(
         const nx = tileX + EDGE_DX[dir]!;
         const ny = tileY + EDGE_DY[dir]!;
         if (!inBounds(map, nx, ny)) continue;
+        // No edge INTO water either, and tested against the mark rather than against
+        // the neighbour's cost: this pass fills the grid in scan order, so a wet tile
+        // below or to the right has not been marked impassable yet and would read as
+        // ordinary ground.
+        if (map.water.length !== 0 && map.water[ny * map.width + nx] === 1) continue;
 
         const there = map.data[ny * map.width + nx]!;
         const delta = here - there;

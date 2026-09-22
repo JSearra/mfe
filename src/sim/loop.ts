@@ -12,6 +12,7 @@ import { updateWoodland, type Woodland } from './woodland.js';
 import { updateAlliance, type Alliance } from './alliance.js';
 import { reap } from './mortality.js';
 import { updateRoles } from './roles.js';
+import { updateFishing } from './fishing.js';
 import { harvestOf, updateFarmland, type Farmland } from './economy/farmland.js';
 import { tuning } from './tuning.js';
 import { updateFog, type FogState } from './vision/fog.js';
@@ -172,6 +173,9 @@ export function step(loop: SimLoop): void {
     // arriving a season after the famine it answers. See src/sim/alliance.ts.
     updateAlliance(alliance, economy, events, world.tick);
   }
+  // Before the ledger charges upkeep, so a catch landed this season is eaten this
+  // season — the same reason an ally's relief is sent before the ledger runs.
+  updateFishing(world, map, economy, world.tick);
   economy.update(
     world,
     events,
