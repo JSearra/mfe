@@ -3,6 +3,7 @@ import { t } from './core/i18n/index.js';
 import { heightAt } from './shared/heightmap.js';
 import { worldToScreenX, worldToScreenY } from './shared/iso.js';
 import { NO_TILE, pickTileIndex, tileX, tileY } from './shared/picking.js';
+import { FARMLAND_STRIDE, fieldFallow, fieldOwner, fieldSlot } from './shared/farmland.js';
 import { BuildingType } from './shared/buildings/index.js';
 import { CommandKind } from './sim/commands.js';
 import { TECH_IDS } from './shared/tech/index.js';
@@ -570,6 +571,33 @@ async function main(options: GameOptions): Promise<void> {
   });
 
   let view: InterpolatedView | null = null;
+  /**
+   * The fields as the simulation last sent them, for the gestures that act on one.
+   *
+   * Held rather than re-read from the renderer, because the render layer keeps sprites
+   * and not records — and because the packed array is exactly what a command needs: a
+   * field's SLOT, which is its index in the simulation and not its place in the packed
+   * array. Packing drops abandoned fields, so the two stop agreeing the moment one is
+   * given up.
+   */
+  let lastFarmland: Float32Array | null = null;
+
+  /** The index into `lastFarmland` of the player's field under the pointer, or -1. */
+  function fieldUnderCursor(): number {
+    if (lastFarmland === null || !input.pointerInside) return -1;
+    const isoX = (input.pointerX - camera.viewportWidth / 2) / camera.zoom + camera.x;
+    const isoY = (input.pointerY - camera.viewportHeight / 2) / camera.zoom + camera.y;
+    const index = pickTileIndex(map, isoX, isoY);
+    if (index === NO_TILE) return -1;
+
+    const cursorX = tileX(map, index);
+    const cursorY = tileY(map, index);
+    for (let at = 0; at + FARMLAND_STRIDE <= lastFarmland.length; at += FARMLAND_STRIDE) {
+      if (fieldOwner(lastFarmland, at) !== PLAYER) continue;
+      if (lastFarmland[at] === cursorX && lastFarmland[at + 1] === cursorY) return at;
+    }
+    return -1;
+  }
   /** The last PlayerState that crossed the boundary, for the dev inspection hook. */
   let lastPlayer: PlayerState | null = null;
   const herdScratch: number[] = [];
@@ -680,6 +708,25 @@ async function main(options: GameOptions): Promise<void> {
     if (event.key === 'f' || event.key === 'F') {
       planting = true;
       armed = null;
+    }
+
+    /*
+     * Rest the field under the cursor, or put it back to work.
+     *
+     * Under the CURSOR rather than under a selection, because fields are not selectable
+     * — there is no field-selection UI and `CommandKind.Abandon` has sat without a
+     * caller since it was written for want of one. Felling a tree already works this
+     * way, so a player who has learned one gesture has learned this one.
+     */
+    if (event.key === 'g' || event.key === 'G') {
+      const at = fieldUnderCursor();
+      if (at >= 0) {
+        sim.sendCommand(
+          CommandKind.Fallow,
+          fieldSlot(lastFarmland!, at),
+          fieldFallow(lastFarmland!, at) ? 0 : 1,
+        );
+      }
     }
   }, { signal });
 
@@ -886,6 +933,20 @@ async function main(options: GameOptions): Promise<void> {
       // not what ended it, which cost an afternoon.
       player: () => lastPlayer,
       count: () => view?.count ?? 0,
+      // The fields as they last crossed the boundary, counted rather than listed. A
+      // browser-driven session needs to be able to see that a gesture reached the
+      // simulation and came back, and "how many are resting" is the whole of that.
+      fields: () => {
+        if (lastFarmland === null) return { mine: 0, resting: 0 };
+        let mine = 0;
+        let resting = 0;
+        for (let at = 0; at + FARMLAND_STRIDE <= lastFarmland.length; at += FARMLAND_STRIDE) {
+          if (fieldOwner(lastFarmland, at) !== PLAYER) continue;
+          mine++;
+          if (fieldFallow(lastFarmland, at)) resting++;
+        }
+        return { mine, resting };
+      },
       selected: () => [...selection.handles],
       handles: () => (view === null ? [] : Array.from(view.handle.subarray(0, view.count))),
       audio: () => ({ running: audio.running, voices: audio.voicesPlayed }),
@@ -1012,6 +1073,7 @@ async function main(options: GameOptions): Promise<void> {
       entities.setWoodland(message.woodland);
       if (message.woodland !== null) standingWood = message.woodland;
       fields.setFarmland(message.farmland);
+      if (message.farmland !== null) lastFarmland = message.farmland;
       if (message.fog !== null) latestFog = message.fog;
       // Sound comes from events, never from diffing snapshots: a death simply stops
       // appearing, and there is nothing in a state diff that says it happened.

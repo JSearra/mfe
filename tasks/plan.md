@@ -274,7 +274,7 @@ and the Definition of Done in `CLAUDE.md`.
       work, nobody dies. The counterplay to a bad year, which does not currently exist.
       *Done when:* a rationed village survives a shortfall that starves an unrationed
       one; the order is reversible; the ledger still serialises.
-- [ ] **V9 — Fallow.** A field left deliberately unworked recovers condition faster than
+- [x] **V9 — Fallow.** Done. Section V complete. A field left deliberately unworked recovers condition faster than
       a worked one, so siting more fields than you can tend becomes a decision rather
       than a mistake.
       *Done when:* a fallow field's condition curve is measured against a worked one and

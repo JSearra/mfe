@@ -3,6 +3,7 @@ import { heightAt, type Heightmap } from '../../shared/heightmap.js';
 import {
   fieldCondition,
   fieldEstablished,
+  fieldFallow,
   fieldOwner,
   FARMLAND_STRIDE,
 } from '../../shared/farmland.js';
@@ -25,6 +26,16 @@ import type { TerrainTiles } from '../assets.js';
 
 /** How dark a field at zero condition draws, as a fraction of a whole one. */
 const RUINED_TINT = 0.45;
+
+/**
+ * A resting field is drawn as the turned earth it is, not as a standing crop.
+ *
+ * A rule the village lives by and cannot read off the map is half a mechanic — this
+ * project has the three playthroughs that died of invisible field decay to prove it —
+ * so fallow had to be visible from the moment it existed. Bare ground is what a resting
+ * field looks like, and it is already the art the broken state uses, so the reading
+ * costs nothing and is immediately legible: crop means working, earth means not.
+ */
 
 export interface FieldLayer {
   readonly container: Container;
@@ -52,9 +63,10 @@ export function createFieldLayer(map: Heightmap, tiles: TerrainTiles | null): Fi
         const tileY = packed[at + 1]!;
         const established = fieldEstablished(packed, at);
         const condition = fieldCondition(packed, at);
+        const resting = fieldFallow(packed, at);
 
         const level = heightAt(map, tileX, tileY);
-        const tile = tiles.field(level < 0 ? 0 : level, established);
+        const tile = tiles.field(level < 0 ? 0 : level, established && !resting);
         if (tile === null) continue;
 
         let sprite = sprites[i];
@@ -72,8 +84,10 @@ export function createFieldLayer(map: Heightmap, tiles: TerrainTiles | null): Fi
         sprite.position.set(centreX - HALF_TILE_W, centreY - HALF_TILE_H);
 
         // Broken ground does not wither — there is nothing on it yet — so only a crop
-        // carries its condition in its colour.
-        const shade = established ? RUINED_TINT + (1 - RUINED_TINT) * condition : 1;
+        // carries its condition in its colour. A resting field is bare ground too, and
+        // its condition is climbing rather than falling, so dimming it would say the
+        // opposite of what is happening.
+        const shade = established && !resting ? RUINED_TINT + (1 - RUINED_TINT) * condition : 1;
         const channel = Math.round(255 * shade);
         sprite.tint = (channel << 16) | (channel << 8) | channel;
         // Somebody else's field is still a field and still worth seeing; whose it is

@@ -39,6 +39,15 @@ export interface Farmland {
   /** 0..1. What the field will actually return of what it could. */
   readonly condition: Float64Array;
   readonly alive: Uint8Array;
+  /**
+   * 1 while the field is deliberately resting.
+   *
+   * A field lost condition every season nobody stood on it, so siting more ground than
+   * a village could work was simply a mistake and there was no way to say "not this
+   * one, not this year". Resting ground pays nothing and comes back better than it went
+   * in, which turns having more land than hands from an error into a position.
+   */
+  readonly fallow: Uint8Array;
   /** Bumped when the fields look different, so a host can skip re-sending them. */
   version: number;
 }
@@ -71,6 +80,7 @@ export function createFarmland(capacity = tuning.farmland.capacity): Farmland {
     work: new Float64Array(capacity),
     condition: new Float64Array(capacity),
     alive: new Uint8Array(capacity),
+    fallow: new Uint8Array(capacity),
     version: 0,
   };
 }
@@ -149,6 +159,35 @@ export function plant(
   return PlantResult.Planted;
 }
 
+/** Is this field resting? */
+export function isFallow(land: Farmland, index: number): boolean {
+  return land.fallow[index] === 1;
+}
+
+/**
+ * Rest a field, or put it back to work.
+ *
+ * Reversible and free, deliberately. What it costs is the harvest it does not give
+ * while it rests, and charging for the decision on top of that would make a village
+ * think twice about the one move that repairs its land.
+ */
+export function setFallow(
+  land: Farmland,
+  index: number,
+  resting: boolean,
+  owner?: number,
+): boolean {
+  if (index < 0 || index >= land.count || land.alive[index] === 0) return false;
+  // A field index arriving from a client is untrusted until the farmland says whose it
+  // is. Resting a neighbour's field would be a free way to starve them.
+  if (owner !== undefined && land.owner[index] !== owner) return false;
+  const next = resting ? 1 : 0;
+  if (land.fallow[index] === next) return false;
+  land.fallow[index] = next;
+  land.version++;
+  return true;
+}
+
 /** Abandon a field. The seed is not refunded. */
 export function abandon(land: Farmland, index: number): boolean {
   if (index < 0 || index >= land.count || land.alive[index] === 0) return false;
@@ -222,8 +261,24 @@ export function updateFarmland(
     const trampling = beasts > f.maxTramplers ? f.maxTramplers : beasts;
     let condition = land.condition[index]!;
     condition -= trampling * f.grazedPerBeastPerUpkeep;
-    condition -= f.neglectPerUpkeep;
-    condition += working * f.tendPerUpkeep;
+    if (land.fallow[index] === 1) {
+      /*
+       * Resting ground comes back, and comes back faster than hands can hold it.
+       *
+       * Faster is the whole point. If rest merely matched a villager standing on the
+       * field, fallow would only ever be what a village did with land it had given up
+       * on — and the decision it exists to create is the opposite one: taking good
+       * ground OUT of use for a year because it will be worth more afterwards.
+       *
+       * The trampling above still applies. Resting ground is not fenced ground, and a
+       * herd parked in a fallow field is still a herd in a field; letting rest outrun
+       * the hooves would make this a way to graze the crops for nothing.
+       */
+      condition += f.fallowRecoveryPerUpkeep;
+    } else {
+      condition -= f.neglectPerUpkeep;
+      condition += working * f.tendPerUpkeep;
+    }
 
     const clamped = condition < 0 ? 0 : condition > 1 ? 1 : condition;
     if (isEstablished(land, index)) {
@@ -284,6 +339,8 @@ export function harvestOf(
   index: number,
 ): { owner: number; sheltered: boolean; share: number } | null {
   if (land.alive[index] === 0) return null;
+  // A resting field feeds nobody, and that is the whole price of resting it.
+  if (land.fallow[index] === 1) return null;
   if (!isEstablished(land, index)) return null;
   return {
     owner: land.owner[index]!,
@@ -307,6 +364,7 @@ export function packFarmland(land: Farmland): Float32Array {
     out[at + 3] = isEstablished(land, i) ? 1 : 0;
     out[at + 4] = land.condition[i]!;
     out[at + 5] = i;
+    out[at + 6] = land.fallow[i]!;
     at += FARMLAND_STRIDE;
   }
   return out;

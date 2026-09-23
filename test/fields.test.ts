@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Texture } from 'pixi.js';
+import { Sprite, Texture } from 'pixi.js';
 import { createFieldLayer } from '../src/render/scene/fields.js';
 import { FARMLAND_STRIDE } from '../src/shared/farmland.js';
 import { HALF_TILE_H, HALF_TILE_W, worldToScreenX, worldToScreenY } from '../src/shared/iso.js';
@@ -30,7 +30,14 @@ const tiles: TerrainTiles = {
 
 /** One packed field record. */
 function packed(
-  entries: readonly { x: number; y: number; owner: number; established: boolean; condition: number }[],
+  entries: readonly {
+    x: number;
+    y: number;
+    owner: number;
+    established: boolean;
+    condition: number;
+    fallow?: boolean;
+  }[],
 ): Float32Array {
   const out = new Float32Array(entries.length * FARMLAND_STRIDE);
   entries.forEach((e, i) => {
@@ -41,6 +48,7 @@ function packed(
     out[at + 3] = e.established ? 1 : 0;
     out[at + 4] = e.condition;
     out[at + 5] = i;
+    out[at + 6] = e.fallow === true ? 1 : 0;
   });
   return out;
 }
@@ -128,5 +136,34 @@ describe('drawing the fields', () => {
     layer.setFarmland(packed([{ x: 4, y: 4, owner: 0, established: true, condition: 1 }]));
     layer.setFarmland(null);
     expect(layer.container.children.filter((c) => c.visible)).toHaveLength(1);
+  });
+});
+
+describe('a field that is resting', () => {
+  it('draws as bare earth rather than as a standing crop', () => {
+    // A rule the village lives by and cannot read off the map is half a mechanic, and
+    // this project has three playthroughs that died of invisible field decay to prove
+    // it. Crop means working; earth means resting.
+    const layer = createFieldLayer(map, tiles);
+    layer.setFarmland(
+      packed([
+        { x: 4, y: 5, owner: 0, established: true, condition: 1 },
+        { x: 6, y: 5, owner: 0, established: true, condition: 1, fallow: true },
+      ]),
+    );
+    const sprites = layer.container.children as Sprite[];
+    expect(sprites[0]!.texture).toBe(crop.texture);
+    expect(sprites[1]!.texture).toBe(broken.texture);
+  });
+
+  it('is not dimmed by its condition, because its condition is climbing', () => {
+    // A crop dims as it fails. A resting field is recovering, so dimming it would say
+    // the opposite of what is happening to it.
+    const layer = createFieldLayer(map, tiles);
+    layer.setFarmland(
+      packed([{ x: 4, y: 5, owner: 0, established: true, condition: 0.2, fallow: true }]),
+    );
+    const sprite = (layer.container.children as Sprite[])[0]!;
+    expect(sprite.tint).toBe(0xffffff);
   });
 });

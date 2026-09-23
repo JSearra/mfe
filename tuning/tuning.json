@@ -168,7 +168,8 @@
     "maxBand": 4,
     "minSpacing": 1.6,
     "failingBelow": 0.7,
-    "warnEverySeasons": 5
+    "warnEverySeasons": 5,
+    "fallowRecoveryPerUpkeep": 0.05
   },
   "trade": {
     "weightCattle": 1.0,

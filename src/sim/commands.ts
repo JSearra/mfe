@@ -8,7 +8,7 @@ import { TECH_IDS } from '../shared/tech/index.js';
 import type { TechState } from './tech.js';
 import type { MovementSystem } from './movement.js';
 import { fell, type Woodland } from './woodland.js';
-import { abandon, plant, type Farmland } from './economy/farmland.js';
+import { abandon, plant, setFallow, type Farmland } from './economy/farmland.js';
 import { trade, TradeResult } from './trade.js';
 import { AllyResult, alliedWith, breakBond, propose, withdraw, type Alliance } from './alliance.js';
 import { Ration, Resource } from './economy/ledger.js';
@@ -104,6 +104,14 @@ export const CommandKind = {
    * two states rather than a dial, and why it costs work.
    */
   SetRation: 20,
+  /**
+   * Rest a field, or put it back to work. `a` is its index, `b` is 1 to rest it.
+   *
+   * See `setFallow` in economy/farmland.ts: the field pays nothing while it rests and
+   * comes back better than it went in, which is what makes having more land than hands
+   * a position rather than a mistake.
+   */
+  Fallow: 21,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -344,6 +352,11 @@ export function applyCommand(
 
     case CommandKind.SetRally:
       return production.setRally(world, command.a as Handle, command.b, command.c);
+
+    case CommandKind.Fallow:
+      // Ownership is checked inside, the way Abandon's is: a field index arriving from
+      // a client is untrusted until the farmland says whose it is.
+      return setFallow(farmland, command.a, command.b === 1, command.playerId);
 
     case CommandKind.SetRation:
       // No check on the value beyond the enum's own range: a ration is a village-wide

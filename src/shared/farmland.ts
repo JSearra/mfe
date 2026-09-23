@@ -6,8 +6,11 @@
  * from `src/sim` at all.
  */
 
-/** Floats per field: tileX, tileY, owner, established, condition, and its own slot. */
-export const FARMLAND_STRIDE = 6;
+/**
+ * Floats per field: tileX, tileY, owner, established, condition, its own slot, and
+ * whether it is resting.
+ */
+export const FARMLAND_STRIDE = 7;
 
 /**
  * The slot is carried rather than implied, for the reason the woodland's is: packing
@@ -30,4 +33,15 @@ export function fieldEstablished(packed: Float32Array, at: number): boolean {
 /** 0..1: what the field will return of what it could. */
 export function fieldCondition(packed: Float32Array, at: number): number {
   return packed[at + 4]!;
+}
+
+/**
+ * Is this field resting?
+ *
+ * Carried across because a player has to be able to SEE which of their fields are
+ * fallow. A rule the village lives by and cannot read off the map is half a mechanic —
+ * see CLAUDE.md, and the three playthroughs that died of invisible field decay.
+ */
+export function fieldFallow(packed: Float32Array, at: number): boolean {
+  return packed[at + 6]! === 1;
 }
