@@ -266,7 +266,7 @@ and the Definition of Done in `CLAUDE.md`.
 
 ## V. Village management
 
-- [ ] **V7 — A calendar.** Year, season and weather, named. The economy has been
+- [x] **V7 — A calendar.** Done. Year, season and weather, named. The economy has been
       seasonal since Phase 6 and nothing on screen says so.
       *Done when:* season and year are pure functions of the tick, tested against the
       ledger's own `seasonTicks`, and read out in the HUD.
@@ -291,7 +291,7 @@ and the Definition of Done in `CLAUDE.md`.
       panel "offers actions that silently fail". Covers the buildings from section U.
       *Done when:* the reason logic is unit-tested for each way an action can be
       unavailable, and no path leaves a button that does nothing.
-- [ ] **W3 — The calendar readout**, pairing with V7.
+- [x] **W3 — The calendar readout**, pairing with V7. Done, with V7 — the readout was V7's own acceptance criterion and splitting it would have landed a season nobody could see.
 - [ ] **W4 — A selection summary** — what is selected, how many, what they are doing.
       `src/sim/roles.ts` already computes the last of these for the renderer.
       *Done when:* the counts are asserted headlessly off an interpolated view.

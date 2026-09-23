@@ -1,4 +1,5 @@
-import { t } from '../core/i18n/index.js';
+import { t, type MessageKey } from '../core/i18n/index.js';
+import { Season, seasonOf } from '../shared/calendar.js';
 import type { PlayerState } from '../host/directHost.js';
 
 /**
@@ -15,6 +16,17 @@ export interface ResourceBar {
 }
 
 const UPDATE_INTERVAL_MS = 250;
+
+/** Season -> its name. Indexed by the enum, so a new season is a compile error here. */
+const SEASON_KEYS: Readonly<Record<Season, MessageKey>> = {
+  [Season.Rains]: 'season.rains',
+  [Season.Drying]: 'season.drying',
+  [Season.Dry]: 'season.dry',
+  [Season.GreatDry]: 'season.greatDry',
+};
+
+/** Trend -1, 0, 1 offset by one, so the array index is the trend plus one. */
+const TREND_KEYS: readonly MessageKey[] = ['season.easing', 'season.steady', 'season.drier'];
 
 export function createResourceBar(parent: HTMLElement): ResourceBar {
   const element = document.createElement('div');
@@ -58,10 +70,25 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
         wood: Math.floor(player.wood),
       });
 
+      /*
+       * The year, the season and which way it is going.
+       *
+       * `Drought 41%` was the whole of what the HUD said about a ten-minute year, and a
+       * percentage on its own answers none of the questions a village actually has:
+       * where in the year this is, whether the number is on its way up or down, and
+       * whether it has reached the point where the open veld stops paying. A village
+       * that plants is betting on the next few months and could not see them.
+       *
+       * The trend is the actionable half. Knowing it is dry says whether to worry;
+       * knowing it is still drying says whether to act now or wait.
+       */
       const pct = Math.round(player.drought * 100);
-      season.textContent = player.droughtSevere
-        ? t('resource.droughtSevere', { pct })
-        : t('resource.drought', { pct });
+      season.textContent = t('season.line', {
+        year: player.year,
+        season: t(SEASON_KEYS[seasonOf(player.drought)]),
+        trend: t(TREND_KEYS[player.droughtTrend + 1]!),
+        pct,
+      });
       season.classList.toggle('is-severe', player.droughtSevere);
 
       // The victory track, always visible. A win condition the player cannot see the

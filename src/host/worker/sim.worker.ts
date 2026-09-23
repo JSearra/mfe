@@ -16,9 +16,13 @@ import { createStartingFarmland } from '../../sim/economy/plots.js';
 import { createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../../sim/loop.js';
 import { createMovementSystem } from '../../sim/movement.js';
 import { buildSnapshot } from '../../sim/snapshot.js';
+import { trendOf, yearOf } from '../../shared/calendar.js';
 import { createHeightmap } from '../../sim/terrain/generate.js';
 import { generateMap } from '../../sim/terrain/maps.js';
 import { tuning } from '../../sim/tuning.js';
+
+/** Matches the direct host: a twelfth of a year ahead, for the weather trend. */
+const LOOKAHEAD_TICKS = Math.round(tuning.economy.seasonTicks / 12);
 import { createFog, type FogState } from '../../sim/vision/fog.js';
 import { createWorld, type World } from '../../sim/world.js';
 import type { SimEvent } from '../../shared/events.js';
@@ -155,6 +159,8 @@ function tick(): void {
     cullHead: cullHead(economy, viewerId),
     driving: drivenBy(world, viewerId),
     drought: droughtNow,
+    year: yearOf(world.tick, tuning.economy.seasonTicks),
+    droughtTrend: trendOf(droughtNow, economy.drought(world.tick + LOOKAHEAD_TICKS)),
     droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
     households: victory.households[viewerId] ?? 0,
     householdsToSettle: tuning.victory.householdsToSettle,

@@ -127,5 +127,15 @@
     "liveryRed": "Red, white marking",
     "liveryDun": "Dun, dark marking",
     "mapCoast": "Coast"
+  },
+  "season": {
+    "rains": "the rains",
+    "drying": "the drying",
+    "dry": "the dry",
+    "greatDry": "the great dry",
+    "drier": "drier",
+    "easing": "easing",
+    "steady": "steady",
+    "line": "Year {year} · {season}, {trend} · drought {pct}%"
   }
 }

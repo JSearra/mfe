@@ -2,6 +2,7 @@ import type { Command, CommandKind } from '../sim/commands.js';
 import { makeCommand } from '../sim/commands.js';
 import { compactLoop, createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../sim/loop.js';
 import { buildSnapshot } from '../sim/snapshot.js';
+import { trendOf, yearOf } from '../shared/calendar.js';
 import type { SimEvent } from '../shared/events.js';
 import type { Heightmap } from '../shared/heightmap.js';
 import { createCattleSystem, type CattleSystem } from '../sim/cattle.js';
@@ -57,6 +58,14 @@ import { createAlliance, relationsFor, type Alliance, type Relation } from '../s
  * per-viewer for the same reason entities are: in a real match you see your own
  * granary, not your enemy's.
  */
+/**
+ * How far ahead the weather trend looks: one twelfth of a year.
+ *
+ * Far enough that the answer is about the season rather than about the curve's own
+ * slope at a point, and near enough that it is still about this year.
+ */
+const LOOKAHEAD_TICKS = Math.round(tuning.economy.seasonTicks / 12);
+
 export interface PlayerState {
   readonly cattle: number;
   readonly grain: number;
@@ -108,6 +117,16 @@ export interface PlayerState {
   /** 0 (wet) to 1 (parched). */
   readonly drought: number;
   readonly droughtSevere: boolean;
+  /**
+   * Whole years elapsed, and which way the weather is going: 1 drying, -1 easing.
+   *
+   * Named here rather than in the HUD because the trend needs the drought curve at a
+   * tick the HUD does not have — it sees one reading a frame, some of them stale, and
+   * differencing those would report the network's jitter as the weather's. The season
+   * itself the HUD can name from `drought` alone.
+   */
+  readonly year: number;
+  readonly droughtTrend: -1 | 0 | 1;
 
   /** Households standing in this player's village. */
   readonly households: number;
@@ -384,6 +403,10 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         driving: drivenBy(world, viewerId),
         drought: droughtNow,
         droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
+        year: yearOf(world.tick, tuning.economy.seasonTicks),
+        // A season ahead, which is far enough that the answer is not noise and near
+        // enough that it is still about this year.
+        droughtTrend: trendOf(droughtNow, economy.drought(world.tick + LOOKAHEAD_TICKS)),
         households: victory.households[viewerId] ?? 0,
         householdsToSettle: tuning.victory.householdsToSettle,
         holdProgress: Math.min(1, (victory.holdTicks[viewerId] ?? 0) / tuning.victory.holdTicks),
