@@ -1,6 +1,7 @@
 import { BUILDINGS, BuildingType, buildingSpec } from '../shared/buildings/index.js';
 import { TECHS, TECH_IDS, type TechId } from '../shared/tech/index.js';
 import { t, type MessageKey } from '../core/i18n/index.js';
+import { summariseSelection, SummaryRole } from './selectionSummary.js';
 import {
   buildAvailability,
   researchAvailability,
@@ -33,6 +34,15 @@ const RESOURCE_KEYS: readonly MessageKey[] = [
 
 /** What a soldier costs, by movement class, as the host reports it. */
 export type TrainCosts = readonly { readonly grain: number; readonly cattle: number }[];
+
+/** Role -> the line that describes it. Keyed by the enum, so a new role is a compile error. */
+const ROLE_KEYS: Readonly<Record<SummaryRole, MessageKey>> = {
+  [SummaryRole.None]: 'role.none',
+  [SummaryRole.Herder]: 'role.herder',
+  [SummaryRole.FieldHand]: 'role.fieldHand',
+  [SummaryRole.Carrier]: 'role.carrier',
+  [SummaryRole.Elder]: 'role.elder',
+};
 
 const KIND_UNIT = 0;
 const KIND_BUILDING = 2;
@@ -286,6 +296,8 @@ export function createCommandPanel(
   let herdSignature = '';
   let rationSignature = '';
   let purseSignature = '';
+  /** Reused every update, so summarising a selection allocates nothing per frame. */
+  const selectedRoles: number[] = [];
   /** What the actions were last built for, so a change of purse can rebuild them. */
   let lastActions: { kind: number; subtype: number; handle: number } | null = null;
 
@@ -455,10 +467,17 @@ export function createCommandPanel(
       // A single building is the interesting case; anything else is "some troops".
       let buildingSlot = -1;
       let units = 0;
+      selectedRoles.length = 0;
       for (let i = 0; i < view.count; i++) {
         if (!selected.has(view.handle[i]!)) continue;
         if (view.kind[i] === KIND_BUILDING) buildingSlot = i;
-        else if (view.kind[i] === KIND_UNIT) units++;
+        else if (view.kind[i] === KIND_UNIT) {
+          units++;
+          // The high nibble of the flags byte. roles.ts writes it; until now the only
+          // thing that read it was the sprite chooser, so the picture knew what each
+          // villager was doing and the words did not.
+          selectedRoles.push(view.flags[i]! >> 4);
+        }
       }
 
       if (buildingSlot !== -1 && units === 0) {
@@ -500,10 +519,22 @@ export function createCommandPanel(
         return;
       }
 
-      const next = `u:${units}`;
+      const summary = summariseSelection(selectedRoles);
+      // The tallies are in the signature, not only the count: a selection whose people
+      // walk into a field is the same selection doing something different, and that is
+      // exactly the change worth redrawing for.
+      const shape = summary.tallies.map((tally) => `${tally.role}x${tally.count}`).join(',');
+      const next = `u:${units}:${shape}`;
       if (signature !== next) {
         heading.textContent = t('panel.units', { count: units });
         detail.replaceChildren();
+        for (const tally of summary.tallies) {
+          const line = document.createElement('div');
+          line.className = 'panel__role';
+          line.textContent = t(ROLE_KEYS[tally.role], { count: tally.count });
+          detail.append(line);
+        }
+        detail.classList.remove('panel__detail--idle');
         buildActions(KIND_UNIT, 0, 0);
         signature = next;
       }

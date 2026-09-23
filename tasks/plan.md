@@ -292,6 +292,6 @@ and the Definition of Done in `CLAUDE.md`.
       *Done when:* the reason logic is unit-tested for each way an action can be
       unavailable, and no path leaves a button that does nothing.
 - [x] **W3 — The calendar readout**, pairing with V7. Done, with V7 — the readout was V7's own acceptance criterion and splitting it would have landed a season nobody could see.
-- [ ] **W4 — A selection summary** — what is selected, how many, what they are doing.
+- [x] **W4 — A selection summary.** Done. — what is selected, how many, what they are doing.
       `src/sim/roles.ts` already computes the last of these for the renderer.
       *Done when:* the counts are asserted headlessly off an interpolated view.

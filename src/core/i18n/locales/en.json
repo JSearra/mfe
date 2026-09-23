@@ -152,5 +152,12 @@
     "queueFull": "Nothing more can be queued here yet",
     "alreadyKnown": "Already known",
     "inProgress": "Already being learned"
+  },
+  "role": {
+    "herder": "{count} holding the herd",
+    "fieldHand": "{count} in the fields",
+    "carrier": "{count} at the granary",
+    "elder": "{count} at the great house",
+    "none": "{count} idle"
   }
 }
