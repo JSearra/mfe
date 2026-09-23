@@ -87,7 +87,7 @@ export interface ConstructionSystem {
     labour?: (player: number) => number,
   ): void;
   /** Grain and cattle produced per upkeep by this player's finished buildings. */
-  yieldFor(world: World, owner: number): { grain: number; cattle: number };
+  yieldFor(world: World, owner: number): { grain: number; hardyGrain: number; cattle: number };
 }
 
 export function createConstructionSystem(
@@ -285,6 +285,7 @@ export function createConstructionSystem(
 
     yieldFor(world, owner) {
       let grain = 0;
+      let hardyGrain = 0;
       let cattle = 0;
 
       for (let index = 0; index < world.capacity; index++) {
@@ -294,9 +295,10 @@ export function createConstructionSystem(
         const spec = buildingSpec(world.buildingType[index]!);
         if (world.buildProgress[index]! < spec.work) continue;
         grain += spec.grainYield;
+        hardyGrain += spec.hardyGrainYield;
         cattle += spec.cattleYield;
       }
-      return { grain, cattle };
+      return { grain, hardyGrain, cattle };
     },
   };
 }

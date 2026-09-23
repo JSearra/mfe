@@ -258,7 +258,7 @@ and the Definition of Done in `CLAUDE.md`.
       lose less condition to drought.
       *Done when:* siting off a shore is refused; a field inside the radius holds
       condition through a drought that costs an identical field outside it.
-- [ ] **U4 — Isibaya sezimbuzi, the small-stock pen.** Cheap and small, a steady modest
+- [x] **U4 — Isibaya sezimbuzi, the small-stock pen.** Done. Section U complete. Cheap and small, a steady modest
       grain yield at low upkeep — the hedge for a village that cannot feed cattle.
       Carries the goats and fowl already placed around the dwellings.
       *Done when:* its yield and upkeep are in tuning and asserted, and it is reachable

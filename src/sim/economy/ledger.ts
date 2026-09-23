@@ -101,7 +101,20 @@ export interface Economy {
   ): void;
 }
 
-export type BuildingYield = (owner: number) => { grain: number; cattle: number };
+export type BuildingYield = (owner: number) => {
+  grain: number;
+  cattle: number;
+  /**
+   * Grain the drought does not touch.
+   *
+   * A separate channel rather than a flag on `grain`, because the two are summed from
+   * different buildings in the same village and there is no single answer for the pair.
+   * Goats and fowl browse scrub and eat scraps where cattle graze grass, so a fold
+   * comes through a dry year that kills a herd — which is why a homestead that owned
+   * cattle kept them anyway.
+   */
+  hardyGrain: number;
+};
 
 /**
  * What one field offers this cycle, `null` for a field that offers nothing, and
@@ -288,9 +301,14 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
           const produced = buildingYield(player);
           // A granary full of nothing is still empty: buildings share the drought, on
           // the sheltered curve — they are built structures, not open veld.
-          const stored = produced.grain * shelteredFactor * (grainMultiplier?.(player) ?? 1);
-          economy.add(player, Resource.Grain, stored);
-          harvested[player] = harvested[player]! + stored;
+          const multiplier = grainMultiplier?.(player) ?? 1;
+          const stored = produced.grain * shelteredFactor * multiplier;
+          // The fold's share is NOT put through the weather. That is the whole of what
+          // distinguishes it from a granary, and folding it into the line above would
+          // quietly delete the building.
+          const hardy = produced.hardyGrain * multiplier;
+          economy.add(player, Resource.Grain, stored + hardy);
+          harvested[player] = harvested[player]! + stored + hardy;
           economy.add(player, Resource.Cattle, produced.cattle);
         }
       }

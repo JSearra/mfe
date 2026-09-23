@@ -49,6 +49,17 @@ export const BuildingType = {
    * Glossed, not translated: see docs/CONTENT.md.
    */
   Isiziba: 6,
+  /**
+   * The goat fold.
+   *
+   * `isibaya sezimbuzi` is the kraal of the goats, and small stock were kept by
+   * homesteads that also owned cattle precisely because they are not cattle: goats and
+   * fowl browse scrub and eat scraps, and come through a dry year that kills a herd.
+   * Named in full rather than shortened, because what it is has to be legible from the
+   * name — see docs/CONTENT.md, where the rule is that these are glossed, not
+   * translated.
+   */
+  IsibayaSezimbuzi: 7,
 } as const;
 
 export type BuildingType = (typeof BuildingType)[keyof typeof BuildingType];
@@ -111,8 +122,15 @@ export interface BuildingSpec {
   readonly cattleCost: number;
   /** Builder-ticks of work needed. */
   readonly work: number;
-  /** Grain added at each upkeep once complete. */
+  /** Grain added at each upkeep once complete. Shares the drought, as a store does. */
   readonly grainYield: number;
+  /**
+   * Grain added at each upkeep that the drought does NOT touch.
+   *
+   * Its own field rather than a modifier on `grainYield`, so a building can have some
+   * of each and the catalogue can say which is which. Only the fold has any.
+   */
+  readonly hardyGrainYield: number;
   /** Cattle added at each upkeep once complete. */
   readonly cattleYield: number;
   /** Terrain must be this flat across the footprint. */
@@ -156,6 +174,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     cattleCost: 0,
     work: 600,
     grainYield: 0,
+    hardyGrainYield: 0,
     /**
      * Sixty upkeeps is ten minutes, so a kraal running that long breeds exactly the
      * thirty head already grazing on the map at the start. Building is therefore never
@@ -194,6 +213,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
      * from the granary that stores what the land gives.
      */
     grainYield: 1,
+    hardyGrainYield: 0,
     cattleYield: 0,
     maxHeightVariation: 0,
     // A homestead is where people come from, so this is where troops are raised.
@@ -219,6 +239,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     // It feeds nobody: an ikhanda consumes the countryside around it rather than
     // provisioning itself, which is the whole political economy of a standing army.
     grainYield: 0,
+    hardyGrainYield: 0,
     cattleYield: 0,
     maxHeightVariation: 0,
     holdsCattle: false,
@@ -235,6 +256,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     cattleCost: 3,
     work: 700,
     grainYield: 2,
+    hardyGrainYield: 0,
     // A third of the isibaya's, as it was before that came down. At parity the
     // indlunkulu would be strictly better — the same cattle plus grain — and the
     // building actually named for cattle would be the wrong thing to build.
@@ -260,6 +282,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     // this catalogue answers a shortage by making more; this one answers it by having
     // kept what was already there.
     grainYield: 0,
+    hardyGrainYield: 0,
     cattleYield: 0,
     maxHeightVariation: 0,
     holdsCattle: false,
@@ -283,6 +306,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     cattleCost: 0,
     work: 640,
     grainYield: 0,
+    hardyGrainYield: 0,
     cattleYield: 0,
     maxHeightVariation: 0,
     holdsCattle: false,
@@ -296,6 +320,32 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     effect: { kind: EffectKind.DroughtShelter, radius: 6, strength: 1 },
     needsWater: true,
   },
+  [BuildingType.IsibayaSezimbuzi]: {
+    type: BuildingType.IsibayaSezimbuzi,
+    nameKey: 'building.isibayaSezimbuzi',
+    footprint: 1,
+    // The cheapest thing in the catalogue. A fold is thorn branches and labour; the
+    // stock that go in it are the village's own.
+    grainCost: 35,
+    woodCost: 25,
+    cattleCost: 0,
+    work: 220,
+    grainYield: 0,
+    /**
+     * Half what a granary pays in a good year, and all of it in a bad one.
+     *
+     * That trade is the building. A village that builds nothing but folds is poorer
+     * than one that builds granaries and will still be standing after the year that
+     * empties them.
+     */
+    hardyGrainYield: 4.5,
+    cattleYield: 0,
+    maxHeightVariation: 0,
+    holdsCattle: false,
+    trains: false,
+    effect: null,
+    needsWater: false,
+  },
   [BuildingType.GrainStore]: {
     type: BuildingType.GrainStore,
     nameKey: 'building.grainStore',
@@ -305,6 +355,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     cattleCost: 0,
     work: 300,
     grainYield: 9,
+    hardyGrainYield: 0,
     cattleYield: 0,
     maxHeightVariation: 0,
     holdsCattle: false,
