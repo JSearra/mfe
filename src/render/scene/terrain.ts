@@ -12,7 +12,14 @@ import type { Camera } from '../camera.js';
 import { presentation } from '../presentation.js';
 import type { TerrainTile, TerrainTiles } from '../assets.js';
 import { CORNER_COUNT, tileCorners } from './surface.js';
-import { cornerSeams, edgeSeams, SEAM_CORNERS } from './seams.js';
+import {
+  cornerSeams,
+  edgeSeams,
+  SEAM_CORNERS,
+  waterCornerSeams,
+  waterDepth,
+  waterEdgeMask,
+} from './seams.js';
 import { cornerPositions, faceTrapezoid, QUAD_FLOATS } from './terrainGeometry.js';
 
 /**
@@ -55,6 +62,32 @@ const { chunkSize, palette, eastFaceShade, southFaceShade, gridAlpha } = present
 /** Open water, and the lighter margin where it meets a bank. */
 const waterColour = Number.parseInt(presentation.terrain.water.slice(1), 16);
 const waterEdgeColour = Number.parseInt(presentation.terrain.waterEdge.slice(1), 16);
+
+/**
+ * Water's colour, run from the margin into the channel by how enclosed the tile is.
+ *
+ * It used to be a choice between two colours on "are all four square neighbours wet",
+ * and on a river a tile or two wide NO tile satisfies that — so every tile in the river
+ * took the margin colour, with the occasional one that did not, and the water read as a
+ * strip of alternating light and dark diamonds rather than as a river. Eight neighbours
+ * and a ramp instead, so a channel darkens toward its middle and a wide pan still has a
+ * pale rim.
+ */
+function waterFill(depth: number): number {
+  const t = depth / 8;
+  return mix(waterEdgeColour, waterColour, t * t);
+}
+
+/** Blend two packed colours. Squared above, so the rim keeps its width on a wide body. */
+function mix(from: number, to: number, t: number): number {
+  const lerp = (shift: number): number => {
+    const a = (from >> shift) & 0xff;
+    const b = (to >> shift) & 0xff;
+    const value = Math.round(a + (b - a) * t);
+    return value < 0 ? 0 : value > 255 ? 255 : value;
+  };
+  return (lerp(16) << 16) | (lerp(8) << 8) | lerp(0);
+}
 
 interface Chunk {
   readonly graphics: Graphics;
@@ -315,17 +348,12 @@ function drawTile(
    * Shallows at the margin so a bank has an edge rather than a hard seam against it.
    */
   if (isWater(map, tileX, tileY)) {
-    const shallow =
-      isWater(map, tileX + 1, tileY) &&
-      isWater(map, tileX - 1, tileY) &&
-      isWater(map, tileX, tileY + 1) &&
-      isWater(map, tileX, tileY - 1);
     graphics.moveTo(northX, northY);
     graphics.lineTo(eastX, eastY);
     graphics.lineTo(southX, southY);
     graphics.lineTo(westX, westY);
     graphics.closePath();
-    graphics.fill({ color: shallow ? waterColour : waterEdgeColour });
+    graphics.fill({ color: waterFill(waterDepth(map, tileX, tileY)) });
     return;
   }
 
@@ -366,6 +394,22 @@ function drawTile(
   }
 
   pushQuad(base, positions, tile.uv);
+
+  // The bank, before the contour blends: a shore is the edge of the map's one painted
+  // surface, and ground bleeding over it from uphill belongs on top of the sand rather
+  // than under it.
+  const wet = waterEdgeMask(map, tileX, tileY);
+  if (wet !== 0) {
+    const bank = tiles.shore(wet);
+    if (bank !== null) pushQuad(overlay, positions, bank.uv);
+  }
+  if (waterCornerSeams(map, tileX, tileY, corner) > 0) {
+    for (let at = 0; at < SEAM_CORNERS; at++) {
+      if (corner[at]! < 0) continue;
+      const bank = tiles.shoreCorner(at);
+      if (bank !== null) pushQuad(overlay, positions, bank.uv);
+    }
+  }
 
   // Higher ground bleeding over the seams. Same page as the tile under it, so these
   // cost vertices but not a draw call, and only boundary tiles have any.

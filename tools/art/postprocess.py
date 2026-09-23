@@ -439,6 +439,59 @@ def command_tile(args: argparse.Namespace) -> int:
             )
     print(f"  {len(TRANSITION_CORNERS) * len(first_of_band)} corner tiles")
 
+    # --- shore -------------------------------------------------------------------
+    #
+    # Water is painted rather than textured -- at this scale a river reads as a colour
+    # and a shape, and a riverbed texture would read as more dry ground -- so the whole
+    # of a waterline's softness has to live on the LAND side of it. Without this a river
+    # is a staircase of blue diamonds with a right angle at every step, which is the
+    # most literal instance on the map of ground ending at ninety degrees.
+    #
+    # Cut from the riverbed tile rather than from each band's own ground, and one set
+    # rather than eight: a bank is wet sand and pebbles whatever the hinterland behind
+    # it is, and eight tinted variations of damp sand is eight ways of drawing the same
+    # thing. Masked exactly like a band seam, so a shore and a contour are built by the
+    # same arithmetic and cannot drift apart.
+    shore_source = next(
+        (tile for name, tile in packed if name.startswith("riverbed")),
+        first_of_band[min(first_of_band)][1],
+    )
+    for mask in range(1, 16):
+        name = f"shore-{mask}.png"
+        bank = make_transition(shore_source, mask)
+        bank.save(target / name)
+        packed.append((name, bank))
+        manifest.append(
+            {
+                "file": name,
+                "subject": "shore",
+                "width": TILE_W,
+                "height": TILE_H,
+                "band": 0,
+                "mask": mask,
+                "averageColour": average_colour(bank),
+                "seam": 0.0,
+            }
+        )
+    for corner in range(len(TRANSITION_CORNERS)):
+        name = f"shore-corner-{corner}.png"
+        bank = make_corner(shore_source, corner)
+        bank.save(target / name)
+        packed.append((name, bank))
+        manifest.append(
+            {
+                "file": name,
+                "subject": "shore",
+                "width": TILE_W,
+                "height": TILE_H,
+                "band": 0,
+                "corner": corner,
+                "averageColour": average_colour(bank),
+                "seam": 0.0,
+            }
+        )
+    print(f"  {15 + len(TRANSITION_CORNERS)} shore tiles")
+
     # --- fields ------------------------------------------------------------------
     #
     # One pair per band, from the same representative tile, so a field looks like the

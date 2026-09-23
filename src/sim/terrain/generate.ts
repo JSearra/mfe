@@ -1,7 +1,7 @@
 import { buildPermutation, fbm, smoothstep } from './noise.js';
 import type { Heightmap } from '../../shared/heightmap.js';
 import { tuning } from '../tuning.js';
-import { carveRiver } from './water.js';
+import { carveRiver, gradeBanks } from './water.js';
 import { createRng } from '../math/rng.js';
 
 /**
@@ -59,5 +59,6 @@ export function createHeightmap(
   const water = new Uint8Array(width * height);
   const map: Heightmap = { width, height, levels, data, water };
   carveRiver(map, createRng(seed ^ 0x5eaf10), tuning.terrain.driftEvery);
+  gradeBanks(map);
   return map;
 }

@@ -220,6 +220,16 @@ export interface TerrainTiles {
    */
   corner(band: number, corner: number): TerrainTile | null;
   /**
+   * The bank where dry ground meets water, bleeding in from `mask`'s edges, or null.
+   *
+   * One set rather than one per band. Water is painted rather than textured, so all of
+   * a waterline's softness lives on the land side of it, and a bank is wet sand and
+   * pebbles whatever the hinterland behind it happens to be.
+   */
+  shore(mask: number): TerrainTile | null;
+  /** The same, arriving at one diamond point — a bend in a river, or a spit. */
+  shoreCorner(corner: number): TerrainTile | null;
+  /**
    * A field on this band's ground, either broken earth or a standing crop.
    *
    * Drawn from the band's own tile so a field looks like the ground it came out of —
@@ -257,6 +267,8 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
     const corners: (TerrainTile | null)[][] = [];
     // band -> [broken, crop]
     const fields: (TerrainTile | null)[][] = [];
+    const shores = new Array<TerrainTile | null>(TRANSITION_MASKS).fill(null);
+    const shoreCorners = new Array<TerrainTile | null>(SEAM_CORNERS).fill(null);
 
     const pageWidth = page.source.width;
     const pageHeight = page.source.height;
@@ -276,6 +288,11 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
       if (entry.field !== undefined) {
         const row = (fields[entry.band] ??= [null, null]);
         row[entry.field === 'crop' ? 1 : 0] = tile;
+        continue;
+      }
+      if (entry.subject === 'shore') {
+        if (entry.corner !== undefined) shoreCorners[entry.corner] = tile;
+        else if (entry.mask !== undefined) shores[entry.mask] = tile;
         continue;
       }
       if (entry.corner !== undefined) {
@@ -317,6 +334,14 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
 
       corner(band: number, corner: number) {
         return corners[band]?.[corner] ?? null;
+      },
+
+      shore(mask: number) {
+        return shores[mask] ?? null;
+      },
+
+      shoreCorner(corner: number) {
+        return shoreCorners[corner] ?? null;
       },
 
       field(band: number, crop: boolean) {

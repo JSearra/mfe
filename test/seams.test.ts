@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { heightmapFrom } from '../src/shared/heightmap.js';
-import { cornerSeams, edgeSeams, SEAM_CORNERS } from '../src/render/scene/seams.js';
+import { heightmapFrom, heightmapWithWater } from '../src/shared/heightmap.js';
+import {
+  cornerSeams,
+  edgeSeams,
+  SEAM_CORNERS,
+  waterCornerSeams,
+  waterDepth,
+  waterEdgeMask,
+} from '../src/render/scene/seams.js';
 
 /**
  * Which neighbours bleed onto a tile, and from where.
@@ -95,5 +102,99 @@ describe('cornerSeams', () => {
     expect(cornerSeams(edge, 0, 0, corners)).toBe(1);
     // (+1,+1) is the diamond's SOUTH point: corner 1.
     expect(corners[1]).toBe(1);
+  });
+});
+
+describe('water seams', () => {
+  // A river running down the middle, one tile wide, with a bend — which is where a
+  // staircase coastline is worst and where the corner case actually arises.
+  const river = heightmapWithWater(
+    [
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+    ],
+    8,
+    [
+      [0, 1, 0, 0],
+      [0, 1, 0, 0],
+      [0, 0, 1, 0],
+      [0, 0, 1, 0],
+    ],
+  );
+
+  it('gives a dry tile the edges that face water', () => {
+    // Tile (0,0) has water at (1,0), which is the diamond's lower-right edge: bit 1.
+    expect(waterEdgeMask(river, 0, 0)).toBe(0b0010);
+    // Tile (2,0) has water at (1,0) — its lower-LEFT edge is (2,1), which is dry, and
+    // its upper-left is (1,0). Bit 3.
+    expect(waterEdgeMask(river, 2, 0)).toBe(0b1000);
+  });
+
+  it('gives a water tile no bank of its own', () => {
+    expect(waterEdgeMask(river, 1, 0)).toBe(0);
+  });
+
+  it('finds water that touches only at a corner', () => {
+    corners.fill(-1);
+    // Tile (1,2): water at (2,2) is orthogonal, so no corner there. Tile (3,1) instead
+    // — its diagonal (2,2) is water and neither edge beside it is.
+    expect(waterCornerSeams(river, 3, 1, corners)).toBe(1);
+  });
+
+  it('does not put a corner wedge where an edge already banks', () => {
+    corners.fill(-1);
+    // Tile (1,1) is beside the water at (1,0) and (2,2) is diagonal from it — but
+    // (1,2) is not water and (2,1) is not water, so this one IS a corner... the case
+    // that must NOT fire is a diagonal whose neighbour edge is also wet.
+    expect(waterCornerSeams(river, 1, 3, corners)).toBe(0);
+  });
+});
+
+describe('waterDepth', () => {
+  it('is deepest in open water and shallowest at a bank', () => {
+    const pan = heightmapWithWater(
+      [
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+      ],
+      8,
+      [
+        [0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 0],
+        [0, 1, 1, 1, 0],
+        [0, 1, 1, 1, 0],
+        [0, 0, 0, 0, 0],
+      ],
+    );
+    // The middle of the pan is surrounded on all eight sides.
+    expect(waterDepth(pan, 2, 2)).toBe(8);
+    // A corner of it touches three.
+    expect(waterDepth(pan, 1, 1)).toBe(3);
+  });
+
+  it('counts eight ways, not four, so a one-tile river is not a checkerboard', () => {
+    // The whole reason this replaces "are all four neighbours wet". On a river a tile
+    // wide, NO tile has four wet neighbours, so every one of them drew as a bank and
+    // the river read as a strip of alternating light and dark diamonds.
+    const narrow = heightmapWithWater(
+      [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+      ],
+      8,
+      [
+        [0, 1, 0],
+        [0, 1, 0],
+        [0, 1, 0],
+      ],
+    );
+    expect(waterDepth(narrow, 1, 1)).toBe(2);
+    expect(waterDepth(narrow, 1, 0)).toBe(1);
   });
 });

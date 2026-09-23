@@ -1,6 +1,6 @@
 import type { Heightmap } from '../../shared/heightmap.js';
 import { MapScript } from '../../shared/maps.js';
-import { carveCoast, carveRiver } from './water.js';
+import { carveCoast, carveRiver, gradeBanks } from './water.js';
 import { createRng, nextInt, nextU32 } from '../math/rng.js';
 import { cos, sin, TWO_PI } from '../math/trig.js';
 import { buildPermutation, fbm, smoothstep } from './noise.js';
@@ -122,6 +122,8 @@ function coast(width: number, height: number, seed: number): Heightmap {
   carveCoast(map, rng, Math.max(4, Math.round(width * 0.11)));
   // And a river reaching the sea, because a coast without one is a wall of water.
   carveRiver(map, rng, 13);
+  // Both, then graded together: a river meeting the sea has one bank, not two.
+  gradeBanks(map);
   return map;
 }
 

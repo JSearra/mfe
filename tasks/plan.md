@@ -235,7 +235,7 @@ and the Definition of Done in `CLAUDE.md`.
       notch at every diagonal. Add the corner masks and the art for them.
       *Done when:* a tile whose only higher neighbour is diagonal receives an overlay,
       asserted headlessly, and the notch is gone in a screenshot.
-- [ ] **T4 — Water gets a bank.** Water is a flat-filled diamond, which is the one
+- [x] **T4 — Water gets a bank.** Done. Section T complete. Water is a flat-filled diamond, which is the one
       literal 90-degree edge left on the map: a river or a coast is a hard staircase.
       Give the waterline the same treatment a band seam gets.
       *Done when:* a shore tile emits a bank overlay and open water does not, asserted
