@@ -362,7 +362,7 @@ about it. Same rules: a failing test first, one commit each, the Definition of D
       nothing to spend the grain on.
       *Done when:* the AI fells timber when it is short and builds past its opening
       stock, measured over a match, with the replay re-recorded and proved.
-- [ ] **X7 — Both villages starve on generated terrain.** Found while measuring X6, and
+- [x] **X7 — Both villages starve on generated terrain.** Done. Section X complete. Found while measuring X6, and
       NOT caused by it: with felling on and off, at the same tick either way, both AI
       villages on `createHeightmap(64, 64, 0x0a1)` collapse to zero villagers at tick
       18,000 for want of grain. On the harness's flat map the same match survives (X5

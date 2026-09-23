@@ -130,9 +130,11 @@ export function step(loop: SimLoop): void {
           d: command.d,
         });
       },
-      // The wood, so the neighbour can cut its own timber. Read-only to it: felling
-      // happens through a command like everything else the AI does.
+      // The wood and the fields, so the neighbour can cut its own timber and work its
+      // own land. Read-only to it: both happen through commands, like everything else
+      // the AI does.
       woodland,
+      farmland,
     );
   }
 

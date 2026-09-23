@@ -10,6 +10,7 @@ import { tuning } from '../tuning.js';
 import { MovementClass } from '../pathing/costs.js';
 import { trainingCost } from '../production.js';
 import { Stage, stageOf, type Woodland } from '../woodland.js';
+import type { Farmland } from '../economy/farmland.js';
 import { EntityKind, HerdState, packHandle, type World } from '../world.js';
 
 /**
@@ -65,6 +66,11 @@ export interface AiController {
      * simply never cuts, which is what it did before it was passed at all.
      */
     woodland?: Woodland,
+    /**
+     * Its fields, so it can work them. Optional for the same reason the woodland is:
+     * a good deal of the harness builds an AI without one.
+     */
+    farmland?: Farmland,
   ): void;
 }
 
@@ -89,11 +95,14 @@ export function createAi(player: number): AiController {
   let buildSlot = 0;
   /** What the ration was last set to, so the AI only sends a command when it changes. */
   let onShortRations = false;
+  /** Reused every decision, so tending allocates nothing per field. */
+  const needy: number[] = [];
+  const tending = new Set<number>();
 
   return {
     stats,
 
-    decide(world, fog, economy, alliance, tech, emit, woodland): void {
+    decide(world, fog, economy, alliance, tech, emit, woodland, farmland): void {
       const ai = tuning.ai;
       if (world.tick % ai.decideEveryTicks !== 0) return;
       stats.decisions++;
@@ -154,6 +163,7 @@ export function createAi(player: number): AiController {
       }
 
       if (own.length === 0) return;
+      tending.clear();
       homeX /= own.length;
       homeY /= own.length;
 
@@ -230,6 +240,76 @@ export function createAi(player: number): AiController {
       }
 
       /*
+       * --- the fields ------------------------------------------------------
+       *
+       * "Fields lose condition unless someone stands on them" is the central rule of
+       * this game. It is in the hint text, it has an alert of its own, and three
+       * playthroughs died of not knowing it. The neighbour did not know it either —
+       * it herded, built, trained, traded, allied and felled, and never once tended.
+       *
+       * It got away with that on flat test ground, where villagers spawn more or less
+       * on top of their fields and hold them by accident. On generated terrain the
+       * fields are sited on whatever will carry them, nobody goes near, and the mean
+       * condition fell 0.86 to 0.01 over a match while both villages starved. It read
+       * as an economy problem and it was a rule the AI had never been told.
+       *
+       * The WORST fields first, because condition is what a field pays out on and the
+       * one at 0.2 is losing far more than the one at 0.95. Whoever is nearest to each,
+       * so the village does not cross itself to work its own land.
+       */
+      if (farmland !== undefined) {
+        // Worst-first, and a stable order: ties break on the field index, so the same
+        // two fields do not swap places between decisions and send people back and
+        // forth. Only this player's, and only fields worth standing on.
+        needy.length = 0;
+        for (let i = 0; i < farmland.count; i++) {
+          if (farmland.alive[i] === 0 || farmland.owner[i] !== player) continue;
+          if (farmland.condition[i]! >= ai.tendBelow) continue;
+          needy.push(i);
+        }
+        needy.sort((a, b) => {
+          const difference = farmland.condition[a]! - farmland.condition[b]!;
+          return difference !== 0 ? difference : a - b;
+        });
+
+        // A share of the village, never all of it. Everything else it does needs hands
+        // too, and a village standing in its fields is a village that never builds.
+        const spare = Math.min(needy.length, Math.floor(own.length * ai.tendShare));
+        for (let n = 0; n < spare; n++) {
+          const field = needy[n]!;
+          const fieldX = farmland.tileX[field]! + 0.5;
+          const fieldY = farmland.tileY[field]! + 0.5;
+
+          let best = -1;
+          let bestDistance = Infinity;
+          for (const hand of own) {
+            const dx = hand.x - fieldX;
+            const dy = hand.y - fieldY;
+            const distance = dx * dx + dy * dy;
+            // Strictly nearer, so a tie keeps the earlier entry and the choice does not
+            // depend on iteration order.
+            if (distance < bestDistance && !tending.has(hand.index)) {
+              bestDistance = distance;
+              best = hand.index;
+            }
+          }
+          if (best < 0) break;
+          tending.add(best);
+
+          // Already standing in it: leave them alone. Re-ordering a move every decision
+          // to where somebody already is cancels their arrival and they never settle.
+          if (bestDistance <= 1) continue;
+          emit({
+            kind: CommandKind.MoveTo,
+            a: packHandle(best, world.generation[best]!),
+            b: fieldX,
+            c: fieldY,
+            d: 0,
+          });
+        }
+      }
+
+      /*
        * --- timber ----------------------------------------------------------
        *
        * A village opens with 90 timber, every building costs some, and until this
@@ -274,8 +354,11 @@ export function createAi(player: number): AiController {
           const treeY = woodland.y[best]!;
           // Send a few, not everybody. The same reasoning as the drovers: a village
           // that walks off in one body to cut a tree is a village doing nothing else.
-          for (let i = 0; i < Math.min(ai.builders, own.length); i++) {
-            const hand = own[(stats.decisions + i) % own.length]!;
+          // Drawn from the hands that are not holding a field, for the same reason the
+          // builders and the herders are.
+          const axes = tending.size === 0 ? own : own.filter((h) => !tending.has(h.index));
+          for (let i = 0; i < Math.min(ai.builders, axes.length); i++) {
+            const hand = axes[(stats.decisions + i) % axes.length]!;
             const dx = world.posX[hand.index]! - treeX;
             const dy = world.posY[hand.index]! - treeY;
             if (dx * dx + dy * dy > 4) {
@@ -469,6 +552,19 @@ export function createAi(player: number): AiController {
         }
       }
 
+      /*
+       * Whoever is not holding a field.
+       *
+       * The branches below assign people by their position in `own` and re-issue a
+       * MoveTo every decision, so without this they walk the field-hands away again
+       * on the very next tick — later command, same player, higher sequence, and the
+       * tending order loses. The first cut of the tending branch had no effect at all
+       * for exactly this reason: mean field condition came back 0.0128, to four
+       * decimal places the same number as with no branch at all, which is what an
+       * order that is always overwritten looks like.
+       */
+      const free = tending.size === 0 ? own : own.filter((hand) => !tending.has(hand.index));
+
       // --- finish what we started -------------------------------------------
       // A site is raised by whoever stands near it, and nothing here ever told anyone
       // to go and stand there. Sites finished anyway only because the builder check
@@ -493,9 +589,9 @@ export function createAi(player: number): AiController {
           }
         }
 
-        assigned = Math.min(own.length, ai.builders);
+        assigned = Math.min(free.length, ai.builders);
         for (let i = 0; i < assigned; i++) {
-          const unit = own[i]!;
+          const unit = free[i]!;
           emit({
             kind: CommandKind.MoveTo,
             a: packHandle(unit.index, world.generation[unit.index]!),
@@ -509,10 +605,10 @@ export function createAi(player: number): AiController {
 
       // --- herd -----------------------------------------------------------
       // Nothing to fight: go and take cattle, which is what the war is about.
-      if (cattle.length > 0 && assigned < own.length) {
-        const herders = Math.min(own.length, assigned + cattle.length);
+      if (cattle.length > 0 && assigned < free.length) {
+        const herders = Math.min(free.length, assigned + cattle.length);
         for (let i = assigned; i < herders; i++) {
-          const unit = own[i]!;
+          const unit = free[i]!;
           const cow = cattle[i % cattle.length]!;
           const dx = cow.x - unit.x;
           const dy = cow.y - unit.y;
@@ -546,8 +642,8 @@ export function createAi(player: number): AiController {
       // Owned trig, not Math.sin: AI decisions feed the replay hash, so they have to
       // reproduce bit-for-bit across engines like everything else in src/sim.
       const step = ((stats.decisions % 8) / 8) * TWO_PI;
-      for (let i = assigned; i < own.length; i++) {
-        const unit = own[i]!;
+      for (let i = assigned; i < free.length; i++) {
+        const unit = free[i]!;
         emit({
           kind: CommandKind.MoveTo,
           a: packHandle(unit.index, world.generation[unit.index]!),
@@ -556,7 +652,7 @@ export function createAi(player: number): AiController {
           d: 0,
         });
       }
-      stats.ordersIssued += own.length - assigned;
+      stats.ordersIssued += free.length - assigned;
     },
   };
 }
