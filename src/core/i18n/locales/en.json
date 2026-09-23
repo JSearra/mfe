@@ -51,7 +51,8 @@
     "armed": "Placing {name} — click to site it, Esc to cancel",
     "refused": "Cannot build there",
     "ikhanda": "ikhanda",
-    "indlunkulu": "indlunkulu"
+    "indlunkulu": "indlunkulu",
+    "umgodi": "umgodi"
   },
   "tech": {
     "amabutho": "amabutho",

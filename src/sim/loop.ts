@@ -15,6 +15,8 @@ import { updateRoles } from './roles.js';
 import { updateFishing } from './fishing.js';
 import { harvestOf, updateFarmland, type Farmland } from './economy/farmland.js';
 import { tuning } from './tuning.js';
+import { effectTotal } from './buildingEffects.js';
+import { EffectKind } from '../shared/buildings/index.js';
 import { updateFog, type FogState } from './vision/fog.js';
 import type { Heightmap } from '../shared/heightmap.js';
 import type { MovementSystem } from './movement.js';
@@ -182,6 +184,10 @@ export function step(loop: SimLoop): void {
     (owner) => construction.yieldFor(world, owner),
     (player) => tech.modifier(player, Modifier.GrainYield),
     (index) => (index >= farmland.count ? undefined : harvestOf(farmland, index)),
+    // What the pits can hold. Injected, like the building yield beside it: the ledger
+    // knows a village can put something by and does not need to learn what a building
+    // is to find out how much.
+    (player) => effectTotal(world, player, EffectKind.GrainReserve),
   );
   // On the upkeep cycle and immediately after it, so the veld pays into the same ledger
   // the harvest does and under the same weather. `drought` is a pure function of the

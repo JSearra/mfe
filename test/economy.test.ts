@@ -260,10 +260,15 @@ describe('starvation', () => {
     economy.update(world, []);
     const spent = before - economy.balance(0, Resource.Grain);
 
-    const expected =
+    const upkeep =
       (10 * E.grainPerUnit + FACTIONS[FactionId.Zulu].startingCattle * E.grainPerCattle) *
       FACTIONS[FactionId.Zulu].upkeepMultiplier;
-    expect(spent).toBeCloseTo(expected, 6);
+    // Upkeep is not the only thing that leaves the granary any more: grain in an open
+    // store goes off, and the spoilage is taken before the harvest lands. Named here
+    // rather than folded into the figure, because what this test is about is that
+    // upkeep is charged per unit and per beast — and that is still exactly true.
+    const spoiled = before * E.grainSpoilPerCycle;
+    expect(spent).toBeCloseTo(upkeep + spoiled, 6);
   });
 
   it('damages troops and reports it when grain runs out', () => {

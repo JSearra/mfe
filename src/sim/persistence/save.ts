@@ -48,6 +48,14 @@ export interface SaveGame {
   readonly economy: string;
   readonly economyScalars: { upkeepCount: number };
   readonly economyShortfall: string;
+  /**
+   * Grain in the pits. Simulation state, so it has to come back with the rest of it —
+   * a village reloaded without its reserve has had a season's foresight deleted.
+   *
+   * Optional on the way IN so a save written before pits existed still loads, and
+   * always written on the way out.
+   */
+  readonly economyReserve?: string;
   /** Who is tied to whom, and what each village thinks of the others. */
   readonly allianceBond: string;
   readonly allianceStanding: string;
@@ -125,6 +133,7 @@ export function captureState(loop: SimLoop): SaveGame {
     economy: toBase64(economy.amounts),
     economyScalars: { upkeepCount: economy.upkeepCount },
     economyShortfall: toBase64(economy.shortfall),
+    economyReserve: toBase64(economy.reserve),
     allianceBond: toBase64(alliance.bond),
     allianceStanding: toBase64(alliance.standing),
     allianceOffered: toBase64(alliance.offered),
@@ -165,6 +174,9 @@ export function restoreState(loop: SimLoop, save: SaveGame): void {
 
   fromBase64(save.economy, economy.amounts);
   fromBase64(save.economyShortfall, economy.shortfall);
+  // A save from before the pits existed has none, which is the same as empty ones.
+  if (save.economyReserve === undefined) economy.reserve.fill(0);
+  else fromBase64(save.economyReserve, economy.reserve);
   economy.upkeepCount = save.economyScalars.upkeepCount;
 
   fromBase64(save.allianceBond, alliance.bond);

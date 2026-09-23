@@ -65,6 +65,16 @@ export interface Economy {
    * feed 69. That is the whole of the win path and it was invisible.
    */
   readonly feeds: Float64Array;
+  /**
+   * Grain held back in the pits, per player, against a hungry season.
+   *
+   * Simulation state and therefore saved. Kept beside `amounts` rather than inside it
+   * because a reserve is not a resource the player spends — nothing can be bought with
+   * it, trade cannot see it, and the only thing that ever draws on it is going short.
+   * A fourth column in `amounts` would have had to be excluded by hand from every one
+   * of those, which is four chances to forget.
+   */
+  readonly reserve: Float64Array;
 
   balance(player: number, resource: Resource): number;
   add(player: number, resource: Resource, amount: number): void;
@@ -82,6 +92,12 @@ export interface Economy {
     buildingYield?: BuildingYield,
     grainMultiplier?: (player: number) => number,
     harvest?: Harvest,
+    /**
+     * How much grain this player's pits can hold, injected for the same reason
+     * `buildingYield` is: the ledger knows that a village can put something by, and
+     * does not need to learn what a building is to find out how much.
+     */
+    reserveCapacity?: (player: number) => number,
   ): void;
 }
 
@@ -126,6 +142,7 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
   const upkeep = new Float64Array(players);
   const harvested = new Float64Array(players);
   const feeds = new Float64Array(players);
+  const reserve = new Float64Array(players);
 
   for (let player = 0; player < players; player++) {
     const config = factions[player]!;
@@ -145,6 +162,7 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
     upkeep,
     harvested,
     feeds,
+    reserve,
 
     balance(player, resource) {
       return amounts[player * RESOURCE_COUNT + resource] ?? 0;
@@ -193,12 +211,38 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
       return value < 0 ? 0 : value > 1 ? 1 : value;
     },
 
-    update(world, events, buildingYield, grainMultiplier, harvest) {
+    update(world, events, buildingYield, grainMultiplier, harvest, reserveCapacity) {
       const tick = world.tick;
       if (tick === 0 || tick % e.upkeepIntervalTicks !== 0) return;
 
       economy.upkeepCount++;
       harvested.fill(0);
+
+      /*
+       * Grain in the open granary goes off.
+       *
+       * Not a tax on running a village: at the shipped rate a village working on a few
+       * hundred grain loses a fraction of a single unit of upkeep a cycle, and would
+       * not notice if it were not told. It is a reason not to sit on four thousand for
+       * a year, which until now was strictly the best thing a careful player could do —
+       * grain accumulated for ever and the only pressure on a hoard was the temptation
+       * to spend it.
+       *
+       * It exists because an umgodi has to be worth digging, and the first design of
+       * one was not. A pit that drew from the granary in a shortfall and refilled from
+       * it in a surplus does not extend a village's life by a single cycle: the total
+       * is conserved, so all it ever did was move the same grain later. Grain that
+       * KEEPS, against grain that does not, is the difference the real pits were dug
+       * for — a sealed pit holds a harvest for years where a basket does not — and it
+       * is the only version of the building that is worth anything.
+       *
+       * Before the harvest lands, so a village is never taxed on grain it has not had a
+       * season to use.
+       */
+      for (let player = 0; player < players; player++) {
+        const held = economy.balance(player, Resource.Grain);
+        if (held > 0) economy.spend(player, Resource.Grain, held * e.grainSpoilPerCycle);
+      }
       const droughtNow = economy.drought(tick);
 
       /*
@@ -296,19 +340,56 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
         const spare = (harvested[player]! - forHerd) / (e.grainPerUnit * config.upkeepMultiplier);
         feeds[player] = spare > 0 ? Math.floor(spare) : 0;
 
+        const capacity = reserveCapacity?.(player) ?? 0;
+        // A pit that has been filled in — demolished, or never dug — cannot be holding
+        // grain. Clamped rather than left, or a reserve would survive the thing that
+        // held it.
+        if (reserve[player]! > capacity) reserve[player] = capacity;
+
         const held = economy.balance(player, Resource.Grain);
         if (held >= needed) {
           economy.spend(player, Resource.Grain, needed);
           shortfall[player] = 0;
+
+          /*
+           * Put something by, out of what is left after everyone has eaten.
+           *
+           * A share of the surplus rather than all of it, so digging a pit is never a
+           * way to make grain disappear from a village that wanted to spend it. The
+           * pit is a hedge against the season, and a hedge that swallowed the whole
+           * harvest would be a tax.
+           */
+          const spare = economy.balance(player, Resource.Grain);
+          const room = capacity - reserve[player]!;
+          if (room > 0 && spare > 0) {
+            const stored = Math.min(spare * e.pitFillRate, room);
+            economy.spend(player, Resource.Grain, stored);
+            reserve[player] = reserve[player]! + stored;
+          }
 
           // The herd grows only when it is fed, and grows slowly on dry grazing.
           const growth =
             (onLedger * e.cattleGrowthPerHundred) / 100 * config.herdGrowthMultiplier;
           economy.add(player, Resource.Cattle, growth * shelteredFactor);
         } else {
+          /*
+           * The pit opens before anybody goes hungry, and empties before anybody does.
+           *
+           * Before rather than after, which is the whole of what it buys: starvation
+           * damage falls on every unit the player owns at once, so a village that dies
+           * and is then handed its reserve has been handed nothing. Drawn down to
+           * whatever the granary was short, so a pit too small for the famine still
+           * pays out all it has and the hunger that follows is only what it could not
+           * meet.
+           */
           economy.spend(player, Resource.Grain, held);
-          shortfall[player] = needed - held;
-          starve(world, player, events);
+          let missing = needed - held;
+          const drawn = Math.min(reserve[player]!, missing);
+          reserve[player] = reserve[player]! - drawn;
+          missing -= drawn;
+
+          shortfall[player] = missing;
+          if (missing > 0) starve(world, player, events);
         }
       }
     },

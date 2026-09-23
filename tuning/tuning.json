@@ -83,7 +83,9 @@
     "shelteredYieldFactor": 0.45,
     "plotsPerPlayer": 10,
     "shelteredPerPlayer": 3,
-    "plotSearchRadius": 6.0
+    "plotSearchRadius": 6.0,
+    "pitFillRate": 0.25,
+    "grainSpoilPerCycle": 0.005
   },
   "herd": {
     "cullSize": 10.0,

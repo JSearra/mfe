@@ -30,6 +30,16 @@ export const BuildingType = {
    * and decision sit, so in play it is what research is done from.
    */
   Indlunkulu: 4,
+  /**
+   * The grain pit.
+   *
+   * `umgodi` is simply "pit" or "hole"; the grain pits were dug in the floor of the
+   * cattle byre, sealed, and opened a season or years later. They are not a quaint
+   * detail — a sealed pit holds a harvest that a basket or a raised store loses to
+   * weevils and damp, which is exactly why they were dug, and exactly what this one
+   * does. See docs/CONTENT.md: the term is glossed, not translated.
+   */
+  Umgodi: 5,
 } as const;
 
 export type BuildingType = (typeof BuildingType)[keyof typeof BuildingType];
@@ -213,6 +223,32 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     holdsCattle: false,
     trains: false,
     effect: null,
+  },
+  [BuildingType.Umgodi]: {
+    type: BuildingType.Umgodi,
+    nameKey: 'building.umgodi',
+    // One tile. A pit is a hole in the ground, and a village puts up several.
+    footprint: 1,
+    // Cheap in everything but work. Digging is labour; what it consumes is people's
+    // time and a little timber for the cover, not a season's grain.
+    grainCost: 40,
+    woodCost: 20,
+    cattleCost: 0,
+    work: 260,
+    // It produces nothing at all, and that is the point of it. Every other building in
+    // this catalogue answers a shortage by making more; this one answers it by having
+    // kept what was already there.
+    grainYield: 0,
+    cattleYield: 0,
+    maxHeightVariation: 0,
+    holdsCattle: false,
+    trains: false,
+    /**
+     * Roughly three cycles of a starting village's upkeep, so one pit is a season's
+     * grace and a row of them is a bad year survived. Village-wide — radius zero —
+     * because where a pit was dug is not the point; the grain in it is the village's.
+     */
+    effect: { kind: EffectKind.GrainReserve, radius: 0, strength: 220 },
   },
   [BuildingType.GrainStore]: {
     type: BuildingType.GrainStore,

@@ -249,7 +249,7 @@ and the Definition of Done in `CLAUDE.md`.
       no new building, so the mechanism and the content land in separate commits.
       *Done when:* an existing building declares a null effect and nothing changes —
       the golden replay proves the scaffolding inert.
-- [ ] **U2 — Umgodi, the grain pit.** One tile, cheap, yields nothing; buffers instead.
+- [x] **U2 — Umgodi, the grain pit.** Done. One tile, cheap, yields nothing; buffers instead.
       In a shortfall it pays out before anybody starves and refills from surplus. Aimed
       at the only failure condition the game has.
       *Done when:* a headless village with a full pit survives a shortfall that kills
