@@ -213,7 +213,7 @@ and the Definition of Done in `CLAUDE.md`.
       *Done when:* flat ground returns the tile's own height at all four corners, a
       one-level step returns a corner between the two, a cliff corner snaps, and the map
       edge does not slope off toward the out-of-bounds sentinel.
-- [ ] **T2 — The ground becomes continuous.** Tile tops drawn from T1's corner heights
+- [x] **T2 — The ground becomes continuous.** Done. Tile tops drawn from T1's corner heights
       as one retained mesh per chunk rather than a sprite per tile, so a single-level
       change is a ramp. Faces are then drawn only where there is a real cliff.
       Render-side only: the simulation keeps per-tile integer heights and movement,

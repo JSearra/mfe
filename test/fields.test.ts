@@ -13,10 +13,13 @@ import { flatMap } from './simHarness.js';
  * slowest possible way to find out that a sprite was in the wrong place.
  */
 
-const broken: TerrainTile = { texture: Texture.EMPTY, colour: 0x111111 };
-const crop: TerrainTile = { texture: new Texture(), colour: 0x222222 };
+const NO_UV = new Float32Array(8);
+
+const broken: TerrainTile = { texture: Texture.EMPTY, colour: 0x111111, uv: NO_UV };
+const crop: TerrainTile = { texture: new Texture(), colour: 0x222222, uv: NO_UV };
 
 const tiles: TerrainTiles = {
+  page: Texture.EMPTY,
   variants: () => [],
   transition: () => null,
   field: (_band, isCrop) => (isCrop ? crop : broken),

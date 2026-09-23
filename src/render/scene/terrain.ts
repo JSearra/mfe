@@ -1,16 +1,19 @@
-import { Container, Graphics, Sprite } from 'pixi.js';
+import { Container, Graphics, Mesh, MeshGeometry } from 'pixi.js';
 import { heightAt, isWater, type Heightmap } from '../../shared/heightmap.js';
 import {
   ELEV_STEP,
   HALF_TILE_H,
   HALF_TILE_W,
   isCliff,
+  MAX_CLIMB,
   worldToScreenX,
   worldToScreenY,
 } from '../../shared/iso.js';
 import type { Camera } from '../camera.js';
 import { presentation } from '../presentation.js';
 import type { TerrainTile, TerrainTiles } from '../assets.js';
+import { CORNER_COUNT, tileCorners } from './surface.js';
+import { cornerPositions, faceTrapezoid, QUAD_FLOATS } from './terrainGeometry.js';
 
 /**
  * Chunked terrain renderer.
@@ -18,18 +21,34 @@ import type { TerrainTile, TerrainTiles } from '../assets.js';
  * Not RenderTexture bakes, despite ARCHITECTURE.md offering them as an option: a
  * 16x16 chunk's isometric bounding box is 1024x568px, so 64 chunks cost ~149MB of
  * VRAM at 1x and ~595MB at the devicePixelRatio 2 we actually render at. Retained
- * Graphics geometry gets the same "build once, draw cheap" property for kilobytes.
+ * geometry gets the same "build once, draw cheap" property for kilobytes.
  * See docs/adr/0010-terrain-chunking-strategy.md.
  *
  * Culling is per chunk, not per tile — at the configured chunk size that is 16
  * bounding-box tests per frame instead of 16,384.
  *
- * Tile tops are sprites off a single page and cost about 5ms of p99 frame time at a
- * dozen visible chunks, against an 8ms budget: the traversal of ~12,000 sprites, not
- * the drawing of them. Smaller chunks do not help — measured, they cull no meaningful
- * extra work and cost a face draw call each, which took 38 visible chunks to 77 draw
- * calls. If this needs to come down, the lever is a ParticleContainer for the tops
- * rather than finer culling.
+ * ## The ground is a mesh, not a field of diamonds
+ *
+ * Tile tops were a sprite each, laid flat at the tile's own integer height. Flat
+ * diamonds cannot express a slope, so every height change however small had to be a
+ * vertical face — and with `MAX_CLIMB` at 1 and `ELEV_STEP` at 8px against a 32px tile,
+ * every one-level contour on a rolling map was a quarter-tile wall with a lit lip on
+ * it. The contours are everywhere, so the walls were: the ground ended at a right angle
+ * wherever it changed at all.
+ *
+ * Now each tile is a quad whose four corners carry their own height, from
+ * `surface.tileCorners`, so a walkable step is a ramp. Corners touching a real cliff
+ * snap back to their tile's height and the face between the two grounds survives, which
+ * is ADR-0006's hard edge kept exactly where it earns its keep.
+ *
+ * The simulation is untouched by all of this. It keeps one integer height per tile;
+ * movement cost, pathing, line of sight and picking all read that and are unchanged.
+ * This is a reading of the same data, not a second copy of it.
+ *
+ * One mesh per chunk rather than a sprite per tile also happens to be much cheaper.
+ * The sprite path spent about 5ms of an 8ms p99 budget on traversing ~12,000 sprites
+ * rather than on drawing them; a chunk is now one object and one draw call, because
+ * every tile on the map indexes into the same page.
  */
 
 const { chunkSize, palette, eastFaceShade, southFaceShade, gridAlpha } = presentation.terrain;
@@ -39,7 +58,19 @@ const waterEdgeColour = Number.parseInt(presentation.terrain.waterEdge.slice(1),
 
 interface Chunk {
   readonly graphics: Graphics;
-  readonly tops: Container;
+  /**
+   * Tile tops and the seam blends over them, in one mesh.
+   *
+   * One rather than two, and the draw-call budget is the reason. A chunk's geometry is
+   * far too large for Pixi to batch it with anything, so every mesh is a draw call of
+   * its own: a base and an overlay layer put twelve visible chunks at 59 calls against
+   * a budget of 60. Triangles rasterise in index order within a single draw, so
+   * appending every overlay quad after every base quad in the same buffer keeps the
+   * blends above the ground they bleed onto for free.
+   *
+   * Null on a map with no terrain page, which falls back to filled diamonds.
+   */
+  readonly tops: Mesh | null;
   /** Isometric-space bounding box, computed once. */
   readonly minX: number;
   readonly maxX: number;
@@ -83,13 +114,6 @@ function colourForLevel(level: number): number {
 }
 
 /**
- * Draw one tile: its two camera-facing cliff faces, then its top surface.
- *
- * Only the east and south faces are ever visible. Both +x and +y move down-screen in
- * this projection, so those are the two sides turned toward the viewer; the north and
- * west faces are always hidden behind the tile's own top.
- */
-/**
  * A stable per-tile hash. Hashed rather than taken from (x+y) so choices do not band
  * into diagonal stripes along the isometric axis, and deterministic so the ground does
  * not crawl between frames or differ between two players looking at the same map.
@@ -101,15 +125,14 @@ function tileHash(tileX: number, tileY: number, salt: number): number {
 }
 
 /**
- * Which height band's art to draw a tile with. Its own, now.
+ * Which height band's art to draw a tile with. Its own.
  *
- * It was not. A tile took a random neighbour's band 38% of the time, which scattered
- * each ground a tile or two into the other along every boundary. That was standing in
- * for a blend, and it does not read as one: two textures interleaved at random read as
- * static, not as ground giving way to ground — and it moved the art off the tile whose
- * height the geometry was drawn at, so a patch of high ground appeared in a hollow.
- *
- * The seam is handled properly now, by `transitionsFor` below, and this can be honest.
+ * It was not always. A tile took a random neighbour's band 38% of the time, which
+ * scattered each ground a tile or two into the other along every boundary. That was
+ * standing in for a blend, and it does not read as one: two textures interleaved at
+ * random read as static, not as ground giving way to ground — and it moved the art off
+ * the tile whose height the geometry was drawn at, so a patch of high ground appeared
+ * in a hollow. The seam is handled by `transitionsFor` below, so this can be honest.
  */
 function bandFor(map: Heightmap, tileX: number, tileY: number): number {
   return map.data[tileY * map.width + tileX]!;
@@ -165,63 +188,141 @@ function variantFor(tiles: readonly TerrainTile[], tileX: number, tileY: number)
 /**
  * A cliff face, drawn as strata rather than as one flat quad.
  *
- * Faces are NOT textured, and the measurement is the reason. A real map carries 2,634 of
- * them over 16,384 tiles, so sprites would add about a sixth again to a scene whose p99
- * already sits at 5.8ms of an 8ms budget — and worse, a face is anywhere from one to
- * seven levels tall, so a single texture would have to stretch (which smears) or tile
- * vertically (which in Pixi means a heavier object than a sprite). The cost is real and
- * the gain is a surface most often seen edge-on and in shadow.
+ * Faces are NOT textured, and the measurement is the reason. Sprites would add about a
+ * sixth again to a scene already near its p99 budget, and worse, a face is anywhere
+ * from one to seven levels tall, so a single texture would have to stretch (which
+ * smears) or tile vertically. The cost is real and the gain is a surface most often
+ * seen edge-on and in shadow.
  *
- * A band per elevation step costs no new display objects, because it is more geometry in
- * the Graphics that was being drawn anyway. It reads as rock bedding, and it does
+ * A band per elevation step costs no new display objects, because it is more geometry
+ * in the Graphics that was being drawn anyway. It reads as rock bedding, and it does
  * something the flat quad could not: the number of bands IS the height, so how far a
  * drop goes is legible without counting tiles.
+ *
+ * **It is a trapezoid now, not a rectangle.** The ground above it is a mesh whose
+ * corners carry their own heights, so the two ends of a face are rarely the same
+ * length: it is the gap between one surface and the next, and taking its top and bottom
+ * from those surfaces is what guarantees it fills the gap exactly rather than
+ * approximately.
  */
 function drawFace(
   graphics: Graphics,
-  fromX: number,
-  fromY: number,
-  toX: number,
-  toY: number,
-  levels: number,
+  nearX: number,
+  nearTopY: number,
+  nearBottomY: number,
+  farX: number,
+  farTopY: number,
+  farBottomY: number,
   base: number,
   faceShade: number,
   tileX: number,
   tileY: number,
 ): void {
+  const nearDrop = nearBottomY - nearTopY;
+  const farDrop = farBottomY - farTopY;
+  const deepest = nearDrop > farDrop ? nearDrop : farDrop;
+  if (deepest <= 0) return;
+
   // A little per-tile variation so a long escarpment does not read as one printed sheet.
   // Hashed off the tile so it holds still between frames.
   let hash = (tileX * 0x27d4eb2d) ^ (tileY * 0x165667b1);
   hash = Math.imul(hash ^ (hash >>> 13), 0x85ebca6b);
   const jitter = (((hash >>> 16) & 0xff) / 255 - 0.5) * 0.06;
 
-  for (let band = 0; band < levels; band++) {
-    const top = band * ELEV_STEP;
-    const bottom = top + ELEV_STEP;
+  const bands = Math.ceil(deepest / ELEV_STEP);
+  for (let band = 0; band < bands; band++) {
+    const from = band * ELEV_STEP;
+    const to = from + ELEV_STEP;
+    // Each end is clipped to its OWN drop, so a face that runs out on one side tapers
+    // to a point there instead of hanging past the ground it is supposed to meet.
+    const nearFrom = from < nearDrop ? from : nearDrop;
+    const nearTo = to < nearDrop ? to : nearDrop;
+    const farFrom = from < farDrop ? from : farDrop;
+    const farTo = to < farDrop ? to : farDrop;
+    if (nearTo <= nearFrom && farTo <= farFrom) continue;
+
     // Darker with depth: less sky reaches the bottom of a cut, and the gradient is what
     // stops a tall face reading as a painted wall.
-    const depth = 1 - (band / Math.max(levels, 1)) * 0.34;
-    graphics.moveTo(fromX, fromY + top);
-    graphics.lineTo(toX, toY + top);
-    graphics.lineTo(toX, toY + bottom);
-    graphics.lineTo(fromX, fromY + bottom);
+    const depth = 1 - (band / bands) * 0.34;
+    graphics.moveTo(nearX, nearTopY + nearFrom);
+    graphics.lineTo(farX, farTopY + farFrom);
+    graphics.lineTo(farX, farTopY + farTo);
+    graphics.lineTo(nearX, nearTopY + nearTo);
     graphics.closePath();
     graphics.fill({ color: shade(base, faceShade * depth + jitter) });
   }
 
-  // The lip. A hard bright edge where the ground breaks away is most of what says
-  // "cliff" rather than "slope" at this size.
-  graphics.moveTo(fromX, fromY);
-  graphics.lineTo(toX, toY);
+  // The lip, and only on a real cliff.
+  //
+  // A hard bright edge where the ground breaks away is most of what says "cliff" rather
+  // than "slope" at this size — which is exactly why it must not appear on a slope. The
+  // mesh leaves small faces behind wherever a snapped corner meets an averaged one, a
+  // few pixels tall and no part of any cliff, and lipping those would put back the
+  // bright line at every contour that this whole change exists to remove.
+  if (deepest <= MAX_CLIMB * ELEV_STEP) return;
+  graphics.moveTo(nearX, nearTopY);
+  graphics.lineTo(farX, farTopY);
   graphics.stroke({ width: 1, color: shade(base, 1.18), alpha: 0.7 });
 }
 
+/** Vertex and index arrays under construction for one chunk's mesh. */
+interface MeshBuild {
+  readonly positions: number[];
+  readonly uvs: number[];
+  readonly indices: number[];
+}
+
+function emptyBuild(): MeshBuild {
+  return { positions: [], uvs: [], indices: [] };
+}
+
 /**
- * Draw one tile's faces into the chunk geometry and append its sprites to `out`.
+ * Append one tile's quad.
  *
- * Appends rather than returns, because a boundary tile is a base sprite plus one
- * overlay per higher ground touching it, and a per-tile array would allocate sixteen
- * thousand of them to hold one element each.
+ * Two triangles off the shared north-south diagonal. A quad whose four corners are not
+ * coplanar has to fold somewhere; folding it along the diamond's long axis puts the
+ * seam where the slope is already changing rather than across it.
+ */
+function pushQuad(build: MeshBuild, corners: Float32Array, uv: Float32Array): void {
+  const first = build.positions.length / 2;
+  for (let i = 0; i < QUAD_FLOATS; i++) {
+    build.positions.push(corners[i]!);
+    build.uvs.push(uv[i]!);
+  }
+  build.indices.push(first, first + 1, first + 2, first, first + 2, first + 3);
+}
+
+/**
+ * The seam blends appended after every tile top, in one set of buffers.
+ *
+ * Index order is draw order inside a single mesh, so this is the whole of the layering:
+ * every base quad is rasterised before every overlay quad, and a blend is therefore
+ * always over the ground it bleeds onto rather than under it.
+ */
+function concat(base: MeshBuild, overlay: MeshBuild): MeshBuild {
+  const offset = base.positions.length / 2;
+  for (const value of overlay.positions) base.positions.push(value);
+  for (const value of overlay.uvs) base.uvs.push(value);
+  for (const index of overlay.indices) base.indices.push(index + offset);
+  return base;
+}
+
+function buildMesh(build: MeshBuild, tiles: TerrainTiles): Mesh | null {
+  if (build.indices.length === 0) return null;
+  const geometry = new MeshGeometry({
+    positions: new Float32Array(build.positions),
+    uvs: new Float32Array(build.uvs),
+    indices: new Uint32Array(build.indices),
+  });
+  return new Mesh({ geometry, texture: tiles.page });
+}
+
+/**
+ * Draw one tile: the gaps between it and the neighbours in front of it, then its top.
+ *
+ * Only the east and south sides can show a face. Both +x and +y move down-screen in
+ * this projection, so those are the two turned toward the viewer; the north and west
+ * sides are always hidden behind the tile's own top.
  */
 function drawTile(
   graphics: Graphics,
@@ -229,18 +330,24 @@ function drawTile(
   tileX: number,
   tileY: number,
   tiles: TerrainTiles | null,
-  out: Sprite[],
-  bleed: number[],
+  base: MeshBuild,
+  overlay: MeshBuild,
+  scratch: TileScratch,
 ): void {
   const level = map.data[tileY * map.width + tileX]!;
-  const centreX = worldToScreenX(tileX + 0.5, tileY + 0.5);
-  const centreY = worldToScreenY(tileX + 0.5, tileY + 0.5, level);
+  const { corners, positions, neighbourCorners, bleed } = scratch;
 
-  // Diamond corners, matching the world corners (tx,ty), (tx+1,ty), (tx+1,ty+1), (tx,ty+1).
-  const northY = centreY - HALF_TILE_H;
-  const southY = centreY + HALF_TILE_H;
-  const eastX = centreX + HALF_TILE_W;
-  const westX = centreX - HALF_TILE_W;
+  tileCorners(map, tileX, tileY, corners);
+  cornerPositions(tileX, tileY, corners, positions);
+
+  const northX = positions[0]!;
+  const northY = positions[1]!;
+  const eastX = positions[2]!;
+  const eastY = positions[3]!;
+  const southX = positions[4]!;
+  const southY = positions[5]!;
+  const westX = positions[6]!;
+  const westY = positions[7]!;
 
   /*
    * Water is painted, not textured.
@@ -256,59 +363,55 @@ function drawTile(
       isWater(map, tileX - 1, tileY) &&
       isWater(map, tileX, tileY + 1) &&
       isWater(map, tileX, tileY - 1);
-    graphics.moveTo(centreX, northY);
-    graphics.lineTo(eastX, centreY);
-    graphics.lineTo(centreX, southY);
-    graphics.lineTo(westX, centreY);
+    graphics.moveTo(northX, northY);
+    graphics.lineTo(eastX, eastY);
+    graphics.lineTo(southX, southY);
+    graphics.lineTo(westX, westY);
     graphics.closePath();
     graphics.fill({ color: shallow ? waterColour : waterEdgeColour });
     return;
   }
 
-  // Drawn with a possibly-borrowed band, but the geometry still uses the tile's real
-  // level: borrowing art must not move the ground a unit walks on.
   const tile =
     tiles === null ? null : (variantFor(tiles.variants(bandFor(map, tileX, tileY)), tileX, tileY) ?? null);
   // The faces take the tile's own average colour rather than the palette's, so a flat
   // shaded cliff matches the textured surface it drops away from.
-  const base = tile === null ? colourForLevel(level) : tile.colour;
+  const faceColour = tile === null ? colourForLevel(level) : tile.colour;
 
-  // East face: shared edge with (tileX+1, tileY), which is the lower-right edge.
-  const eastNeighbour = heightAt(map, tileX + 1, tileY);
-  const eastDrop = eastNeighbour < 0 ? level : level - eastNeighbour;
-  if (eastDrop > 0) {
-    drawFace(graphics, eastX, centreY, centreX, southY, eastDrop, base, eastFaceShade, tileX, tileY);
-  }
+  // East side: shared edge with (tileX+1, tileY), the lower-right one. This tile's east
+  // and south corners meet that tile's north and west corners at the same two world
+  // points, so any disagreement between them is a gap to be filled.
+  faceAgainst(
+    graphics, map, tileX, tileY, 1, 0,
+    eastX, eastY, southX, southY,
+    corners[1]!, corners[2]!, 0, 3,
+    faceColour, eastFaceShade, neighbourCorners,
+  );
 
-  // South face: shared edge with (tileX, tileY+1), the lower-left edge.
-  const southNeighbour = heightAt(map, tileX, tileY + 1);
-  const southDrop = southNeighbour < 0 ? level : level - southNeighbour;
-  if (southDrop > 0) {
-    drawFace(graphics, centreX, southY, westX, centreY, southDrop, base, southFaceShade, tileX, tileY);
-  }
+  // South side: shared edge with (tileX, tileY+1), the lower-left one. This tile's
+  // south and west corners meet that tile's east and north corners.
+  faceAgainst(
+    graphics, map, tileX, tileY, 0, 1,
+    southX, southY, westX, westY,
+    corners[2]!, corners[3]!, 1, 0,
+    faceColour, southFaceShade, neighbourCorners,
+  );
 
-  graphics.moveTo(centreX, northY);
-  graphics.lineTo(eastX, centreY);
-  graphics.lineTo(centreX, southY);
-  graphics.lineTo(westX, centreY);
-  graphics.closePath();
   if (tile === null || tiles === null) {
-    graphics.fill({ color: base });
+    graphics.moveTo(northX, northY);
+    graphics.lineTo(eastX, eastY);
+    graphics.lineTo(southX, southY);
+    graphics.lineTo(westX, westY);
+    graphics.closePath();
+    graphics.fill({ color: faceColour });
     graphics.stroke({ width: 1, color: 0x000000, alpha: gridAlpha });
     return;
   }
 
-  // Untextured, the diamond is only needed to close the path the faces were drawn with;
-  // the sprite covers it. Filling it anyway would show through the tile's own alpha at
-  // the diamond edge, which is what the grid stroke used to hide.
-  graphics.fill({ color: base, alpha: 0 });
-
-  const sprite = new Sprite(tile.texture);
-  sprite.position.set(westX, northY);
-  out.push(sprite);
+  pushQuad(base, positions, tile.uv);
 
   // Higher ground bleeding over the seam. Same page as the tile under it, so these cost
-  // sprites but not a draw call, and only boundary tiles have any.
+  // vertices but not a draw call, and only boundary tiles have any.
   bleed.length = 0;
   if (transitionsFor(map, tileX, tileY, bleed) > 0) {
     for (let band = 0; band < bleed.length; band++) {
@@ -316,11 +419,76 @@ function drawTile(
       if (mask === undefined) continue;
       const blend = tiles.transition(band, mask);
       if (blend === null) continue;
-      const overlay = new Sprite(blend.texture);
-      overlay.position.set(westX, northY);
-      out.push(overlay);
+      pushQuad(overlay, positions, blend.uv);
     }
   }
+}
+
+/**
+ * Fill the gap between one edge of this tile and the neighbour across it.
+ *
+ * The neighbour's corners are recomputed rather than cached. It is four height lookups
+ * and an average, it happens once when a chunk is built and never again, and the
+ * alternative — a second surface array the size of the map, kept in step with this one
+ * — is a cache that can go stale in a renderer that has no other mutable state.
+ */
+function faceAgainst(
+  graphics: Graphics,
+  map: Heightmap,
+  tileX: number,
+  tileY: number,
+  stepX: number,
+  stepY: number,
+  nearX: number,
+  nearTopY: number,
+  farX: number,
+  farTopY: number,
+  ourNearH: number,
+  ourFarH: number,
+  theirNear: number,
+  theirFar: number,
+  colour: number,
+  faceShade: number,
+  neighbourCorners: Float64Array,
+): void {
+  const neighbourX = tileX + stepX;
+  const neighbourY = tileY + stepY;
+  const own = heightAt(map, tileX, tileY);
+
+  let nearBottomY: number;
+  let farBottomY: number;
+
+  if (heightAt(map, neighbourX, neighbourY) < 0) {
+    // Off the map. The ground has to end somewhere and a floating slab reads worse than
+    // a skirt, so the edge drops to level zero.
+    nearBottomY = nearTopY + own * ELEV_STEP;
+    farBottomY = farTopY + own * ELEV_STEP;
+  } else {
+    tileCorners(map, neighbourX, neighbourY, neighbourCorners);
+    // Their corner heights against ours at the SAME two world points. A face exists
+    // exactly where the two surfaces disagree, which is what keeps it from ever being
+    // too short (a crack) or too long (an apron over the ground in front).
+    if (!faceTrapezoid(ourNearH, ourFarH, neighbourCorners[theirNear]!, neighbourCorners[theirFar]!)) {
+      return;
+    }
+    nearBottomY = nearTopY + (ourNearH - neighbourCorners[theirNear]!) * ELEV_STEP;
+    farBottomY = farTopY + (ourFarH - neighbourCorners[theirFar]!) * ELEV_STEP;
+  }
+
+  drawFace(
+    graphics,
+    nearX, nearTopY, nearBottomY,
+    farX, farTopY, farBottomY,
+    colour, faceShade, tileX, tileY,
+  );
+}
+
+/** Buffers reused across every tile in a chunk, so building one allocates nothing per tile. */
+interface TileScratch {
+  readonly corners: Float64Array;
+  readonly neighbourCorners: Float64Array;
+  readonly positions: Float32Array;
+  readonly bleed: number[];
 }
 
 function buildChunk(
@@ -330,31 +498,35 @@ function buildChunk(
   tiles: TerrainTiles | null,
 ): Chunk {
   const graphics = new Graphics();
-  const tops = new Container();
-  // Reused across every tile in the chunk; drawTile appends and we drain.
-  const sprites: Sprite[] = [];
-  const bleed: number[] = [];
+  const base = emptyBuild();
+  const overlay = emptyBuild();
+  const scratch: TileScratch = {
+    corners: new Float64Array(CORNER_COUNT),
+    neighbourCorners: new Float64Array(CORNER_COUNT),
+    positions: new Float32Array(QUAD_FLOATS),
+    bleed: [],
+  };
   const startX = chunkX * chunkSize;
   const startY = chunkY * chunkSize;
   const endX = Math.min(startX + chunkSize, map.width);
   const endY = Math.min(startY + chunkSize, map.height);
 
-  // Painter's order within the chunk: increasing tileX + tileY draws back to front,
-  // so a tile's top surface covers the cliff faces of whatever sits behind it.
+  // Painter's order within the chunk, for the FACES. The tops no longer need it: every
+  // tile shares its corners exactly with the tiles beside it, so the quads tessellate
+  // the screen and none of them overlaps another. Faces still drop into the ground in
+  // front of them and still have to be drawn behind it.
   for (let sum = startX + startY; sum <= endX + endY - 2; sum++) {
     for (let tileX = startX; tileX < endX; tileX++) {
       const tileY = sum - tileX;
       if (tileY < startY || tileY >= endY) continue;
-      sprites.length = 0;
-      drawTile(graphics, map, tileX, tileY, tiles, sprites, bleed);
-      for (const sprite of sprites) tops.addChild(sprite);
+      drawTile(graphics, map, tileX, tileY, tiles, base, overlay, scratch);
     }
   }
 
   const maxLift = (map.levels - 1) * ELEV_STEP;
   return {
     graphics,
-    tops,
+    tops: tiles === null ? null : buildMesh(concat(base, overlay), tiles),
     minX: worldToScreenX(startX, endY) - HALF_TILE_W,
     maxX: worldToScreenX(endX, startY) + HALF_TILE_W,
     minY: worldToScreenY(startX, startY, 0) - HALF_TILE_H - maxLift,
@@ -368,21 +540,18 @@ export function createTerrain(map: Heightmap, tiles: TerrainTiles | null = null)
   const chunksY = Math.ceil(map.height / chunkSize);
   const chunks: Chunk[] = [];
 
-  // Two layers spanning every chunk, not two layers inside each chunk.
+  // Two layers spanning every chunk, not two inside each chunk.
   //
   // Every face belongs under every top. A face drops down-screen, into the ground of
   // the tiles in FRONT of it, and those are exactly the tops that must cover it;
   // nothing behind a face is ever occluded by it. So the split can be global, and it
-  // has to be: interleaving a Graphics with sprites chunk by chunk breaks the sprite
-  // batch at every chunk boundary, which took 38 visible chunks to 114 draw calls
-  // against a budget of 60. Split globally, the faces batch among themselves and the
-  // tops batch among themselves however many chunks are on screen.
+  // has to be: interleaving a Graphics with the meshes chunk by chunk would break the
+  // batch at every chunk boundary.
   const faceLayer = new Container();
   const topLayer = new Container();
-  container.addChild(faceLayer);
-  container.addChild(topLayer);
+  container.addChild(faceLayer, topLayer);
 
-  // Chunks are added back to front for the same reason tiles are.
+  // Chunks are added back to front for the faces' sake.
   for (let sum = 0; sum <= chunksX + chunksY - 2; sum++) {
     for (let chunkX = 0; chunkX < chunksX; chunkX++) {
       const chunkY = sum - chunkX;
@@ -390,7 +559,7 @@ export function createTerrain(map: Heightmap, tiles: TerrainTiles | null = null)
       const chunk = buildChunk(map, chunkX, chunkY, tiles);
       chunks.push(chunk);
       faceLayer.addChild(chunk.graphics);
-      topLayer.addChild(chunk.tops);
+      if (chunk.tops !== null) topLayer.addChild(chunk.tops);
     }
   }
 
@@ -411,7 +580,7 @@ export function createTerrain(map: Heightmap, tiles: TerrainTiles | null = null)
         const onScreen =
           chunk.maxX >= left && chunk.minX <= right && chunk.maxY >= top && chunk.minY <= bottom;
         chunk.graphics.visible = onScreen;
-        chunk.tops.visible = onScreen;
+        if (chunk.tops !== null) chunk.tops.visible = onScreen;
         if (onScreen) visible++;
       }
       renderer.visibleChunks = visible;

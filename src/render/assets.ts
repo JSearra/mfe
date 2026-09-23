@@ -1,4 +1,5 @@
 import { Assets, Rectangle, Texture } from 'pixi.js';
+import { diamondUvs, QUAD_FLOATS } from './scene/terrainGeometry.js';
 
 /**
  * Loads the sprite atlas and hands out textures by meaning rather than by coordinate.
@@ -173,9 +174,25 @@ export interface TerrainTile {
   readonly texture: Texture;
   /** Mean colour of the tile, for the flat-shaded cliff faces beneath it. */
   readonly colour: number;
+  /**
+   * The diamond's four corners in page-normalised UV, as x,y pairs.
+   *
+   * Precomputed here because the terrain mesh needs UVs rather than a Texture, and
+   * because this is the one file that is allowed to know an atlas has coordinates at
+   * all — ARCHITECTURE section 9 wants the renderer asset-agnostic, and a mesh builder
+   * reaching into `texture.frame` to find a page offset would break that.
+   */
+  readonly uv: Float32Array;
 }
 
 export interface TerrainTiles {
+  /**
+   * The whole page, as one texture.
+   *
+   * The terrain mesh is drawn with this and indexes into it with the per-tile UVs
+   * above, which is what keeps a chunk of any composition to a single draw call.
+   */
+  readonly page: Texture;
   /** Variants available for a height level, nearest band if that level has none. */
   variants(level: number): readonly TerrainTile[];
   /**
@@ -224,13 +241,19 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
     // band -> [broken, crop]
     const fields: (TerrainTile | null)[][] = [];
 
+    const pageWidth = page.source.width;
+    const pageHeight = page.source.height;
+
     for (const entry of manifest.tiles) {
+      const uv = new Float32Array(QUAD_FLOATS);
+      diamondUvs(entry.x, entry.y, entry.width, entry.height, pageWidth, pageHeight, uv);
       const tile: TerrainTile = {
         texture: new Texture({
           source: page.source,
           frame: new Rectangle(entry.x, entry.y, entry.width, entry.height),
         }),
         colour: Number.parseInt(entry.averageColour.slice(1), 16),
+        uv,
       };
 
       if (entry.field !== undefined) {
@@ -250,6 +273,8 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
     if (byBand.length === 0) return null;
 
     return {
+      page,
+
       variants(level: number) {
         const exact = byBand[level];
         if (exact && exact.length > 0) return exact;
