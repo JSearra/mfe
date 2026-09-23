@@ -40,6 +40,15 @@ export const BuildingType = {
    * does. See docs/CONTENT.md: the term is glossed, not translated.
    */
   Umgodi: 5,
+  /**
+   * The weir.
+   *
+   * `isiziba` is a pool or a deep place in a river — water held rather than water
+   * running. A furrow led off a dammed pool is the oldest irrigation there is, and it
+   * is the one work a village can do that answers a dry season rather than enduring it.
+   * Glossed, not translated: see docs/CONTENT.md.
+   */
+  Isiziba: 6,
 } as const;
 
 export type BuildingType = (typeof BuildingType)[keyof typeof BuildingType];
@@ -127,6 +136,14 @@ export interface BuildingSpec {
    * rather than an omission of it.
    */
   readonly effect: BuildingEffect | null;
+  /**
+   * Must stand on a bank: at least one tile of the footprint touching water.
+   *
+   * A property of the building rather than a special case in the placement code, so
+   * that adding a mill or a furrow later is a line in this file rather than a branch in
+   * `construction.place`.
+   */
+  readonly needsWater: boolean;
 }
 
 export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
@@ -151,6 +168,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     holdsCattle: true,
     trains: false,
     effect: null,
+    needsWater: false,
   },
   [BuildingType.Umuzi]: {
     type: BuildingType.Umuzi,
@@ -182,6 +200,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     holdsCattle: false,
     trains: true,
     effect: null,
+    needsWater: false,
   },
   [BuildingType.Ikhanda]: {
     type: BuildingType.Ikhanda,
@@ -205,6 +224,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     holdsCattle: false,
     trains: true,
     effect: null,
+    needsWater: false,
   },
   [BuildingType.Indlunkulu]: {
     type: BuildingType.Indlunkulu,
@@ -223,6 +243,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     holdsCattle: false,
     trains: false,
     effect: null,
+    needsWater: false,
   },
   [BuildingType.Umgodi]: {
     type: BuildingType.Umgodi,
@@ -249,6 +270,31 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
      * because where a pit was dug is not the point; the grain in it is the village's.
      */
     effect: { kind: EffectKind.GrainReserve, radius: 0, strength: 220 },
+    needsWater: false,
+  },
+  [BuildingType.Isiziba]: {
+    type: BuildingType.Isiziba,
+    nameKey: 'building.isiziba',
+    footprint: 1,
+    // Dear, and meant to be. It is the only counter the drought has, so it should cost
+    // a season of the thing the drought takes.
+    grainCost: 110,
+    woodCost: 85,
+    cattleCost: 0,
+    work: 640,
+    grainYield: 0,
+    cattleYield: 0,
+    maxHeightVariation: 0,
+    holdsCattle: false,
+    trains: false,
+    /**
+     * Six tiles, which is a walk rather than a glance, so a village has to decide which
+     * of its fields to put near the river rather than getting all of them sheltered by
+     * one weir. `plotSearchRadius` is 6 as well, so a weir covers about one village's
+     * worth of ground if the fields were sited around it deliberately.
+     */
+    effect: { kind: EffectKind.DroughtShelter, radius: 6, strength: 1 },
+    needsWater: true,
   },
   [BuildingType.GrainStore]: {
     type: BuildingType.GrainStore,
@@ -264,6 +310,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     holdsCattle: false,
     trains: false,
     effect: null,
+    needsWater: false,
   },
 };
 

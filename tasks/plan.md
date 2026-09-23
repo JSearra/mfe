@@ -254,7 +254,7 @@ and the Definition of Done in `CLAUDE.md`.
       at the only failure condition the game has.
       *Done when:* a headless village with a full pit survives a shortfall that kills
       the same village without one, and the pit empties and refills across the seasons.
-- [ ] **U3 — Isiziba, the weir.** Sited only on a shore tile. Fields within its radius
+- [x] **U3 — Isiziba, the weir.** Done. Sited only on a shore tile. Fields within its radius
       lose less condition to drought.
       *Done when:* siting off a shore is refused; a field inside the radius holds
       condition through a drought that costs an identical field outside it.

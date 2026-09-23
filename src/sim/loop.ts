@@ -15,7 +15,7 @@ import { updateRoles } from './roles.js';
 import { updateFishing } from './fishing.js';
 import { harvestOf, updateFarmland, type Farmland } from './economy/farmland.js';
 import { tuning } from './tuning.js';
-import { effectTotal } from './buildingEffects.js';
+import { effectAt, effectTotal } from './buildingEffects.js';
 import { EffectKind } from '../shared/buildings/index.js';
 import { updateFog, type FogState } from './vision/fog.js';
 import type { Heightmap } from '../shared/heightmap.js';
@@ -183,7 +183,31 @@ export function step(loop: SimLoop): void {
     events,
     (owner) => construction.yieldFor(world, owner),
     (player) => tech.modifier(player, Modifier.GrainYield),
-    (index) => (index >= farmland.count ? undefined : harvestOf(farmland, index)),
+    /*
+     * What each field has, with the weirs taken into account.
+     *
+     * A weir makes the ground around it count as SHELTERED, which is the same standing
+     * a river bottom or a kloof already has — and that is the honest reading of what a
+     * weir is. Holding water on the land is exactly what a kloof does for free.
+     *
+     * Wrapped here rather than inside `harvestOf`, because the farmland owns a field's
+     * condition and siting and has no business knowing what a building is. The ledger
+     * owns the weather and has no business knowing where a field stands. This is the
+     * one place that knows both.
+     */
+    (index) => {
+      if (index >= farmland.count) return undefined;
+      const field = harvestOf(farmland, index);
+      if (field === null || field.sheltered) return field;
+      const watered = effectAt(
+        world,
+        field.owner,
+        EffectKind.DroughtShelter,
+        farmland.tileX[index]!,
+        farmland.tileY[index]!,
+      );
+      return watered > 0 ? { ...field, sheltered: true } : field;
+    },
     // What the pits can hold. Injected, like the building yield beside it: the ledger
     // knows a village can put something by and does not need to learn what a building
     // is to find out how much.

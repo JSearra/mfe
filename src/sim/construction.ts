@@ -1,6 +1,6 @@
 import type { SimEvent } from '../shared/events.js';
 import { EventType, makeEvent } from '../shared/events.js';
-import { heightAt, type Heightmap } from '../shared/heightmap.js';
+import { heightAt, isShore, type Heightmap } from '../shared/heightmap.js';
 import { BuildingType, buildingSpec } from '../shared/buildings/index.js';
 import type { Economy } from './economy/ledger.js';
 import { Resource } from './economy/ledger.js';
@@ -41,6 +41,14 @@ export const PlacementResult = {
   TooSteep: 3,
   Unaffordable: 4,
   NoRoom: 5,
+  /**
+   * A weir with no water to hold.
+   *
+   * Its own result rather than folding into `Unsuitable`, because it is the one refusal
+   * the player can act on by walking somewhere else — the panel says which, and a
+   * reason a player can answer is worth a value of its own.
+   */
+  NoWater: 6,
 } as const;
 
 export type PlacementResult = (typeof PlacementResult)[keyof typeof PlacementResult];
@@ -104,6 +112,16 @@ export function createConstructionSystem(
     return true;
   }
 
+  /** Does any tile of this footprint stand on a bank? */
+  function touchesWater(tileX: number, tileY: number, size: number): boolean {
+    for (let dy = 0; dy < size; dy++) {
+      for (let dx = 0; dx < size; dx++) {
+        if (isShore(map, tileX + dx, tileY + dy)) return true;
+      }
+    }
+    return false;
+  }
+
   function levelEnough(tileX: number, tileY: number, size: number, tolerance: number): boolean {
     let low = Infinity;
     let high = -Infinity;
@@ -136,6 +154,13 @@ export function createConstructionSystem(
       if (!footprintFree(tileX, tileY, size)) {
         stats.refused++;
         return PlacementResult.Occupied;
+      }
+      // A weir has to have water to hold. Checked on the footprint's own tiles rather
+      // than within a radius: it is built ON the bank, and a work of irrigation a
+      // village away from the river is just a trench.
+      if (spec.needsWater && !touchesWater(tileX, tileY, size)) {
+        stats.refused++;
+        return PlacementResult.NoWater;
       }
       if (
         economy.balance(owner, Resource.Grain) < spec.grainCost ||
