@@ -322,7 +322,7 @@ about it. Same rules: a failing test first, one commit each, the Definition of D
       *Done when:* the AI builds a pit and a fold when its own books say it should, a
       headless match shows it doing so, and the golden replay is re-recorded with both
       proofs.
-- [ ] **X3 — The ground reads as Karoo, which is the wrong half of the country.**
+- [x] **X3 — The ground reads as Karoo, which is the wrong half of the country.** Done.
       `generate_tiles.py` says so in its own prompt notes — "green for much of the year"
       — and the map is orange. The band distribution is even (measured: 15-17% each
       across the middle five), so it is not a generation problem: six of the eight

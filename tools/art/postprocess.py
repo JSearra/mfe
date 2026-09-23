@@ -644,7 +644,27 @@ def main() -> int:
     tile.add_argument(
         "--strength",
         type=float,
-        default=0.55,
+        # 0.8, measured rather than chosen by eye alone.
+        #
+        # The palette's job is to say which band a tile belongs to, and at 0.55 it was
+        # not doing it: savanna-low's palette entry asks for a green at hue 87 and the
+        # tile came out at hue 40, an orange-brown, across 15% of the map. Six of the
+        # eight SUBJECTS describe orange-red ground, so at 0.55 -- where 45% of the
+        # generation's own colour survives -- the map read as Karoo everywhere, which
+        # generate_tiles.py's own prompt notes call the wrong half of the country.
+        #
+        # Mean hue error against the palette, swept over four values:
+        #     0.55  12.0 deg   (savanna-low 46.6)
+        #     0.70   8.5       (35.3)
+        #     0.80   5.8       (24.6)
+        #     0.90   3.1       (12.8)
+        #
+        # 0.9 scores better and looks worse. `harmonise` ramps ONE band colour by each
+        # pixel's luminance, so as strength rises the tile loses its own hue variation
+        # and keeps only its grain -- at 0.9 the grasslands go flat and monochrome. 0.8
+        # is where the low bands become green and the donga and sandstone stay orange,
+        # which is the distinction the ramp exists to draw.
+        default=0.80,
         help="How far to pull colour toward the band. 0 keeps the generation as-is.",
     )
     tile.set_defaults(func=command_tile)

@@ -11,6 +11,7 @@ import { createDirectSimHost, type PlayerState, type SimHost } from './host/dire
 import { createWorkerSimHost } from './host/worker/workerHost.js';
 import { createHeightmap } from './sim/terrain/generate.js';
 import { MAP_SCRIPTS, generateMap, type MapScript } from './sim/terrain/maps.js';
+import { bandShiftFor } from './render/scene/terrainBand.js';
 import { FactionId } from './shared/factions/index.js';
 import { createWorld } from './sim/world.js';
 import { treeSlot, WOODLAND_STRIDE } from './shared/woodland.js';
@@ -485,7 +486,10 @@ async function main(options: GameOptions): Promise<void> {
   const cameraBounds = mapBounds(map.width, map.height, map.levels - 1);
 
   const terrainTiles = await loadTerrainTiles();
-  const terrain = createTerrain(map, terrainTiles);
+  // How dry this country is drawn. A statement about the landscape, which is the one
+  // thing a heightmap was never able to make — see render/scene/terrainBand.ts.
+  const bandShift = bandShiftFor(options.mapScript);
+  const terrain = createTerrain(map, terrainTiles, bandShift);
   const cursor = createTileCursor();
   // Null if the atlas is missing or malformed, and the entity layer then falls back to
   // drawing shapes. Art is not worth failing to start over, and the build runs without
@@ -499,7 +503,7 @@ async function main(options: GameOptions): Promise<void> {
     faction: PLAYER,
   });
   const damage = createDamageFlashes();
-  const fields = createFieldLayer(map, terrainTiles);
+  const fields = createFieldLayer(map, terrainTiles, bandShift);
   const fog = createFogRenderer(map);
   // Above the ground and below everything that stands on it.
   terrain.container.addChild(fields.container);

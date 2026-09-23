@@ -24,7 +24,12 @@
     "gridAlpha": 0.16,
     "cursorColour": "#e8d9a8",
     "water": "#2f5a6e",
-    "waterEdge": "#3d7288"
+    "waterEdge": "#3d7288",
+    "bandShift": {
+      "karoo": 2,
+      "thaba-bosiu": 2,
+      "magaliesberg": 2
+    }
   },
   "debug": {
     "showChunkBounds": false

@@ -9,6 +9,7 @@ import {
 } from '../../shared/farmland.js';
 import { HALF_TILE_H, HALF_TILE_W, worldToScreenX, worldToScreenY } from '../../shared/iso.js';
 import type { TerrainTiles } from '../assets.js';
+import { groundBand } from './terrainBand.js';
 
 /**
  * The fields, drawn on the ground they were broken out of.
@@ -43,7 +44,14 @@ export interface FieldLayer {
   setFarmland(packed: Float32Array | null): void;
 }
 
-export function createFieldLayer(map: Heightmap, tiles: TerrainTiles | null): FieldLayer {
+export function createFieldLayer(
+  map: Heightmap,
+  tiles: TerrainTiles | null,
+  // A field is broken out of the ground it stands on, so it takes the same shift along
+  // the ramp that ground does. Without it a Karoo field would be green earth in a
+  // thornveld.
+  bandShift = 0,
+): FieldLayer {
   const container = new Container();
   // Sprites are reused in place rather than rebuilt, for the reason the woodland's are:
   // Pixi's addChild removes-then-appends, so rebuilding a hundred fields to change one
@@ -66,7 +74,7 @@ export function createFieldLayer(map: Heightmap, tiles: TerrainTiles | null): Fi
         const resting = fieldFallow(packed, at);
 
         const level = heightAt(map, tileX, tileY);
-        const tile = tiles.field(level < 0 ? 0 : level, established && !resting);
+        const tile = tiles.field(groundBand(level < 0 ? 0 : level, bandShift, map.levels), established && !resting);
         if (tile === null) continue;
 
         let sprite = sprites[i];

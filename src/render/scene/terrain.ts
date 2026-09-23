@@ -12,6 +12,7 @@ import type { Camera } from '../camera.js';
 import { presentation } from '../presentation.js';
 import type { TerrainTile, TerrainTiles } from '../assets.js';
 import { CORNER_COUNT, tileCorners } from './surface.js';
+import { groundBand } from './terrainBand.js';
 import {
   cornerSeams,
   edgeSeams,
@@ -167,8 +168,8 @@ function tileHash(tileX: number, tileY: number, salt: number): number {
  * the tile whose height the geometry was drawn at, so a patch of high ground appeared
  * in a hollow. The seam is handled by `transitionsFor` below, so this can be honest.
  */
-function bandFor(map: Heightmap, tileX: number, tileY: number): number {
-  return map.data[tileY * map.width + tileX]!;
+function bandFor(map: Heightmap, tileX: number, tileY: number, shift: number): number {
+  return groundBand(map.data[tileY * map.width + tileX]!, shift, map.levels);
 }
 
 function variantFor(tiles: readonly TerrainTile[], tileX: number, tileY: number): TerrainTile {
@@ -323,6 +324,7 @@ function drawTile(
   base: MeshBuild,
   overlay: MeshBuild,
   scratch: TileScratch,
+  bandShift: number,
 ): void {
   const level = map.data[tileY * map.width + tileX]!;
   const { corners, positions, neighbourCorners, bleed, corner } = scratch;
@@ -358,7 +360,7 @@ function drawTile(
   }
 
   const tile =
-    tiles === null ? null : (variantFor(tiles.variants(bandFor(map, tileX, tileY)), tileX, tileY) ?? null);
+    tiles === null ? null : (variantFor(tiles.variants(bandFor(map, tileX, tileY, bandShift)), tileX, tileY) ?? null);
   // The faces take the tile's own average colour rather than the palette's, so a flat
   // shaded cliff matches the textured surface it drops away from.
   const faceColour = tile === null ? colourForLevel(level) : tile.colour;
@@ -418,7 +420,9 @@ function drawTile(
     for (let band = 0; band < bleed.length; band++) {
       const mask = bleed[band];
       if (mask === undefined) continue;
-      const blend = tiles.transition(band, mask);
+      // Shifted like the base tile: a seam is the neighbouring GROUND bleeding over,
+      // and it has to be the same ground the neighbour is actually drawn with.
+      const blend = tiles.transition(groundBand(band, bandShift, map.levels), mask);
       if (blend === null) continue;
       pushQuad(overlay, positions, blend.uv);
     }
@@ -431,7 +435,7 @@ function drawTile(
     for (let at = 0; at < SEAM_CORNERS; at++) {
       const band = corner[at]!;
       if (band < 0) continue;
-      const wedge = tiles.corner(band, at);
+      const wedge = tiles.corner(groundBand(band, bandShift, map.levels), at);
       if (wedge === null) continue;
       pushQuad(overlay, positions, wedge.uv);
     }
@@ -511,6 +515,7 @@ function buildChunk(
   chunkX: number,
   chunkY: number,
   tiles: TerrainTiles | null,
+  bandShift: number,
 ): Chunk {
   const graphics = new Graphics();
   const base = emptyBuild();
@@ -535,7 +540,7 @@ function buildChunk(
     for (let tileX = startX; tileX < endX; tileX++) {
       const tileY = sum - tileX;
       if (tileY < startY || tileY >= endY) continue;
-      drawTile(graphics, map, tileX, tileY, tiles, base, overlay, scratch);
+      drawTile(graphics, map, tileX, tileY, tiles, base, overlay, scratch, bandShift);
     }
   }
 
@@ -550,7 +555,16 @@ function buildChunk(
   };
 }
 
-export function createTerrain(map: Heightmap, tiles: TerrainTiles | null = null): TerrainRenderer {
+/**
+ * @param bandShift Moves this map's ART along the wet-to-dry ramp without touching a
+ * single height — see `terrainBand.ts`. Zero for the unnamed default generator, which
+ * is the map the golden replay runs on.
+ */
+export function createTerrain(
+  map: Heightmap,
+  tiles: TerrainTiles | null = null,
+  bandShift = 0,
+): TerrainRenderer {
   const container = new Container();
   const chunksX = Math.ceil(map.width / chunkSize);
   const chunksY = Math.ceil(map.height / chunkSize);
@@ -572,7 +586,7 @@ export function createTerrain(map: Heightmap, tiles: TerrainTiles | null = null)
     for (let chunkX = 0; chunkX < chunksX; chunkX++) {
       const chunkY = sum - chunkX;
       if (chunkY < 0 || chunkY >= chunksY) continue;
-      const chunk = buildChunk(map, chunkX, chunkY, tiles);
+      const chunk = buildChunk(map, chunkX, chunkY, tiles, bandShift);
       chunks.push(chunk);
       faceLayer.addChild(chunk.graphics);
       if (chunk.tops !== null) topLayer.addChild(chunk.tops);
