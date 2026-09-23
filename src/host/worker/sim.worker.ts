@@ -17,6 +17,7 @@ import { createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../../s
 import { createMovementSystem } from '../../sim/movement.js';
 import { buildSnapshot } from '../../sim/snapshot.js';
 import { trendOf, yearOf } from '../../shared/calendar.js';
+import { TRAIN_COSTS, techStatusFor } from '../playerRules.js';
 import { createHeightmap } from '../../sim/terrain/generate.js';
 import { generateMap } from '../../sim/terrain/maps.js';
 import { tuning } from '../../sim/tuning.js';
@@ -159,6 +160,8 @@ function tick(): void {
     cullHead: cullHead(economy, viewerId),
     driving: drivenBy(world, viewerId),
     shortRation: economy.ration[viewerId] === Ration.Short,
+    techStatus: techStatusFor(loop.tech, viewerId),
+    trainCosts: TRAIN_COSTS,
     drought: droughtNow,
     year: yearOf(world.tick, tuning.economy.seasonTicks),
     droughtTrend: trendOf(droughtNow, economy.drought(world.tick + LOOKAHEAD_TICKS)),

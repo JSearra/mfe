@@ -286,7 +286,7 @@ and the Definition of Done in `CLAUDE.md`.
       off by default behind its existing toggle.
       *Done when:* looked at in a browser at 1440x900 and at a narrow width, and the
       `src/ui` string-literal lint still passes.
-- [ ] **W2 — A build palette that says no out loud.** Cost, affordability, and a stated
+- [x] **W2 — A build palette that says no out loud.** Done. Cost, affordability, and a stated
       reason when an action cannot be taken — `tasks/plan.md` section F records that the
       panel "offers actions that silently fail". Covers the buildings from section U.
       *Done when:* the reason logic is unit-tested for each way an action can be

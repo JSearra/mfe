@@ -4,6 +4,7 @@ import { compactLoop, createLoop, enqueueCommand, step, TICK_MS, type SimLoop } 
 import { buildSnapshot } from '../sim/snapshot.js';
 import { trendOf, yearOf } from '../shared/calendar.js';
 import { Ration } from '../sim/economy/ledger.js';
+import { TRAIN_COSTS, techStatusFor } from './playerRules.js';
 import type { SimEvent } from '../shared/events.js';
 import type { Heightmap } from '../shared/heightmap.js';
 import { createCattleSystem, type CattleSystem } from '../sim/cattle.js';
@@ -117,6 +118,22 @@ export interface PlayerState {
   readonly shortfall: number;
   /** True while the village is on short commons. The panel's switch reads it. */
   readonly shortRation: boolean;
+  /**
+   * Per tech: 0 unknown, 1 being learned, 2 known.
+   *
+   * Carried so the panel can say WHY an action is unavailable rather than accepting a
+   * click and doing nothing. `tasks/plan.md` section F has had that defect recorded
+   * since September.
+   */
+  readonly techStatus: readonly number[];
+  /**
+   * What a soldier costs, indexed by movement class.
+   *
+   * Sent across rather than read from the tuning file, for the same reason `cullHead`
+   * is: what a thing costs is a rule, and the UI may not read tuning across the
+   * boundary.
+   */
+  readonly trainCosts: readonly { readonly grain: number; readonly cattle: number }[];
   /** 0 (wet) to 1 (parched). */
   readonly drought: number;
   readonly droughtSevere: boolean;
@@ -405,6 +422,8 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         cullHead: cullHead(economy, viewerId),
         driving: drivenBy(world, viewerId),
         shortRation: economy.ration[viewerId] === Ration.Short,
+        techStatus: techStatusFor(loop.tech, viewerId),
+        trainCosts: TRAIN_COSTS,
         drought: droughtNow,
         droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
         year: yearOf(world.tick, tuning.economy.seasonTicks),

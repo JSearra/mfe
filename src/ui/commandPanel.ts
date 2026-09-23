@@ -1,6 +1,13 @@
 import { BUILDINGS, BuildingType, buildingSpec } from '../shared/buildings/index.js';
 import { TECHS, TECH_IDS, type TechId } from '../shared/tech/index.js';
 import { t, type MessageKey } from '../core/i18n/index.js';
+import {
+  buildAvailability,
+  researchAvailability,
+  trainAvailability,
+  Refusal,
+  type Purse,
+} from './availability.js';
 import type { InterpolatedView } from '../render/interpolation.js';
 import type { TradeOffer } from '../sim/trade.js';
 import type { Relation } from '../sim/alliance.js';
@@ -23,6 +30,9 @@ const RESOURCE_KEYS: readonly MessageKey[] = [
  * free text shaping for diacritic-heavy isiZulu and Sesotho, accessibility, and far less
  * code than drawing buttons in Pixi.
  */
+
+/** What a soldier costs, by movement class, as the host reports it. */
+export type TrainCosts = readonly { readonly grain: number; readonly cattle: number }[];
 
 const KIND_UNIT = 0;
 const KIND_BUILDING = 2;
@@ -72,6 +82,15 @@ export interface CommandPanel {
    * move is discovered.
    */
   setRation(short: boolean, hungry: boolean): void;
+  /**
+   * What the village holds and knows, so the actions can say why they are unavailable.
+   *
+   * Set separately from `update` because it changes on its own clock — the balance
+   * moves every upkeep and the selection does not — and because the actions are rebuilt
+   * only when the selection's SHAPE changes. Affordability has to be able to repaint a
+   * button without replacing the one the player is mid-click on.
+   */
+  setPurse(purse: Purse, techStatus: readonly number[], trainCosts: TrainCosts): void;
 }
 
 function button(label: string, hint: string, onClick: () => void): HTMLButtonElement {
@@ -80,6 +99,47 @@ function button(label: string, hint: string, onClick: () => void): HTMLButtonEle
   element.textContent = label;
   element.title = hint;
   element.addEventListener('click', onClick);
+  return element;
+}
+
+/** Refusal -> the string that explains it, and which cost it is about. */
+const REFUSAL_KEYS: Readonly<Record<Refusal, MessageKey | null>> = {
+  [Refusal.None]: null,
+  [Refusal.Grain]: 'refusal.grain',
+  [Refusal.Wood]: 'refusal.wood',
+  [Refusal.Cattle]: 'refusal.cattle',
+  [Refusal.NeedsWater]: 'refusal.needsWater',
+  [Refusal.Unfinished]: 'refusal.unfinished',
+  [Refusal.QueueFull]: 'refusal.queueFull',
+  [Refusal.AlreadyKnown]: 'refusal.alreadyKnown',
+  [Refusal.InProgress]: 'refusal.inProgress',
+};
+
+/**
+ * A button that says why it cannot be pressed, instead of accepting the click and
+ * doing nothing.
+ *
+ * NOT disabled, except where pressing it is genuinely meaningless. A greyed-out control
+ * with a reason on it is readable; a dead one teaches nothing, and the player has to
+ * discover by hovering that there was ever an explanation. `NeedsWater` in particular
+ * stays live: the refusal is about WHERE, and the player finds out by trying to site
+ * it, which is the gesture that teaches the rule.
+ */
+function actionButton(
+  label: string,
+  cost: string,
+  refusal: Refusal,
+  reason: string,
+  onClick: () => void,
+): HTMLButtonElement {
+  const element = button(label, refusal === Refusal.None ? cost : `${cost} — ${reason}`, onClick);
+  if (refusal !== Refusal.None) {
+    element.classList.add('is-refused');
+    const why = document.createElement('span');
+    why.className = 'panel__why';
+    why.textContent = reason;
+    element.append(why);
+  }
   return element;
 }
 
@@ -127,43 +187,97 @@ export function createCommandPanel(
    */
   let signature = '';
 
+  /**
+   * What the village holds, and what it knows.
+   *
+   * Starts empty rather than optimistic: before the first message has arrived the panel
+   * knows nothing, and drawing every action as affordable would be a guess that is
+   * wrong for exactly as long as it takes to be corrected.
+   */
+  let purse: Purse = { grain: 0, wood: 0, cattle: 0 };
+  let techStatus: readonly number[] = [];
+  let trainCosts: TrainCosts = [];
+  /**
+   * Whether the selected building is finished.
+   *
+   * Held rather than passed, because `buildActions` is called from the selection path
+   * and again when the purse changes, and the second caller has no view to read it
+   * from. It is set immediately before every rebuild.
+   */
+  let shownFinished = false;
+
   function buildActions(kind: number, subtype: number, handle: number): void {
+    lastActions = { kind, subtype, handle };
     actions.replaceChildren();
 
     if (kind === KIND_BUILDING) {
       const spec = buildingSpec(subtype);
       if (!spec.trains) return;
-      actions.append(
-        button(t('panel.trainInfantry'), t('panel.trainInfantry'), () =>
-          handlers.onTrain(handle, MOVEMENT_INFANTRY),
-        ),
-        button(t('panel.trainMounted'), t('panel.trainMounted'), () =>
-          handlers.onTrain(handle, MOVEMENT_MOUNTED),
-        ),
-      );
+      for (const [movementClass, label] of [
+        [MOVEMENT_INFANTRY, 'panel.trainInfantry'],
+        [MOVEMENT_MOUNTED, 'panel.trainMounted'],
+      ] as const) {
+        const cost = trainCosts[movementClass] ?? { grain: 0, cattle: 0 };
+        // The queue is not in the snapshot, so the panel cannot see its depth and
+        // passes zero. QueueFull is therefore a refusal this surface never reports,
+        // and the simulation still enforces it — which is the right way round, but it
+        // means a full queue is the one silent refusal left. Carrying the depth across
+        // would be a world array and a snapshot field for one line of text.
+        const refusal = trainAvailability(purse, shownFinished, 0, Infinity, cost);
+        actions.append(
+          actionButton(
+            t(label),
+            t('panel.costs', { grain: cost.grain, cattle: cost.cattle }),
+            refusal,
+            reasonFor(refusal, cost.grain, cost.cattle, 0),
+            () => handlers.onTrain(handle, movementClass),
+          ),
+        );
+      }
       return;
     }
 
     // Troops selected: what they can put up, and what the nation can learn.
     for (const spec of Object.values(BUILDINGS)) {
+      const refusal = buildAvailability(spec, purse);
       actions.append(
-        button(
+        actionButton(
           t(spec.nameKey as MessageKey),
-          t('panel.costs', { grain: spec.grainCost, cattle: spec.cattleCost }),
+          t('panel.costsFull', {
+            grain: spec.grainCost,
+            wood: spec.woodCost,
+            cattle: spec.cattleCost,
+          }),
+          refusal,
+          reasonFor(refusal, spec.grainCost, spec.cattleCost, spec.woodCost),
           () => handlers.onArmBuild(spec.type),
         ),
       );
     }
     for (let i = 0; i < TECH_IDS.length; i++) {
       const spec = TECHS[TECH_IDS[i] as TechId];
+      const status = techStatus[i] ?? 0;
+      const refusal = researchAvailability(spec, purse, status === 2, status === 1);
       actions.append(
-        button(
+        actionButton(
           t(spec.nameKey as MessageKey),
           t('panel.costs', { grain: spec.grainCost, cattle: spec.cattleCost }),
+          refusal,
+          reasonFor(refusal, spec.grainCost, spec.cattleCost, 0),
           () => handlers.onResearch(i),
         ),
       );
     }
+  }
+
+  /** The sentence for a refusal, with the numbers filled in where it has any. */
+  function reasonFor(refusal: Refusal, grain: number, cattle: number, wood: number): string {
+    const key = REFUSAL_KEYS[refusal];
+    if (key === null) return '';
+    if (refusal === Refusal.Grain) return t(key, { need: grain, has: Math.floor(purse.grain) });
+    if (refusal === Refusal.Wood) return t(key, { need: wood, has: Math.floor(purse.wood) });
+    if (refusal === Refusal.Cattle) return t(key, { need: cattle, has: Math.floor(purse.cattle) });
+    return t(key);
   }
 
   /** Rebuilt only when the offers actually change, for the reason the actions are. */
@@ -171,9 +285,25 @@ export function createCommandPanel(
   let relationSignature = '';
   let herdSignature = '';
   let rationSignature = '';
+  let purseSignature = '';
+  /** What the actions were last built for, so a change of purse can rebuild them. */
+  let lastActions: { kind: number; subtype: number; handle: number } | null = null;
 
   return {
     element,
+
+    setPurse(next, status, costs): void {
+      // A signature over what any refusal could turn on, rounded to whole units: the
+      // balance moves continuously and rebuilding the actions every frame would discard
+      // the button the player is mid-click on, which reads as the game ignoring input.
+      const key = `${Math.floor(next.grain)}/${Math.floor(next.wood)}/${Math.floor(next.cattle)}/${status.join('')}`;
+      purse = next;
+      techStatus = status;
+      trainCosts = costs;
+      if (key === purseSignature) return;
+      purseSignature = key;
+      if (lastActions !== null) buildActions(lastActions.kind, lastActions.subtype, lastActions.handle);
+    },
 
     setOffers(offers): void {
       const next = offers
@@ -337,9 +467,14 @@ export function createCommandPanel(
         const progress = view.progressPct[buildingSlot]!;
         const builders = view.builders[buildingSlot]!;
         const spec = buildingSpec(subtype);
-        const next = `b:${subtype}:${handle}`;
+        // Whether it is finished is part of the signature, not only of the state: a
+        // site that completes while selected has to redraw its Train buttons from
+        // "Not built yet" to live, and nothing else about the selection changed.
+        const finished = progress >= 255;
+        const next = `b:${subtype}:${handle}:${finished}`;
 
         if (signature !== next) {
+          shownFinished = finished;
           heading.textContent = t(spec.nameKey as MessageKey);
           buildActions(KIND_BUILDING, subtype, handle);
           signature = next;

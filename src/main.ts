@@ -1065,6 +1065,11 @@ async function main(options: GameOptions): Promise<void> {
       // Hungry means grain was actually owed last season, not merely that the year is
       // dry: the button turns amber when cutting the ration would have helped.
       panel.setRation(message.player.shortRation, message.player.shortfall > 0);
+      panel.setPurse(
+        { grain: message.player.grain, wood: message.player.wood, cattle: message.player.cattle },
+        message.player.techStatus,
+        message.player.trainCosts,
+      );
       lastPlayer = message.player;
       outcomeBanner.update(message.player, PLAYER);
       fog.setFog(message.fog);

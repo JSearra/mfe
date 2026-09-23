@@ -102,7 +102,8 @@
     "rationShort": "Cut the ration",
     "rationFull": "Restore the ration",
     "rationShortHint": "The village eats less and works slower. Grain lasts, building does not.",
-    "rationFullHint": "Back to full commons: the village eats its fill and works at full speed."
+    "rationFullHint": "Back to full commons: the village eats its fill and works at full speed.",
+    "costsFull": "{grain} grain · {wood} timber · {cattle} cattle"
   },
   "alert": {
     "stampede": "The herd has broken",
@@ -141,5 +142,15 @@
     "easing": "easing",
     "steady": "steady",
     "line": "Year {year} · {season}, {trend} · drought {pct}%"
+  },
+  "refusal": {
+    "grain": "Not enough grain — needs {need}, the village has {has}",
+    "wood": "Not enough timber — needs {need}, the village has {has}",
+    "cattle": "Not enough cattle — needs {need}, the village has {has}",
+    "needsWater": "Must be sited on a bank, with water against it",
+    "unfinished": "Not built yet — send people to raise it first",
+    "queueFull": "Nothing more can be queued here yet",
+    "alreadyKnown": "Already known",
+    "inProgress": "Already being learned"
   }
 }
