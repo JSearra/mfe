@@ -94,6 +94,8 @@ export function createAi(player: number): AiController {
       /** Our unfinished buildings. Somebody has to go and stand at them. */
       const sites: Sighting[] = [];
       let homesteads = 0;
+      let pits = 0;
+      let folds = 0;
       let homeX = 0;
       let homeY = 0;
 
@@ -117,6 +119,11 @@ export function createAi(player: number): AiController {
           // Every unfinished building, not just the homesteads — a granary left half
           // raised is grain the AI never earns.
           if (!finished) sites.push({ index, x, y });
+          // Counted whether or not it is finished. A site already placed is a decision
+          // already taken, and counting only finished ones would have the AI order a
+          // second pit every decision until the first one was raised.
+          if (spec.type === BuildingType.Umgodi) pits++;
+          if (spec.type === BuildingType.IsibayaSezimbuzi) folds++;
           if (!spec.trains) continue;
           homesteads++;
           if (finished) trainers.push(index);
@@ -173,28 +180,61 @@ export function createAi(player: number): AiController {
         trainers.length > 0 ? ai.trainFloor + trainingCost(MovementClass.Infantry).grain : 0;
       const buildFloor = ai.grainFloor + reserve;
 
-      if (homesteads < ai.wantedHomesteads && economy.balance(player, Resource.Grain) > buildFloor) {
-        emit({
-          kind: CommandKind.Build,
-          a: Math.floor(homeX + (buildSlot % 2 === 0 ? -3 : 3)),
-          b: Math.floor(homeY + (buildSlot % 4 < 2 ? -3 : 3)),
-          c: BuildingType.Umuzi,
-          d: player,
-        });
-        buildSlot = (buildSlot + 1) % 16;
-        stats.buildsOrdered++;
-      } else if (economy.balance(player, Resource.Grain) > buildFloor) {
+      /*
+       * What to raise next, in order of what a village most needs.
+       *
+       * Homesteads first: grain with nowhere to spend it wins nothing, and people are
+       * what everything else is for. Then the fold, which is the cheapest thing in the
+       * catalogue and the only income a drought does not touch — a neighbour that keeps
+       * eating through a dry year is the one worth racing. Then the pit, which protects
+       * what the granaries are about to store. Then granaries without limit, which is
+       * what the AI did before any of this and remains the endless sink for a surplus.
+       *
+       * The repertoire was Umuzi and GrainStore alone: two of the eight types in the
+       * catalogue, with the ikhanda and the indlunkulu never built either. The pit and
+       * the fold are added here and the weir is deliberately not — siting one needs a
+       * shore tile and the AI picks its spots by arithmetic around its own homestead,
+       * so it would order the same refusal every decision for the rest of the match.
+       */
+      const wanted: BuildingType | null =
+        homesteads < ai.wantedHomesteads
+          ? BuildingType.Umuzi
+          : folds < ai.wantedFolds
+            ? BuildingType.IsibayaSezimbuzi
+            : pits < ai.wantedPits
+              ? BuildingType.Umgodi
+              : BuildingType.GrainStore;
+
+      /*
+       * Ordered only if it can actually be paid for, IN TIMBER AS WELL AS GRAIN.
+       *
+       * Timber was never checked. The AI ordered on its grain balance alone and
+       * `construction.place` refused every one of those orders for want of wood — and a
+       * decision spent being refused is a decision not spent herding, trading or asking
+       * a neighbour for help. It is the sort of waste that never shows up as a bug
+       * because the AI simply appears a little slow.
+       */
+      const spec = buildingSpec(wanted);
+      const affordable =
+        economy.balance(player, Resource.Grain) > buildFloor + spec.grainCost &&
+        economy.balance(player, Resource.Wood) >= spec.woodCost &&
+        economy.balance(player, Resource.Cattle) >= spec.cattleCost;
+
+      if (affordable) {
+        // A homestead sits close in; everything else rings outward, so a village grows
+        // around its people rather than sprawling from the first slot chosen.
+        const close = wanted === BuildingType.Umuzi;
         const spacing = ai.buildSpacing;
-        const ring = 1 + Math.floor(buildSlot / 4);
+        const ring = close ? 1 : 1 + Math.floor(buildSlot / 4);
         const corner = buildSlot % 4;
-        const offsetX = (corner === 0 || corner === 3 ? -1 : 1) * ring * spacing;
-        const offsetY = (corner < 2 ? -1 : 1) * ring * spacing;
+        const offsetX = (corner === 0 || corner === 3 ? -1 : 1) * (close ? 3 : ring * spacing);
+        const offsetY = (corner < 2 ? -1 : 1) * (close ? 3 : ring * spacing);
 
         emit({
           kind: CommandKind.Build,
           a: Math.floor(homeX + offsetX),
           b: Math.floor(homeY + offsetY),
-          c: BuildingType.GrainStore,
+          c: wanted,
           d: player,
         });
         buildSlot = (buildSlot + 1) % 16;

@@ -216,7 +216,9 @@
     "trainFloor": 120,
     "wantedHomesteads": 2,
     "builders": 3,
-    "tradeEveryDecisions": 6
+    "tradeEveryDecisions": 6,
+    "wantedFolds": 2,
+    "wantedPits": 2
   },
   "production": {
     "queueLimit": 5,

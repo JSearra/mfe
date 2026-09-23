@@ -315,7 +315,7 @@ about it. Same rules: a failing test first, one commit each, the Definition of D
       *Done when:* each has a silhouette of its own through `tools/art/make_building.py`,
       the fallback is a named default rather than "the first building in the list", and
       one of each has been placed and looked at.
-- [ ] **X2 — The AI cannot build five of the eight types.** Its repertoire is `Umuzi`
+- [x] **X2 — The AI cannot build five of the eight types.** Done, with a finding — see X5. Its repertoire is `Umuzi`
       and `GrainStore`; it has never known about the ikhanda or the indlunkulu either,
       and now the pit, the weir and the fold are dead content in every AI match. A
       neighbour that cannot answer a drought is not a neighbour worth racing.
