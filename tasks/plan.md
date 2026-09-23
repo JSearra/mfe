@@ -295,3 +295,45 @@ and the Definition of Done in `CLAUDE.md`.
 - [x] **W4 — A selection summary.** Done. — what is selected, how many, what they are doing.
       `src/sim/roles.ts` already computes the last of these for the renderer.
       *Done when:* the counts are asserted headlessly off an interpolated view.
+
+---
+
+# Part III — what Part II exposed
+
+Not new requirements. Every item here is a gap the previous section's work either
+created or made visible, found by looking at the running game rather than by reasoning
+about it. Same rules: a failing test first, one commit each, the Definition of Done.
+
+## X. The gaps
+
+- [ ] **X1 — The three new buildings have no art.** `BUILDING_KINDS` in
+      `render/scene/entities.ts` has five entries and the new types are 5, 6 and 7, so
+      a grain pit, a weir and a goat fold all fall through to `BUILDING_KINDS[0]` and
+      draw as an isibaya. Confirmed in a browser: they are featureless brown ellipses.
+      This is a defect the previous section shipped — the panel was checked and the map
+      was not, which is exactly the failure `CLAUDE.md` names.
+      *Done when:* each has a silhouette of its own through `tools/art/make_building.py`,
+      the fallback is a named default rather than "the first building in the list", and
+      one of each has been placed and looked at.
+- [ ] **X2 — The AI cannot build five of the eight types.** Its repertoire is `Umuzi`
+      and `GrainStore`; it has never known about the ikhanda or the indlunkulu either,
+      and now the pit, the weir and the fold are dead content in every AI match. A
+      neighbour that cannot answer a drought is not a neighbour worth racing.
+      *Done when:* the AI builds a pit and a fold when its own books say it should, a
+      headless match shows it doing so, and the golden replay is re-recorded with both
+      proofs.
+- [ ] **X3 — The ground reads as Karoo, which is the wrong half of the country.**
+      `generate_tiles.py` says so in its own prompt notes — "green for much of the year"
+      — and the map is orange. The band distribution is even (measured: 15-17% each
+      across the middle five), so it is not a generation problem: six of the eight
+      SUBJECTS are orange-red, and `harmonise` is too gentle to pull the low bands back
+      toward the green their palette entries ask for.
+      *Done when:* the low bands read green against the high bands' ochre, measured as
+      mean hue per band rather than judged, and looked at on two maps.
+- [ ] **X4 — Starvation is not proportional to the shortfall.** Open in section F since
+      September: being five grain short does the same damage, to every unit the player
+      owns, as being five hundred short. Part II made this much more visible — a pit and
+      a cut ration both exist to turn a catastrophic shortfall into a small one, and at
+      present a small one is just as lethal, so both of them buy less than they should.
+      *Done when:* damage scales with the fraction of the upkeep that went unpaid, a
+      village one grain short loses nobody, and the replay is re-recorded with proofs.
