@@ -5,13 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mfecane RTS</title>
     <style>
+      /*
+       * One palette, named once.
+       *
+       * The HUD had grown eleven hard-coded greys and six ambers across four files,
+       * which is how a surface ends up nearly consistent: every new panel matched the
+       * one beside it to within a couple of points and the drift only shows when two
+       * of them are finally on screen together.
+       */
+      :root {
+        --ink: #14110d;
+        --card: rgba(23, 19, 14, 0.9);
+        --card-solid: #1c1811;
+        --edge: rgba(200, 168, 106, 0.16);
+        --edge-strong: rgba(200, 168, 106, 0.34);
+        --text: #e8e0d0;
+        --text-dim: #9c9280;
+        --gold: #d6b26a;
+        --gold-dim: #a88c52;
+        --amber: #d9973a;
+        --green: #8fbf6a;
+        --radius: 5px;
+        /* One gutter everywhere, so the four corners agree with each other. */
+        --gutter: 14px;
+      }
+
       html,
       body {
         margin: 0;
         height: 100%;
         overflow: hidden;
-        background: #14110d;
-        color: #e8e0d0;
+        background: var(--ink);
+        color: var(--text);
         font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
       }
 
@@ -25,45 +50,97 @@
         display: block;
       }
 
-      .debug-overlay {
+      /*
+       * The two secondary cards share one line, below the two primary bars.
+       *
+       * The controls sat in the top-left CORNER and the resource bar in the top-right,
+       * which is fine until the window narrows: at 1100px the bar reaches far enough
+       * left to cover a line of the controls. Dropping both secondary cards below the
+       * bar's band removes the collision at every width rather than at the ones that
+       * were tested, and it lines the controls up with the stats opposite them.
+       */
+      .hud-controls {
         position: absolute;
-        top: 12px;
-        left: 12px;
-        padding: 10px 14px;
-        border: 1px solid #3a3226;
-        border-radius: 4px;
-        background: rgba(20, 17, 13, 0.82);
+        top: calc(var(--gutter) + 48px);
+        left: var(--gutter);
+        /* Wide enough that a line of keys is a LINE. At 260px every one of them
+           wrapped, which doubled the card's height and put half of it behind the
+           command panel — a reference card you cannot read is worse than none. */
+        max-width: 392px;
         pointer-events: none;
         user-select: none;
-        min-width: 168px;
       }
 
-      .debug-overlay strong {
+      /* Numbers with numbers: the stats hang under the resource bar. */
+      .debug-overlay {
+        position: absolute;
+        top: calc(var(--gutter) + 48px);
+        right: var(--gutter);
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .debug-overlay,
+      .controls {
+        padding: 9px 12px;
+        border: 1px solid var(--edge);
+        border-radius: var(--radius);
+        background: var(--card);
+      }
+
+      .debug-overlay strong,
+      .controls strong {
         display: block;
         margin-bottom: 6px;
-        color: #c8a86a;
+        color: var(--gold-dim);
         letter-spacing: 0.08em;
         text-transform: uppercase;
-        font-size: 11px;
+        font-size: 10px;
       }
 
+      .debug-overlay {
+        min-width: 176px;
+        color: var(--text-dim);
+      }
+
+      /* Smaller and dimmer than the readouts a player acts on: this is a reference card
+         they read once, not a number they watch. */
+      .controls__body {
+        font-size: 11px;
+        line-height: 1.6;
+        color: var(--text-dim);
+      }
+
+      .controls__note {
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px solid var(--edge);
+        color: #7f7768;
+      }
+
+      /*
+       * The village's standing, read left to right in the order it is decided in: what
+       * is in hand, what the year is doing, what the land will carry, where the village
+       * stands against the objective. Separators between the groups rather than a flat
+       * run of text, because the bar had become one sentence of five clauses.
+       */
       .resource-bar {
         position: absolute;
-        top: 12px;
-        right: 12px;
+        top: var(--gutter);
+        right: var(--gutter);
         display: flex;
-        gap: 18px;
+        gap: 0;
         align-items: center;
-        padding: 10px 16px;
-        border: 1px solid #3a3226;
-        border-radius: 4px;
-        background: rgba(20, 17, 13, 0.82);
+        padding: 9px 4px;
+        border: 1px solid var(--edge);
+        border-radius: var(--radius);
+        background: var(--card);
         pointer-events: none;
         user-select: none;
       }
 
       .resource-bar__season {
-        color: #8a8070;
+        color: var(--text-dim);
       }
 
       .resource-bar__season.is-severe {
@@ -93,35 +170,65 @@
       }
 
       .resource-bar__herd.is-holding {
-        color: #8fbf6a;
+        color: var(--green);
         font-weight: 600;
+      }
+
+      .resource-bar > span {
+        padding: 0 14px;
+        white-space: nowrap;
+      }
+
+      /* Hairlines between the groups, and none before the first or after an empty one. */
+      .resource-bar > span + span:not(:empty) {
+        border-left: 1px solid var(--edge);
+      }
+
+      .resource-bar > span:empty {
+        display: none;
       }
 
       .panel {
         position: absolute;
-        left: 12px;
-        bottom: 12px;
-        min-width: 260px;
-        max-width: 340px;
-        padding: 10px 14px;
-        border: 1px solid #3a3226;
-        border-radius: 4px;
-        background: rgba(20, 17, 13, 0.86);
+        left: var(--gutter);
+        bottom: var(--gutter);
+        min-width: 280px;
+        max-width: 360px;
+        /*
+         * Never tall enough to reach the controls card in the opposite corner.
+         *
+         * The panel grows upward and the village has a lot to offer it — eight
+         * buildings, five techs, six trades, the ration, the cull and an alliance — so
+         * with troops selected it ran the full height of the screen and overlapped the
+         * controls. The reserve is the controls card's own height plus both gutters.
+         */
+        max-height: calc(100vh - 296px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 11px 14px 12px;
+        border: 1px solid var(--edge);
+        border-radius: var(--radius);
+        background: var(--card);
         user-select: none;
       }
 
       .panel__heading {
-        color: #c8a86a;
-        letter-spacing: 0.06em;
+        color: var(--gold);
+        letter-spacing: 0.08em;
         text-transform: uppercase;
-        font-size: 11px;
+        font-size: 10px;
         margin-bottom: 6px;
       }
 
       .panel__detail {
-        color: #8a8070;
-        margin-bottom: 8px;
+        color: var(--text-dim);
+        margin-bottom: 9px;
         min-height: 1em;
+      }
+
+      .panel__detail:empty {
+        margin-bottom: 0;
+        min-height: 0;
       }
 
       .panel__actions {
@@ -136,9 +243,9 @@
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-        margin-top: 8px;
-        padding-top: 8px;
-        border-top: 1px solid #3a3226;
+        margin-top: 9px;
+        padding-top: 9px;
+        border-top: 1px solid var(--edge);
       }
 
       .panel__trade:empty {
@@ -162,7 +269,7 @@
         color: #b8a882;
       }
       .panel__role:first-child {
-        color: #d6b26a;
+        color: var(--gold);
       }
       .panel__button.is-refused {
         opacity: 0.55;
@@ -176,9 +283,9 @@
         color: #c08a52;
       }
       .panel__ration {
-        border-top: 1px solid rgba(214, 178, 106, 0.18);
-        padding-top: 8px;
-        margin-top: 8px;
+        border-top: 1px solid var(--edge);
+        padding-top: 9px;
+        margin-top: 9px;
       }
       .panel__ration .panel__button.is-urgent {
         border-color: rgba(214, 138, 58, 0.75);
@@ -191,9 +298,9 @@
       .panel__herd {
         display: flex;
         gap: 6px;
-        margin-top: 8px;
-        padding-top: 8px;
-        border-top: 1px solid #3a3226;
+        margin-top: 9px;
+        padding-top: 9px;
+        border-top: 1px solid var(--edge);
       }
 
       .panel__herd:empty {
@@ -217,9 +324,9 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 6px;
-        margin-top: 8px;
-        padding-top: 8px;
-        border-top: 1px solid #3a3226;
+        margin-top: 9px;
+        padding-top: 9px;
+        border-top: 1px solid var(--edge);
       }
 
       .panel__alliance:empty {
@@ -237,28 +344,36 @@
       }
 
       .panel__standing {
-        color: #b8ab92;
+        color: var(--text-dim);
         font-size: 12px;
       }
 
       /* A site nobody is working on. The one state the player has to act on. */
       .panel__detail--idle {
-        color: #d9973a;
+        color: var(--amber);
       }
 
       .panel__button {
         font: inherit;
-        color: #e8e0d0;
-        background: rgba(58, 50, 38, 0.8);
-        border: 1px solid #4a4029;
-        border-radius: 3px;
+        text-align: left;
+        color: var(--text);
+        background: rgba(58, 50, 38, 0.72);
+        border: 1px solid var(--edge-strong);
+        border-radius: 4px;
         padding: 5px 9px;
         cursor: pointer;
+        transition: background 90ms linear, border-color 90ms linear;
       }
 
       .panel__button:hover {
         background: #4a4029;
-        border-color: #c8a86a;
+        border-color: var(--gold);
+      }
+
+      /* Keyboard focus has to be visible, and the hover colour is not focus. */
+      .panel__button:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 1px;
       }
 
       .panel__button:active {
@@ -267,12 +382,12 @@
 
       .minimap {
         position: absolute;
-        right: 12px;
-        bottom: 12px;
+        right: var(--gutter);
+        bottom: var(--gutter);
         width: 176px;
         height: 176px;
-        border: 1px solid #3a3226;
-        border-radius: 4px;
+        border: 1px solid var(--edge);
+        border-radius: var(--radius);
         background: #0b0906;
         cursor: crosshair;
         image-rendering: pixelated;
@@ -341,15 +456,23 @@
         cursor: pointer;
       }
 
+      /*
+       * Centred in the map, not in the window.
+       *
+       * Centred on the window it slid under the controls card the moment the window
+       * narrowed — at 1100px the two overlapped by fifty pixels and a line of the
+       * reference card read through a translucent banner. The left offset is the
+       * controls' own width, so the alert centres in what is actually left.
+       */
       .alerts {
         position: absolute;
         top: 74px;
-        left: 50%;
+        left: calc(406px + (100% - 406px) / 2);
         transform: translateX(-50%);
         padding: 7px 16px;
-        border: 1px solid #c8a86a;
-        border-radius: 4px;
-        background: rgba(20, 17, 13, 0.9);
+        border: 1px solid var(--edge-strong);
+        border-radius: var(--radius);
+        background: var(--card);
         color: #e8d9a8;
         font-size: 14px;
         letter-spacing: 0.03em;
@@ -391,14 +514,6 @@
         color: #d94a3a;
       }
 
-      .debug-overlay__hint {
-        margin-top: 8px;
-        padding-top: 8px;
-        border-top: 1px solid #3a3226;
-        color: #8a8070;
-        max-width: 220px;
-        white-space: normal;
-      }
     </style>
   </head>
   <body>

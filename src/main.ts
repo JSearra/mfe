@@ -525,6 +525,14 @@ async function main(options: GameOptions): Promise<void> {
 
   const stats = createRenderStats();
   const overlay = createDebugOverlay(root);
+  /**
+   * The stats are off until asked for, and the controls are open until read.
+   *
+   * A frame counter welded to the corner of a shipped game is a choice nobody made on
+   * purpose; a player who cannot find out what the keys do has been given a worse one.
+   */
+  let statsVisible = false;
+  let controlsOpen = true;
   const resourceBar = createResourceBar(root);
   const outcomeBanner = createOutcomeBanner(root, { onRestart: () => void restart() });
   const alerts = createAlerts();
@@ -708,6 +716,18 @@ async function main(options: GameOptions): Promise<void> {
     if (event.key === 'f' || event.key === 'F') {
       planting = true;
       armed = null;
+    }
+
+    // F1 brings the stats back; H folds the controls away once they have been read.
+    // Neither touches the simulation, so neither is a command.
+    if (event.key === 'F1') {
+      statsVisible = !statsVisible;
+      overlay.setStatsVisible(statsVisible);
+      event.preventDefault();
+    }
+    if (event.key === 'h' || event.key === 'H') {
+      controlsOpen = !controlsOpen;
+      overlay.setControlsOpen(controlsOpen);
     }
 
     /*

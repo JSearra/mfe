@@ -282,7 +282,7 @@ and the Definition of Done in `CLAUDE.md`.
 
 ## W. A HUD you can play from
 
-- [ ] **W1 — Restyle the HUD.** Grouping, chrome, typography, spacing; the debug overlay
+- [x] **W1 — Restyle the HUD.** Done. Section W complete, and with it the plan. Grouping, chrome, typography, spacing; the debug overlay
       off by default behind its existing toggle.
       *Done when:* looked at in a browser at 1440x900 and at a narrow width, and the
       `src/ui` string-literal lint still passes.
