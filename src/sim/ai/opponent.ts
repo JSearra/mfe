@@ -9,6 +9,7 @@ import { isVisible, type FogState } from '../vision/fog.js';
 import { tuning } from '../tuning.js';
 import { MovementClass } from '../pathing/costs.js';
 import { trainingCost } from '../production.js';
+import { Stage, stageOf, type Woodland } from '../woodland.js';
 import { EntityKind, HerdState, packHandle, type World } from '../world.js';
 
 /**
@@ -56,6 +57,14 @@ export interface AiController {
     alliance: Alliance,
     tech: TechState,
     emit: (command: AiCommand) => void,
+    /**
+     * The wood, so the neighbour can cut its own timber.
+     *
+     * Optional, because a good deal of this project's test harness builds an AI without
+     * one and a village that cannot fell is still a village. Where it is absent the AI
+     * simply never cuts, which is what it did before it was passed at all.
+     */
+    woodland?: Woodland,
   ): void;
 }
 
@@ -84,7 +93,7 @@ export function createAi(player: number): AiController {
   return {
     stats,
 
-    decide(world, fog, economy, alliance, tech, emit): void {
+    decide(world, fog, economy, alliance, tech, emit, woodland): void {
       const ai = tuning.ai;
       if (world.tick % ai.decideEveryTicks !== 0) return;
       stats.decisions++;
@@ -218,6 +227,72 @@ export function createAi(player: number): AiController {
       if (wantShort !== onShortRations) {
         onShortRations = wantShort;
         emit({ kind: CommandKind.SetRation, a: wantShort ? 1 : 0, b: 0, c: 0, d: player });
+      }
+
+      /*
+       * --- timber ----------------------------------------------------------
+       *
+       * A village opens with 90 timber, every building costs some, and until this
+       * nothing in here ever cut a tree — the woodland was not even passed in.
+       * Measured: a twenty-minute match ended with the AI holding 10 timber, 460 grain
+       * and nothing it could spend the grain on. Timber is the one resource that cannot
+       * be reliably traded for and cannot be grown by building; it has to be walked to
+       * and cut, so an opponent that cannot do that has a ceiling two buildings above
+       * where it starts.
+       *
+       * ONLY WHEN SHORT, and that is the whole of what keeps the wood a wood. A village
+       * that fells everything within reach has taken the one renewable thing on the map
+       * and made it not renewable — see src/sim/woodland.ts, where a standing wood is
+       * what seeds the next one. It cuts to a ceiling and stops.
+       */
+      if (woodland !== undefined && economy.balance(player, Resource.Wood) < ai.timberFloor) {
+        // The nearest standing tree to somebody who could swing at it. `fell` refuses
+        // unless a villager is already within reach, so the order is: find the tree
+        // closest to the village, send a few people, and cut it once they arrive. The
+        // same two-step the builders use.
+        let best = -1;
+        let bestDistance = Infinity;
+        for (let index = 0; index < woodland.count; index++) {
+          if (woodland.alive[index] === 0) continue;
+          // A sapling yields nothing to an axe, so cutting one is pure loss — it is the
+          // tree that would have been worth cutting in a few seasons.
+          if (stageOf(woodland, index) === Stage.Sapling) continue;
+
+          const dx = woodland.x[index]! - homeX;
+          const dy = woodland.y[index]! - homeY;
+          const distance = dx * dx + dy * dy;
+          // Strictly nearer, so a tie keeps the lower index and the choice does not
+          // depend on iteration order. Same total-order rule as everything else here.
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            best = index;
+          }
+        }
+
+        if (best >= 0) {
+          const treeX = woodland.x[best]!;
+          const treeY = woodland.y[best]!;
+          // Send a few, not everybody. The same reasoning as the drovers: a village
+          // that walks off in one body to cut a tree is a village doing nothing else.
+          for (let i = 0; i < Math.min(ai.builders, own.length); i++) {
+            const hand = own[(stats.decisions + i) % own.length]!;
+            const dx = world.posX[hand.index]! - treeX;
+            const dy = world.posY[hand.index]! - treeY;
+            if (dx * dx + dy * dy > 4) {
+              emit({
+                kind: CommandKind.MoveTo,
+                a: packHandle(hand.index, world.generation[hand.index]!),
+                b: treeX,
+                c: treeY,
+                d: 0,
+              });
+            }
+          }
+          // Ordered every decision while short. `fell` refuses until somebody is
+          // actually standing there, and a refusal costs nothing — which is what lets
+          // the move and the cut be the same branch rather than a state machine.
+          emit({ kind: CommandKind.Fell, a: best, b: 0, c: 0, d: player });
+        }
       }
 
       // --- build ----------------------------------------------------------

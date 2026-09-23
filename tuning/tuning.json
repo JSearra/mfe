@@ -219,7 +219,8 @@
     "tradeEveryDecisions": 6,
     "wantedFolds": 2,
     "wantedPits": 2,
-    "feedsMargin": 0.6
+    "feedsMargin": 0.6,
+    "timberFloor": 140
   },
   "production": {
     "queueLimit": 5,

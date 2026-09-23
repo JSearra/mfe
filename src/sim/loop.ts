@@ -112,18 +112,28 @@ export function step(loop: SimLoop): void {
   // Nothing here reaches into world state — that invariant is what made an AI a day's
   // work rather than a second mutation path to keep in step.
   for (const { player, controller } of loop.ai) {
-    controller.decide(world, fog, economy, alliance, tech, (command) => {
-      enqueueCommand(loop, {
-        tick: world.tick,
-        playerId: player,
-        seq: loop.aiSequence++,
-        kind: command.kind as Command['kind'],
-        a: command.a,
-        b: command.b,
-        c: command.c,
-        d: command.d,
-      });
-    });
+    controller.decide(
+      world,
+      fog,
+      economy,
+      alliance,
+      tech,
+      (command) => {
+        enqueueCommand(loop, {
+          tick: world.tick,
+          playerId: player,
+          seq: loop.aiSequence++,
+          kind: command.kind as Command['kind'],
+          a: command.a,
+          b: command.b,
+          c: command.c,
+          d: command.d,
+        });
+      },
+      // The wood, so the neighbour can cut its own timber. Read-only to it: felling
+      // happens through a command like everything else the AI does.
+      woodland,
+    );
   }
 
   if (loop.dirty) {

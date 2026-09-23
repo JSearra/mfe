@@ -354,7 +354,7 @@ about it. Same rules: a failing test first, one commit each, the Definition of D
       *Done when:* a match shows the village stabilising at a size its land carries
       rather than collapsing to zero, it builds more than one thing, and the replay is
       re-recorded with both proofs.
-- [ ] **X6 — The neighbour is timber-locked.** With X5 in, a match ends with the AI
+- [x] **X6 — The neighbour is timber-locked.** Done. With X5 in, a match ends with the AI
       holding 10 timber and two buildings, and it can never build again: it opens with
       90 and has no way to get more, because nothing in `decide` ever fells a tree. The
       woodland is not even passed to it. Everything else about its economy now works —
@@ -362,3 +362,12 @@ about it. Same rules: a failing test first, one commit each, the Definition of D
       nothing to spend the grain on.
       *Done when:* the AI fells timber when it is short and builds past its opening
       stock, measured over a match, with the replay re-recorded and proved.
+- [ ] **X7 — Both villages starve on generated terrain.** Found while measuring X6, and
+      NOT caused by it: with felling on and off, at the same tick either way, both AI
+      villages on `createHeightmap(64, 64, 0x0a1)` collapse to zero villagers at tick
+      18,000 for want of grain. On the harness's flat map the same match survives (X5
+      pins that). So it is the fields on real terrain — sited on worse ground, or too far
+      from the people to be tended — rather than the economy. The AI now dies holding
+      150 timber it cannot spend.
+      *Done when:* the cause is identified rather than tuned around, and a match on
+      generated terrain ends with both villages standing.
