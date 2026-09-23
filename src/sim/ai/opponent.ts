@@ -78,6 +78,8 @@ export function createAi(player: number): AiController {
 
   /** Where the next building goes. Walked outward so sites do not pile up. */
   let buildSlot = 0;
+  /** What the ration was last set to, so the AI only sends a command when it changes. */
+  let onShortRations = false;
 
   return {
     stats,
@@ -146,10 +148,42 @@ export function createAi(player: number): AiController {
       homeX /= own.length;
       homeY /= own.length;
 
-      // --- raise troops ----------------------------------------------------
-      // Replacements before anything else discretionary. An army that cannot replace
-      // losses is on a one-way path to zero however well it fights.
-      if (trainers.length > 0) {
+      /*
+       * --- raise a household -----------------------------------------------
+       *
+       * Only if the land will carry one. `economy.feeds` is the number the HUD puts in
+       * front of the human — "land feeds 63" — and the whole of the win path is to
+       * break more ground rather than to raise more people. The neighbour was doing the
+       * opposite as fast as it could afford to.
+       *
+       * Measured over a 24,000-tick match before this: 14 villagers became 63 on land
+       * that feeds 64-77 in a good year, which pinned the granary at about 145 — just
+       * above the training floor of 160 and nowhere near the build bar of 400 — so it
+       * raised exactly ONE homestead in twenty minutes. Then the drought came, feeds
+       * fell to 16 against 63 mouths, every villager starved, and the grain climbed to
+       * 1,070 with nobody left to eat it.
+       *
+       * The rule this replaces — "replacements before anything else discretionary" —
+       * was written when there were losses to replace. Nothing kills a villager now but
+       * hunger, so training through a shortage is not replacing losses, it is causing
+       * them.
+       *
+       * A MARGIN below `feeds`, not up to it. `feeds` is what the LAST harvest would
+       * carry, and a village grown to exactly that has no room for the next season —
+       * which is the definition of imprudence in this game. Capping at feeds alone was
+       * tried and changed nothing at all: the village still grew to 63 in the good
+       * years, because 63 was under the good years' limit, and the drought still killed
+       * all of it. The number that matters is what the land carries in a BAD year.
+       *
+       * `feedsMargin` is 0.6, which is roughly what a village can carry on short
+       * commons — and the branch below puts it on short commons when it needs to, so
+       * the two numbers are the same decision seen from either end.
+       *
+       * Before the first upkeep `feeds` is nought and the floor of one lets the opening
+       * spend through, which is what allows a village to get started at all.
+       */
+      const carries = Math.max((economy.feeds[player] ?? 0) * ai.feedsMargin, 1);
+      if (trainers.length > 0 && own.length < carries) {
         const cost = trainingCost(MovementClass.Infantry);
         if (
           economy.balance(player, Resource.Grain) > ai.trainFloor + cost.grain &&
@@ -165,6 +199,25 @@ export function createAi(player: number): AiController {
           });
           stats.troopsOrdered++;
         }
+      }
+
+      /*
+       * --- the ration ------------------------------------------------------
+       *
+       * The same move the player has, taken on the same evidence: grain was owed and
+       * unpaid at the last upkeep. A village on short commons eats 60% and works at
+       * 65%, which is the trade, and it comes off rations the moment the shortfall is
+       * met rather than staying on them out of caution — a neighbour permanently at
+       * two-thirds speed is not a neighbour worth racing.
+       *
+       * Emitted only on a CHANGE. A command every twenty ticks that sets the ration to
+       * what it already is would be twelve hundred commands a match in the log and in
+       * every replay of it.
+       */
+      const wantShort = (economy.shortfall[player] ?? 0) > 0;
+      if (wantShort !== onShortRations) {
+        onShortRations = wantShort;
+        emit({ kind: CommandKind.SetRation, a: wantShort ? 1 : 0, b: 0, c: 0, d: player });
       }
 
       // --- build ----------------------------------------------------------
@@ -196,14 +249,12 @@ export function createAi(player: number): AiController {
        * shore tile and the AI picks its spots by arithmetic around its own homestead,
        * so it would order the same refusal every decision for the rest of the match.
        */
-      const wanted: BuildingType | null =
-        homesteads < ai.wantedHomesteads
-          ? BuildingType.Umuzi
-          : folds < ai.wantedFolds
-            ? BuildingType.IsibayaSezimbuzi
-            : pits < ai.wantedPits
-              ? BuildingType.Umgodi
-              : BuildingType.GrainStore;
+      const wishlist: readonly BuildingType[] = [
+        ...(homesteads < ai.wantedHomesteads ? [BuildingType.Umuzi] : []),
+        ...(folds < ai.wantedFolds ? [BuildingType.IsibayaSezimbuzi] : []),
+        ...(pits < ai.wantedPits ? [BuildingType.Umgodi] : []),
+        BuildingType.GrainStore,
+      ];
 
       /*
        * Ordered only if it can actually be paid for, IN TIMBER AS WELL AS GRAIN.
@@ -214,13 +265,32 @@ export function createAi(player: number): AiController {
        * a neighbour for help. It is the sort of waste that never shows up as a bug
        * because the AI simply appears a little slow.
        */
-      const spec = buildingSpec(wanted);
-      const affordable =
-        economy.balance(player, Resource.Grain) > buildFloor + spec.grainCost &&
-        economy.balance(player, Resource.Wood) >= spec.woodCost &&
-        economy.balance(player, Resource.Cattle) >= spec.cattleCost;
+      /*
+       * The best thing it can actually pay for, not the best thing it wants.
+       *
+       * The wishlist is a strict order of preference and the first cut of this took its
+       * head and then asked whether that was affordable — so a village that wanted a
+       * homestead and could not afford the timber for one built NOTHING, while a fold
+       * it could pay for twice over sat below it on the list. Measured: timber pinned
+       * at 35 for a whole match against a homestead's 55, and one building raised in
+       * twenty minutes.
+       *
+       * A preference is a preference, not a blocker.
+       */
+      let wanted: BuildingType | null = null;
+      for (const candidate of wishlist) {
+        const cost = buildingSpec(candidate);
+        if (
+          economy.balance(player, Resource.Grain) > buildFloor + cost.grainCost &&
+          economy.balance(player, Resource.Wood) >= cost.woodCost &&
+          economy.balance(player, Resource.Cattle) >= cost.cattleCost
+        ) {
+          wanted = candidate;
+          break;
+        }
+      }
 
-      if (affordable) {
+      if (wanted !== null) {
         // A homestead sits close in; everything else rings outward, so a village grows
         // around its people rather than sprawling from the first slot chosen.
         const close = wanted === BuildingType.Umuzi;

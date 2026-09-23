@@ -218,7 +218,8 @@
     "builders": 3,
     "tradeEveryDecisions": 6,
     "wantedFolds": 2,
-    "wantedPits": 2
+    "wantedPits": 2,
+    "feedsMargin": 0.6
   },
   "production": {
     "queueLimit": 5,

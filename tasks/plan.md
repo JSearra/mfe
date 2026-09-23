@@ -337,7 +337,7 @@ about it. Same rules: a failing test first, one commit each, the Definition of D
       present a small one is just as lethal, so both of them buy less than they should.
       *Done when:* damage scales with the fraction of the upkeep that went unpaid, a
       village one grain short loses nobody, and the replay is re-recorded with proofs.
-- [ ] **X5 — The neighbour trains itself to death.** Traced over a 24,000-tick match:
+- [x] **X5 — The neighbour trains itself to death.** Done, and it uncovered X6. Traced over a 24,000-tick match:
       it grows 14 villagers to 63 on land that feeds 64–77 in a good year, pinning its
       granary just above the training floor so it can never reach the build bar and puts
       up exactly ONE homestead in twenty minutes. Then the first real drought takes
@@ -354,3 +354,11 @@ about it. Same rules: a failing test first, one commit each, the Definition of D
       *Done when:* a match shows the village stabilising at a size its land carries
       rather than collapsing to zero, it builds more than one thing, and the replay is
       re-recorded with both proofs.
+- [ ] **X6 — The neighbour is timber-locked.** With X5 in, a match ends with the AI
+      holding 10 timber and two buildings, and it can never build again: it opens with
+      90 and has no way to get more, because nothing in `decide` ever fells a tree. The
+      woodland is not even passed to it. Everything else about its economy now works —
+      it survives the drought, holds 50 villagers and banks 460 grain — and it has
+      nothing to spend the grain on.
+      *Done when:* the AI fells timber when it is short and builds past its opening
+      stock, measured over a match, with the replay re-recorded and proved.
