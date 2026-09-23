@@ -34,6 +34,50 @@ export const BuildingType = {
 
 export type BuildingType = (typeof BuildingType)[keyof typeof BuildingType];
 
+/**
+ * What a building does to the ground, the season or the granary around it.
+ *
+ * Every type in the catalogue until now differed from every other only in the numbers
+ * on `grainYield`, `cattleYield` and `trains` — five buildings and one verb between
+ * them, which is why the answer to every problem the village had was another granary.
+ * A spec with no way to say "this one SHELTERS the fields near it" can only ever
+ * produce more of what is already produced.
+ *
+ * Retired kinds are numbered gaps like every other enum here. See CLAUDE.md.
+ */
+export const EffectKind = {
+  /**
+   * Fields within reach lose less of their yield to a drought.
+   *
+   * A weir, a furrow, a cistern: works that hold water on the land. The drought is the
+   * only pressure the economy has that the player cannot answer by working harder, so
+   * this is the one kind of building that answers it.
+   */
+  DroughtShelter: 0,
+  /**
+   * Grain held back against a hungry season, above what the granary is already storing.
+   *
+   * Village-wide rather than local — a pit is dug where it is dug, and the grain in it
+   * is the village's. Declared with `radius` zero to say so.
+   */
+  GrainReserve: 1,
+} as const;
+
+export type EffectKind = (typeof EffectKind)[keyof typeof EffectKind];
+
+export interface BuildingEffect {
+  readonly kind: EffectKind;
+  /**
+   * Tiles from the building's own tile, or ZERO for an effect that belongs to the
+   * village rather than to a place. Not a sentinel standing in for "everywhere": a
+   * radius of nought genuinely is the building's own tile, and the two readings agree
+   * for every effect that would want either.
+   */
+  readonly radius: number;
+  /** What one finished building of this type contributes. Effects of a kind add up. */
+  readonly strength: number;
+}
+
 export interface BuildingSpec {
   readonly type: BuildingType;
   readonly nameKey: string;
@@ -66,6 +110,13 @@ export interface BuildingSpec {
    * open ground with a fence drawn on it.
    */
   readonly holdsCattle: boolean;
+  /**
+   * What this one DOES, beyond adding to a total. Null for most of them.
+   *
+   * Null rather than optional, so adding a building type is a decision about this
+   * rather than an omission of it.
+   */
+  readonly effect: BuildingEffect | null;
 }
 
 export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
@@ -89,6 +140,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     maxHeightVariation: 0,
     holdsCattle: true,
     trains: false,
+    effect: null,
   },
   [BuildingType.Umuzi]: {
     type: BuildingType.Umuzi,
@@ -119,6 +171,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     // A homestead is where people come from, so this is where troops are raised.
     holdsCattle: false,
     trains: true,
+    effect: null,
   },
   [BuildingType.Ikhanda]: {
     type: BuildingType.Ikhanda,
@@ -141,6 +194,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     maxHeightVariation: 0,
     holdsCattle: false,
     trains: true,
+    effect: null,
   },
   [BuildingType.Indlunkulu]: {
     type: BuildingType.Indlunkulu,
@@ -158,6 +212,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     maxHeightVariation: 0,
     holdsCattle: false,
     trains: false,
+    effect: null,
   },
   [BuildingType.GrainStore]: {
     type: BuildingType.GrainStore,
@@ -172,6 +227,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     maxHeightVariation: 0,
     holdsCattle: false,
     trains: false,
+    effect: null,
   },
 };
 

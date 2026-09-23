@@ -243,7 +243,7 @@ and the Definition of Done in `CLAUDE.md`.
 
 ## U. Buildings that do something the village needs
 
-- [ ] **U1 — `BuildingSpec` can express an effect with a radius.** Four of the five
+- [x] **U1 — `BuildingSpec` can express an effect with a radius.** Done. Four of the five
       existing types differ only in `grainYield`/`cattleYield`/`trains`; the struct has
       no vocabulary for a building that acts on what is near it. Scaffolding only, with
       no new building, so the mechanism and the content land in separate commits.
