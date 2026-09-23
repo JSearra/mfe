@@ -37,6 +37,8 @@ export interface CommandPanelHandlers {
   onAlly(partner: number): void;
   onBreak(partner: number): void;
   onCull(): void;
+  /** Put the village on short commons, or take it off them. */
+  onRation(short: boolean): void;
 }
 
 export interface CommandPanel {
@@ -60,6 +62,16 @@ export interface CommandPanel {
   setRelations(relations: readonly Relation[]): void;
   /** How many head a slaughter would take, as the simulation reckons it. Zero hides it. */
   setHerd(head: number): void;
+  /**
+   * What the village is eating, and the switch for it.
+   *
+   * Beside the cull rather than under a selection, because neither is a thing a
+   * villager does — they are both the village deciding something about itself, and a
+   * player looking for either is looking for the same kind of answer to the same
+   * question. Always shown, so a bad year does not have to be survived once before the
+   * move is discovered.
+   */
+  setRation(short: boolean, hungry: boolean): void;
 }
 
 function button(label: string, hint: string, onClick: () => void): HTMLButtonElement {
@@ -98,7 +110,13 @@ export function createCommandPanel(
   const herd = document.createElement('div');
   herd.className = 'panel__herd';
 
-  element.append(heading, detail, actions, herd, trade, alliance);
+  // The ration sits with the herd for the same reason the herd sits away from the
+  // selection: both are the village deciding something about itself rather than
+  // anything a particular villager does.
+  const ration = document.createElement('div');
+  ration.className = 'panel__ration';
+
+  element.append(heading, detail, actions, ration, herd, trade, alliance);
   parent.appendChild(element);
 
   /**
@@ -152,6 +170,7 @@ export function createCommandPanel(
   let offerSignature = '';
   let relationSignature = '';
   let herdSignature = '';
+  let rationSignature = '';
 
   return {
     element,
@@ -185,6 +204,25 @@ export function createCommandPanel(
       herd.replaceChildren();
       if (head <= 0) return;
       herd.append(button(t('panel.cull', { head }), t('panel.cullHint'), handlers.onCull));
+    },
+
+    setRation(short, hungry): void {
+      const next = `${short}/${hungry}`;
+      if (next === rationSignature) return;
+      rationSignature = next;
+
+      ration.replaceChildren();
+      const control = button(
+        short ? t('panel.rationFull') : t('panel.rationShort'),
+        short ? t('panel.rationFullHint') : t('panel.rationShortHint'),
+        () => handlers.onRation(!short),
+      );
+      // Amber while the village is actually going short, which is when the button is
+      // worth looking at. Not an alert: cutting the ration is a decision, and a village
+      // that is merely thin may well want to keep working at full speed.
+      control.classList.toggle('is-urgent', hungry && !short);
+      control.classList.toggle('is-active', short);
+      ration.append(control);
     },
 
     setRelations(relations): void {

@@ -31,6 +31,7 @@ const IDLE_PLAYER: PlayerState = {
   feeds: 0,
   cullHead: 0,
   driving: 0,
+  shortRation: false,
   drought: 0,
   year: 0,
   droughtTrend: 0,

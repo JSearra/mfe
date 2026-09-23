@@ -3,6 +3,7 @@ import { makeCommand } from '../sim/commands.js';
 import { compactLoop, createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../sim/loop.js';
 import { buildSnapshot } from '../sim/snapshot.js';
 import { trendOf, yearOf } from '../shared/calendar.js';
+import { Ration } from '../sim/economy/ledger.js';
 import type { SimEvent } from '../shared/events.js';
 import type { Heightmap } from '../shared/heightmap.js';
 import { createCattleSystem, type CattleSystem } from '../sim/cattle.js';
@@ -114,6 +115,8 @@ export interface PlayerState {
   readonly driving: number;
   /** Grain owed but unpaid at the last upkeep. Non-zero means troops are starving. */
   readonly shortfall: number;
+  /** True while the village is on short commons. The panel's switch reads it. */
+  readonly shortRation: boolean;
   /** 0 (wet) to 1 (parched). */
   readonly drought: number;
   readonly droughtSevere: boolean;
@@ -401,6 +404,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         feeds: economy.feeds[viewerId] ?? 0,
         cullHead: cullHead(economy, viewerId),
         driving: drivenBy(world, viewerId),
+        shortRation: economy.ration[viewerId] === Ration.Short,
         drought: droughtNow,
         droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
         year: yearOf(world.tick, tuning.economy.seasonTicks),

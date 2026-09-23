@@ -56,6 +56,12 @@ export interface SaveGame {
    * always written on the way out.
    */
   readonly economyReserve?: string;
+  /**
+   * What each village is eating. Optional on the way in, like the reserve beside it,
+   * so a save written before rationing existed loads as a village on full commons —
+   * which is what it was.
+   */
+  readonly economyRation?: string;
   /** Who is tied to whom, and what each village thinks of the others. */
   readonly allianceBond: string;
   readonly allianceStanding: string;
@@ -134,6 +140,7 @@ export function captureState(loop: SimLoop): SaveGame {
     economyScalars: { upkeepCount: economy.upkeepCount },
     economyShortfall: toBase64(economy.shortfall),
     economyReserve: toBase64(economy.reserve),
+    economyRation: toBase64(economy.ration),
     allianceBond: toBase64(alliance.bond),
     allianceStanding: toBase64(alliance.standing),
     allianceOffered: toBase64(alliance.offered),
@@ -177,6 +184,8 @@ export function restoreState(loop: SimLoop, save: SaveGame): void {
   // A save from before the pits existed has none, which is the same as empty ones.
   if (save.economyReserve === undefined) economy.reserve.fill(0);
   else fromBase64(save.economyReserve, economy.reserve);
+  if (save.economyRation === undefined) economy.ration.fill(0);
+  else fromBase64(save.economyRation, economy.ration);
   economy.upkeepCount = save.economyScalars.upkeepCount;
 
   fromBase64(save.allianceBond, alliance.bond);

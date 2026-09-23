@@ -71,8 +71,14 @@ export interface ProductionSystem {
   readonly stats: ProductionStats;
   train(world: World, economy: Economy, building: Handle, movementClass: number): TrainResult;
   setRally(world: World, building: Handle, x: number, y: number): boolean;
-  /** Economy is not consulted: the cost was paid when the order was placed. */
-  update(world: World, events: SimEvent[]): void;
+  /**
+   * Economy is not consulted for COST: that was paid when the order was placed.
+   *
+   * `labour` is injected the way construction's is, and for the same reason: raising a
+   * household is work, a village on short commons does less of it, and production has
+   * no business learning what a ration is to find that out.
+   */
+  update(world: World, events: SimEvent[], labour?: (player: number) => number): void;
   /** Queue depth, for the UI. */
   queueLength(world: World, building: Handle): number;
 }
@@ -142,7 +148,7 @@ export function createProductionSystem(movement: MovementSystem): ProductionSyst
       return world.trainQueue[handleIndex(building)]!;
     },
 
-    update(world, events): void {
+    update(world, events, labour): void {
       for (let index = 0; index < world.capacity; index++) {
         if (world.alive[index] !== 1 || world.kind[index] !== EntityKind.Building) continue;
         if (world.trainQueue[index] === 0) continue;
@@ -150,7 +156,8 @@ export function createProductionSystem(movement: MovementSystem): ProductionSyst
         const movementClass = queuedKind(world, index, 0);
         const cost = trainingCost(movementClass);
 
-        world.trainProgress[index] = world.trainProgress[index]! + 1;
+        const rate = labour?.(world.faction[index]!) ?? 1;
+        world.trainProgress[index] = world.trainProgress[index]! + rate;
         if (world.trainProgress[index]! < cost.ticks) continue;
 
         // Place the new soldier clear of the footprint, then send them to the rally.

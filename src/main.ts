@@ -564,6 +564,9 @@ async function main(options: GameOptions): Promise<void> {
     onCull() {
       sim.sendCommand(CommandKind.Cull);
     },
+    onRation(short) {
+      sim.sendCommand(CommandKind.SetRation, short ? 1 : 0);
+    },
   });
 
   let view: InterpolatedView | null = null;
@@ -998,6 +1001,9 @@ async function main(options: GameOptions): Promise<void> {
       panel.setOffers(message.player.offers);
       panel.setRelations(message.player.relations);
       panel.setHerd(message.player.cullHead);
+      // Hungry means grain was actually owed last season, not merely that the year is
+      // dry: the button turns amber when cutting the ration would have helped.
+      panel.setRation(message.player.shortRation, message.player.shortfall > 0);
       lastPlayer = message.player;
       outcomeBanner.update(message.player, PLAYER);
       fog.setFog(message.fog);

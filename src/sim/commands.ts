@@ -11,7 +11,7 @@ import { fell, type Woodland } from './woodland.js';
 import { abandon, plant, type Farmland } from './economy/farmland.js';
 import { trade, TradeResult } from './trade.js';
 import { AllyResult, alliedWith, breakBond, propose, withdraw, type Alliance } from './alliance.js';
-import { Resource } from './economy/ledger.js';
+import { Ration, Resource } from './economy/ledger.js';
 import type { Heightmap } from '../shared/heightmap.js';
 import { cull } from './herd.js';
 import {
@@ -97,6 +97,13 @@ export const CommandKind = {
    * it is a real decision because the herd is also the wealth.
    */
   Cull: 19,
+  /**
+   * Put the village on short rations, or take it off them. `a` is the ration.
+   *
+   * The move a bad year did not have. See `Ration` in economy/ledger.ts for why it is
+   * two states rather than a dial, and why it costs work.
+   */
+  SetRation: 20,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -337,6 +344,12 @@ export function applyCommand(
 
     case CommandKind.SetRally:
       return production.setRally(world, command.a as Handle, command.b, command.c);
+
+    case CommandKind.SetRation:
+      // No check on the value beyond the enum's own range: a ration is a village-wide
+      // switch with no cost to flip and nothing to validate against the world.
+      economy.setRation(command.playerId, command.a === Ration.Short ? Ration.Short : Ration.Full);
+      return true;
 
     case CommandKind.Destroy:
       return destroy(world, command.a as Handle);

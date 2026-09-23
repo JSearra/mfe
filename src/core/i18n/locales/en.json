@@ -98,7 +98,11 @@
     "allyWaiting": "Waiting on {village}",
     "allyWithdraw": "Withdraw the offer",
     "siteIdle": "{name} — {pct}% built · nobody working it",
-    "siteBuilding": "{name} — {pct}% built · {builders} building"
+    "siteBuilding": "{name} — {pct}% built · {builders} building",
+    "rationShort": "Cut the ration",
+    "rationFull": "Restore the ration",
+    "rationShortHint": "The village eats less and works slower. Grain lasts, building does not.",
+    "rationFullHint": "Back to full commons: the village eats its fill and works at full speed."
   },
   "alert": {
     "stampede": "The herd has broken",

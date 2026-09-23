@@ -159,10 +159,14 @@ export function step(loop: SimLoop): void {
   // below, so the first cycle is tick 200, not 199.
   // Combat after movement and cattle, so a strike lands on where things ended up
   // this tick rather than where they started.
+  // Labour is the tech modifier and the ration together. A village on short commons
+  // builds more slowly, which is the cost that makes cutting the ration a decision
+  // rather than a free saving — the work it takes away is the work that would have dug
+  // the village out.
   construction.update(world, movement.grid, events, (player) =>
-    tech.modifier(player, Modifier.Labour),
+    tech.modifier(player, Modifier.Labour) * economy.labourFactor(player),
   );
-  production.update(world, events);
+  production.update(world, events, (player) => economy.labourFactor(player));
   // After everything that can take health away, and in one place, because dying is not
   // a rule any of them owns. See src/sim/mortality.ts.
   reap(world, events);

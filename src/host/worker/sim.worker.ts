@@ -6,7 +6,7 @@ import { createConstructionSystem } from '../../sim/construction.js';
 import { createTechState } from '../../sim/tech.js';
 import { createVictoryState, type VictoryState } from '../../sim/victory.js';
 import { createProductionSystem } from '../../sim/production.js';
-import { createEconomy, Resource, type Economy } from '../../sim/economy/ledger.js';
+import { createEconomy, Ration, Resource, type Economy } from '../../sim/economy/ledger.js';
 import { createWoodland, packWoodland, type Woodland } from '../../sim/woodland.js';
 import { offersFor } from '../../sim/trade.js';
 import { cullHead, drivenBy } from '../../sim/herd.js';
@@ -158,6 +158,7 @@ function tick(): void {
     feeds: economy.feeds[viewerId] ?? 0,
     cullHead: cullHead(economy, viewerId),
     driving: drivenBy(world, viewerId),
+    shortRation: economy.ration[viewerId] === Ration.Short,
     drought: droughtNow,
     year: yearOf(world.tick, tuning.economy.seasonTicks),
     droughtTrend: trendOf(droughtNow, economy.drought(world.tick + LOOKAHEAD_TICKS)),

@@ -270,7 +270,7 @@ and the Definition of Done in `CLAUDE.md`.
       seasonal since Phase 6 and nothing on screen says so.
       *Done when:* season and year are pure functions of the tick, tested against the
       ledger's own `seasonTicks`, and read out in the HUD.
-- [ ] **V8 — Rationing.** A village-wide order cutting the ration: less upkeep, slower
+- [x] **V8 — Rationing.** Done. A village-wide order cutting the ration: less upkeep, slower
       work, nobody dies. The counterplay to a bad year, which does not currently exist.
       *Done when:* a rationed village survives a shortfall that starves an unrationed
       one; the order is reversible; the ledger still serialises.

@@ -36,6 +36,30 @@ export type Resource = (typeof Resource)[keyof typeof Resource];
 
 export const RESOURCE_COUNT = 3;
 
+/**
+ * How much a village is eating.
+ *
+ * A bad year used to have exactly one outcome and no move in it: the granary ran out
+ * and every unit the player owned took damage at once, and the only decision that had
+ * ever mattered was the one taken ten minutes earlier. Cutting the ration is the move a
+ * village actually has — eat less, work slower, come out the other side.
+ *
+ * It is a real decision and not a free one, because the work it costs is exactly the
+ * work that would have dug the village out: fewer hands on a field, a granary that
+ * takes longer to raise. Without that cost a short ration would be strictly better than
+ * a full one in every season and no one would ever choose between them.
+ *
+ * Two states rather than a slider. The interesting question is whether to tighten the
+ * belt, not by how much, and a slider would ask the player to optimise a number instead
+ * of taking a decision.
+ */
+export const Ration = {
+  Full: 0,
+  Short: 1,
+} as const;
+
+export type Ration = (typeof Ration)[keyof typeof Ration];
+
 export interface Economy {
   readonly players: number;
   /** players x RESOURCE_COUNT, row-major. */
@@ -75,8 +99,20 @@ export interface Economy {
    * of those, which is four chances to forget.
    */
   readonly reserve: Float64Array;
+  /** What each village is eating. Simulation state, and saved. */
+  readonly ration: Uint8Array;
 
   balance(player: number, resource: Resource): number;
+  /** Set a village's ration. Reversible, and one village's business alone. */
+  setRation(player: number, ration: Ration): void;
+  /**
+   * How fast this village works, given what it is eating.
+   *
+   * Read by construction and production rather than applied here, because the ledger
+   * charges for food and does not build things. The same shape as the tech modifiers
+   * those systems already take.
+   */
+  labourFactor(player: number): number;
   add(player: number, resource: Resource, amount: number): void;
   spend(player: number, resource: Resource, amount: number): boolean;
   /** Seasonal drought, 0 (wet) to 1 (parched). A pure function of the tick. */
@@ -156,6 +192,7 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
   const harvested = new Float64Array(players);
   const feeds = new Float64Array(players);
   const reserve = new Float64Array(players);
+  const ration = new Uint8Array(players);
 
   for (let player = 0; player < players; player++) {
     const config = factions[player]!;
@@ -176,6 +213,7 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
     harvested,
     feeds,
     reserve,
+    ration,
 
     balance(player, resource) {
       return amounts[player * RESOURCE_COUNT + resource] ?? 0;
@@ -211,6 +249,14 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
      * opening is a season the village has already survived, and the ruinous years arrive
      * once there is a granary and a herd to meet them with.
      */
+    setRation(player, value) {
+      if (player < players) ration[player] = value;
+    },
+
+    labourFactor(player) {
+      return ration[player] === Ration.Short ? e.rationShortLabour : 1;
+    },
+
     drought(tick) {
       const year = Math.floor(tick / e.seasonTicks);
       const phase = (tick % e.seasonTicks) / e.seasonTicks;
@@ -347,8 +393,18 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
         // being driven. Both eat.
         const onLedger = economy.balance(player, Resource.Cattle);
         const totalCattle = onLedger + herds[player]!;
+        /*
+         * The ration applies to the PEOPLE and not to the herd.
+         *
+         * Cattle are not rationed; they graze, and what they eat is grass rather than
+         * the village's grain — `grainPerCattle` is the fodder and salt a standing herd
+         * costs its keeper, not a portion anyone can choose to cut. A village that
+         * wants to spend less on its cattle has the cull for that, which is a decision
+         * with a price rather than a dial.
+         */
+        const eats = ration[player] === Ration.Short ? e.rationShortFactor : 1;
         const needed =
-          (units[player]! * e.grainPerUnit + totalCattle * e.grainPerCattle) *
+          (units[player]! * e.grainPerUnit * eats + totalCattle * e.grainPerCattle) *
           config.upkeepMultiplier;
 
         upkeep[player] = needed;

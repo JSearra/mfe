@@ -85,7 +85,9 @@
     "shelteredPerPlayer": 3,
     "plotSearchRadius": 6.0,
     "pitFillRate": 0.25,
-    "grainSpoilPerCycle": 0.005
+    "grainSpoilPerCycle": 0.005,
+    "rationShortFactor": 0.6,
+    "rationShortLabour": 0.65
   },
   "herd": {
     "cullSize": 10.0,
