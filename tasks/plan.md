@@ -337,3 +337,20 @@ about it. Same rules: a failing test first, one commit each, the Definition of D
       present a small one is just as lethal, so both of them buy less than they should.
       *Done when:* damage scales with the fraction of the upkeep that went unpaid, a
       village one grain short loses nobody, and the replay is re-recorded with proofs.
+- [ ] **X5 — The neighbour trains itself to death.** Traced over a 24,000-tick match:
+      it grows 14 villagers to 63 on land that feeds 64–77 in a good year, pinning its
+      granary just above the training floor so it can never reach the build bar and puts
+      up exactly ONE homestead in twenty minutes. Then the first real drought takes
+      `feeds` to 16 against 63 mouths, every villager dies, and the grain climbs to 1,070
+      with nobody left to eat it.
+
+      `tasks/plan.md` section F and the Phase V6 notes both record this as "the AI
+      raises households it has no grain to feed"; this is that, measured. It is not a
+      balance question and it is not being treated as one: `economy.feeds` is the exact
+      number the HUD puts in front of the human — "land feeds 63" — and the fix is to
+      make the neighbour obey the rule the game states rather than to retune anything.
+      The rule it is currently following, "replacements before anything else
+      discretionary", is left over from when there were losses to replace.
+      *Done when:* a match shows the village stabilising at a size its land carries
+      rather than collapsing to zero, it builds more than one thing, and the replay is
+      re-recorded with both proofs.
