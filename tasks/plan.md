@@ -206,21 +206,30 @@ and the Definition of Done in `CLAUDE.md`.
 
 ## T. Terrain — ground that does not end in a wall
 
-- [ ] **T1 — A walkable step stops being a wall.** `drawTile` draws a vertical face for
-      any drop at all, so every one-level contour on a rolling map is a quarter-tile
-      wall with a bright lip. Only a real cliff (`isCliff`, past `MAX_CLIMB`) should
-      draw one. Render-only; ADR-0006's hard cliff edge is preserved exactly.
-      *Done when:* a test asserts a face for a drop past `MAX_CLIMB` and no face for a
-      drop within it, and the golden replay is untouched because nothing in `src/sim`
-      moved.
-- [ ] **T2 — The ground becomes continuous.** Tile tops drawn from per-corner heights
-      averaged off the tile grid, as one retained mesh per chunk rather than a sprite
-      per tile, so a single-level change is a ramp instead of a step. Corners touching a
-      real cliff snap to the tile's own height. Render-side only — the simulation keeps
-      per-tile integer heights and movement, pathing and cost are untouched.
-      *Done when:* corner-height derivation and cliff snapping are unit-tested, the UV
-      mapping into the terrain page is unit-tested, draw calls do not regress against
-      `npm run perf:terrain`, and it is looked at in a browser.
+- [x] **T1 — The ground surface, derived and tested on its own.** Done. A pure module giving
+      the four CORNER heights of a tile, each the mean of the tiles meeting at that
+      corner, except that a corner touching a real cliff takes the tile's own height so
+      the cliff stays a hard edge. No rendering change; the module is not yet called.
+      *Done when:* flat ground returns the tile's own height at all four corners, a
+      one-level step returns a corner between the two, a cliff corner snaps, and the map
+      edge does not slope off toward the out-of-bounds sentinel.
+- [ ] **T2 — The ground becomes continuous.** Tile tops drawn from T1's corner heights
+      as one retained mesh per chunk rather than a sprite per tile, so a single-level
+      change is a ramp. Faces are then drawn only where there is a real cliff.
+      Render-side only: the simulation keeps per-tile integer heights and movement,
+      pathing and cost are untouched.
+
+      *Why this is one task with T1 and not two.* The first cut of this plan had a cheap
+      T1 — "a walkable step stops drawing a wall" — ahead of the mesh. It does not work,
+      and the projection says why: `worldToScreenY` is `(x+y)·HALF_TILE_H − h·ELEV_STEP`,
+      so two tiles sharing a world edge across a one-level step have that shared corner
+      drawn `ELEV_STEP` apart on screen. The face is not decoration over flat diamonds,
+      it is the only thing filling the gap between them. Deleting it opens an 8px hole
+      to the background along every contour on the map. The ground has to be continuous
+      before a walkable step can stop being a wall, so it is one change.
+
+      *Done when:* the UV mapping into the terrain page is unit-tested, draw calls do
+      not regress against `npm run perf:terrain`, and it is looked at in a browser.
 - [ ] **T3 — Corner seams.** `transitionsFor` walks four orthogonal neighbours, so
       higher ground meeting a tile only diagonally contributes no blend and leaves a
       notch at every diagonal. Add the corner masks and the art for them.
