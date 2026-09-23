@@ -195,3 +195,94 @@ so alerts, audio and damage flashes all report things happening under fog. With 
 and an opponent that herds, this went from a curiosity to a constant.
 
 Filtering events per viewer is the fix, and it belongs next to the snapshot filter.
+
+---
+
+# Part II of the plan — the 2026-09-23 brief
+
+Source: `SPEC.md`, which takes the project owner's four clauses and costs each against
+the code. Tasks are in dependency order; each earns a failing test first, its own commit,
+and the Definition of Done in `CLAUDE.md`.
+
+## T. Terrain — ground that does not end in a wall
+
+- [ ] **T1 — A walkable step stops being a wall.** `drawTile` draws a vertical face for
+      any drop at all, so every one-level contour on a rolling map is a quarter-tile
+      wall with a bright lip. Only a real cliff (`isCliff`, past `MAX_CLIMB`) should
+      draw one. Render-only; ADR-0006's hard cliff edge is preserved exactly.
+      *Done when:* a test asserts a face for a drop past `MAX_CLIMB` and no face for a
+      drop within it, and the golden replay is untouched because nothing in `src/sim`
+      moved.
+- [ ] **T2 — The ground becomes continuous.** Tile tops drawn from per-corner heights
+      averaged off the tile grid, as one retained mesh per chunk rather than a sprite
+      per tile, so a single-level change is a ramp instead of a step. Corners touching a
+      real cliff snap to the tile's own height. Render-side only — the simulation keeps
+      per-tile integer heights and movement, pathing and cost are untouched.
+      *Done when:* corner-height derivation and cliff snapping are unit-tested, the UV
+      mapping into the terrain page is unit-tested, draw calls do not regress against
+      `npm run perf:terrain`, and it is looked at in a browser.
+- [ ] **T3 — Corner seams.** `transitionsFor` walks four orthogonal neighbours, so
+      higher ground meeting a tile only diagonally contributes no blend and leaves a
+      notch at every diagonal. Add the corner masks and the art for them.
+      *Done when:* a tile whose only higher neighbour is diagonal receives an overlay,
+      asserted headlessly, and the notch is gone in a screenshot.
+- [ ] **T4 — Water gets a bank.** Water is a flat-filled diamond, which is the one
+      literal 90-degree edge left on the map: a river or a coast is a hard staircase.
+      Give the waterline the same treatment a band seam gets.
+      *Done when:* a shore tile emits a bank overlay and open water does not, asserted
+      headlessly; looked at on `umfolozi`, which is the map with the most water on it.
+
+## U. Buildings that do something the village needs
+
+- [ ] **U1 — `BuildingSpec` can express an effect with a radius.** Four of the five
+      existing types differ only in `grainYield`/`cattleYield`/`trains`; the struct has
+      no vocabulary for a building that acts on what is near it. Scaffolding only, with
+      no new building, so the mechanism and the content land in separate commits.
+      *Done when:* an existing building declares a null effect and nothing changes —
+      the golden replay proves the scaffolding inert.
+- [ ] **U2 — Umgodi, the grain pit.** One tile, cheap, yields nothing; buffers instead.
+      In a shortfall it pays out before anybody starves and refills from surplus. Aimed
+      at the only failure condition the game has.
+      *Done when:* a headless village with a full pit survives a shortfall that kills
+      the same village without one, and the pit empties and refills across the seasons.
+- [ ] **U3 — Isiziba, the weir.** Sited only on a shore tile. Fields within its radius
+      lose less condition to drought.
+      *Done when:* siting off a shore is refused; a field inside the radius holds
+      condition through a drought that costs an identical field outside it.
+- [ ] **U4 — Isibaya sezimbuzi, the small-stock pen.** Cheap and small, a steady modest
+      grain yield at low upkeep — the hedge for a village that cannot feed cattle.
+      Carries the goats and fowl already placed around the dwellings.
+      *Done when:* its yield and upkeep are in tuning and asserted, and it is reachable
+      from the build palette with a hotkey.
+
+## V. Village management
+
+- [ ] **V7 — A calendar.** Year, season and weather, named. The economy has been
+      seasonal since Phase 6 and nothing on screen says so.
+      *Done when:* season and year are pure functions of the tick, tested against the
+      ledger's own `seasonTicks`, and read out in the HUD.
+- [ ] **V8 — Rationing.** A village-wide order cutting the ration: less upkeep, slower
+      work, nobody dies. The counterplay to a bad year, which does not currently exist.
+      *Done when:* a rationed village survives a shortfall that starves an unrationed
+      one; the order is reversible; the ledger still serialises.
+- [ ] **V9 — Fallow.** A field left deliberately unworked recovers condition faster than
+      a worked one, so siting more fields than you can tend becomes a decision rather
+      than a mistake.
+      *Done when:* a fallow field's condition curve is measured against a worked one and
+      an abandoned one, all three differing.
+
+## W. A HUD you can play from
+
+- [ ] **W1 — Restyle the HUD.** Grouping, chrome, typography, spacing; the debug overlay
+      off by default behind its existing toggle.
+      *Done when:* looked at in a browser at 1440x900 and at a narrow width, and the
+      `src/ui` string-literal lint still passes.
+- [ ] **W2 — A build palette that says no out loud.** Cost, affordability, and a stated
+      reason when an action cannot be taken — `tasks/plan.md` section F records that the
+      panel "offers actions that silently fail". Covers the buildings from section U.
+      *Done when:* the reason logic is unit-tested for each way an action can be
+      unavailable, and no path leaves a button that does nothing.
+- [ ] **W3 — The calendar readout**, pairing with V7.
+- [ ] **W4 — A selection summary** — what is selected, how many, what they are doing.
+      `src/sim/roles.ts` already computes the last of these for the renderer.
+      *Done when:* the counts are asserted headlessly off an interpolated view.
