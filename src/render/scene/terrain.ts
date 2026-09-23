@@ -4,7 +4,6 @@ import {
   ELEV_STEP,
   HALF_TILE_H,
   HALF_TILE_W,
-  isCliff,
   MAX_CLIMB,
   worldToScreenX,
   worldToScreenY,
@@ -13,6 +12,7 @@ import type { Camera } from '../camera.js';
 import { presentation } from '../presentation.js';
 import type { TerrainTile, TerrainTiles } from '../assets.js';
 import { CORNER_COUNT, tileCorners } from './surface.js';
+import { cornerSeams, edgeSeams, SEAM_CORNERS } from './seams.js';
 import { cornerPositions, faceTrapezoid, QUAD_FLOATS } from './terrainGeometry.js';
 
 /**
@@ -136,49 +136,6 @@ function tileHash(tileX: number, tileY: number, salt: number): number {
  */
 function bandFor(map: Heightmap, tileX: number, tileY: number): number {
   return map.data[tileY * map.width + tileX]!;
-}
-
-/**
- * The four orthogonal neighbours, clockwise from the upper right.
- *
- * Isometric puts tile +x down-RIGHT and tile +y down-LEFT, so the tile-space neighbour
- * (x, y-1) is the diamond's upper-right EDGE rather than its top corner. The order here
- * is the bit order the transition masks were baked with; changing one without the other
- * paints the blend on the wrong side.
- */
-const NEIGHBOUR_DX = [0, 1, 0, -1] as const;
-const NEIGHBOUR_DY = [-1, 0, 1, 0] as const;
-
-/**
- * Masks of the higher grounds bleeding onto this tile, indexed by band.
- *
- * The higher band always spills onto the lower, never the reverse, so each seam is
- * drawn exactly once — from the uphill side — and two tiles never both try to blend
- * into each other and double the alpha along the join.
- *
- * Returned as a sparse array so the common case, a tile with no boundary at all, costs
- * four height lookups and no allocation beyond it.
- */
-function transitionsFor(map: Heightmap, tileX: number, tileY: number, out: number[]): number {
-  const own = map.data[tileY * map.width + tileX]!;
-  let found = 0;
-
-  for (let bit = 0; bit < 4; bit++) {
-    const neighbour = heightAt(map, tileX + NEIGHBOUR_DX[bit]!, tileY + NEIGHBOUR_DY[bit]!);
-    if (neighbour <= own) continue;
-    // Only where the two grounds actually meet. Across a cliff they do not: there is a
-    // face between them, the upper surface is metres above and behind, and bleeding its
-    // texture onto the floor below reads as a smear down the drop rather than as a
-    // transition. A cliff is meant to be a hard edge — that is the whole of ADR-0006 —
-    // and softening it would undo the one boundary that should be legible at a glance.
-    if (isCliff(neighbour, own)) continue;
-    if (out[neighbour] === undefined) {
-      out[neighbour] = 0;
-      found++;
-    }
-    out[neighbour]! |= 1 << bit;
-  }
-  return found;
 }
 
 function variantFor(tiles: readonly TerrainTile[], tileX: number, tileY: number): TerrainTile {
@@ -335,7 +292,7 @@ function drawTile(
   scratch: TileScratch,
 ): void {
   const level = map.data[tileY * map.width + tileX]!;
-  const { corners, positions, neighbourCorners, bleed } = scratch;
+  const { corners, positions, neighbourCorners, bleed, corner } = scratch;
 
   tileCorners(map, tileX, tileY, corners);
   cornerPositions(tileX, tileY, corners, positions);
@@ -410,16 +367,29 @@ function drawTile(
 
   pushQuad(base, positions, tile.uv);
 
-  // Higher ground bleeding over the seam. Same page as the tile under it, so these cost
-  // vertices but not a draw call, and only boundary tiles have any.
+  // Higher ground bleeding over the seams. Same page as the tile under it, so these
+  // cost vertices but not a draw call, and only boundary tiles have any.
   bleed.length = 0;
-  if (transitionsFor(map, tileX, tileY, bleed) > 0) {
+  if (edgeSeams(map, tileX, tileY, bleed) > 0) {
     for (let band = 0; band < bleed.length; band++) {
       const mask = bleed[band];
       if (mask === undefined) continue;
       const blend = tiles.transition(band, mask);
       if (blend === null) continue;
       pushQuad(overlay, positions, blend.uv);
+    }
+  }
+
+  // And the diagonals. Ground that meets this tile at a single point contributed
+  // nothing before, so every diagonal boundary on the map ended in a sharp notch where
+  // the two edge blends beside it stopped.
+  if (cornerSeams(map, tileX, tileY, corner) > 0) {
+    for (let at = 0; at < SEAM_CORNERS; at++) {
+      const band = corner[at]!;
+      if (band < 0) continue;
+      const wedge = tiles.corner(band, at);
+      if (wedge === null) continue;
+      pushQuad(overlay, positions, wedge.uv);
     }
   }
 }
@@ -489,6 +459,7 @@ interface TileScratch {
   readonly neighbourCorners: Float64Array;
   readonly positions: Float32Array;
   readonly bleed: number[];
+  readonly corner: Int8Array;
 }
 
 function buildChunk(
@@ -505,6 +476,7 @@ function buildChunk(
     neighbourCorners: new Float64Array(CORNER_COUNT),
     positions: new Float32Array(QUAD_FLOATS),
     bleed: [],
+    corner: new Int8Array(SEAM_CORNERS),
   };
   const startX = chunkX * chunkSize;
   const startY = chunkY * chunkSize;

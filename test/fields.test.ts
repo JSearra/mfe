@@ -22,6 +22,7 @@ const tiles: TerrainTiles = {
   page: Texture.EMPTY,
   variants: () => [],
   transition: () => null,
+  corner: () => null,
   field: (_band, isCrop) => (isCrop ? crop : broken),
 };
 

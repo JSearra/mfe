@@ -230,7 +230,7 @@ and the Definition of Done in `CLAUDE.md`.
 
       *Done when:* the UV mapping into the terrain page is unit-tested, draw calls do
       not regress against `npm run perf:terrain`, and it is looked at in a browser.
-- [ ] **T3 — Corner seams.** `transitionsFor` walks four orthogonal neighbours, so
+- [x] **T3 — Corner seams.** Done. `transitionsFor` walks four orthogonal neighbours, so
       higher ground meeting a tile only diagonally contributes no blend and leaves a
       notch at every diagonal. Add the corner masks and the art for them.
       *Done when:* a tile whose only higher neighbour is diagonal receives an overlay,

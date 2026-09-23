@@ -1,5 +1,6 @@
 import { Assets, Rectangle, Texture } from 'pixi.js';
 import { diamondUvs, QUAD_FLOATS } from './scene/terrainGeometry.js';
+import { SEAM_CORNERS } from './scene/seams.js';
 
 /**
  * Loads the sprite atlas and hands out textures by meaning rather than by coordinate.
@@ -155,6 +156,11 @@ interface TerrainTileEntry {
    * the terrain renderer walks.
    */
   readonly mask?: number;
+  /**
+   * Set on corner tiles only: which diamond POINT this one bleeds in from — east,
+   * south, west, north — for ground that touches the tile only diagonally.
+   */
+  readonly corner?: number;
   /** Set on field tiles: 'broken' for turned earth, 'crop' for a standing crop. */
   readonly field?: string;
   readonly averageColour: string;
@@ -205,6 +211,15 @@ export interface TerrainTiles {
    */
   transition(band: number, mask: number): TerrainTile | null;
   /**
+   * A band's ground bleeding in from one diamond point, or null.
+   *
+   * Its own accessor rather than more bits in the mask above. Folding the diagonals in
+   * would take that mask from four bits to eight — 255 combinations a band, two
+   * thousand tiles — for a wedge whose shape does not depend on how many of them a tile
+   * has. A tile with two diagonal neighbours draws two.
+   */
+  corner(band: number, corner: number): TerrainTile | null;
+  /**
    * A field on this band's ground, either broken earth or a standing crop.
    *
    * Drawn from the band's own tile so a field looks like the ground it came out of —
@@ -238,6 +253,8 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
     const byBand: TerrainTile[][] = [];
     // band -> mask -> tile. Dense and small: sixteen slots a band, fifteen of them used.
     const transitions: (TerrainTile | null)[][] = [];
+    // band -> corner -> tile. Four a band, one per diamond point.
+    const corners: (TerrainTile | null)[][] = [];
     // band -> [broken, crop]
     const fields: (TerrainTile | null)[][] = [];
 
@@ -259,6 +276,11 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
       if (entry.field !== undefined) {
         const row = (fields[entry.band] ??= [null, null]);
         row[entry.field === 'crop' ? 1 : 0] = tile;
+        continue;
+      }
+      if (entry.corner !== undefined) {
+        const row = (corners[entry.band] ??= new Array<TerrainTile | null>(SEAM_CORNERS).fill(null));
+        row[entry.corner] = tile;
         continue;
       }
       if (entry.mask !== undefined) {
@@ -291,6 +313,10 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
 
       transition(band: number, mask: number) {
         return transitions[band]?.[mask] ?? null;
+      },
+
+      corner(band: number, corner: number) {
+        return corners[band]?.[corner] ?? null;
       },
 
       field(band: number, crop: boolean) {

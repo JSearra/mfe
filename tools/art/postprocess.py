@@ -172,6 +172,39 @@ def make_transition(tile: Image.Image, mask: int) -> Image.Image:
     return Image.fromarray(pixels, "RGBA")
 
 
+def corner_falloff(width: int, height: int, corner: int) -> np.ndarray:
+    """
+    Alpha for a corner transition: opaque at one diamond POINT, gone a short way in.
+
+    The edge blends cover the case where two grounds share a whole tile side. Ground that
+    touches a tile only diagonally shares a single point, and until this existed it
+    contributed nothing at all — so every diagonal boundary on the map ended in a sharp
+    notch where the two edge blends beside it stopped.
+
+    A wedge rather than a band, and much shorter than an edge's reach: a corner is a
+    hint that the other ground is about to arrive, not the arrival. Distance is taken in
+    the diamond's own metric, |dx| + |dy|, so the wedge's front runs parallel to the two
+    edges it sits between instead of bulging into one of them.
+    """
+    ys, xs = np.mgrid[0:height, 0:width]
+    nx = ((xs + 0.5) - width / 2) / (width / 2)
+    ny = ((ys + 0.5) - height / 2) / (height / 2)
+
+    point_x, point_y = TRANSITION_CORNERS[corner]
+    distance = np.abs(nx - point_x) + np.abs(ny - point_y)
+    near = np.clip(1.0 - distance / CORNER_REACH, 0.0, 1.0)
+    return near * near * (3.0 - 2.0 * near)
+
+
+def make_corner(tile: Image.Image, corner: int) -> Image.Image:
+    """A tile masked to bleed in from one diamond point."""
+    pixels = np.array(tile.convert("RGBA"))
+    falloff = corner_falloff(tile.width, tile.height, corner)
+    inside = diamond_mask(tile.width, tile.height)
+    pixels[:, :, 3] = np.where(inside, np.clip(falloff * 255.0, 0, 255).astype(np.uint8), 0)
+    return Image.fromarray(pixels, "RGBA")
+
+
 def make_tile(source: Image.Image, band: np.ndarray, strength: float) -> Image.Image:
     """Resize to the tile footprint, harmonise to the band, and mask to the diamond."""
     resized = source.convert("RGBA").resize((TILE_W, TILE_H), Image.Resampling.LANCZOS)
@@ -250,6 +283,17 @@ TRANSITION_EDGES = ((1, -1), (1, 1), (-1, 1), (-1, -1))
 # How far across a tile a neighbour's ground bleeds. Most of the way: a narrow band reads
 # as a drawn outline rather than as one ground giving way to another.
 TRANSITION_REACH = 0.85
+
+# The four diamond POINTS a diagonal neighbour arrives at, in (nx, ny): east, south,
+# west, north. Corner i sits between edges i and (i + 1) % 4, which is the order
+# seams.ts walks them in — changing one without the other puts the wedge on the wrong
+# side of the tile.
+TRANSITION_CORNERS = ((1, 0), (0, 1), (-1, 0), (0, -1))
+
+# Shorter than an edge's reach, and deliberately. Ground that touches only at a point is
+# barely arriving; a wedge as long as a full edge band would read as the whole tile
+# changing ground because one diagonal neighbour did.
+CORNER_REACH = 0.55
 
 TILE_PAD = 2
 
@@ -367,6 +411,33 @@ def command_tile(args: argparse.Namespace) -> int:
                 }
             )
     print(f"  {15 * len(first_of_band)} transition tiles over {len(first_of_band)} bands")
+
+    # --- corners -----------------------------------------------------------------
+    #
+    # Four per band rather than a second set of mask combinations. Folding the diagonals
+    # into the edge mask would take it from four bits to eight -- 255 masks a band, two
+    # thousand tiles -- for a wedge that is the same shape however many of them a tile
+    # has. They stack instead: a tile with two diagonal neighbours draws two.
+    for band_index in sorted(first_of_band):
+        _, tile = first_of_band[band_index]
+        for corner in range(len(TRANSITION_CORNERS)):
+            name = f"corner-{band_index}-{corner}.png"
+            wedge = make_corner(tile, corner)
+            wedge.save(target / name)
+            packed.append((name, wedge))
+            manifest.append(
+                {
+                    "file": name,
+                    "subject": "corner",
+                    "width": TILE_W,
+                    "height": TILE_H,
+                    "band": band_index,
+                    "corner": corner,
+                    "averageColour": average_colour(wedge),
+                    "seam": 0.0,
+                }
+            )
+    print(f"  {len(TRANSITION_CORNERS) * len(first_of_band)} corner tiles")
 
     # --- fields ------------------------------------------------------------------
     #
