@@ -330,7 +330,7 @@ about it. Same rules: a failing test first, one commit each, the Definition of D
       toward the green their palette entries ask for.
       *Done when:* the low bands read green against the high bands' ochre, measured as
       mean hue per band rather than judged, and looked at on two maps.
-- [ ] **X4 — Starvation is not proportional to the shortfall.** Open in section F since
+- [x] **X4 — Starvation is not proportional to the shortfall.** Done. Open in section F since
       September: being five grain short does the same damage, to every unit the player
       owns, as being five hundred short. Part II made this much more visible — a pit and
       a cut ration both exist to turn a catastrophic shortfall into a small one, and at

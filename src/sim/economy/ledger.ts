@@ -463,7 +463,8 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
           missing -= drawn;
 
           shortfall[player] = missing;
-          if (missing > 0) starve(world, player, events);
+          // In proportion to what was missed, not to the fact of missing. See `starve`.
+          if (missing > 0) starve(world, player, events, needed > 0 ? missing / needed : 1);
         }
       }
     },
@@ -472,9 +473,29 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
   return economy;
 }
 
-/** Hunger falls on the troops, not the herd: eating the herd is the player's choice. */
-function starve(world: World, player: number, events: SimEvent[]): void {
-  const damage = tuning.economy.starvationDamage;
+/**
+ * Hunger falls on the people, not the herd: eating the herd is the player's choice.
+ *
+ * **In proportion to the shortfall**, which `tasks/plan.md` section F has wanted since
+ * September: being five grain short did the same damage, to every unit the player
+ * owned, as being five hundred short.
+ *
+ * That was not only harsh, it made the whole of this game's counterplay worthless. A
+ * grain pit and a cut ration both exist to turn a catastrophic shortfall into a small
+ * one, and while a small one was just as lethal neither of them bought anything at all
+ * — a village that covered 95% of its upkeep died exactly as fast as one that covered
+ * none of it. A village one grain short has not had a famine; it has had a thin week.
+ *
+ * The full figure is the CEILING rather than the new baseline, so a total failure costs
+ * exactly what it always did and nothing here makes the game harsher than it was.
+ *
+ * The event still fires for everyone, however small the miss. The alert bar is the only
+ * thing that tells a player their village is going short at all, and going quiet on a
+ * near miss would hide the warning precisely when it is still early enough to act on.
+ */
+function starve(world: World, player: number, events: SimEvent[], fraction: number): void {
+  const share = fraction < 0 ? 0 : fraction > 1 ? 1 : fraction;
+  const damage = tuning.economy.starvationDamage * share;
 
   for (let i = 0; i < world.capacity; i++) {
     if (world.alive[i] !== 1) continue;
