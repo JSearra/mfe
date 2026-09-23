@@ -306,7 +306,7 @@ about it. Same rules: a failing test first, one commit each, the Definition of D
 
 ## X. The gaps
 
-- [ ] **X1 — The three new buildings have no art.** `BUILDING_KINDS` in
+- [x] **X1 — The three new buildings have no art.** Done. `BUILDING_KINDS` in
       `render/scene/entities.ts` has five entries and the new types are 5, 6 and 7, so
       a grain pit, a weir and a goat fold all fall through to `BUILDING_KINDS[0]` and
       draw as an isibaya. Confirmed in a browser: they are featureless brown ellipses.

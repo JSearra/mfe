@@ -34,7 +34,16 @@ ISIBAYA_RADIUS = 3.4
 HUT_RADIUS = 1.15
 GRANARY_RADIUS = 0.85
 
-KINDS = ("isibaya", "umuzi", "grain-store", "ikhanda", "indlunkulu")
+KINDS = (
+    "isibaya",
+    "umuzi",
+    "grain-store",
+    "ikhanda",
+    "indlunkulu",
+    "umgodi",
+    "isiziba",
+    "goat-fold",
+)
 STAGES = 3
 
 
@@ -173,6 +182,201 @@ def build_grain_store(root, stage, thatch, timber, earth):
     cap.parent = root
 
 
+# --- the three added with Part II of the roadmap ------------------------------------
+#
+# The brief at the top of this file is that they differ in OUTLINE before they differ in
+# detail, because at forty pixels the outline is all there is. The five that came before
+# are a wide low ring, a cluster of domes, a small drum on legs, a large compound and a
+# great house — all of them ROUND and all of them standing up off the ground. So:
+#
+#   umgodi     flat. The only thing on the map with no height at all: a rim of spoil
+#              around a dark mouth. Read by its absence rather than its mass.
+#   isiziba    linear. The only straight thing on the map, laid across a watercourse
+#              rather than sitting on a patch of ground.
+#   goat-fold  square. A pen with corners, against a kraal that is a circle — which is
+#              the one distinction that has to survive, because a small round pen and a
+#              large round pen at this size are the same picture.
+
+
+def build_umgodi(root, stage, thatch, timber, earth):
+    """
+    The grain pit: a mouth in the ground with its spoil heaped around it.
+
+    Deliberately the flattest thing in the catalogue. Everything else here stands up off
+    the ground and this one goes into it, so at tile size it is told apart by having no
+    silhouette to speak of — a dark disc inside a pale ring.
+    """
+    spoil = material("spoil", (0.115, 0.080, 0.046))
+    void = material("void", (0.022, 0.016, 0.010))
+    # Darker than it looks like it should be. These values are LINEAR and the render is
+    # sRGB-encoded on the way out, so a mid grey here leaves as pale concrete — the same
+    # trap the note above `build()` records for the thatch and timber.
+    stone = material("capstone", (0.048, 0.043, 0.037))
+
+    # The ring of excavated earth. Always present: a dug pit is a dug pit from the first
+    # day, and the spoil is what says so from above.
+    bpy.ops.mesh.primitive_torus_add(
+        major_radius=0.78, minor_radius=0.22, major_segments=22, minor_segments=8,
+        location=(0, 0, 0.10),
+    )
+    rim = bpy.context.active_object
+    rim.name = "rim"
+    rim.scale = (1.0, 1.0, 0.45)
+    rim.data.materials.append(spoil)
+    rim.parent = root
+
+    if stage == 0:
+        return
+
+    # The mouth. Sunk slightly so the rim reads as standing proud of it.
+    mouth = cylinder("mouth", 0.62, 0.10, (0, 0, 0.0), verts=20)
+    mouth.data.materials.append(void)
+    mouth.parent = root
+
+    if stage == 1:
+        return
+
+    # Sealed: the capstone laid over, which is the whole of why a pit keeps grain where
+    # a basket does not. Offset a little, so it reads as a lid rather than as a floor.
+    cap = cylinder("cap", 0.56, 0.09, (0.06, 0.04, 0.11), verts=14)
+    cap.data.materials.append(stone)
+    cap.parent = root
+
+    # Stones weighting it down. THREE and irregular, not two and symmetric: two round
+    # stones either side of a disc read as a pair of eyes, which is exactly what the
+    # first render of this came out looking like.
+    for i, (x, y, r) in enumerate(((0.30, -0.20, 0.13), (-0.24, 0.20, 0.10), (0.05, 0.31, 0.08))):
+        weight = dome(f"weight_{i}", r, 0.07, (x, y, 0.13))
+        weight.data.materials.append(stone)
+        weight.parent = root
+
+
+def build_isiziba(root, stage, thatch, timber, earth):
+    """
+    The weir: a low wall laid across a watercourse, and the pool it holds.
+
+    The only straight thing in the catalogue. Everything else is built on a patch of
+    ground and is round; this one is built ACROSS something and is a bar, which is the
+    whole of how it is told apart at tile size.
+    """
+    stone = material("weir-stone", (0.068, 0.062, 0.055))
+    # Held water, not open water: duller and browner than the river the renderer paints,
+    # because a weir pool is a few inches of it over mud.
+    water = material("held-water", (0.024, 0.040, 0.044), roughness=0.3)
+
+    length = 2.9
+
+    # Stakes driven in a line: the first thing anyone does, and the stage-0 read.
+    stakes = 5 if stage == 0 else 9
+    for i in range(stakes):
+        t = (i / max(stakes - 1, 1)) - 0.5
+        stake = cylinder(
+            f"stake_{i}", 0.055, 0.55 if stage == 0 else 0.34,
+            (t * length, 0.0, 0.27 if stage == 0 else 0.17), verts=6,
+        )
+        stake.data.materials.append(timber)
+        stake.parent = root
+
+    if stage == 0:
+        return
+
+    # The wall itself, packed stone between the stakes.
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, 0.22 if stage == 1 else 0.30))
+    wall = bpy.context.active_object
+    wall.name = "wall"
+    # A size-1 cube spans -0.5..0.5, so scaling by S gives a total extent of S rather
+    # than 2S. The first pass halved every one of these and the wall stopped a third of
+    # the way along its own line of stakes.
+    wall.scale = (length, 0.30, 0.22 if stage == 1 else 0.30)
+    wall.data.materials.append(stone)
+    wall.parent = root
+
+    if stage == 1:
+        return
+
+    # The pool standing behind it. Upstream only — water on both sides would read as a
+    # bridge rather than as something holding water back.
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0.88, 0.11))
+    pool = bpy.context.active_object
+    pool.name = "pool"
+    pool.scale = (length * 0.92, 1.30, 0.06)
+    pool.data.materials.append(water)
+    pool.parent = root
+
+    # The furrow leading off. It is what makes the weir agricultural rather than
+    # structural: the point is not the wall, it is the water reaching the fields.
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(length * 0.40, -0.70, 0.10))
+    furrow = bpy.context.active_object
+    furrow.name = "furrow"
+    furrow.scale = (0.16, 1.15, 0.05)
+    furrow.data.materials.append(water)
+    furrow.parent = root
+
+
+def build_goat_fold(root, stage, thatch, timber, earth):
+    """
+    The small-stock fold: a square brush pen with a lean-to in one corner.
+
+    SQUARE, and that is the only decision here that matters. A goat fold is a small
+    cattle kraal in every respect a modeller would care about, and at forty pixels a
+    small round pen and a large round pen are the same picture — so the fold has corners
+    and the kraal does not, and the two can never be confused however far the camera
+    pulls back.
+    """
+    half = 1.35
+
+    floor = cylinder("floor", half * 1.42, 0.05, (0, 0, 0.025), verts=4)
+    floor.rotation_euler = (0, 0, math.pi / 4)
+    floor.data.materials.append(earth)
+    floor.parent = root
+
+    if stage == 0:
+        return
+
+    # Corner posts first, then the runs between them: a fence is built as a frame.
+    height = 0.95 if stage == 2 else 0.5
+    for i in range(4):
+        angle = (i / 4) * math.tau + math.pi / 4
+        post = cylinder(
+            f"corner_{i}", 0.09, height + 0.14,
+            (math.cos(angle) * half * 1.42, math.sin(angle) * half * 1.42, (height + 0.14) / 2),
+            verts=6,
+        )
+        post.data.materials.append(timber)
+        post.parent = root
+
+    if stage == 1:
+        return
+
+    # Four straight runs of packed thorn. Cubes rather than a torus, which is what
+    # keeps the corners sharp — a rounded fence is a kraal again.
+    for i in range(4):
+        angle = (i / 4) * math.tau
+        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(
+            math.cos(angle) * half, math.sin(angle) * half, height * 0.43,
+        ))
+        run = bpy.context.active_object
+        run.name = f"run_{i}"
+        run.rotation_euler = (0, 0, angle)
+        # The side of a square whose circumradius is half*1.42 is half*2.0, and a
+        # size-1 cube's extent is its scale rather than twice it. Getting either of
+        # those wrong leaves the fence short of its own corner posts, which is what the
+        # first render did.
+        run.scale = (0.16, half * 2.0, height * 0.86)
+        run.data.materials.append(thatch)
+        run.parent = root
+
+    # The lean-to the stock shelter under. One sloped slab in a corner: it is the only
+    # thing standing above the fence line and it says "kept animals" rather than "pen".
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(half * 0.58, half * 0.58, 0.80))
+    roof = bpy.context.active_object
+    roof.name = "lean-to"
+    roof.rotation_euler = (0, -0.42, math.pi / 4)
+    roof.scale = (1.15, 1.30, 0.07)
+    roof.data.materials.append(thatch)
+    roof.parent = root
+
+
 def build_ikhanda(root, stage, thatch, timber, earth):
     """
     A military homestead: a ring of houses around its own enclosure, and bigger.
@@ -265,6 +469,9 @@ BUILDERS = {
     "grain-store": build_grain_store,
     "ikhanda": build_ikhanda,
     "indlunkulu": build_indlunkulu,
+    "umgodi": build_umgodi,
+    "isiziba": build_isiziba,
+    "goat-fold": build_goat_fold,
 }
 
 FRAMING = {
@@ -274,6 +481,10 @@ FRAMING = {
     "grain-store": (3.4, 1.0),
     "ikhanda": (9.2, 1.0),
     "indlunkulu": (5.4, 1.0),
+    # The pit is tiny and flat, so it is framed close or it would be four dark pixels.
+    "umgodi": (2.6, 0.2),
+    "isiziba": (4.2, 0.4),
+    "goat-fold": (4.6, 0.6),
 }
 
 

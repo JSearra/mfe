@@ -2,6 +2,7 @@ import { Container, Graphics, Sprite } from 'pixi.js';
 import { heightAt, type Heightmap } from '../../shared/heightmap.js';
 import { worldToScreenX, worldToScreenY } from '../../shared/iso.js';
 import type { InterpolatedView } from '../interpolation.js';
+import { BuildingType } from '../../shared/buildings/index.js';
 import { presentation } from '../presentation.js';
 import { createDepthOrder } from './depthOrder.js';
 import type { SpriteAtlas } from '../assets.js';
@@ -56,7 +57,47 @@ const CLASS_MOUNTED = 2;
  * index — which needed no new atlas format and no new loading code. Three stages: a
  * cleared footprint, a half-raised frame, and the finished thing.
  */
-const BUILDING_KINDS = ['isibaya', 'umuzi', 'grain-store', 'ikhanda', 'indlunkulu'] as const;
+/**
+ * Every building's sprite, keyed by its TYPE rather than by its place in an array.
+ *
+ * It was an array indexed by type, and three buildings were added to the catalogue
+ * without it — so a grain pit, a weir and a goat fold all fell off the end and drew as
+ * `BUILDING_KINDS[0]`, a cattle enclosure. Nothing failed anywhere: the command panel
+ * listed them correctly, which is what got checked, and the map was not looked at.
+ *
+ * A record keyed by the enum cannot go short in silence. Adding a building type without
+ * art is now a typecheck failure here, and `test/spriteKind.test.ts` asserts that no two
+ * of them share a silhouette.
+ */
+const BUILDING_SPRITES: Readonly<Record<BuildingType, string>> = {
+  [BuildingType.Isibaya]: 'isibaya',
+  [BuildingType.Umuzi]: 'umuzi',
+  [BuildingType.GrainStore]: 'grain-store',
+  [BuildingType.Ikhanda]: 'ikhanda',
+  [BuildingType.Indlunkulu]: 'indlunkulu',
+  [BuildingType.Umgodi]: 'umgodi',
+  [BuildingType.Isiziba]: 'isiziba',
+  [BuildingType.IsibayaSezimbuzi]: 'goat-fold',
+};
+
+/** Every sprite name the buildings use, for the atlas and for the tests. */
+export const BUILDING_KINDS: readonly string[] = Object.values(BUILDING_SPRITES);
+
+/**
+ * A homestead, deliberately.
+ *
+ * An unknown type is a snapshot from a newer build, and it has to draw as SOMETHING —
+ * but the something should be a decision rather than an accident of array order, which
+ * is what made the original defect so quiet. A homestead is the most ordinary structure
+ * on the map and the least likely to be mistaken for a claim about what the thing does.
+ */
+const UNKNOWN_BUILDING = 'umuzi';
+
+/** Which sprite draws a building of this type. */
+export function buildingSpriteKind(type: number): string {
+  return BUILDING_SPRITES[type as BuildingType] ?? UNKNOWN_BUILDING;
+}
+
 const BUILD_STAGES = 3;
 
 const TAU = Math.PI * 2;
@@ -70,7 +111,7 @@ const TAU = Math.PI * 2;
  */
 function spriteKind(kind: number, subtype: number, handle: number, role = 0): string {
   if (kind === KIND_CATTLE) return (handle & 1) === 0 ? 'nguni' : 'nguni-dark';
-  if (kind === KIND_BUILDING) return BUILDING_KINDS[subtype] ?? BUILDING_KINDS[0];
+  if (kind === KIND_BUILDING) return buildingSpriteKind(subtype);
   if (subtype === CLASS_MOUNTED) return 'commando';
   // A villager is drawn as whatever she is doing. The role rides in the high nibble of
   // the flags byte the snapshot already carries — see src/sim/roles.ts.
