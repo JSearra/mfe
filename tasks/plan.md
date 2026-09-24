@@ -468,7 +468,11 @@ Left open, in the order they seem worth doing:
       variation returns the quilt of blue lozenges that `smoothWaterDepth` was written to
       remove, so anything here has to vary at sub-tile scale, which a flat Graphics fill
       cannot do.
-- [ ] **V2 — The hard bands are twice the contrast of the soft ones.** Per-tile contrast
+- [x] **V2 — The hard bands are twice the contrast of the soft ones.** Done:
+      `lift_shadows` in postprocess.py scales the below-mean half of any tile over a
+      spread of 22 by the one factor that brings it to 22. Donga 29.0 -> 22.4 (darkest
+      fiftieth 31 -> 58), rock 27.6 -> 22.2 (19 -> 44); highlights, hue and plate size
+      untouched. Was: Per-tile contrast
       runs 14 to 21 for bands 0-4 and 29.9 (donga) and 27.2 (rock) for the broken ones,
       whose darkest fifty-first pixel reaches luminance 35 on a base of 175. Large
       expanses of donga dominate any frame they are in. Before touching it: the coarse

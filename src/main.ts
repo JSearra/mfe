@@ -830,6 +830,29 @@ async function main(options: GameOptions): Promise<void> {
         camera.x = worldToScreenX(tileX + 0.5, tileY + 0.5);
         camera.y = worldToScreenY(tileX + 0.5, tileY + 0.5, heightAt(map, tileX, tileY));
       },
+      // The tile nearest the map's centre wearing this ground band, surrounded by it, for
+      // photographing one kind of ground. Read from the renderer's own ground field.
+      nearestGround: (band: number) => {
+        let best: [number, number] | null = null;
+        let bestDistance = Infinity;
+        for (let y = 3; y < map.height - 3; y++) {
+          for (let x = 3; x < map.width - 3; x++) {
+            let all = true;
+            for (let dy = -3; dy <= 3 && all; dy++) {
+              for (let dx = -3; dx <= 3 && all; dx++) {
+                if (groundField[(y + dy) * map.width + x + dx] !== band) all = false;
+              }
+            }
+            if (!all) continue;
+            const d = (x - map.width / 2) ** 2 + (y - map.height / 2) ** 2;
+            if (d < bestDistance) {
+              bestDistance = d;
+              best = [x, y];
+            }
+          }
+        }
+        return best;
+      },
       // The open-water tile nearest the camera's tile with water on every side, from the
       // renderer's own copy of the map, or null on a dry map.
       nearestWater: () => {

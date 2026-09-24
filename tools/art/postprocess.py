@@ -429,9 +429,56 @@ def make_tile(
     resized = source.convert("RGBA").resize((TILE_W, TILE_H), Image.Resampling.LANCZOS)
     toned = harmonise(resized, band, strength)
 
-    pixels = np.array(toned)
+    pixels = lift_shadows(np.array(toned), diamond_mask(TILE_W, TILE_H))
     pixels[:, :, 3] = np.where(diamond_mask(TILE_W, TILE_H), 255, 0)
     return Image.fromarray(pixels, "RGBA")
+
+
+CONTRAST_CEILING = 22.0
+"""Per-tile luminance spread above which a tile's shadows are lifted. Soft bands run 14-21."""
+
+
+def lift_shadows(pixels: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    """
+    Pull the shadows of an over-contrasty tile up toward its mean (plan V2).
+
+    The broken grounds — donga floor, basalt — came out at twice the per-tile contrast of
+    every other band, 29.9 and 27.2 against 14 to 21, with the darkest fiftieth of a
+    donga tile at luminance 35 on a base of 175. A large expanse of either dominated any
+    frame it was in. The size of the plates is settled and documented in
+    generate_tiles.py (finer cracks came back as flat orange three times); what was out
+    of line is how deep their SHADOWS go, so only those move.
+
+    Pixels darker than the tile's mean have their distance below it scaled by the one
+    factor that brings the tile's spread to CONTRAST_CEILING. Highlights, hue and the
+    mean are untouched, and a tile already under the ceiling is returned as it came.
+    """
+    rgb = pixels[:, :, :3].astype(np.float64)
+    lum = rgb[:, :, 0] * 0.2126 + rgb[:, :, 1] * 0.7152 + rgb[:, :, 2] * 0.0722
+    inside = lum[mask]
+    mean = float(inside.mean())
+    if float(inside.std()) <= CONTRAST_CEILING:
+        return pixels
+
+    def spread(factor: float) -> float:
+        deviation = inside - mean
+        return float(np.where(deviation < 0, deviation * factor, deviation).std())
+
+    low, high = 0.0, 1.0
+    for _ in range(30):
+        middle = (low + high) / 2
+        if spread(middle) > CONTRAST_CEILING:
+            high = middle
+        else:
+            low = middle
+    factor = low
+
+    deviation = lum - mean
+    target = np.where(deviation < 0, mean + deviation * factor, lum)
+    scale = target / np.maximum(lum, 1e-6)
+    out = pixels.copy()
+    out[:, :, :3] = np.clip(rgb * scale[:, :, None], 0, 255).astype(np.uint8)
+    return out
 
 
 def trim(image: Image.Image) -> tuple[Image.Image, int, int]:

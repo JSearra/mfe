@@ -8,7 +8,7 @@
       "width": 64,
       "height": 32,
       "band": 5,
-      "averageColour": "#af6237",
+      "averageColour": "#b86639",
       "seam": 0.1764,
       "x": 2,
       "y": 2
@@ -19,7 +19,7 @@
       "width": 64,
       "height": 32,
       "band": 5,
-      "averageColour": "#ac6136",
+      "averageColour": "#b76639",
       "seam": 0.1764,
       "x": 70,
       "y": 2
@@ -30,7 +30,7 @@
       "width": 64,
       "height": 32,
       "band": 5,
-      "averageColour": "#b36438",
+      "averageColour": "#bb683a",
       "seam": 0.1764,
       "x": 138,
       "y": 2
@@ -41,7 +41,7 @@
       "width": 64,
       "height": 32,
       "band": 5,
-      "averageColour": "#ad6137",
+      "averageColour": "#b9673a",
       "seam": 0.1764,
       "x": 206,
       "y": 2
@@ -52,7 +52,7 @@
       "width": 64,
       "height": 32,
       "band": 5,
-      "averageColour": "#ad6237",
+      "averageColour": "#b26538",
       "seam": 0.1383,
       "x": 274,
       "y": 2
@@ -63,7 +63,7 @@
       "width": 64,
       "height": 32,
       "band": 5,
-      "averageColour": "#b16438",
+      "averageColour": "#b56739",
       "seam": 0.1383,
       "x": 342,
       "y": 2
@@ -74,7 +74,7 @@
       "width": 64,
       "height": 32,
       "band": 5,
-      "averageColour": "#ae6337",
+      "averageColour": "#b36539",
       "seam": 0.1383,
       "x": 410,
       "y": 2
@@ -85,7 +85,7 @@
       "width": 64,
       "height": 32,
       "band": 5,
-      "averageColour": "#af6438",
+      "averageColour": "#b36639",
       "seam": 0.1383,
       "x": 478,
       "y": 2
@@ -96,7 +96,7 @@
       "width": 64,
       "height": 32,
       "band": 5,
-      "averageColour": "#ae6438",
+      "averageColour": "#b26639",
       "seam": 0.1126,
       "x": 2,
       "y": 38
@@ -107,7 +107,7 @@
       "width": 64,
       "height": 32,
       "band": 5,
-      "averageColour": "#ae6438",
+      "averageColour": "#b26639",
       "seam": 0.1126,
       "x": 70,
       "y": 38
@@ -118,7 +118,7 @@
       "width": 64,
       "height": 32,
       "band": 5,
-      "averageColour": "#b06538",
+      "averageColour": "#b26639",
       "seam": 0.1126,
       "x": 138,
       "y": 38
@@ -129,7 +129,7 @@
       "width": 64,
       "height": 32,
       "band": 5,
-      "averageColour": "#ae6438",
+      "averageColour": "#b26639",
       "seam": 0.1126,
       "x": 206,
       "y": 38
@@ -272,7 +272,7 @@
       "width": 64,
       "height": 32,
       "band": 7,
-      "averageColour": "#514a43",
+      "averageColour": "#575049",
       "seam": 0.1657,
       "x": 2,
       "y": 110
@@ -283,7 +283,7 @@
       "width": 64,
       "height": 32,
       "band": 7,
-      "averageColour": "#514b44",
+      "averageColour": "#554f48",
       "seam": 0.1657,
       "x": 70,
       "y": 110
@@ -294,7 +294,7 @@
       "width": 64,
       "height": 32,
       "band": 7,
-      "averageColour": "#5a5045",
+      "averageColour": "#60554a",
       "seam": 0.1657,
       "x": 138,
       "y": 110
@@ -305,7 +305,7 @@
       "width": 64,
       "height": 32,
       "band": 7,
-      "averageColour": "#594e42",
+      "averageColour": "#5a4f43",
       "seam": 0.1657,
       "x": 206,
       "y": 110
@@ -316,7 +316,7 @@
       "width": 64,
       "height": 32,
       "band": 7,
-      "averageColour": "#544d46",
+      "averageColour": "#585049",
       "seam": 0.1691,
       "x": 274,
       "y": 110
@@ -327,7 +327,7 @@
       "width": 64,
       "height": 32,
       "band": 7,
-      "averageColour": "#5a5149",
+      "averageColour": "#645950",
       "seam": 0.1691,
       "x": 342,
       "y": 110
@@ -338,7 +338,7 @@
       "width": 64,
       "height": 32,
       "band": 7,
-      "averageColour": "#554d46",
+      "averageColour": "#595149",
       "seam": 0.1691,
       "x": 410,
       "y": 110
@@ -349,7 +349,7 @@
       "width": 64,
       "height": 32,
       "band": 7,
-      "averageColour": "#584f46",
+      "averageColour": "#5d534a",
       "seam": 0.1691,
       "x": 478,
       "y": 110
@@ -360,7 +360,7 @@
       "width": 64,
       "height": 32,
       "band": 7,
-      "averageColour": "#554f47",
+      "averageColour": "#59534a",
       "seam": 0.1289,
       "x": 2,
       "y": 146
@@ -371,7 +371,7 @@
       "width": 64,
       "height": 32,
       "band": 7,
-      "averageColour": "#575148",
+      "averageColour": "#5a534a",
       "seam": 0.1289,
       "x": 70,
       "y": 146
@@ -382,7 +382,7 @@
       "width": 64,
       "height": 32,
       "band": 7,
-      "averageColour": "#534e46",
+      "averageColour": "#565148",
       "seam": 0.1289,
       "x": 138,
       "y": 146
@@ -393,7 +393,7 @@
       "width": 64,
       "height": 32,
       "band": 7,
-      "averageColour": "#544e46",
+      "averageColour": "#585249",
       "seam": 0.1289,
       "x": 206,
       "y": 146
@@ -437,7 +437,7 @@
       "width": 64,
       "height": 32,
       "band": 6,
-      "averageColour": "#d5b67f",
+      "averageColour": "#d6b67f",
       "seam": 0.2302,
       "x": 478,
       "y": 146
@@ -525,7 +525,7 @@
       "width": 64,
       "height": 32,
       "band": 6,
-      "averageColour": "#ceaf78",
+      "averageColour": "#d2b27b",
       "seam": 0.2126,
       "x": 478,
       "y": 182
@@ -536,7 +536,7 @@
       "width": 64,
       "height": 32,
       "band": 3,
-      "averageColour": "#908943",
+      "averageColour": "#948c44",
       "seam": 0.2137,
       "x": 2,
       "y": 218
@@ -547,7 +547,7 @@
       "width": 64,
       "height": 32,
       "band": 3,
-      "averageColour": "#918943",
+      "averageColour": "#958d45",
       "seam": 0.2137,
       "x": 70,
       "y": 218
@@ -569,7 +569,7 @@
       "width": 64,
       "height": 32,
       "band": 3,
-      "averageColour": "#908541",
+      "averageColour": "#908642",
       "seam": 0.2137,
       "x": 206,
       "y": 218
@@ -580,7 +580,7 @@
       "width": 64,
       "height": 32,
       "band": 3,
-      "averageColour": "#928844",
+      "averageColour": "#948a45",
       "seam": 0.0742,
       "x": 274,
       "y": 218
@@ -591,7 +591,7 @@
       "width": 64,
       "height": 32,
       "band": 3,
-      "averageColour": "#8f8743",
+      "averageColour": "#948b45",
       "seam": 0.0742,
       "x": 342,
       "y": 218
@@ -602,7 +602,7 @@
       "width": 64,
       "height": 32,
       "band": 3,
-      "averageColour": "#918543",
+      "averageColour": "#938843",
       "seam": 0.0742,
       "x": 410,
       "y": 218
@@ -613,7 +613,7 @@
       "width": 64,
       "height": 32,
       "band": 3,
-      "averageColour": "#908642",
+      "averageColour": "#938844",
       "seam": 0.0742,
       "x": 478,
       "y": 218
@@ -2201,7 +2201,7 @@
       "band": 3,
       "mask": 1,
       "variant": 0,
-      "averageColour": "#908b44",
+      "averageColour": "#948f45",
       "seam": 0.0,
       "x": 70,
       "y": 794
@@ -2215,7 +2215,7 @@
       "band": 3,
       "mask": 1,
       "variant": 1,
-      "averageColour": "#888340",
+      "averageColour": "#8d8842",
       "seam": 0.0,
       "x": 138,
       "y": 794
@@ -2229,7 +2229,7 @@
       "band": 3,
       "mask": 1,
       "variant": 2,
-      "averageColour": "#8a8440",
+      "averageColour": "#8f8943",
       "seam": 0.0,
       "x": 206,
       "y": 794
@@ -2243,7 +2243,7 @@
       "band": 3,
       "mask": 1,
       "variant": 3,
-      "averageColour": "#8a8641",
+      "averageColour": "#8f8a43",
       "seam": 0.0,
       "x": 274,
       "y": 794
@@ -2257,7 +2257,7 @@
       "band": 3,
       "mask": 2,
       "variant": 0,
-      "averageColour": "#8d8742",
+      "averageColour": "#918b43",
       "seam": 0.0,
       "x": 342,
       "y": 794
@@ -2271,7 +2271,7 @@
       "band": 3,
       "mask": 2,
       "variant": 1,
-      "averageColour": "#8c8641",
+      "averageColour": "#908a43",
       "seam": 0.0,
       "x": 410,
       "y": 794
@@ -2285,7 +2285,7 @@
       "band": 3,
       "mask": 2,
       "variant": 2,
-      "averageColour": "#8f8842",
+      "averageColour": "#928b44",
       "seam": 0.0,
       "x": 478,
       "y": 794
@@ -2299,7 +2299,7 @@
       "band": 3,
       "mask": 2,
       "variant": 3,
-      "averageColour": "#8b8541",
+      "averageColour": "#8f8943",
       "seam": 0.0,
       "x": 2,
       "y": 830
@@ -2313,7 +2313,7 @@
       "band": 3,
       "mask": 3,
       "variant": 0,
-      "averageColour": "#8f8842",
+      "averageColour": "#938c44",
       "seam": 0.0,
       "x": 70,
       "y": 830
@@ -2327,7 +2327,7 @@
       "band": 3,
       "mask": 4,
       "variant": 0,
-      "averageColour": "#978d45",
+      "averageColour": "#998f46",
       "seam": 0.0,
       "x": 138,
       "y": 830
@@ -2341,7 +2341,7 @@
       "band": 3,
       "mask": 4,
       "variant": 1,
-      "averageColour": "#958b45",
+      "averageColour": "#988e46",
       "seam": 0.0,
       "x": 206,
       "y": 830
@@ -2355,7 +2355,7 @@
       "band": 3,
       "mask": 4,
       "variant": 2,
-      "averageColour": "#978c45",
+      "averageColour": "#9a8f46",
       "seam": 0.0,
       "x": 274,
       "y": 830
@@ -2369,7 +2369,7 @@
       "band": 3,
       "mask": 4,
       "variant": 3,
-      "averageColour": "#958b45",
+      "averageColour": "#988e46",
       "seam": 0.0,
       "x": 342,
       "y": 830
@@ -2383,7 +2383,7 @@
       "band": 3,
       "mask": 5,
       "variant": 0,
-      "averageColour": "#918a43",
+      "averageColour": "#948d45",
       "seam": 0.0,
       "x": 410,
       "y": 830
@@ -2397,7 +2397,7 @@
       "band": 3,
       "mask": 6,
       "variant": 0,
-      "averageColour": "#948b44",
+      "averageColour": "#978e46",
       "seam": 0.0,
       "x": 478,
       "y": 830
@@ -2411,7 +2411,7 @@
       "band": 3,
       "mask": 7,
       "variant": 0,
-      "averageColour": "#928a44",
+      "averageColour": "#958d45",
       "seam": 0.0,
       "x": 2,
       "y": 866
@@ -2425,7 +2425,7 @@
       "band": 3,
       "mask": 8,
       "variant": 0,
-      "averageColour": "#938b44",
+      "averageColour": "#978e46",
       "seam": 0.0,
       "x": 70,
       "y": 866
@@ -2439,7 +2439,7 @@
       "band": 3,
       "mask": 8,
       "variant": 1,
-      "averageColour": "#948b44",
+      "averageColour": "#978e46",
       "seam": 0.0,
       "x": 138,
       "y": 866
@@ -2453,7 +2453,7 @@
       "band": 3,
       "mask": 8,
       "variant": 2,
-      "averageColour": "#908943",
+      "averageColour": "#948c45",
       "seam": 0.0,
       "x": 206,
       "y": 866
@@ -2467,7 +2467,7 @@
       "band": 3,
       "mask": 8,
       "variant": 3,
-      "averageColour": "#908843",
+      "averageColour": "#938c44",
       "seam": 0.0,
       "x": 274,
       "y": 866
@@ -2481,7 +2481,7 @@
       "band": 3,
       "mask": 9,
       "variant": 0,
-      "averageColour": "#918a43",
+      "averageColour": "#958d45",
       "seam": 0.0,
       "x": 342,
       "y": 866
@@ -2495,7 +2495,7 @@
       "band": 3,
       "mask": 10,
       "variant": 0,
-      "averageColour": "#918943",
+      "averageColour": "#958d45",
       "seam": 0.0,
       "x": 410,
       "y": 866
@@ -2509,7 +2509,7 @@
       "band": 3,
       "mask": 11,
       "variant": 0,
-      "averageColour": "#908843",
+      "averageColour": "#948c44",
       "seam": 0.0,
       "x": 478,
       "y": 866
@@ -2523,7 +2523,7 @@
       "band": 3,
       "mask": 12,
       "variant": 0,
-      "averageColour": "#928943",
+      "averageColour": "#958d45",
       "seam": 0.0,
       "x": 2,
       "y": 902
@@ -2537,7 +2537,7 @@
       "band": 3,
       "mask": 13,
       "variant": 0,
-      "averageColour": "#908943",
+      "averageColour": "#948c45",
       "seam": 0.0,
       "x": 70,
       "y": 902
@@ -2551,7 +2551,7 @@
       "band": 3,
       "mask": 14,
       "variant": 0,
-      "averageColour": "#918943",
+      "averageColour": "#958c45",
       "seam": 0.0,
       "x": 138,
       "y": 902
@@ -2565,7 +2565,7 @@
       "band": 3,
       "mask": 15,
       "variant": 0,
-      "averageColour": "#908943",
+      "averageColour": "#948c45",
       "seam": 0.0,
       "x": 206,
       "y": 902
@@ -2957,7 +2957,7 @@
       "band": 5,
       "mask": 1,
       "variant": 0,
-      "averageColour": "#b16337",
+      "averageColour": "#b9673a",
       "seam": 0.0,
       "x": 478,
       "y": 1010
@@ -2971,7 +2971,7 @@
       "band": 5,
       "mask": 1,
       "variant": 1,
-      "averageColour": "#ac6036",
+      "averageColour": "#b56539",
       "seam": 0.0,
       "x": 2,
       "y": 1046
@@ -2985,7 +2985,7 @@
       "band": 5,
       "mask": 1,
       "variant": 2,
-      "averageColour": "#af6237",
+      "averageColour": "#b76639",
       "seam": 0.0,
       "x": 70,
       "y": 1046
@@ -2999,7 +2999,7 @@
       "band": 5,
       "mask": 1,
       "variant": 3,
-      "averageColour": "#ae6237",
+      "averageColour": "#b86639",
       "seam": 0.0,
       "x": 138,
       "y": 1046
@@ -3013,7 +3013,7 @@
       "band": 5,
       "mask": 2,
       "variant": 0,
-      "averageColour": "#ae6137",
+      "averageColour": "#b76639",
       "seam": 0.0,
       "x": 206,
       "y": 1046
@@ -3027,7 +3027,7 @@
       "band": 5,
       "mask": 2,
       "variant": 1,
-      "averageColour": "#ae6137",
+      "averageColour": "#b76639",
       "seam": 0.0,
       "x": 274,
       "y": 1046
@@ -3041,7 +3041,7 @@
       "band": 5,
       "mask": 2,
       "variant": 2,
-      "averageColour": "#ad6136",
+      "averageColour": "#b66639",
       "seam": 0.0,
       "x": 342,
       "y": 1046
@@ -3055,7 +3055,7 @@
       "band": 5,
       "mask": 2,
       "variant": 3,
-      "averageColour": "#b06337",
+      "averageColour": "#b9673a",
       "seam": 0.0,
       "x": 410,
       "y": 1046
@@ -3069,7 +3069,7 @@
       "band": 5,
       "mask": 3,
       "variant": 0,
-      "averageColour": "#ad6136",
+      "averageColour": "#b66639",
       "seam": 0.0,
       "x": 478,
       "y": 1046
@@ -3083,7 +3083,7 @@
       "band": 5,
       "mask": 4,
       "variant": 0,
-      "averageColour": "#b06237",
+      "averageColour": "#b8673a",
       "seam": 0.0,
       "x": 2,
       "y": 1082
@@ -3097,7 +3097,7 @@
       "band": 5,
       "mask": 4,
       "variant": 1,
-      "averageColour": "#ae6237",
+      "averageColour": "#b76639",
       "seam": 0.0,
       "x": 70,
       "y": 1082
@@ -3111,7 +3111,7 @@
       "band": 5,
       "mask": 4,
       "variant": 2,
-      "averageColour": "#af6237",
+      "averageColour": "#b8673a",
       "seam": 0.0,
       "x": 138,
       "y": 1082
@@ -3125,7 +3125,7 @@
       "band": 5,
       "mask": 4,
       "variant": 3,
-      "averageColour": "#b16338",
+      "averageColour": "#ba683a",
       "seam": 0.0,
       "x": 206,
       "y": 1082
@@ -3139,7 +3139,7 @@
       "band": 5,
       "mask": 5,
       "variant": 0,
-      "averageColour": "#ae6136",
+      "averageColour": "#b76639",
       "seam": 0.0,
       "x": 274,
       "y": 1082
@@ -3153,7 +3153,7 @@
       "band": 5,
       "mask": 6,
       "variant": 0,
-      "averageColour": "#ad6136",
+      "averageColour": "#b76639",
       "seam": 0.0,
       "x": 342,
       "y": 1082
@@ -3167,7 +3167,7 @@
       "band": 5,
       "mask": 7,
       "variant": 0,
-      "averageColour": "#af6237",
+      "averageColour": "#b86639",
       "seam": 0.0,
       "x": 410,
       "y": 1082
@@ -3181,7 +3181,7 @@
       "band": 5,
       "mask": 8,
       "variant": 0,
-      "averageColour": "#b26338",
+      "averageColour": "#ba683a",
       "seam": 0.0,
       "x": 478,
       "y": 1082
@@ -3195,7 +3195,7 @@
       "band": 5,
       "mask": 8,
       "variant": 1,
-      "averageColour": "#b16338",
+      "averageColour": "#ba683a",
       "seam": 0.0,
       "x": 2,
       "y": 1118
@@ -3209,7 +3209,7 @@
       "band": 5,
       "mask": 8,
       "variant": 2,
-      "averageColour": "#ae6137",
+      "averageColour": "#b76639",
       "seam": 0.0,
       "x": 70,
       "y": 1118
@@ -3223,7 +3223,7 @@
       "band": 5,
       "mask": 8,
       "variant": 3,
-      "averageColour": "#b06237",
+      "averageColour": "#b9673a",
       "seam": 0.0,
       "x": 138,
       "y": 1118
@@ -3237,7 +3237,7 @@
       "band": 5,
       "mask": 9,
       "variant": 0,
-      "averageColour": "#b16337",
+      "averageColour": "#b9673a",
       "seam": 0.0,
       "x": 206,
       "y": 1118
@@ -3251,7 +3251,7 @@
       "band": 5,
       "mask": 10,
       "variant": 0,
-      "averageColour": "#ae6137",
+      "averageColour": "#b76639",
       "seam": 0.0,
       "x": 274,
       "y": 1118
@@ -3265,7 +3265,7 @@
       "band": 5,
       "mask": 11,
       "variant": 0,
-      "averageColour": "#af6237",
+      "averageColour": "#b8673a",
       "seam": 0.0,
       "x": 342,
       "y": 1118
@@ -3279,7 +3279,7 @@
       "band": 5,
       "mask": 12,
       "variant": 0,
-      "averageColour": "#b16337",
+      "averageColour": "#ba683a",
       "seam": 0.0,
       "x": 410,
       "y": 1118
@@ -3293,7 +3293,7 @@
       "band": 5,
       "mask": 13,
       "variant": 0,
-      "averageColour": "#af6237",
+      "averageColour": "#b86639",
       "seam": 0.0,
       "x": 478,
       "y": 1118
@@ -3307,7 +3307,7 @@
       "band": 5,
       "mask": 14,
       "variant": 0,
-      "averageColour": "#ad6136",
+      "averageColour": "#b76639",
       "seam": 0.0,
       "x": 2,
       "y": 1154
@@ -3321,7 +3321,7 @@
       "band": 5,
       "mask": 15,
       "variant": 0,
-      "averageColour": "#ae6237",
+      "averageColour": "#b76639",
       "seam": 0.0,
       "x": 70,
       "y": 1154
@@ -3713,7 +3713,7 @@
       "band": 7,
       "mask": 1,
       "variant": 0,
-      "averageColour": "#4f4a44",
+      "averageColour": "#56504a",
       "seam": 0.0,
       "x": 342,
       "y": 1262
@@ -3727,7 +3727,7 @@
       "band": 7,
       "mask": 1,
       "variant": 1,
-      "averageColour": "#4e4a44",
+      "averageColour": "#55504a",
       "seam": 0.0,
       "x": 410,
       "y": 1262
@@ -3741,7 +3741,7 @@
       "band": 7,
       "mask": 1,
       "variant": 2,
-      "averageColour": "#4f4a44",
+      "averageColour": "#55504a",
       "seam": 0.0,
       "x": 478,
       "y": 1262
@@ -3755,7 +3755,7 @@
       "band": 7,
       "mask": 1,
       "variant": 3,
-      "averageColour": "#514c47",
+      "averageColour": "#57524c",
       "seam": 0.0,
       "x": 2,
       "y": 1298
@@ -3769,7 +3769,7 @@
       "band": 7,
       "mask": 2,
       "variant": 0,
-      "averageColour": "#554c44",
+      "averageColour": "#5a5149",
       "seam": 0.0,
       "x": 70,
       "y": 1298
@@ -3783,7 +3783,7 @@
       "band": 7,
       "mask": 2,
       "variant": 1,
-      "averageColour": "#564d44",
+      "averageColour": "#5b5148",
       "seam": 0.0,
       "x": 138,
       "y": 1298
@@ -3797,7 +3797,7 @@
       "band": 7,
       "mask": 2,
       "variant": 2,
-      "averageColour": "#564c43",
+      "averageColour": "#5b5147",
       "seam": 0.0,
       "x": 206,
       "y": 1298
@@ -3811,7 +3811,7 @@
       "band": 7,
       "mask": 2,
       "variant": 3,
-      "averageColour": "#524a42",
+      "averageColour": "#585047",
       "seam": 0.0,
       "x": 274,
       "y": 1298
@@ -3825,7 +3825,7 @@
       "band": 7,
       "mask": 3,
       "variant": 0,
-      "averageColour": "#524a43",
+      "averageColour": "#585048",
       "seam": 0.0,
       "x": 342,
       "y": 1298
@@ -3839,7 +3839,7 @@
       "band": 7,
       "mask": 4,
       "variant": 0,
-      "averageColour": "#554c43",
+      "averageColour": "#5b5148",
       "seam": 0.0,
       "x": 410,
       "y": 1298
@@ -3853,7 +3853,7 @@
       "band": 7,
       "mask": 4,
       "variant": 1,
-      "averageColour": "#544c43",
+      "averageColour": "#5b5149",
       "seam": 0.0,
       "x": 478,
       "y": 1298
@@ -3867,7 +3867,7 @@
       "band": 7,
       "mask": 4,
       "variant": 2,
-      "averageColour": "#564c43",
+      "averageColour": "#5c5249",
       "seam": 0.0,
       "x": 2,
       "y": 1334
@@ -3881,7 +3881,7 @@
       "band": 7,
       "mask": 4,
       "variant": 3,
-      "averageColour": "#554c44",
+      "averageColour": "#5b524a",
       "seam": 0.0,
       "x": 70,
       "y": 1334
@@ -3895,7 +3895,7 @@
       "band": 7,
       "mask": 5,
       "variant": 0,
-      "averageColour": "#524b44",
+      "averageColour": "#58514a",
       "seam": 0.0,
       "x": 138,
       "y": 1334
@@ -3909,7 +3909,7 @@
       "band": 7,
       "mask": 6,
       "variant": 0,
-      "averageColour": "#514a43",
+      "averageColour": "#575048",
       "seam": 0.0,
       "x": 206,
       "y": 1334
@@ -3923,7 +3923,7 @@
       "band": 7,
       "mask": 7,
       "variant": 0,
-      "averageColour": "#524b44",
+      "averageColour": "#58514a",
       "seam": 0.0,
       "x": 274,
       "y": 1334
@@ -3937,7 +3937,7 @@
       "band": 7,
       "mask": 8,
       "variant": 0,
-      "averageColour": "#4f4b45",
+      "averageColour": "#56524c",
       "seam": 0.0,
       "x": 342,
       "y": 1334
@@ -3951,7 +3951,7 @@
       "band": 7,
       "mask": 8,
       "variant": 1,
-      "averageColour": "#4e4944",
+      "averageColour": "#55514b",
       "seam": 0.0,
       "x": 410,
       "y": 1334
@@ -3965,7 +3965,7 @@
       "band": 7,
       "mask": 8,
       "variant": 2,
-      "averageColour": "#4d4944",
+      "averageColour": "#55504b",
       "seam": 0.0,
       "x": 478,
       "y": 1334
@@ -3979,7 +3979,7 @@
       "band": 7,
       "mask": 8,
       "variant": 3,
-      "averageColour": "#4d4944",
+      "averageColour": "#55504b",
       "seam": 0.0,
       "x": 2,
       "y": 1370
@@ -3993,7 +3993,7 @@
       "band": 7,
       "mask": 9,
       "variant": 0,
-      "averageColour": "#4d4843",
+      "averageColour": "#544f4a",
       "seam": 0.0,
       "x": 70,
       "y": 1370
@@ -4007,7 +4007,7 @@
       "band": 7,
       "mask": 10,
       "variant": 0,
-      "averageColour": "#544d45",
+      "averageColour": "#5a524a",
       "seam": 0.0,
       "x": 138,
       "y": 1370
@@ -4021,7 +4021,7 @@
       "band": 7,
       "mask": 11,
       "variant": 0,
-      "averageColour": "#524b44",
+      "averageColour": "#58514a",
       "seam": 0.0,
       "x": 206,
       "y": 1370
@@ -4035,7 +4035,7 @@
       "band": 7,
       "mask": 12,
       "variant": 0,
-      "averageColour": "#524b43",
+      "averageColour": "#595149",
       "seam": 0.0,
       "x": 274,
       "y": 1370
@@ -4049,7 +4049,7 @@
       "band": 7,
       "mask": 13,
       "variant": 0,
-      "averageColour": "#524b44",
+      "averageColour": "#58514a",
       "seam": 0.0,
       "x": 342,
       "y": 1370
@@ -4063,7 +4063,7 @@
       "band": 7,
       "mask": 14,
       "variant": 0,
-      "averageColour": "#534c44",
+      "averageColour": "#59514a",
       "seam": 0.0,
       "x": 410,
       "y": 1370
@@ -4077,7 +4077,7 @@
       "band": 7,
       "mask": 15,
       "variant": 0,
-      "averageColour": "#514a43",
+      "averageColour": "#575049",
       "seam": 0.0,
       "x": 478,
       "y": 1370
@@ -4714,7 +4714,7 @@
       "band": 3,
       "corner": 0,
       "variant": 0,
-      "averageColour": "#959347",
+      "averageColour": "#989648",
       "seam": 0.0,
       "x": 2,
       "y": 1622
@@ -4727,7 +4727,7 @@
       "band": 3,
       "corner": 0,
       "variant": 1,
-      "averageColour": "#8c8742",
+      "averageColour": "#908b44",
       "seam": 0.0,
       "x": 70,
       "y": 1622
@@ -4740,7 +4740,7 @@
       "band": 3,
       "corner": 0,
       "variant": 2,
-      "averageColour": "#939146",
+      "averageColour": "#969448",
       "seam": 0.0,
       "x": 138,
       "y": 1622
@@ -4753,7 +4753,7 @@
       "band": 3,
       "corner": 0,
       "variant": 3,
-      "averageColour": "#8f8b44",
+      "averageColour": "#938f46",
       "seam": 0.0,
       "x": 206,
       "y": 1622
@@ -4766,7 +4766,7 @@
       "band": 3,
       "corner": 1,
       "variant": 0,
-      "averageColour": "#978f46",
+      "averageColour": "#999147",
       "seam": 0.0,
       "x": 274,
       "y": 1622
@@ -4779,7 +4779,7 @@
       "band": 3,
       "corner": 1,
       "variant": 1,
-      "averageColour": "#988b44",
+      "averageColour": "#9a8d45",
       "seam": 0.0,
       "x": 342,
       "y": 1622
@@ -4792,7 +4792,7 @@
       "band": 3,
       "corner": 1,
       "variant": 2,
-      "averageColour": "#a19147",
+      "averageColour": "#a19248",
       "seam": 0.0,
       "x": 410,
       "y": 1622
@@ -4805,7 +4805,7 @@
       "band": 3,
       "corner": 1,
       "variant": 3,
-      "averageColour": "#958c45",
+      "averageColour": "#978f45",
       "seam": 0.0,
       "x": 478,
       "y": 1622
@@ -4818,7 +4818,7 @@
       "band": 3,
       "corner": 2,
       "variant": 0,
-      "averageColour": "#a9964b",
+      "averageColour": "#aa964b",
       "seam": 0.0,
       "x": 2,
       "y": 1658
@@ -4831,7 +4831,7 @@
       "band": 3,
       "corner": 2,
       "variant": 1,
-      "averageColour": "#a6944a",
+      "averageColour": "#a7954b",
       "seam": 0.0,
       "x": 70,
       "y": 1658
@@ -4844,7 +4844,7 @@
       "band": 3,
       "corner": 2,
       "variant": 2,
-      "averageColour": "#8d8642",
+      "averageColour": "#918a43",
       "seam": 0.0,
       "x": 138,
       "y": 1658
@@ -4857,7 +4857,7 @@
       "band": 3,
       "corner": 2,
       "variant": 3,
-      "averageColour": "#a29449",
+      "averageColour": "#a3954a",
       "seam": 0.0,
       "x": 206,
       "y": 1658
@@ -4870,7 +4870,7 @@
       "band": 3,
       "corner": 3,
       "variant": 0,
-      "averageColour": "#84803e",
+      "averageColour": "#8a8640",
       "seam": 0.0,
       "x": 274,
       "y": 1658
@@ -4883,7 +4883,7 @@
       "band": 3,
       "corner": 3,
       "variant": 1,
-      "averageColour": "#7f7b3b",
+      "averageColour": "#86823e",
       "seam": 0.0,
       "x": 342,
       "y": 1658
@@ -4896,7 +4896,7 @@
       "band": 3,
       "corner": 3,
       "variant": 2,
-      "averageColour": "#8a8641",
+      "averageColour": "#8f8b43",
       "seam": 0.0,
       "x": 410,
       "y": 1658
@@ -4909,7 +4909,7 @@
       "band": 3,
       "corner": 3,
       "variant": 3,
-      "averageColour": "#86803e",
+      "averageColour": "#8c8540",
       "seam": 0.0,
       "x": 478,
       "y": 1658
@@ -5130,7 +5130,7 @@
       "band": 5,
       "corner": 0,
       "variant": 0,
-      "averageColour": "#ac6036",
+      "averageColour": "#b46439",
       "seam": 0.0,
       "x": 2,
       "y": 1766
@@ -5143,7 +5143,7 @@
       "band": 5,
       "corner": 0,
       "variant": 1,
-      "averageColour": "#a75d35",
+      "averageColour": "#b16237",
       "seam": 0.0,
       "x": 70,
       "y": 1766
@@ -5156,7 +5156,7 @@
       "band": 5,
       "corner": 0,
       "variant": 2,
-      "averageColour": "#a25b33",
+      "averageColour": "#ae6136",
       "seam": 0.0,
       "x": 138,
       "y": 1766
@@ -5169,7 +5169,7 @@
       "band": 5,
       "corner": 0,
       "variant": 3,
-      "averageColour": "#af6237",
+      "averageColour": "#b76639",
       "seam": 0.0,
       "x": 206,
       "y": 1766
@@ -5182,7 +5182,7 @@
       "band": 5,
       "corner": 1,
       "variant": 0,
-      "averageColour": "#b76639",
+      "averageColour": "#bf6b3c",
       "seam": 0.0,
       "x": 274,
       "y": 1766
@@ -5195,7 +5195,7 @@
       "band": 5,
       "corner": 1,
       "variant": 1,
-      "averageColour": "#b46538",
+      "averageColour": "#bb693b",
       "seam": 0.0,
       "x": 342,
       "y": 1766
@@ -5208,7 +5208,7 @@
       "band": 5,
       "corner": 1,
       "variant": 2,
-      "averageColour": "#b36438",
+      "averageColour": "#bc683b",
       "seam": 0.0,
       "x": 410,
       "y": 1766
@@ -5221,7 +5221,7 @@
       "band": 5,
       "corner": 1,
       "variant": 3,
-      "averageColour": "#ba683b",
+      "averageColour": "#c06b3c",
       "seam": 0.0,
       "x": 478,
       "y": 1766
@@ -5234,7 +5234,7 @@
       "band": 5,
       "corner": 2,
       "variant": 0,
-      "averageColour": "#b26338",
+      "averageColour": "#ba683a",
       "seam": 0.0,
       "x": 2,
       "y": 1802
@@ -5247,7 +5247,7 @@
       "band": 5,
       "corner": 2,
       "variant": 1,
-      "averageColour": "#ad6136",
+      "averageColour": "#b86639",
       "seam": 0.0,
       "x": 70,
       "y": 1802
@@ -5260,7 +5260,7 @@
       "band": 5,
       "corner": 2,
       "variant": 2,
-      "averageColour": "#b16337",
+      "averageColour": "#b9673a",
       "seam": 0.0,
       "x": 138,
       "y": 1802
@@ -5273,7 +5273,7 @@
       "band": 5,
       "corner": 2,
       "variant": 3,
-      "averageColour": "#bf6b3c",
+      "averageColour": "#c26c3c",
       "seam": 0.0,
       "x": 206,
       "y": 1802
@@ -5286,7 +5286,7 @@
       "band": 5,
       "corner": 3,
       "variant": 0,
-      "averageColour": "#a75d34",
+      "averageColour": "#b26337",
       "seam": 0.0,
       "x": 274,
       "y": 1802
@@ -5299,7 +5299,7 @@
       "band": 5,
       "corner": 3,
       "variant": 1,
-      "averageColour": "#b16337",
+      "averageColour": "#b9673a",
       "seam": 0.0,
       "x": 342,
       "y": 1802
@@ -5312,7 +5312,7 @@
       "band": 5,
       "corner": 3,
       "variant": 2,
-      "averageColour": "#ac6036",
+      "averageColour": "#b76639",
       "seam": 0.0,
       "x": 410,
       "y": 1802
@@ -5325,7 +5325,7 @@
       "band": 5,
       "corner": 3,
       "variant": 3,
-      "averageColour": "#af6237",
+      "averageColour": "#b96739",
       "seam": 0.0,
       "x": 478,
       "y": 1802
@@ -5546,7 +5546,7 @@
       "band": 7,
       "corner": 0,
       "variant": 0,
-      "averageColour": "#48433e",
+      "averageColour": "#504a45",
       "seam": 0.0,
       "x": 2,
       "y": 1910
@@ -5559,7 +5559,7 @@
       "band": 7,
       "corner": 0,
       "variant": 1,
-      "averageColour": "#514d48",
+      "averageColour": "#56514c",
       "seam": 0.0,
       "x": 70,
       "y": 1910
@@ -5572,7 +5572,7 @@
       "band": 7,
       "corner": 0,
       "variant": 2,
-      "averageColour": "#524d48",
+      "averageColour": "#56514c",
       "seam": 0.0,
       "x": 138,
       "y": 1910
@@ -5585,7 +5585,7 @@
       "band": 7,
       "corner": 0,
       "variant": 3,
-      "averageColour": "#514c47",
+      "averageColour": "#56514b",
       "seam": 0.0,
       "x": 206,
       "y": 1910
@@ -5598,7 +5598,7 @@
       "band": 7,
       "corner": 1,
       "variant": 0,
-      "averageColour": "#725a46",
+      "averageColour": "#735b46",
       "seam": 0.0,
       "x": 274,
       "y": 1910
@@ -5611,7 +5611,7 @@
       "band": 7,
       "corner": 1,
       "variant": 1,
-      "averageColour": "#695341",
+      "averageColour": "#6c5643",
       "seam": 0.0,
       "x": 342,
       "y": 1910
@@ -5624,7 +5624,7 @@
       "band": 7,
       "corner": 1,
       "variant": 2,
-      "averageColour": "#745d47",
+      "averageColour": "#745d48",
       "seam": 0.0,
       "x": 410,
       "y": 1910
@@ -5637,7 +5637,7 @@
       "band": 7,
       "corner": 1,
       "variant": 3,
-      "averageColour": "#615346",
+      "averageColour": "#635548",
       "seam": 0.0,
       "x": 478,
       "y": 1910
@@ -5650,7 +5650,7 @@
       "band": 7,
       "corner": 2,
       "variant": 0,
-      "averageColour": "#4a4540",
+      "averageColour": "#534d48",
       "seam": 0.0,
       "x": 2,
       "y": 1946
@@ -5663,7 +5663,7 @@
       "band": 7,
       "corner": 2,
       "variant": 1,
-      "averageColour": "#4e4a45",
+      "averageColour": "#54504b",
       "seam": 0.0,
       "x": 70,
       "y": 1946
@@ -5676,7 +5676,7 @@
       "band": 7,
       "corner": 2,
       "variant": 2,
-      "averageColour": "#4e4a45",
+      "averageColour": "#56504b",
       "seam": 0.0,
       "x": 138,
       "y": 1946
@@ -5689,7 +5689,7 @@
       "band": 7,
       "corner": 2,
       "variant": 3,
-      "averageColour": "#4d4944",
+      "averageColour": "#534f4a",
       "seam": 0.0,
       "x": 206,
       "y": 1946
@@ -5702,7 +5702,7 @@
       "band": 7,
       "corner": 3,
       "variant": 0,
-      "averageColour": "#524d48",
+      "averageColour": "#59544f",
       "seam": 0.0,
       "x": 274,
       "y": 1946
@@ -5715,7 +5715,7 @@
       "band": 7,
       "corner": 3,
       "variant": 1,
-      "averageColour": "#57534d",
+      "averageColour": "#5d5953",
       "seam": 0.0,
       "x": 342,
       "y": 1946
@@ -5728,7 +5728,7 @@
       "band": 7,
       "corner": 3,
       "variant": 2,
-      "averageColour": "#55514b",
+      "averageColour": "#5b5751",
       "seam": 0.0,
       "x": 410,
       "y": 1946
@@ -5741,7 +5741,7 @@
       "band": 7,
       "corner": 3,
       "variant": 3,
-      "averageColour": "#5a554f",
+      "averageColour": "#5f5a54",
       "seam": 0.0,
       "x": 478,
       "y": 1946
@@ -6391,7 +6391,7 @@
       "band": 3,
       "field": "broken",
       "spill": 0.527,
-      "averageColour": "#755e26",
+      "averageColour": "#796127",
       "seam": 0.0,
       "x": 70,
       "y": 2198
@@ -6404,7 +6404,7 @@
       "band": 3,
       "field": "crop",
       "spill": 0.322,
-      "averageColour": "#839c2f",
+      "averageColour": "#86a030",
       "seam": 0.0,
       "x": 138,
       "y": 2198
@@ -6443,7 +6443,7 @@
       "band": 5,
       "field": "broken",
       "spill": 0.527,
-      "averageColour": "#8c431f",
+      "averageColour": "#944620",
       "seam": 0.0,
       "x": 342,
       "y": 2198
@@ -6456,7 +6456,7 @@
       "band": 5,
       "field": "crop",
       "spill": 0.322,
-      "averageColour": "#9d6f26",
+      "averageColour": "#a67528",
       "seam": 0.0,
       "x": 410,
       "y": 2198
@@ -6495,7 +6495,7 @@
       "band": 7,
       "field": "broken",
       "spill": 0.527,
-      "averageColour": "#443528",
+      "averageColour": "#49392b",
       "seam": 0.0,
       "x": 70,
       "y": 2234
@@ -6508,7 +6508,7 @@
       "band": 7,
       "field": "crop",
       "spill": 0.322,
-      "averageColour": "#4b5731",
+      "averageColour": "#515e35",
       "seam": 0.0,
       "x": 138,
       "y": 2234
