@@ -269,11 +269,12 @@
     {
       "file": "transition-0-1.png",
       "subject": "transition",
+      "frontWander": 9.667,
       "width": 64,
       "height": 32,
       "band": 0,
       "mask": 1,
-      "averageColour": "#5a7045",
+      "averageColour": "#5b7146",
       "seam": 0.0,
       "x": 2,
       "y": 110
@@ -281,11 +282,12 @@
     {
       "file": "transition-0-2.png",
       "subject": "transition",
+      "frontWander": 7.119,
       "width": 64,
       "height": 32,
       "band": 0,
       "mask": 2,
-      "averageColour": "#5d7248",
+      "averageColour": "#5a7045",
       "seam": 0.0,
       "x": 70,
       "y": 110
@@ -293,11 +295,12 @@
     {
       "file": "transition-0-3.png",
       "subject": "transition",
+      "frontWander": 12.221,
       "width": 64,
       "height": 32,
       "band": 0,
       "mask": 3,
-      "averageColour": "#5b7046",
+      "averageColour": "#5a7045",
       "seam": 0.0,
       "x": 138,
       "y": 110
@@ -305,11 +308,12 @@
     {
       "file": "transition-0-4.png",
       "subject": "transition",
+      "frontWander": 1.94,
       "width": 64,
       "height": 32,
       "band": 0,
       "mask": 4,
-      "averageColour": "#5a6f45",
+      "averageColour": "#5c7147",
       "seam": 0.0,
       "x": 206,
       "y": 110
@@ -317,11 +321,12 @@
     {
       "file": "transition-0-5.png",
       "subject": "transition",
+      "frontWander": 16.468,
       "width": 64,
       "height": 32,
       "band": 0,
       "mask": 5,
-      "averageColour": "#5a6f45",
+      "averageColour": "#5b7046",
       "seam": 0.0,
       "x": 274,
       "y": 110
@@ -329,11 +334,12 @@
     {
       "file": "transition-0-6.png",
       "subject": "transition",
+      "frontWander": 11.049,
       "width": 64,
       "height": 32,
       "band": 0,
       "mask": 6,
-      "averageColour": "#5c7147",
+      "averageColour": "#5b7046",
       "seam": 0.0,
       "x": 342,
       "y": 110
@@ -341,11 +347,12 @@
     {
       "file": "transition-0-7.png",
       "subject": "transition",
+      "frontWander": 9.0,
       "width": 64,
       "height": 32,
       "band": 0,
       "mask": 7,
-      "averageColour": "#5b7046",
+      "averageColour": "#5b7146",
       "seam": 0.0,
       "x": 410,
       "y": 110
@@ -353,11 +360,12 @@
     {
       "file": "transition-0-8.png",
       "subject": "transition",
+      "frontWander": 4.215,
       "width": 64,
       "height": 32,
       "band": 0,
       "mask": 8,
-      "averageColour": "#5e7349",
+      "averageColour": "#5a7046",
       "seam": 0.0,
       "x": 478,
       "y": 110
@@ -365,11 +373,12 @@
     {
       "file": "transition-0-9.png",
       "subject": "transition",
+      "frontWander": 13.243,
       "width": 64,
       "height": 32,
       "band": 0,
       "mask": 9,
-      "averageColour": "#5b7147",
+      "averageColour": "#5c7147",
       "seam": 0.0,
       "x": 2,
       "y": 146
@@ -377,11 +386,12 @@
     {
       "file": "transition-0-10.png",
       "subject": "transition",
+      "frontWander": 13.358,
       "width": 64,
       "height": 32,
       "band": 0,
       "mask": 10,
-      "averageColour": "#5d7348",
+      "averageColour": "#5b7146",
       "seam": 0.0,
       "x": 70,
       "y": 146
@@ -389,11 +399,12 @@
     {
       "file": "transition-0-11.png",
       "subject": "transition",
+      "frontWander": 10.796,
       "width": 64,
       "height": 32,
       "band": 0,
       "mask": 11,
-      "averageColour": "#5c7147",
+      "averageColour": "#5b7146",
       "seam": 0.0,
       "x": 138,
       "y": 146
@@ -401,11 +412,12 @@
     {
       "file": "transition-0-12.png",
       "subject": "transition",
+      "frontWander": 7.435,
       "width": 64,
       "height": 32,
       "band": 0,
       "mask": 12,
-      "averageColour": "#5b7147",
+      "averageColour": "#5b7046",
       "seam": 0.0,
       "x": 206,
       "y": 146
@@ -413,11 +425,12 @@
     {
       "file": "transition-0-13.png",
       "subject": "transition",
+      "frontWander": 6.464,
       "width": 64,
       "height": 32,
       "band": 0,
       "mask": 13,
-      "averageColour": "#5b7046",
+      "averageColour": "#5b7146",
       "seam": 0.0,
       "x": 274,
       "y": 146
@@ -425,11 +438,12 @@
     {
       "file": "transition-0-14.png",
       "subject": "transition",
+      "frontWander": 6.172,
       "width": 64,
       "height": 32,
       "band": 0,
       "mask": 14,
-      "averageColour": "#5c7247",
+      "averageColour": "#5b7146",
       "seam": 0.0,
       "x": 342,
       "y": 146
@@ -437,11 +451,12 @@
     {
       "file": "transition-0-15.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 0,
       "mask": 15,
-      "averageColour": "#5b7046",
+      "averageColour": "#5b7146",
       "seam": 0.0,
       "x": 410,
       "y": 146
@@ -449,11 +464,12 @@
     {
       "file": "transition-1-1.png",
       "subject": "transition",
+      "frontWander": 9.243,
       "width": 64,
       "height": 32,
       "band": 1,
       "mask": 1,
-      "averageColour": "#68682f",
+      "averageColour": "#6a6a30",
       "seam": 0.0,
       "x": 478,
       "y": 146
@@ -461,11 +477,12 @@
     {
       "file": "transition-1-2.png",
       "subject": "transition",
+      "frontWander": 1.84,
       "width": 64,
       "height": 32,
       "band": 1,
       "mask": 2,
-      "averageColour": "#6a6c31",
+      "averageColour": "#6b6c31",
       "seam": 0.0,
       "x": 2,
       "y": 182
@@ -473,11 +490,12 @@
     {
       "file": "transition-1-3.png",
       "subject": "transition",
+      "frontWander": 10.424,
       "width": 64,
       "height": 32,
       "band": 1,
       "mask": 3,
-      "averageColour": "#696930",
+      "averageColour": "#6a6a30",
       "seam": 0.0,
       "x": 70,
       "y": 182
@@ -485,11 +503,12 @@
     {
       "file": "transition-1-4.png",
       "subject": "transition",
+      "frontWander": 6.171,
       "width": 64,
       "height": 32,
       "band": 1,
       "mask": 4,
-      "averageColour": "#6a6c31",
+      "averageColour": "#6a6b30",
       "seam": 0.0,
       "x": 138,
       "y": 182
@@ -497,6 +516,7 @@
     {
       "file": "transition-1-5.png",
       "subject": "transition",
+      "frontWander": 19.477,
       "width": 64,
       "height": 32,
       "band": 1,
@@ -509,11 +529,12 @@
     {
       "file": "transition-1-6.png",
       "subject": "transition",
+      "frontWander": 10.324,
       "width": 64,
       "height": 32,
       "band": 1,
       "mask": 6,
-      "averageColour": "#6a6c31",
+      "averageColour": "#6a6b30",
       "seam": 0.0,
       "x": 274,
       "y": 182
@@ -521,6 +542,7 @@
     {
       "file": "transition-1-7.png",
       "subject": "transition",
+      "frontWander": 19.38,
       "width": 64,
       "height": 32,
       "band": 1,
@@ -533,11 +555,12 @@
     {
       "file": "transition-1-8.png",
       "subject": "transition",
+      "frontWander": 1.767,
       "width": 64,
       "height": 32,
       "band": 1,
       "mask": 8,
-      "averageColour": "#66672f",
+      "averageColour": "#68682f",
       "seam": 0.0,
       "x": 410,
       "y": 182
@@ -545,11 +568,12 @@
     {
       "file": "transition-1-9.png",
       "subject": "transition",
+      "frontWander": 15.724,
       "width": 64,
       "height": 32,
       "band": 1,
       "mask": 9,
-      "averageColour": "#67682f",
+      "averageColour": "#696a30",
       "seam": 0.0,
       "x": 478,
       "y": 182
@@ -557,11 +581,12 @@
     {
       "file": "transition-1-10.png",
       "subject": "transition",
+      "frontWander": 4.361,
       "width": 64,
       "height": 32,
       "band": 1,
       "mask": 10,
-      "averageColour": "#686930",
+      "averageColour": "#696a30",
       "seam": 0.0,
       "x": 2,
       "y": 218
@@ -569,11 +594,12 @@
     {
       "file": "transition-1-11.png",
       "subject": "transition",
+      "frontWander": 13.91,
       "width": 64,
       "height": 32,
       "band": 1,
       "mask": 11,
-      "averageColour": "#68692f",
+      "averageColour": "#696a30",
       "seam": 0.0,
       "x": 70,
       "y": 218
@@ -581,11 +607,12 @@
     {
       "file": "transition-1-12.png",
       "subject": "transition",
+      "frontWander": 11.857,
       "width": 64,
       "height": 32,
       "band": 1,
       "mask": 12,
-      "averageColour": "#696930",
+      "averageColour": "#6a6a30",
       "seam": 0.0,
       "x": 138,
       "y": 218
@@ -593,6 +620,7 @@
     {
       "file": "transition-1-13.png",
       "subject": "transition",
+      "frontWander": 7.69,
       "width": 64,
       "height": 32,
       "band": 1,
@@ -605,6 +633,7 @@
     {
       "file": "transition-1-14.png",
       "subject": "transition",
+      "frontWander": 5.417,
       "width": 64,
       "height": 32,
       "band": 1,
@@ -617,6 +646,7 @@
     {
       "file": "transition-1-15.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 1,
@@ -629,11 +659,12 @@
     {
       "file": "transition-2-1.png",
       "subject": "transition",
+      "frontWander": 6.275,
       "width": 64,
       "height": 32,
       "band": 2,
       "mask": 1,
-      "averageColour": "#658031",
+      "averageColour": "#698232",
       "seam": 0.0,
       "x": 410,
       "y": 218
@@ -641,11 +672,12 @@
     {
       "file": "transition-2-2.png",
       "subject": "transition",
+      "frontWander": 6.565,
       "width": 64,
       "height": 32,
       "band": 2,
       "mask": 2,
-      "averageColour": "#6b8333",
+      "averageColour": "#6a8232",
       "seam": 0.0,
       "x": 478,
       "y": 218
@@ -653,11 +685,12 @@
     {
       "file": "transition-2-3.png",
       "subject": "transition",
+      "frontWander": 8.117,
       "width": 64,
       "height": 32,
       "band": 2,
       "mask": 3,
-      "averageColour": "#698132",
+      "averageColour": "#688132",
       "seam": 0.0,
       "x": 2,
       "y": 254
@@ -665,11 +698,12 @@
     {
       "file": "transition-2-4.png",
       "subject": "transition",
+      "frontWander": 4.293,
       "width": 64,
       "height": 32,
       "band": 2,
       "mask": 4,
-      "averageColour": "#617c2f",
+      "averageColour": "#678031",
       "seam": 0.0,
       "x": 70,
       "y": 254
@@ -677,11 +711,12 @@
     {
       "file": "transition-2-5.png",
       "subject": "transition",
+      "frontWander": 14.892,
       "width": 64,
       "height": 32,
       "band": 2,
       "mask": 5,
-      "averageColour": "#637e30",
+      "averageColour": "#678031",
       "seam": 0.0,
       "x": 138,
       "y": 254
@@ -689,6 +724,7 @@
     {
       "file": "transition-2-6.png",
       "subject": "transition",
+      "frontWander": 0.477,
       "width": 64,
       "height": 32,
       "band": 2,
@@ -701,11 +737,12 @@
     {
       "file": "transition-2-7.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 2,
       "mask": 7,
-      "averageColour": "#668031",
+      "averageColour": "#678031",
       "seam": 0.0,
       "x": 274,
       "y": 254
@@ -713,11 +750,12 @@
     {
       "file": "transition-2-8.png",
       "subject": "transition",
+      "frontWander": 4.796,
       "width": 64,
       "height": 32,
       "band": 2,
       "mask": 8,
-      "averageColour": "#607c2f",
+      "averageColour": "#657f31",
       "seam": 0.0,
       "x": 342,
       "y": 254
@@ -725,11 +763,12 @@
     {
       "file": "transition-2-9.png",
       "subject": "transition",
+      "frontWander": 0.671,
       "width": 64,
       "height": 32,
       "band": 2,
       "mask": 9,
-      "averageColour": "#637e30",
+      "averageColour": "#678031",
       "seam": 0.0,
       "x": 410,
       "y": 254
@@ -737,11 +776,12 @@
     {
       "file": "transition-2-10.png",
       "subject": "transition",
+      "frontWander": 15.623,
       "width": 64,
       "height": 32,
       "band": 2,
       "mask": 10,
-      "averageColour": "#657f31",
+      "averageColour": "#678031",
       "seam": 0.0,
       "x": 478,
       "y": 254
@@ -749,11 +789,12 @@
     {
       "file": "transition-2-11.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 2,
       "mask": 11,
-      "averageColour": "#668031",
+      "averageColour": "#678031",
       "seam": 0.0,
       "x": 2,
       "y": 290
@@ -761,11 +802,12 @@
     {
       "file": "transition-2-12.png",
       "subject": "transition",
+      "frontWander": 11.872,
       "width": 64,
       "height": 32,
       "band": 2,
       "mask": 12,
-      "averageColour": "#617d30",
+      "averageColour": "#657f31",
       "seam": 0.0,
       "x": 70,
       "y": 290
@@ -773,11 +815,12 @@
     {
       "file": "transition-2-13.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 2,
       "mask": 13,
-      "averageColour": "#637e30",
+      "averageColour": "#657f31",
       "seam": 0.0,
       "x": 138,
       "y": 290
@@ -785,11 +828,12 @@
     {
       "file": "transition-2-14.png",
       "subject": "transition",
+      "frontWander": 5.766,
       "width": 64,
       "height": 32,
       "band": 2,
       "mask": 14,
-      "averageColour": "#657f31",
+      "averageColour": "#678031",
       "seam": 0.0,
       "x": 206,
       "y": 290
@@ -797,11 +841,12 @@
     {
       "file": "transition-2-15.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 2,
       "mask": 15,
-      "averageColour": "#668031",
+      "averageColour": "#678031",
       "seam": 0.0,
       "x": 274,
       "y": 290
@@ -809,11 +854,12 @@
     {
       "file": "transition-3-1.png",
       "subject": "transition",
+      "frontWander": 8.65,
       "width": 64,
       "height": 32,
       "band": 3,
       "mask": 1,
-      "averageColour": "#88833f",
+      "averageColour": "#8b843f",
       "seam": 0.0,
       "x": 342,
       "y": 290
@@ -821,11 +867,12 @@
     {
       "file": "transition-3-2.png",
       "subject": "transition",
+      "frontWander": 11.777,
       "width": 64,
       "height": 32,
       "band": 3,
       "mask": 2,
-      "averageColour": "#958942",
+      "averageColour": "#938842",
       "seam": 0.0,
       "x": 410,
       "y": 290
@@ -833,11 +880,12 @@
     {
       "file": "transition-3-3.png",
       "subject": "transition",
+      "frontWander": 7.802,
       "width": 64,
       "height": 32,
       "band": 3,
       "mask": 3,
-      "averageColour": "#908741",
+      "averageColour": "#8e8540",
       "seam": 0.0,
       "x": 478,
       "y": 290
@@ -845,11 +893,12 @@
     {
       "file": "transition-3-4.png",
       "subject": "transition",
+      "frontWander": 7.809,
       "width": 64,
       "height": 32,
       "band": 3,
       "mask": 4,
-      "averageColour": "#988d45",
+      "averageColour": "#928942",
       "seam": 0.0,
       "x": 2,
       "y": 326
@@ -857,11 +906,12 @@
     {
       "file": "transition-3-5.png",
       "subject": "transition",
+      "frontWander": 15.971,
       "width": 64,
       "height": 32,
       "band": 3,
       "mask": 5,
-      "averageColour": "#908842",
+      "averageColour": "#8f8641",
       "seam": 0.0,
       "x": 70,
       "y": 326
@@ -869,11 +919,12 @@
     {
       "file": "transition-3-6.png",
       "subject": "transition",
+      "frontWander": 13.133,
       "width": 64,
       "height": 32,
       "band": 3,
       "mask": 6,
-      "averageColour": "#958a43",
+      "averageColour": "#918742",
       "seam": 0.0,
       "x": 138,
       "y": 326
@@ -881,11 +932,12 @@
     {
       "file": "transition-3-7.png",
       "subject": "transition",
+      "frontWander": 14.819,
       "width": 64,
       "height": 32,
       "band": 3,
       "mask": 7,
-      "averageColour": "#918842",
+      "averageColour": "#8f8641",
       "seam": 0.0,
       "x": 206,
       "y": 326
@@ -893,11 +945,12 @@
     {
       "file": "transition-3-8.png",
       "subject": "transition",
+      "frontWander": 9.904,
       "width": 64,
       "height": 32,
       "band": 3,
       "mask": 8,
-      "averageColour": "#8f8842",
+      "averageColour": "#8b8540",
       "seam": 0.0,
       "x": 274,
       "y": 326
@@ -905,11 +958,12 @@
     {
       "file": "transition-3-9.png",
       "subject": "transition",
+      "frontWander": 15.02,
       "width": 64,
       "height": 32,
       "band": 3,
       "mask": 9,
-      "averageColour": "#8d8741",
+      "averageColour": "#8c8540",
       "seam": 0.0,
       "x": 342,
       "y": 326
@@ -917,11 +971,12 @@
     {
       "file": "transition-3-10.png",
       "subject": "transition",
+      "frontWander": 13.115,
       "width": 64,
       "height": 32,
       "band": 3,
       "mask": 10,
-      "averageColour": "#928842",
+      "averageColour": "#8f8641",
       "seam": 0.0,
       "x": 410,
       "y": 326
@@ -929,11 +984,12 @@
     {
       "file": "transition-3-11.png",
       "subject": "transition",
+      "frontWander": 12.822,
       "width": 64,
       "height": 32,
       "band": 3,
       "mask": 11,
-      "averageColour": "#918942",
+      "averageColour": "#8f8641",
       "seam": 0.0,
       "x": 478,
       "y": 326
@@ -941,11 +997,12 @@
     {
       "file": "transition-3-12.png",
       "subject": "transition",
+      "frontWander": 10.784,
       "width": 64,
       "height": 32,
       "band": 3,
       "mask": 12,
-      "averageColour": "#928942",
+      "averageColour": "#918842",
       "seam": 0.0,
       "x": 2,
       "y": 362
@@ -953,11 +1010,12 @@
     {
       "file": "transition-3-13.png",
       "subject": "transition",
+      "frontWander": 5.95,
       "width": 64,
       "height": 32,
       "band": 3,
       "mask": 13,
-      "averageColour": "#908842",
+      "averageColour": "#8e8641",
       "seam": 0.0,
       "x": 70,
       "y": 362
@@ -965,11 +1023,12 @@
     {
       "file": "transition-3-14.png",
       "subject": "transition",
+      "frontWander": 3.179,
       "width": 64,
       "height": 32,
       "band": 3,
       "mask": 14,
-      "averageColour": "#918842",
+      "averageColour": "#8f8741",
       "seam": 0.0,
       "x": 138,
       "y": 362
@@ -977,11 +1036,12 @@
     {
       "file": "transition-3-15.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 3,
       "mask": 15,
-      "averageColour": "#918842",
+      "averageColour": "#8f8641",
       "seam": 0.0,
       "x": 206,
       "y": 362
@@ -989,11 +1049,12 @@
     {
       "file": "transition-4-1.png",
       "subject": "transition",
+      "frontWander": 11.075,
       "width": 64,
       "height": 32,
       "band": 4,
       "mask": 1,
-      "averageColour": "#97753d",
+      "averageColour": "#98763e",
       "seam": 0.0,
       "x": 274,
       "y": 362
@@ -1001,11 +1062,12 @@
     {
       "file": "transition-4-2.png",
       "subject": "transition",
+      "frontWander": 5.201,
       "width": 64,
       "height": 32,
       "band": 4,
       "mask": 2,
-      "averageColour": "#a1773c",
+      "averageColour": "#99753d",
       "seam": 0.0,
       "x": 342,
       "y": 362
@@ -1013,11 +1075,12 @@
     {
       "file": "transition-4-3.png",
       "subject": "transition",
+      "frontWander": 10.398,
       "width": 64,
       "height": 32,
       "band": 4,
       "mask": 3,
-      "averageColour": "#9b763d",
+      "averageColour": "#98753d",
       "seam": 0.0,
       "x": 410,
       "y": 362
@@ -1025,11 +1088,12 @@
     {
       "file": "transition-4-4.png",
       "subject": "transition",
+      "frontWander": 3.059,
       "width": 64,
       "height": 32,
       "band": 4,
       "mask": 4,
-      "averageColour": "#a07b40",
+      "averageColour": "#9b773e",
       "seam": 0.0,
       "x": 478,
       "y": 362
@@ -1037,11 +1101,12 @@
     {
       "file": "transition-4-5.png",
       "subject": "transition",
+      "frontWander": 14.737,
       "width": 64,
       "height": 32,
       "band": 4,
       "mask": 5,
-      "averageColour": "#9b783f",
+      "averageColour": "#9a773e",
       "seam": 0.0,
       "x": 2,
       "y": 398
@@ -1049,11 +1114,12 @@
     {
       "file": "transition-4-6.png",
       "subject": "transition",
+      "frontWander": 15.998,
       "width": 64,
       "height": 32,
       "band": 4,
       "mask": 6,
-      "averageColour": "#9f783e",
+      "averageColour": "#9c773e",
       "seam": 0.0,
       "x": 70,
       "y": 398
@@ -1061,11 +1127,12 @@
     {
       "file": "transition-4-7.png",
       "subject": "transition",
+      "frontWander": 9.778,
       "width": 64,
       "height": 32,
       "band": 4,
       "mask": 7,
-      "averageColour": "#9b773e",
+      "averageColour": "#9a763e",
       "seam": 0.0,
       "x": 138,
       "y": 398
@@ -1073,11 +1140,12 @@
     {
       "file": "transition-4-8.png",
       "subject": "transition",
+      "frontWander": 5.233,
       "width": 64,
       "height": 32,
       "band": 4,
       "mask": 8,
-      "averageColour": "#a07b40",
+      "averageColour": "#99773e",
       "seam": 0.0,
       "x": 206,
       "y": 398
@@ -1085,11 +1153,12 @@
     {
       "file": "transition-4-9.png",
       "subject": "transition",
+      "frontWander": 11.127,
       "width": 64,
       "height": 32,
       "band": 4,
       "mask": 9,
-      "averageColour": "#9a773e",
+      "averageColour": "#98763e",
       "seam": 0.0,
       "x": 274,
       "y": 398
@@ -1097,11 +1166,12 @@
     {
       "file": "transition-4-10.png",
       "subject": "transition",
+      "frontWander": 19.165,
       "width": 64,
       "height": 32,
       "band": 4,
       "mask": 10,
-      "averageColour": "#a0793e",
+      "averageColour": "#9a773e",
       "seam": 0.0,
       "x": 342,
       "y": 398
@@ -1109,11 +1179,12 @@
     {
       "file": "transition-4-11.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 4,
       "mask": 11,
-      "averageColour": "#9c773e",
+      "averageColour": "#9b773e",
       "seam": 0.0,
       "x": 410,
       "y": 398
@@ -1121,11 +1192,12 @@
     {
       "file": "transition-4-12.png",
       "subject": "transition",
+      "frontWander": 14.652,
       "width": 64,
       "height": 32,
       "band": 4,
       "mask": 12,
-      "averageColour": "#9e7a40",
+      "averageColour": "#9b773e",
       "seam": 0.0,
       "x": 478,
       "y": 398
@@ -1133,11 +1205,12 @@
     {
       "file": "transition-4-13.png",
       "subject": "transition",
+      "frontWander": 4.739,
       "width": 64,
       "height": 32,
       "band": 4,
       "mask": 13,
-      "averageColour": "#9b783f",
+      "averageColour": "#9a773e",
       "seam": 0.0,
       "x": 2,
       "y": 434
@@ -1145,11 +1218,12 @@
     {
       "file": "transition-4-14.png",
       "subject": "transition",
+      "frontWander": 3.704,
       "width": 64,
       "height": 32,
       "band": 4,
       "mask": 14,
-      "averageColour": "#9e793f",
+      "averageColour": "#9a773e",
       "seam": 0.0,
       "x": 70,
       "y": 434
@@ -1157,11 +1231,12 @@
     {
       "file": "transition-4-15.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 4,
       "mask": 15,
-      "averageColour": "#9b773e",
+      "averageColour": "#9a773e",
       "seam": 0.0,
       "x": 138,
       "y": 434
@@ -1169,11 +1244,12 @@
     {
       "file": "transition-5-1.png",
       "subject": "transition",
+      "frontWander": 4.728,
       "width": 64,
       "height": 32,
       "band": 5,
       "mask": 1,
-      "averageColour": "#a86538",
+      "averageColour": "#ab6739",
       "seam": 0.0,
       "x": 206,
       "y": 434
@@ -1181,11 +1257,12 @@
     {
       "file": "transition-5-2.png",
       "subject": "transition",
+      "frontWander": 7.762,
       "width": 64,
       "height": 32,
       "band": 5,
       "mask": 2,
-      "averageColour": "#ab6639",
+      "averageColour": "#ad673a",
       "seam": 0.0,
       "x": 274,
       "y": 434
@@ -1193,11 +1270,12 @@
     {
       "file": "transition-5-3.png",
       "subject": "transition",
+      "frontWander": 9.815,
       "width": 64,
       "height": 32,
       "band": 5,
       "mask": 3,
-      "averageColour": "#a96539",
+      "averageColour": "#aa6639",
       "seam": 0.0,
       "x": 342,
       "y": 434
@@ -1205,11 +1283,12 @@
     {
       "file": "transition-5-4.png",
       "subject": "transition",
+      "frontWander": 5.693,
       "width": 64,
       "height": 32,
       "band": 5,
       "mask": 4,
-      "averageColour": "#b0693b",
+      "averageColour": "#ad683a",
       "seam": 0.0,
       "x": 410,
       "y": 434
@@ -1217,11 +1296,12 @@
     {
       "file": "transition-5-5.png",
       "subject": "transition",
+      "frontWander": 15.503,
       "width": 64,
       "height": 32,
       "band": 5,
       "mask": 5,
-      "averageColour": "#ac673a",
+      "averageColour": "#ad673a",
       "seam": 0.0,
       "x": 478,
       "y": 434
@@ -1229,11 +1309,12 @@
     {
       "file": "transition-5-6.png",
       "subject": "transition",
+      "frontWander": 7.696,
       "width": 64,
       "height": 32,
       "band": 5,
       "mask": 6,
-      "averageColour": "#af693a",
+      "averageColour": "#ae683a",
       "seam": 0.0,
       "x": 2,
       "y": 470
@@ -1241,11 +1322,12 @@
     {
       "file": "transition-5-7.png",
       "subject": "transition",
+      "frontWander": 9.791,
       "width": 64,
       "height": 32,
       "band": 5,
       "mask": 7,
-      "averageColour": "#ad673a",
+      "averageColour": "#ac6739",
       "seam": 0.0,
       "x": 70,
       "y": 470
@@ -1253,6 +1335,7 @@
     {
       "file": "transition-5-8.png",
       "subject": "transition",
+      "frontWander": 4.553,
       "width": 64,
       "height": 32,
       "band": 5,
@@ -1265,11 +1348,12 @@
     {
       "file": "transition-5-9.png",
       "subject": "transition",
+      "frontWander": 1.031,
       "width": 64,
       "height": 32,
       "band": 5,
       "mask": 9,
-      "averageColour": "#ac673a",
+      "averageColour": "#ad673a",
       "seam": 0.0,
       "x": 206,
       "y": 470
@@ -1277,11 +1361,12 @@
     {
       "file": "transition-5-10.png",
       "subject": "transition",
+      "frontWander": 16.636,
       "width": 64,
       "height": 32,
       "band": 5,
       "mask": 10,
-      "averageColour": "#ab6739",
+      "averageColour": "#ac6739",
       "seam": 0.0,
       "x": 274,
       "y": 470
@@ -1289,6 +1374,7 @@
     {
       "file": "transition-5-11.png",
       "subject": "transition",
+      "frontWander": 12.348,
       "width": 64,
       "height": 32,
       "band": 5,
@@ -1301,11 +1387,12 @@
     {
       "file": "transition-5-12.png",
       "subject": "transition",
+      "frontWander": 9.357,
       "width": 64,
       "height": 32,
       "band": 5,
       "mask": 12,
-      "averageColour": "#ad673a",
+      "averageColour": "#ac673a",
       "seam": 0.0,
       "x": 410,
       "y": 470
@@ -1313,11 +1400,12 @@
     {
       "file": "transition-5-13.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 5,
       "mask": 13,
-      "averageColour": "#ad673a",
+      "averageColour": "#ac673a",
       "seam": 0.0,
       "x": 478,
       "y": 470
@@ -1325,11 +1413,12 @@
     {
       "file": "transition-5-14.png",
       "subject": "transition",
+      "frontWander": 2.604,
       "width": 64,
       "height": 32,
       "band": 5,
       "mask": 14,
-      "averageColour": "#ad673a",
+      "averageColour": "#ac6739",
       "seam": 0.0,
       "x": 2,
       "y": 506
@@ -1337,11 +1426,12 @@
     {
       "file": "transition-5-15.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 5,
       "mask": 15,
-      "averageColour": "#ad673a",
+      "averageColour": "#ac6739",
       "seam": 0.0,
       "x": 70,
       "y": 506
@@ -1349,11 +1439,12 @@
     {
       "file": "transition-6-1.png",
       "subject": "transition",
+      "frontWander": 2.732,
       "width": 64,
       "height": 32,
       "band": 6,
       "mask": 1,
-      "averageColour": "#ad7242",
+      "averageColour": "#b07343",
       "seam": 0.0,
       "x": 138,
       "y": 506
@@ -1361,11 +1452,12 @@
     {
       "file": "transition-6-2.png",
       "subject": "transition",
+      "frontWander": 5.066,
       "width": 64,
       "height": 32,
       "band": 6,
       "mask": 2,
-      "averageColour": "#ab7241",
+      "averageColour": "#ae7342",
       "seam": 0.0,
       "x": 206,
       "y": 506
@@ -1373,11 +1465,12 @@
     {
       "file": "transition-6-3.png",
       "subject": "transition",
+      "frontWander": 8.009,
       "width": 64,
       "height": 32,
       "band": 6,
       "mask": 3,
-      "averageColour": "#ac7242",
+      "averageColour": "#ad7242",
       "seam": 0.0,
       "x": 274,
       "y": 506
@@ -1385,11 +1478,12 @@
     {
       "file": "transition-6-4.png",
       "subject": "transition",
+      "frontWander": 1.258,
       "width": 64,
       "height": 32,
       "band": 6,
       "mask": 4,
-      "averageColour": "#ab7241",
+      "averageColour": "#af7443",
       "seam": 0.0,
       "x": 342,
       "y": 506
@@ -1397,11 +1491,12 @@
     {
       "file": "transition-6-5.png",
       "subject": "transition",
+      "frontWander": 12.608,
       "width": 64,
       "height": 32,
       "band": 6,
       "mask": 5,
-      "averageColour": "#ac7242",
+      "averageColour": "#af7342",
       "seam": 0.0,
       "x": 410,
       "y": 506
@@ -1409,11 +1504,12 @@
     {
       "file": "transition-6-6.png",
       "subject": "transition",
+      "frontWander": 0.44,
       "width": 64,
       "height": 32,
       "band": 6,
       "mask": 6,
-      "averageColour": "#ad7242",
+      "averageColour": "#af7343",
       "seam": 0.0,
       "x": 478,
       "y": 506
@@ -1421,11 +1517,12 @@
     {
       "file": "transition-6-7.png",
       "subject": "transition",
+      "frontWander": 12.53,
       "width": 64,
       "height": 32,
       "band": 6,
       "mask": 7,
-      "averageColour": "#ad7242",
+      "averageColour": "#af7342",
       "seam": 0.0,
       "x": 2,
       "y": 542
@@ -1433,11 +1530,12 @@
     {
       "file": "transition-6-8.png",
       "subject": "transition",
+      "frontWander": 2.16,
       "width": 64,
       "height": 32,
       "band": 6,
       "mask": 8,
-      "averageColour": "#b17443",
+      "averageColour": "#b07343",
       "seam": 0.0,
       "x": 70,
       "y": 542
@@ -1445,11 +1543,12 @@
     {
       "file": "transition-6-9.png",
       "subject": "transition",
+      "frontWander": 17.99,
       "width": 64,
       "height": 32,
       "band": 6,
       "mask": 9,
-      "averageColour": "#af7342",
+      "averageColour": "#b17443",
       "seam": 0.0,
       "x": 138,
       "y": 542
@@ -1457,11 +1556,12 @@
     {
       "file": "transition-6-10.png",
       "subject": "transition",
+      "frontWander": 5.656,
       "width": 64,
       "height": 32,
       "band": 6,
       "mask": 10,
-      "averageColour": "#ae7342",
+      "averageColour": "#af7443",
       "seam": 0.0,
       "x": 206,
       "y": 542
@@ -1469,11 +1569,12 @@
     {
       "file": "transition-6-11.png",
       "subject": "transition",
+      "frontWander": 11.242,
       "width": 64,
       "height": 32,
       "band": 6,
       "mask": 11,
-      "averageColour": "#ae7342",
+      "averageColour": "#af7343",
       "seam": 0.0,
       "x": 274,
       "y": 542
@@ -1481,11 +1582,12 @@
     {
       "file": "transition-6-12.png",
       "subject": "transition",
+      "frontWander": 10.927,
       "width": 64,
       "height": 32,
       "band": 6,
       "mask": 12,
-      "averageColour": "#ae7342",
+      "averageColour": "#af7443",
       "seam": 0.0,
       "x": 342,
       "y": 542
@@ -1493,11 +1595,12 @@
     {
       "file": "transition-6-13.png",
       "subject": "transition",
+      "frontWander": 5.624,
       "width": 64,
       "height": 32,
       "band": 6,
       "mask": 13,
-      "averageColour": "#ad7242",
+      "averageColour": "#ae7342",
       "seam": 0.0,
       "x": 410,
       "y": 542
@@ -1505,6 +1608,7 @@
     {
       "file": "transition-6-14.png",
       "subject": "transition",
+      "frontWander": 0.189,
       "width": 64,
       "height": 32,
       "band": 6,
@@ -1517,11 +1621,12 @@
     {
       "file": "transition-6-15.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 6,
       "mask": 15,
-      "averageColour": "#ae7342",
+      "averageColour": "#af7443",
       "seam": 0.0,
       "x": 2,
       "y": 578
@@ -1529,11 +1634,12 @@
     {
       "file": "transition-7-1.png",
       "subject": "transition",
+      "frontWander": 4.436,
       "width": 64,
       "height": 32,
       "band": 7,
       "mask": 1,
-      "averageColour": "#a79579",
+      "averageColour": "#9e8c70",
       "seam": 0.0,
       "x": 70,
       "y": 578
@@ -1541,11 +1647,12 @@
     {
       "file": "transition-7-2.png",
       "subject": "transition",
+      "frontWander": 14.421,
       "width": 64,
       "height": 32,
       "band": 7,
       "mask": 2,
-      "averageColour": "#987f61",
+      "averageColour": "#998063",
       "seam": 0.0,
       "x": 138,
       "y": 578
@@ -1553,11 +1660,12 @@
     {
       "file": "transition-7-3.png",
       "subject": "transition",
+      "frontWander": 8.56,
       "width": 64,
       "height": 32,
       "band": 7,
       "mask": 3,
-      "averageColour": "#9b8568",
+      "averageColour": "#9c8568",
       "seam": 0.0,
       "x": 206,
       "y": 578
@@ -1565,11 +1673,12 @@
     {
       "file": "transition-7-4.png",
       "subject": "transition",
+      "frontWander": 7.388,
       "width": 64,
       "height": 32,
       "band": 7,
       "mask": 4,
-      "averageColour": "#927355",
+      "averageColour": "#91785a",
       "seam": 0.0,
       "x": 274,
       "y": 578
@@ -1577,11 +1686,12 @@
     {
       "file": "transition-7-5.png",
       "subject": "transition",
+      "frontWander": 12.82,
       "width": 64,
       "height": 32,
       "band": 7,
       "mask": 5,
-      "averageColour": "#9d8467",
+      "averageColour": "#9a8366",
       "seam": 0.0,
       "x": 342,
       "y": 578
@@ -1589,11 +1699,12 @@
     {
       "file": "transition-7-6.png",
       "subject": "transition",
+      "frontWander": 3.443,
       "width": 64,
       "height": 32,
       "band": 7,
       "mask": 6,
-      "averageColour": "#957b5d",
+      "averageColour": "#977f61",
       "seam": 0.0,
       "x": 410,
       "y": 578
@@ -1601,11 +1712,12 @@
     {
       "file": "transition-7-7.png",
       "subject": "transition",
+      "frontWander": 11.956,
       "width": 64,
       "height": 32,
       "band": 7,
       "mask": 7,
-      "averageColour": "#998164",
+      "averageColour": "#988164",
       "seam": 0.0,
       "x": 478,
       "y": 578
@@ -1613,11 +1725,12 @@
     {
       "file": "transition-7-8.png",
       "subject": "transition",
+      "frontWander": 2.883,
       "width": 64,
       "height": 32,
       "band": 7,
       "mask": 8,
-      "averageColour": "#988468",
+      "averageColour": "#9a8569",
       "seam": 0.0,
       "x": 2,
       "y": 614
@@ -1625,11 +1738,12 @@
     {
       "file": "transition-7-9.png",
       "subject": "transition",
+      "frontWander": 16.17,
       "width": 64,
       "height": 32,
       "band": 7,
       "mask": 9,
-      "averageColour": "#a18d72",
+      "averageColour": "#9a8669",
       "seam": 0.0,
       "x": 70,
       "y": 614
@@ -1637,11 +1751,12 @@
     {
       "file": "transition-7-10.png",
       "subject": "transition",
+      "frontWander": 14.957,
       "width": 64,
       "height": 32,
       "band": 7,
       "mask": 10,
-      "averageColour": "#988264",
+      "averageColour": "#9a8366",
       "seam": 0.0,
       "x": 138,
       "y": 614
@@ -1649,11 +1764,12 @@
     {
       "file": "transition-7-11.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 7,
       "mask": 11,
-      "averageColour": "#9a8467",
+      "averageColour": "#9a8366",
       "seam": 0.0,
       "x": 206,
       "y": 614
@@ -1661,11 +1777,12 @@
     {
       "file": "transition-7-12.png",
       "subject": "transition",
+      "frontWander": 15.491,
       "width": 64,
       "height": 32,
       "band": 7,
       "mask": 12,
-      "averageColour": "#977e5f",
+      "averageColour": "#957d60",
       "seam": 0.0,
       "x": 274,
       "y": 614
@@ -1673,11 +1790,12 @@
     {
       "file": "transition-7-13.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 7,
       "mask": 13,
-      "averageColour": "#9d8669",
+      "averageColour": "#9a8366",
       "seam": 0.0,
       "x": 342,
       "y": 614
@@ -1685,11 +1803,12 @@
     {
       "file": "transition-7-14.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 7,
       "mask": 14,
-      "averageColour": "#988063",
+      "averageColour": "#998265",
       "seam": 0.0,
       "x": 410,
       "y": 614
@@ -1697,6 +1816,7 @@
     {
       "file": "transition-7-15.png",
       "subject": "transition",
+      "frontWander": 0.0,
       "width": 64,
       "height": 32,
       "band": 7,
@@ -1713,7 +1833,7 @@
       "height": 32,
       "band": 0,
       "corner": 0,
-      "averageColour": "#5f754a",
+      "averageColour": "#5e7449",
       "seam": 0.0,
       "x": 2,
       "y": 650
@@ -1725,7 +1845,7 @@
       "height": 32,
       "band": 0,
       "corner": 1,
-      "averageColour": "#5e7449",
+      "averageColour": "#586d43",
       "seam": 0.0,
       "x": 70,
       "y": 650
@@ -1737,7 +1857,7 @@
       "height": 32,
       "band": 0,
       "corner": 2,
-      "averageColour": "#5d7349",
+      "averageColour": "#5d7248",
       "seam": 0.0,
       "x": 138,
       "y": 650
@@ -1749,7 +1869,7 @@
       "height": 32,
       "band": 0,
       "corner": 3,
-      "averageColour": "#5d7248",
+      "averageColour": "#5b7146",
       "seam": 0.0,
       "x": 206,
       "y": 650
@@ -1761,7 +1881,7 @@
       "height": 32,
       "band": 1,
       "corner": 0,
-      "averageColour": "#626e32",
+      "averageColour": "#646c31",
       "seam": 0.0,
       "x": 274,
       "y": 650
@@ -1773,7 +1893,7 @@
       "height": 32,
       "band": 1,
       "corner": 1,
-      "averageColour": "#635e2b",
+      "averageColour": "#6b6930",
       "seam": 0.0,
       "x": 342,
       "y": 650
@@ -1785,7 +1905,7 @@
       "height": 32,
       "band": 1,
       "corner": 2,
-      "averageColour": "#5a6e31",
+      "averageColour": "#686c31",
       "seam": 0.0,
       "x": 410,
       "y": 650
@@ -1797,7 +1917,7 @@
       "height": 32,
       "band": 1,
       "corner": 3,
-      "averageColour": "#63622d",
+      "averageColour": "#66652e",
       "seam": 0.0,
       "x": 478,
       "y": 650
@@ -1809,7 +1929,7 @@
       "height": 32,
       "band": 2,
       "corner": 0,
-      "averageColour": "#5e7c2f",
+      "averageColour": "#6a8232",
       "seam": 0.0,
       "x": 2,
       "y": 686
@@ -1821,7 +1941,7 @@
       "height": 32,
       "band": 2,
       "corner": 1,
-      "averageColour": "#5d792e",
+      "averageColour": "#6f8434",
       "seam": 0.0,
       "x": 70,
       "y": 686
@@ -1833,7 +1953,7 @@
       "height": 32,
       "band": 2,
       "corner": 2,
-      "averageColour": "#57722b",
+      "averageColour": "#617d30",
       "seam": 0.0,
       "x": 138,
       "y": 686
@@ -1845,7 +1965,7 @@
       "height": 32,
       "band": 2,
       "corner": 3,
-      "averageColour": "#607e30",
+      "averageColour": "#627f30",
       "seam": 0.0,
       "x": 206,
       "y": 686
@@ -1857,7 +1977,7 @@
       "height": 32,
       "band": 3,
       "corner": 0,
-      "averageColour": "#867f3d",
+      "averageColour": "#817a3b",
       "seam": 0.0,
       "x": 274,
       "y": 686
@@ -1869,7 +1989,7 @@
       "height": 32,
       "band": 3,
       "corner": 1,
-      "averageColour": "#9f9046",
+      "averageColour": "#938641",
       "seam": 0.0,
       "x": 342,
       "y": 686
@@ -1881,7 +2001,7 @@
       "height": 32,
       "band": 3,
       "corner": 2,
-      "averageColour": "#a09348",
+      "averageColour": "#998f46",
       "seam": 0.0,
       "x": 410,
       "y": 686
@@ -1893,7 +2013,7 @@
       "height": 32,
       "band": 3,
       "corner": 3,
-      "averageColour": "#807d3b",
+      "averageColour": "#88833f",
       "seam": 0.0,
       "x": 478,
       "y": 686
@@ -1905,7 +2025,7 @@
       "height": 32,
       "band": 4,
       "corner": 0,
-      "averageColour": "#a67a3e",
+      "averageColour": "#97743b",
       "seam": 0.0,
       "x": 2,
       "y": 722
@@ -1917,7 +2037,7 @@
       "height": 32,
       "band": 4,
       "corner": 1,
-      "averageColour": "#a97e40",
+      "averageColour": "#9a743b",
       "seam": 0.0,
       "x": 70,
       "y": 722
@@ -1929,7 +2049,7 @@
       "height": 32,
       "band": 4,
       "corner": 2,
-      "averageColour": "#a87b3e",
+      "averageColour": "#a0793f",
       "seam": 0.0,
       "x": 138,
       "y": 722
@@ -1941,7 +2061,7 @@
       "height": 32,
       "band": 4,
       "corner": 3,
-      "averageColour": "#a97c3f",
+      "averageColour": "#a38144",
       "seam": 0.0,
       "x": 206,
       "y": 722
@@ -1953,7 +2073,7 @@
       "height": 32,
       "band": 5,
       "corner": 0,
-      "averageColour": "#a16036",
+      "averageColour": "#aa6539",
       "seam": 0.0,
       "x": 274,
       "y": 722
@@ -1965,7 +2085,7 @@
       "height": 32,
       "band": 5,
       "corner": 1,
-      "averageColour": "#a86538",
+      "averageColour": "#af683a",
       "seam": 0.0,
       "x": 342,
       "y": 722
@@ -1977,7 +2097,7 @@
       "height": 32,
       "band": 5,
       "corner": 2,
-      "averageColour": "#b16a3b",
+      "averageColour": "#ae683a",
       "seam": 0.0,
       "x": 410,
       "y": 722
@@ -1989,7 +2109,7 @@
       "height": 32,
       "band": 5,
       "corner": 3,
-      "averageColour": "#945a32",
+      "averageColour": "#935931",
       "seam": 0.0,
       "x": 478,
       "y": 722
@@ -2001,7 +2121,7 @@
       "height": 32,
       "band": 6,
       "corner": 0,
-      "averageColour": "#b27343",
+      "averageColour": "#b07343",
       "seam": 0.0,
       "x": 2,
       "y": 758
@@ -2013,7 +2133,7 @@
       "height": 32,
       "band": 6,
       "corner": 1,
-      "averageColour": "#9f7440",
+      "averageColour": "#ad7643",
       "seam": 0.0,
       "x": 70,
       "y": 758
@@ -2025,7 +2145,7 @@
       "height": 32,
       "band": 6,
       "corner": 2,
-      "averageColour": "#b07442",
+      "averageColour": "#b27543",
       "seam": 0.0,
       "x": 138,
       "y": 758
@@ -2037,7 +2157,7 @@
       "height": 32,
       "band": 6,
       "corner": 3,
-      "averageColour": "#aa7142",
+      "averageColour": "#b07343",
       "seam": 0.0,
       "x": 206,
       "y": 758
@@ -2049,7 +2169,7 @@
       "height": 32,
       "band": 7,
       "corner": 0,
-      "averageColour": "#c0ad90",
+      "averageColour": "#a19075",
       "seam": 0.0,
       "x": 274,
       "y": 758
@@ -2061,7 +2181,7 @@
       "height": 32,
       "band": 7,
       "corner": 1,
-      "averageColour": "#93714f",
+      "averageColour": "#8f7253",
       "seam": 0.0,
       "x": 342,
       "y": 758
@@ -2073,7 +2193,7 @@
       "height": 32,
       "band": 7,
       "corner": 2,
-      "averageColour": "#9a7d61",
+      "averageColour": "#947b5e",
       "seam": 0.0,
       "x": 410,
       "y": 758
@@ -2085,7 +2205,7 @@
       "height": 32,
       "band": 7,
       "corner": 3,
-      "averageColour": "#8c7d60",
+      "averageColour": "#a29174",
       "seam": 0.0,
       "x": 478,
       "y": 758
@@ -2097,7 +2217,7 @@
       "height": 32,
       "band": 0,
       "mask": 1,
-      "averageColour": "#5a7045",
+      "averageColour": "#5c7147",
       "seam": 0.0,
       "x": 2,
       "y": 794
@@ -2109,7 +2229,7 @@
       "height": 32,
       "band": 0,
       "mask": 2,
-      "averageColour": "#5d7248",
+      "averageColour": "#5a6f45",
       "seam": 0.0,
       "x": 70,
       "y": 794
@@ -2121,7 +2241,7 @@
       "height": 32,
       "band": 0,
       "mask": 3,
-      "averageColour": "#5b7046",
+      "averageColour": "#5a7045",
       "seam": 0.0,
       "x": 138,
       "y": 794
@@ -2133,7 +2253,7 @@
       "height": 32,
       "band": 0,
       "mask": 4,
-      "averageColour": "#5a6f45",
+      "averageColour": "#5b7046",
       "seam": 0.0,
       "x": 206,
       "y": 794
@@ -2145,7 +2265,7 @@
       "height": 32,
       "band": 0,
       "mask": 5,
-      "averageColour": "#5a6f45",
+      "averageColour": "#5b7046",
       "seam": 0.0,
       "x": 274,
       "y": 794
@@ -2157,7 +2277,7 @@
       "height": 32,
       "band": 0,
       "mask": 6,
-      "averageColour": "#5c7147",
+      "averageColour": "#5b7146",
       "seam": 0.0,
       "x": 342,
       "y": 794
@@ -2181,7 +2301,7 @@
       "height": 32,
       "band": 0,
       "mask": 8,
-      "averageColour": "#5e7349",
+      "averageColour": "#5b7046",
       "seam": 0.0,
       "x": 478,
       "y": 794
@@ -2193,7 +2313,7 @@
       "height": 32,
       "band": 0,
       "mask": 9,
-      "averageColour": "#5b7147",
+      "averageColour": "#5a7045",
       "seam": 0.0,
       "x": 2,
       "y": 830
@@ -2205,7 +2325,7 @@
       "height": 32,
       "band": 0,
       "mask": 10,
-      "averageColour": "#5d7348",
+      "averageColour": "#5b7046",
       "seam": 0.0,
       "x": 70,
       "y": 830
@@ -2217,7 +2337,7 @@
       "height": 32,
       "band": 0,
       "mask": 11,
-      "averageColour": "#5c7147",
+      "averageColour": "#5b7146",
       "seam": 0.0,
       "x": 138,
       "y": 830
@@ -2229,7 +2349,7 @@
       "height": 32,
       "band": 0,
       "mask": 12,
-      "averageColour": "#5b7147",
+      "averageColour": "#5c7147",
       "seam": 0.0,
       "x": 206,
       "y": 830
@@ -2241,7 +2361,7 @@
       "height": 32,
       "band": 0,
       "mask": 13,
-      "averageColour": "#5b7046",
+      "averageColour": "#5b7146",
       "seam": 0.0,
       "x": 274,
       "y": 830
@@ -2253,7 +2373,7 @@
       "height": 32,
       "band": 0,
       "mask": 14,
-      "averageColour": "#5c7247",
+      "averageColour": "#5b7146",
       "seam": 0.0,
       "x": 342,
       "y": 830
@@ -2277,7 +2397,7 @@
       "height": 32,
       "band": 0,
       "corner": 0,
-      "averageColour": "#5f754a",
+      "averageColour": "#5d7248",
       "seam": 0.0,
       "x": 478,
       "y": 830
@@ -2289,7 +2409,7 @@
       "height": 32,
       "band": 0,
       "corner": 1,
-      "averageColour": "#5e7449",
+      "averageColour": "#576c42",
       "seam": 0.0,
       "x": 2,
       "y": 866
@@ -2313,7 +2433,7 @@
       "height": 32,
       "band": 0,
       "corner": 3,
-      "averageColour": "#5d7248",
+      "averageColour": "#5e7349",
       "seam": 0.0,
       "x": 138,
       "y": 866

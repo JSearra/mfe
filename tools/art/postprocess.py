@@ -89,7 +89,69 @@ def diamond_mask(width: int, height: int) -> np.ndarray:
     return (nx + ny) <= 1.0
 
 
-def edge_falloff(width: int, height: int, mask: int) -> np.ndarray:
+def _value_noise(shape: tuple[int, int], cells: tuple[int, int], seed: int) -> np.ndarray:
+    """Bilinear value noise on a lattice of `cells` across the frame, smoothstepped."""
+    rng = np.random.default_rng(seed)
+    height, width = shape
+    rows, cols = cells
+    lattice = rng.random((rows + 1, cols + 1))
+
+    ys = np.linspace(0, rows, height, endpoint=False)
+    xs = np.linspace(0, cols, width, endpoint=False)
+    y0 = np.floor(ys).astype(int)
+    x0 = np.floor(xs).astype(int)
+    fy = (ys - y0)[:, None]
+    fx = (xs - x0)[None, :]
+    # Smoothstepped interpolants, or the lattice shows as a grid of creases.
+    fy = fy * fy * (3 - 2 * fy)
+    fx = fx * fx * (3 - 2 * fx)
+
+    v00 = lattice[np.ix_(y0, x0)]
+    v10 = lattice[np.ix_(y0, x0 + 1)]
+    v01 = lattice[np.ix_(y0 + 1, x0)]
+    v11 = lattice[np.ix_(y0 + 1, x0 + 1)]
+    top = v00 + (v10 - v00) * fx
+    bottom = v01 + (v11 - v01) * fx
+    return top + (bottom - top) * fy
+
+
+def _fbm_normalised(shape: tuple[int, int], seed: int, octaves: int = 3) -> np.ndarray:
+    """
+    `_fbm` rescaled to zero mean and unit standard deviation.
+
+    Raw fbm is the mean of several uniform fields, so it clusters hard around 0.5 — its
+    practical spread is about a tenth of its nominal 0..1 range. Scaling a perturbation
+    by the raw value therefore does a fraction of what the number says: at a nominal
+    roughness of 0.8 the blend front of a single-edge mask wandered 1.4px, measured,
+    which is nothing on a 64px tile. Normalising makes the knob mean standard
+    deviations, which is a quantity that can be reasoned about and calibrated.
+    """
+    noise = _fbm(shape, seed, octaves)
+    spread = float(noise.std())
+    return (noise - float(noise.mean())) / (spread if spread > 1e-9 else 1.0)
+
+
+def _fbm(shape: tuple[int, int], seed: int, octaves: int = 3) -> np.ndarray:
+    """
+    Octaves of value noise, in 0..1.
+
+    Three octaves rather than one, because the two scales do different jobs. The coarse
+    octave makes the boundary MEANDER — a bay here, a headland there — and the fine ones
+    make its edge RAGGED, which is the grain of grass ending rather than a line where it
+    stops. One octave of either alone reads as a wobble or as static.
+    """
+    total = np.zeros(shape, dtype=np.float64)
+    amplitude = 1.0
+    norm = 0.0
+    for octave in range(octaves):
+        cells = (2 * 2**octave, 4 * 2**octave)
+        total += _value_noise(shape, cells, seed + octave * 977) * amplitude
+        norm += amplitude
+        amplitude *= 0.5
+    return total / norm
+
+
+def edge_falloff(width: int, height: int, mask: int, seed: int = 0) -> np.ndarray:
     """
     Alpha for a transition tile: opaque against the edges in `mask`, fading inward.
 
@@ -109,17 +171,56 @@ def edge_falloff(width: int, height: int, mask: int) -> np.ndarray:
     nx = ((xs + 0.5) - width / 2) / (width / 2)
     ny = ((ys + 0.5) - height / 2) / (height / 2)
 
+    # Seeded off the mask, so the four edges of a tile do not meander identically and
+    # two different configurations never wear the same coastline.
+    rough = _fbm_normalised((height, width), seed * 31 + mask * 7 + 1) * TRANSITION_ROUGHNESS
+
     alpha = np.zeros((height, width), dtype=np.float64)
     for bit, (sx, sy) in enumerate(TRANSITION_EDGES):
         if not mask & (1 << bit):
             continue
         # 0 on the edge itself, rising to 2 at the opposite corner.
         inward = 1.0 - (sx * nx + sy * ny)
-        near = np.clip(1.0 - inward / TRANSITION_REACH, 0.0, 1.0)
+        # Perturbed by how far in we already are, so the ROOT of the bleed stays solid
+        # against the edge it comes from and only its leading edge wanders. Noise at the
+        # root would open gaps along the seam, which is the one place the two grounds
+        # must actually meet.
+        depth = np.clip(inward / TRANSITION_REACH, 0.0, 1.0)
+        near = np.clip(1.0 - (inward + rough * depth) / TRANSITION_REACH, 0.0, 1.0)
         # Smoothstep, so the blend has no visible start or end line.
         alpha = np.maximum(alpha, near * near * (3.0 - 2.0 * near))
 
     return alpha
+
+
+def front_wander(alpha: np.ndarray) -> float:
+    """
+    How far the blend's leading edge strays from a straight line, in pixels.
+    
+    Measured and recorded rather than trusted, because a flat blend front is exactly the
+    class of art defect this project keeps shipping: it passes every type check, every
+    test and every size budget, and it is only visible to somebody looking at the map.
+    A regeneration with the roughness reset to zero would be silent without this.
+    
+    Taken as the standard deviation of where each row crosses half alpha, after taking
+    out the straight-line trend — so a front that runs diagonally but straight scores
+    near zero, and only genuine meander counts.
+    """
+    height, width = alpha.shape
+    crossings = []
+    for row in range(height):
+        line = alpha[row]
+        hit = np.where(line >= 0.5)[0]
+        if hit.size == 0 or hit.size == width:
+            continue
+        crossings.append((row, float(hit.min() if line[0] < 0.5 else hit.max())))
+    if len(crossings) < 4:
+        return 0.0
+    rows = np.array([c[0] for c in crossings], dtype=np.float64)
+    cols = np.array([c[1] for c in crossings], dtype=np.float64)
+    # Least squares line through the crossings; the residual is the wander.
+    slope, intercept = np.polyfit(rows, cols, 1)
+    return float(np.std(cols - (slope * rows + intercept)))
 
 
 def make_field(tile: Image.Image, broken: bool) -> Image.Image:
@@ -163,16 +264,16 @@ def make_field(tile: Image.Image, broken: bool) -> Image.Image:
     return Image.fromarray(pixels.astype(np.uint8), "RGBA")
 
 
-def make_transition(tile: Image.Image, mask: int) -> Image.Image:
+def make_transition(tile: Image.Image, mask: int, seed: int = 0) -> Image.Image:
     """A tile masked to bleed in from the edges named by `mask`."""
     pixels = np.array(tile.convert("RGBA"))
-    falloff = edge_falloff(tile.width, tile.height, mask)
+    falloff = edge_falloff(tile.width, tile.height, mask, seed)
     inside = diamond_mask(tile.width, tile.height)
     pixels[:, :, 3] = np.where(inside, np.clip(falloff * 255.0, 0, 255).astype(np.uint8), 0)
     return Image.fromarray(pixels, "RGBA")
 
 
-def corner_falloff(width: int, height: int, corner: int) -> np.ndarray:
+def corner_falloff(width: int, height: int, corner: int, seed: int = 0) -> np.ndarray:
     """
     Alpha for a corner transition: opaque at one diamond POINT, gone a short way in.
 
@@ -192,14 +293,18 @@ def corner_falloff(width: int, height: int, corner: int) -> np.ndarray:
 
     point_x, point_y = TRANSITION_CORNERS[corner]
     distance = np.abs(nx - point_x) + np.abs(ny - point_y)
-    near = np.clip(1.0 - distance / CORNER_REACH, 0.0, 1.0)
+    # Perturbed like an edge's front, and weighted the same way, so the wedge's tip
+    # stays anchored on the point it arrives at and only its far side wanders.
+    rough = _fbm_normalised((height, width), seed * 31 + corner * 13 + 101) * TRANSITION_ROUGHNESS
+    depth = np.clip(distance / CORNER_REACH, 0.0, 1.0)
+    near = np.clip(1.0 - (distance + rough * depth) / CORNER_REACH, 0.0, 1.0)
     return near * near * (3.0 - 2.0 * near)
 
 
-def make_corner(tile: Image.Image, corner: int) -> Image.Image:
+def make_corner(tile: Image.Image, corner: int, seed: int = 0) -> Image.Image:
     """A tile masked to bleed in from one diamond point."""
     pixels = np.array(tile.convert("RGBA"))
-    falloff = corner_falloff(tile.width, tile.height, corner)
+    falloff = corner_falloff(tile.width, tile.height, corner, seed)
     inside = diamond_mask(tile.width, tile.height)
     pixels[:, :, 3] = np.where(inside, np.clip(falloff * 255.0, 0, 255).astype(np.uint8), 0)
     return Image.fromarray(pixels, "RGBA")
@@ -280,9 +385,36 @@ TERRAIN_BANDS = {
 # space is the upper-right edge on screen and not the top corner.
 TRANSITION_EDGES = ((1, -1), (1, 1), (-1, 1), (-1, -1))
 
-# How far across a tile a neighbour's ground bleeds. Most of the way: a narrow band reads
-# as a drawn outline rather than as one ground giving way to another.
-TRANSITION_REACH = 0.85
+# How far across a tile a neighbour's ground bleeds, in the diamond's own metric, where
+# 2.0 is the opposite corner.
+#
+# It was 0.85 — under half the tile — which left every boundary tile with an unblended
+# core of its own ground, so the visible edge fell on the TILE GRID and read as a
+# staircase of diamonds however soft the gradient across it was. That is the thing the
+# blend exists to hide and it was never hiding it.
+#
+# The reference here is AoE2's blendomatic, whose masks cover enough of a tile that the
+# MASK decides where the boundary runs rather than the grid. Swept at 0.85, 1.3 and 1.8
+# against a composed boundary: 0.85 is a staircase, 1.8 floods nine tenths of the tile
+# so the lower ground loses its territory and small patches of it vanish, and 1.3 is
+# where the boundary meanders while both grounds keep their own.
+TRANSITION_REACH = 1.3
+
+# How far the blend's leading edge wanders, in standard deviations of the noise.
+#
+# Without it the mask is a dead-straight ramp running exactly parallel to the tile edge,
+# identical on every tile, which the eye reads as a printed seam rather than as one
+# ground giving way to another. Both games this was modelled on solve it the same way
+# from opposite directions: AoE2's blendomatic carries nine blend MODES including
+# "rough transition, used for dirt, grass" and "rough hard edges, spraylike", and
+# Red Alert's LAT tiles are hand-drawn with irregular, dithered boundaries. Neither
+# ever draws a straight one.
+# Calibrated rather than guessed: the mean front wander of a single-edge mask, which is
+# the case that tiles along a long boundary, runs 0.66px at 0.05 and 4.95px at 0.30.
+# 0.35 puts it near 6px on a 64px tile — an eighth of a tile of meander. Swept against a
+# composed boundary at 0.2, 0.35 and 0.5: 0.2 still shows the tile grid through it, 0.5
+# frays the edge into noise, and 0.35 has bays and headlands that hold together.
+TRANSITION_ROUGHNESS = 0.35
 
 # The four diamond POINTS a diagonal neighbour arrives at, in (nx, ny): east, south,
 # west, north. Corner i sits between edges i and (i + 1) % 4, which is the order
@@ -292,8 +424,9 @@ TRANSITION_CORNERS = ((1, 0), (0, 1), (-1, 0), (0, -1))
 
 # Shorter than an edge's reach, and deliberately. Ground that touches only at a point is
 # barely arriving; a wedge as long as a full edge band would read as the whole tile
-# changing ground because one diagonal neighbour did.
-CORNER_REACH = 0.55
+# changing ground because one diagonal neighbour did. Kept at the same proportion of
+# TRANSITION_REACH it has always had, so the two were raised together.
+CORNER_REACH = 0.85
 
 TILE_PAD = 2
 
@@ -395,13 +528,14 @@ def command_tile(args: argparse.Namespace) -> int:
         _, tile = first_of_band[band_index]
         for mask in range(1, 16):
             name = f"transition-{band_index}-{mask}.png"
-            blended = make_transition(tile, mask)
+            blended = make_transition(tile, mask, seed=band_index)
             blended.save(target / name)
             packed.append((name, blended))
             manifest.append(
                 {
                     "file": name,
                     "subject": "transition",
+                    "frontWander": round(front_wander(edge_falloff(TILE_W, TILE_H, mask, band_index)), 3),
                     "width": TILE_W,
                     "height": TILE_H,
                     "band": band_index,
@@ -422,7 +556,7 @@ def command_tile(args: argparse.Namespace) -> int:
         _, tile = first_of_band[band_index]
         for corner in range(len(TRANSITION_CORNERS)):
             name = f"corner-{band_index}-{corner}.png"
-            wedge = make_corner(tile, corner)
+            wedge = make_corner(tile, corner, seed=band_index)
             wedge.save(target / name)
             packed.append((name, wedge))
             manifest.append(
@@ -458,7 +592,7 @@ def command_tile(args: argparse.Namespace) -> int:
     )
     for mask in range(1, 16):
         name = f"shore-{mask}.png"
-        bank = make_transition(shore_source, mask)
+        bank = make_transition(shore_source, mask, seed=97)
         bank.save(target / name)
         packed.append((name, bank))
         manifest.append(
@@ -475,7 +609,7 @@ def command_tile(args: argparse.Namespace) -> int:
         )
     for corner in range(len(TRANSITION_CORNERS)):
         name = f"shore-corner-{corner}.png"
-        bank = make_corner(shore_source, corner)
+        bank = make_corner(shore_source, corner, seed=97)
         bank.save(target / name)
         packed.append((name, bank))
         manifest.append(
