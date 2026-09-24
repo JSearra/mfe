@@ -17,7 +17,12 @@ import {
   clampCamera,
   mapBounds,
 } from '../src/render/camera.js';
-import { worldToScreenX, worldToScreenY } from '../src/shared/iso.js';
+import {
+  screenToWorldX,
+  screenToWorldY,
+  worldToScreenX,
+  worldToScreenY,
+} from '../src/shared/iso.js';
 
 describe('camera zoom', () => {
   it('clamps at both ends', () => {
@@ -194,8 +199,8 @@ describe('camera bounds', () => {
       clampCamera(camera, bounds);
     }
 
-    expect(camera.x).toBeLessThanOrEqual(bounds.maxX);
-    expect(camera.y).toBeLessThanOrEqual(bounds.maxY);
+    expect(screenToWorldX(camera.x, camera.y, 0)).toBeLessThanOrEqual(128);
+    expect(screenToWorldY(camera.x, camera.y, 0)).toBeLessThanOrEqual(128);
 
     input.panRight = false;
     input.panDown = false;
@@ -206,16 +211,64 @@ describe('camera bounds', () => {
       clampCamera(camera, bounds);
     }
 
-    expect(camera.x).toBeGreaterThanOrEqual(bounds.minX);
-    expect(camera.y).toBeGreaterThanOrEqual(bounds.minY);
+    expect(screenToWorldX(camera.x, camera.y, 0)).toBeGreaterThanOrEqual(0);
+    expect(screenToWorldY(camera.x, camera.y, 0)).toBeGreaterThanOrEqual(0);
   });
 
-  it('brackets the projected corners of the map', () => {
-    // Far west is (0, height); far east is (width, 0). A box that does not contain both
-    // would clip a corner of the map out of reach.
-    expect(bounds.minX).toBeLessThanOrEqual(worldToScreenX(0, 128));
-    expect(bounds.maxX).toBeGreaterThanOrEqual(worldToScreenX(128, 0));
-    expect(bounds.maxY).toBeGreaterThanOrEqual(worldToScreenY(128, 128, 0));
+  it('lets the camera reach every corner of the map exactly', () => {
+    // Far west is (0, height) and far east is (width, 0), because the projection turns
+    // the grid 45 degrees. A clamp that cannot reach one of these clips a corner of the
+    // map out of view for good.
+    for (const [tileX, tileY] of [[0, 0], [128, 0], [0, 128], [128, 128]] as const) {
+      const camera = createCamera(1280, 820);
+      camera.x = worldToScreenX(tileX, tileY);
+      camera.y = worldToScreenY(tileX, tileY, 0);
+      clampCamera(camera, bounds);
+      expect(camera.x).toBe(worldToScreenX(tileX, tileY));
+      expect(camera.y).toBe(worldToScreenY(tileX, tileY, 0));
+    }
+  });
+
+  /**
+   * Every corner of the screen-space bounding box, in the order a player reaches them by
+   * holding two pan keys. None of these is a corner of the MAP.
+   */
+  const corners = [
+    ['north-west', { panLeft: true, panUp: true }],
+    ['north-east', { panRight: true, panUp: true }],
+    ['south-west', { panLeft: true, panDown: true }],
+    ['south-east', { panRight: true, panDown: true }],
+  ] as const;
+
+  it.each(corners)('leaves the camera over the map after panning %s', (_name, keys) => {
+    /*
+     * The defect this guards, and it is the one the original clamp was written to stop.
+     *
+     * A 128x128 map is a DIAMOND on screen, not a rectangle: its west point is at
+     * (-4096, 2048) and its north point at (0, 0). Clamping x and y independently
+     * against the bounding box therefore permits (-4096, 0) — a bounding-box corner
+     * some two thousand pixels from the nearest land, which is half a dozen viewports
+     * of pure background with nothing on it to say which way the map went.
+     *
+     * Holding left and up for fifteen seconds put the camera exactly there and the
+     * screen was empty. The axis assertions above all passed while it did, because they
+     * ask the same question the broken clamp asks.
+     */
+    const camera = createCamera(1280, 820);
+    const input = createCameraInput();
+    Object.assign(input, keys);
+
+    for (let frame = 0; frame < 6000; frame++) {
+      updateCamera(camera, input, 1 / 60);
+      clampCamera(camera, bounds);
+    }
+
+    const tileX = screenToWorldX(camera.x, camera.y, 0);
+    const tileY = screenToWorldY(camera.x, camera.y, 0);
+    expect(tileX).toBeGreaterThanOrEqual(0);
+    expect(tileX).toBeLessThanOrEqual(128);
+    expect(tileY).toBeGreaterThanOrEqual(0);
+    expect(tileY).toBeLessThanOrEqual(128);
   });
 
   it('pins the camera inside a map smaller than the viewport rather than oscillating', () => {
@@ -224,8 +277,11 @@ describe('camera bounds', () => {
     camera.x = 9999;
     camera.y = -9999;
     clampCamera(camera, small);
-    expect(camera.x).toBe(small.maxX);
-    expect(camera.y).toBe(small.minY);
+    // Far to the right of the map and far above it. Up-screen is north-WEST and
+    // north-east at once, so both tile coordinates go negative long before the
+    // rightward offset can carry either of them east: the nearest land is (0, 0).
+    expect(camera.x).toBe(worldToScreenX(0, 0));
+    expect(camera.y).toBe(worldToScreenY(0, 0, 0));
     const once = { x: camera.x, y: camera.y };
     clampCamera(camera, small);
     expect(camera.x).toBe(once.x);

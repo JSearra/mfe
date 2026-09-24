@@ -484,7 +484,7 @@ async function main(options: GameOptions): Promise<void> {
   camera.y = MAP_SIZE * 16;
   // The camera may not leave the map. Without this, a held pan key walks the view into
   // empty space and nothing is relative enough to the map to bring it back.
-  const cameraBounds = mapBounds(map.width, map.height, map.levels - 1);
+  const cameraBounds = mapBounds(map.width, map.height);
 
   const terrainTiles = await loadTerrainTiles();
   // How dry this country is drawn. A statement about the landscape, which is the one
