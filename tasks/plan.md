@@ -506,14 +506,21 @@ Left open, in the order they seem worth doing:
       beside the seam score, printed per source, so a ploughed field is caught when it is
       generated rather than after it ships. It must not become a gate on its own: seed
       1504 scored clean and was unusable.
-- [ ] **V4 — The remaining lattice.** *Eased by Z5:* twice the sources a band means a
-      given feature sits at the same tile-relative position in far fewer of the tiles
-      around it; not visible at default zoom on open savanna. Not re-measured at close
-      zoom. Was: Open ground is much improved but faint diamond
+- [x] **V4 — The remaining lattice.** Resolved by Z5: with twice the sources a band, open
+      savanna at close zoom (camera zoomed six steps in) shows no diamond outlines — the
+      only diamond in frame was the cursor. Was: Open ground is much improved but faint diamond
       outlines are still visible at close zoom. The overlapping cuts share 80% of their
       source, so a large feature sits at nearly the same tile-relative position in all
       four — the opposite failure to the one just fixed, and the two trade against each
       other at a fixed source size of 512px.
+
+- [ ] **V5 — The river bank is a staircase.** Seen at close zoom beside the default
+      veld's river: the darker bank ground on the LAND side of a shore steps along in
+      whole diamonds, a sawtooth of lozenges following the tile grid, where the water
+      side (V1) and open ground (V4) no longer show the grid at all. The shore masks come
+      from the same dissolving transitions as a band seam, so the question is why they
+      read as solid steps here — likely the bank's contrast against the grass, which is
+      far higher than one grass against another.
 
 *Note for whoever picks this up:* `tools/art/generate_tiles.py` drives a local FLUX
 model and the weights ARE cached (~9GB in ~/.cache/huggingface), so terrain subjects can
