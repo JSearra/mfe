@@ -118,6 +118,42 @@ SUBJECTS = {
     ),
 }
 
+# Seeds that came back unusable, and what was wrong with them.
+#
+# The model does not always give ground. Asked for grassland it sometimes gives a
+# PLOUGHED FIELD: regular parallel rows, which tile into corduroy running across the
+# open veld and read as farmland from horizon to horizon. savanna-low seed 1501 was one,
+# and it shipped — it is the striping visible in any wide shot of the grass.
+#
+# A rejected seed is SKIPPED and the next one taken, never renumbered, so every other
+# tile in the set keeps the seed it already had and a rejection here churns one image
+# rather than the whole subject.
+#
+# Measure first, then look; neither alone is enough. Row-periodicity, as the strength of
+# the strongest component between 4 and 64 pixels against the noise, separated 1501
+# (1.16) from every other source in the set (0.14 to 0.65) and named the defect exactly.
+# It did NOT catch seed 1504, which has no periodicity at all and is a mat of rosette
+# plants split by branching orange channels — wrong ground, scored clean. The number
+# finds the repeat; the eye finds everything else.
+REJECTED: dict[str, dict[int, str]] = {
+    "savanna-low": {
+        1501: "regular parallel rows - ploughed field, corduroy across the veld",
+    },
+}
+
+
+def seeds_for(name: str, base: int, count: int) -> list[int]:
+    """`count` usable seeds for a subject, stepping over the rejected ones."""
+    rejected = REJECTED.get(name, {})
+    out: list[int] = []
+    seed = base
+    while len(out) < count:
+        if seed not in rejected:
+            out.append(seed)
+        seed += 1
+    return out
+
+
 def generate(name: str, subject: str, seed: int, args: argparse.Namespace) -> pathlib.Path:
     out = pathlib.Path(args.out) / f"{name}_{seed}.png"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -194,11 +230,10 @@ def main() -> int:
         for old in pathlib.Path(args.out).glob(f"{name}_*.png"):
             old.unlink()
 
-        for variant in range(args.variants):
-            # Derived, not random: the same invocation reproduces the same tiles, which
-            # is what lets a set be regenerated after a prompt tweak without churning
-            # every unrelated image.
-            seed = args.seed + order[name] * 100 + variant
+        # Derived, not random: the same invocation reproduces the same tiles, which is
+        # what lets a set be regenerated after a prompt tweak without churning every
+        # unrelated image. Rejected seeds are stepped over — see REJECTED.
+        for seed in seeds_for(name, args.seed + order[name] * 100, args.variants):
             written.append(str(generate(name, subject, seed, args)))
 
     # The manifest describes the directory, not this invocation. Listing only what this

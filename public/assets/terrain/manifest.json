@@ -707,50 +707,6 @@
       "y": 254
     },
     {
-      "file": "savanna-low_1501-0.png",
-      "subject": "savanna-low",
-      "width": 64,
-      "height": 32,
-      "band": 1,
-      "averageColour": "#50752a",
-      "seam": 0.1702,
-      "x": 2,
-      "y": 290
-    },
-    {
-      "file": "savanna-low_1501-1.png",
-      "subject": "savanna-low",
-      "width": 64,
-      "height": 32,
-      "band": 1,
-      "averageColour": "#50742a",
-      "seam": 0.1702,
-      "x": 70,
-      "y": 290
-    },
-    {
-      "file": "savanna-low_1501-2.png",
-      "subject": "savanna-low",
-      "width": 64,
-      "height": 32,
-      "band": 1,
-      "averageColour": "#50752a",
-      "seam": 0.1702,
-      "x": 138,
-      "y": 290
-    },
-    {
-      "file": "savanna-low_1501-3.png",
-      "subject": "savanna-low",
-      "width": 64,
-      "height": 32,
-      "band": 1,
-      "averageColour": "#50752a",
-      "seam": 0.1702,
-      "x": 206,
-      "y": 290
-    },
-    {
       "file": "savanna-low_1502-0.png",
       "subject": "savanna-low",
       "width": 64,
@@ -758,7 +714,7 @@
       "band": 1,
       "averageColour": "#537128",
       "seam": 0.1993,
-      "x": 274,
+      "x": 2,
       "y": 290
     },
     {
@@ -769,7 +725,7 @@
       "band": 1,
       "averageColour": "#537128",
       "seam": 0.1993,
-      "x": 342,
+      "x": 70,
       "y": 290
     },
     {
@@ -780,7 +736,7 @@
       "band": 1,
       "averageColour": "#537128",
       "seam": 0.1993,
-      "x": 410,
+      "x": 138,
       "y": 290
     },
     {
@@ -791,6 +747,50 @@
       "band": 1,
       "averageColour": "#537128",
       "seam": 0.1993,
+      "x": 206,
+      "y": 290
+    },
+    {
+      "file": "savanna-low_1503-0.png",
+      "subject": "savanna-low",
+      "width": 64,
+      "height": 32,
+      "band": 1,
+      "averageColour": "#51742a",
+      "seam": 0.1594,
+      "x": 274,
+      "y": 290
+    },
+    {
+      "file": "savanna-low_1503-1.png",
+      "subject": "savanna-low",
+      "width": 64,
+      "height": 32,
+      "band": 1,
+      "averageColour": "#517329",
+      "seam": 0.1594,
+      "x": 342,
+      "y": 290
+    },
+    {
+      "file": "savanna-low_1503-2.png",
+      "subject": "savanna-low",
+      "width": 64,
+      "height": 32,
+      "band": 1,
+      "averageColour": "#51742a",
+      "seam": 0.1594,
+      "x": 410,
+      "y": 290
+    },
+    {
+      "file": "savanna-low_1503-3.png",
+      "subject": "savanna-low",
+      "width": 64,
+      "height": 32,
+      "band": 1,
+      "averageColour": "#52752a",
+      "seam": 0.1594,
       "x": 478,
       "y": 290
     },
