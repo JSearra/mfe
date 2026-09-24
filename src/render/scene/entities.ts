@@ -1,8 +1,8 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
 import { heightAt, type Heightmap } from '../../shared/heightmap.js';
-import { worldToScreenX, worldToScreenY } from '../../shared/iso.js';
+import { HALF_TILE_W, worldToScreenX, worldToScreenY } from '../../shared/iso.js';
 import type { InterpolatedView } from '../interpolation.js';
-import { BuildingType } from '../../shared/buildings/index.js';
+import { BuildingType, buildingSpec } from '../../shared/buildings/index.js';
 import { presentation } from '../presentation.js';
 import { createDepthOrder } from './depthOrder.js';
 import type { SpriteAtlas } from '../assets.js';
@@ -134,14 +134,33 @@ const VILLAGER_KINDS: readonly string[] = ['impi', 'herd-boy', 'field-hand', 'ca
  * into a single draw call. Mixing a Graphics between every pair of sprites would break
  * the batch on each switch, which at 500 units is the whole frame budget.
  */
+/**
+ * How much ground a thing's shadow covers, in screen pixels.
+ *
+ * Buildings were getting the villager's. `drawDecal` drew one ellipse at the unit
+ * radius for everything handed to it, so an isibaya two tiles across sat on the same
+ * smudge as one person — which is most of why the buildings looked like they were
+ * resting on the grass rather than standing in it. Every reference sheet of isometric
+ * buildings carries a cast shadow the size of the building; ours carried a dot.
+ *
+ * A building's is taken from its FOOTPRINT, which is the ground it actually occupies,
+ * rather than from its sprite, which is deliberately larger — how big a building looks
+ * and how much ground it holds were never the same number here.
+ */
+export function shadowRadius(kind: number, subtype: number): number {
+  if (kind === KIND_CATTLE) return cattleStyle.radius;
+  if (kind !== KIND_BUILDING) return radius;
+  return buildingSpec(subtype).footprint * HALF_TILE_W * 0.5;
+}
+
 function drawDecal(
   graphics: Graphics,
   isCattle: boolean,
   stressPct: number,
   stampeding: boolean,
   selected: boolean,
+  r: number = isCattle ? cattleStyle.radius : radius,
 ): void {
-  const r = isCattle ? cattleStyle.radius : radius;
 
   if (selected) {
     graphics.ellipse(0, 0, r + 5, (r + 5) / 2);
@@ -815,7 +834,15 @@ export function createEntityLayer(
           marker.decal.clear();
           marker.graphics.clear();
           if (isBuilding && !textured) drawBuilding(marker.graphics, progressBand << 4, isSelected);
-          else if (textured) drawDecal(marker.decal, isCattle, stressBand << 4, stampeding, isSelected);
+          else if (textured)
+            drawDecal(
+              marker.decal,
+              isCattle,
+              stressBand << 4,
+              stampeding,
+              isSelected,
+              shadowRadius(kind, view.subtype[index]!),
+            );
           else if (isCattle) drawCow(marker.graphics, stressBand << 4, stampeding, isSelected);
           else drawUnit(marker.graphics, faction, isSelected);
           marker.signature = signature;
