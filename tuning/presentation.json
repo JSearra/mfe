@@ -29,6 +29,11 @@
       "karoo": 2,
       "thaba-bosiu": 2,
       "magaliesberg": 2
+    },
+    "edgeFalloff": {
+      "tiles": 8,
+      "exponent": 3,
+      "stops": 24
     }
   },
   "debug": {

@@ -39,6 +39,7 @@ import { createFieldLayer } from './render/scene/fields.js';
 import { loadSpriteAtlas, loadTerrainTiles } from './render/assets.js';
 import { presentation } from './render/presentation.js';
 import { createTileCursor, placeTileCursor } from './render/scene/cursor.js';
+import { createEdgeFalloff } from './render/scene/edgeFalloff.js';
 import { createFogRenderer } from './render/scene/fog.js';
 import { createTerrain } from './render/scene/terrain.js';
 import {
@@ -521,6 +522,11 @@ async function main(options: GameOptions): Promise<void> {
   // Fog goes on top of everything in the world layer: it hides terrain as well as what
   // stands on it.
   terrain.container.addChild(fog.container);
+  // And the world going dark where the map runs out goes on top of the fog, for the same
+  // reason: a tree at the boundary has to fade with the ground under it. Static, so it is
+  // built once and never touched again.
+  const edgeFalloff = createEdgeFalloff(map, BACKGROUND);
+  terrain.container.addChild(edgeFalloff.container);
   app.stage.addChild(terrain.container);
 
   const marquee = createMarqueeGraphics();
@@ -1135,6 +1141,7 @@ async function main(options: GameOptions): Promise<void> {
     terrain.update(camera);
     alerts.update(performance.now());
     fog.update(camera);
+    edgeFalloff.update(camera);
 
     if (view !== null) {
       const at = performance.now();
