@@ -445,6 +445,44 @@ disagreed with it in specific, correctable ways.
       the softened ground they are now the most artificial thing on screen, so the
       argument has weakened. A decision about what a field IS, not about how tiles meet.
 
+## Part VI — terrain, continued
+
+Done this pass: the camera is clamped to the map's diamond rather than its bounding box
+(it could be parked on an entirely empty screen); the world now fades to background at
+the map boundary instead of being cut off; ground tiles are cut with overlapping rather
+than quadrant crops, which halved the per-tile contrast spread that made open veld read
+as a quilt; savanna-low seed 1501, a ploughed field, is rejected and replaced.
+
+Left open, in the order they seem worth doing:
+
+- [ ] **V1 — Water is flat.** Measured over 15,586 river pixels: luminance sd 1.53 and
+      five near-identical colours, against 15 to 21 for land. It reads as a plastic
+      sheet. `terrain.ts` records a deliberate decision not to texture it — "at this
+      scale a river reads as a colour and a shape, and a textured one would read as more
+      dry ground" — which is about a RIVERBED and does not settle whether the surface
+      should have any modulation at all. Note the trap already paid for once: per-tile
+      variation returns the quilt of blue lozenges that `smoothWaterDepth` was written to
+      remove, so anything here has to vary at sub-tile scale, which a flat Graphics fill
+      cannot do.
+- [ ] **V2 — The hard bands are twice the contrast of the soft ones.** Per-tile contrast
+      runs 14 to 21 for bands 0-4 and 29.9 (donga) and 27.2 (rock) for the broken ones,
+      whose darkest fifty-first pixel reaches luminance 35 on a base of 175. Large
+      expanses of donga dominate any frame they are in. Before touching it: the coarse
+      feature scale is SETTLED and documented in generate_tiles.py — finer cracks were
+      tried three times and came back as flat orange, because they do not survive an
+      eight-to-one downscale. The open question is the contrast of the shadow, not the
+      size of the plates.
+- [ ] **V3 — A periodicity check in the pipeline.** The row/column measure that caught
+      seed 1501 lives only in this session's scratch. It belongs in `postprocess.py`
+      beside the seam score, printed per source, so a ploughed field is caught when it is
+      generated rather than after it ships. It must not become a gate on its own: seed
+      1504 scored clean and was unusable.
+- [ ] **V4 — The remaining lattice.** Open ground is much improved but faint diamond
+      outlines are still visible at close zoom. The overlapping cuts share 80% of their
+      source, so a large feature sits at nearly the same tile-relative position in all
+      four — the opposite failure to the one just fixed, and the two trade against each
+      other at a fixed source size of 512px.
+
 *Note for whoever picks this up:* `tools/art/generate_tiles.py` drives a local FLUX
 model and the weights ARE cached (~9GB in ~/.cache/huggingface), so terrain subjects can
 be regenerated — about 45 seconds an image, three per subject. `make_unit.py` and
