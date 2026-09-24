@@ -2,6 +2,7 @@ import { Assets, Rectangle, Texture } from 'pixi.js';
 import { diamondUvs, QUAD_FLOATS } from './scene/terrainGeometry.js';
 import { SEAM_CORNERS } from './scene/seams.js';
 import { BLEND_VARIANTS } from './scene/terrainBand.js';
+import { presentation } from './presentation.js';
 
 /**
  * Loads the sprite atlas and hands out textures by meaning rather than by coordinate.
@@ -180,6 +181,8 @@ interface TerrainManifest {
   readonly page: string;
   readonly padding: number;
   readonly tiles: readonly TerrainTileEntry[];
+  /** Season name -> a page in the same layout, re-toned by tools/art/season.py. */
+  readonly seasons?: { readonly dry?: string; readonly drought?: string };
 }
 
 export interface TerrainTile {
@@ -205,6 +208,16 @@ export interface TerrainTiles {
    * above, which is what keeps a chunk of any composition to a single draw call.
    */
   readonly page: Texture;
+  /**
+   * Show the ground at a point on the season ramp: 0 the rains, 1 the dry season, 2
+   * drought, and anything between (roadmap Phase B5).
+   *
+   * Redraws the page itself as a blend of the two seasonal pages either side, so every
+   * chunk mesh and field sprite that samples it changes at once — no geometry rebuilt,
+   * no second mesh, no extra draw call. Quantised, so it only redraws when the ground
+   * would visibly change. A no-op when the pipeline shipped no seasonal pages.
+   */
+  setSeason(position: number): void;
   /** Variants available for a height level, nearest band if that level has none. */
   variants(level: number): readonly TerrainTile[];
   /**
@@ -277,7 +290,9 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
     const manifest = (await response.json()) as TerrainManifest;
     if (!manifest.page || !manifest.tiles?.length) return null;
 
-    const page = await Assets.load<Texture>(`${base}/${manifest.page}`);
+    const wet = await Assets.load<Texture>(`${base}/${manifest.page}`);
+    const seasonal = await loadSeasons(base, manifest, wet);
+    const page = seasonal?.page ?? wet;
     // Nearest sampling: these are pixel art at exactly their drawn size, and linear
     // filtering on a diamond's edge fringes it against the transparent padding.
     page.source.scaleMode = 'nearest';
@@ -341,6 +356,10 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
     return {
       page,
 
+      setSeason(position: number) {
+        seasonal?.set(position);
+      },
+
       variants(level: number) {
         const exact = byBand[level];
         if (exact && exact.length > 0) return exact;
@@ -378,4 +397,66 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
   } catch {
     return null;
   }
+}
+
+/**
+ * The seasonal pages, and a canvas that holds the blend of two of them.
+ *
+ * The three pages are the same tiles in the same places, re-toned per band by
+ * tools/art/season.py. Blending them is a straight lerp of premultiplied pixels — drawn
+ * with `lighter` at complementary alphas, so a soft-edged transition tile keeps exactly
+ * the alpha it had rather than thickening where two draws overlap.
+ */
+async function loadSeasons(
+  base: string,
+  manifest: TerrainManifest,
+  wet: Texture,
+): Promise<{ page: Texture; set(position: number): void } | null> {
+  const dryFile = manifest.seasons?.dry;
+  const droughtFile = manifest.seasons?.drought;
+  if (dryFile === undefined || droughtFile === undefined) return null;
+  if (typeof document === 'undefined') return null;
+
+  const [dry, drought] = await Promise.all([
+    Assets.load<Texture>(`${base}/${dryFile}`),
+    Assets.load<Texture>(`${base}/${droughtFile}`),
+  ]);
+  const images = [wet, dry, drought].map((t) => t.source.resource as CanvasImageSource);
+  const width = wet.source.width;
+  const height = wet.source.height;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d');
+  if (context === null) return null;
+  const page = Texture.from(canvas);
+
+  const steps = presentation.terrain.seasonRamp.steps;
+  let shown = -1;
+
+  function set(position: number): void {
+    const clamped = position < 0 ? 0 : position > 2 ? 2 : position;
+    const step = Math.round(clamped * steps);
+    if (step === shown) return;
+    shown = step;
+
+    const at = step / steps;
+    const lower = Math.min(Math.floor(at), 1);
+    const t = at - lower;
+    context!.clearRect(0, 0, width, height);
+    context!.globalCompositeOperation = 'lighter';
+    context!.globalAlpha = 1 - t;
+    context!.drawImage(images[lower]!, 0, 0);
+    if (t > 0) {
+      context!.globalAlpha = t;
+      context!.drawImage(images[lower + 1]!, 0, 0);
+    }
+    context!.globalAlpha = 1;
+    context!.globalCompositeOperation = 'source-over';
+    page.source.update();
+  }
+
+  set(0);
+  return { page, set };
 }

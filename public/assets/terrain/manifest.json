@@ -6513,5 +6513,9 @@
       "x": 138,
       "y": 2234
     }
-  ]
+  ],
+  "seasons": {
+    "dry": "tiles-dry.png",
+    "drought": "tiles-drought.png"
+  }
 }

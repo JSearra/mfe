@@ -959,6 +959,24 @@ Green in the wet season, gold then grey-brown in the dry, and harsher in a droug
 Terrain bands need seasonal versions from the art pipeline, not only a tint. Look at it
 and measure it, per `CLAUDE.md`.
 
+**Done (2026-09-24).** `tools/art/season.py` re-tones the shipped terrain page, band by
+band, toward the `dry` and `drought` palettes in `tuning/presentation.json`. It uses
+`postprocess.harmonise`'s transform measured over opaque pixels, and writes
+`tiles-dry.png` and `tiles-drought.png` in the same layout. The renderer draws its page
+from a canvas and redraws it as a lerp of the two neighbouring seasonal pages whenever
+the drought reading crosses a step of the `seasonRamp`. Every chunk mesh and field sprite
+samples that one texture, so the whole veld changes with no extra draw call and no
+rebuilt geometry. The cliff faces are flat colours, and they are tinted instead.
+
+Measured, per band: each season's mean lands on its palette entry; contrast is kept
+(band 2: 18.3 wet, 20.7 dry, 18.8 drought); and the grain is untouched (luminance
+correlation wet to drought, per tile, median 1.000, minimum 0.999). In the browser the
+same view went from mean `#7f7b42` through `#92844c` to `#837557`, with the grain within
+19–22 throughout. Looked at: green-olive, then gold, then grey-brown, with the red earth
+and the rock hardly moving. `__debug.season(position)` shows any point on the ramp.
+
+*Not done:* tree canopies are separate sprites and stay green all year.
+
 ## Already built
 
 Rivers with dry crossings, coastlines and fishing (commit `4f7d310`). ADR-0020 asked for

@@ -49,7 +49,7 @@ import { presentation } from './render/presentation.js';
 import { createTileCursor, placeTileCursor } from './render/scene/cursor.js';
 import { createEdgeFalloff } from './render/scene/edgeFalloff.js';
 import { createFogRenderer } from './render/scene/fog.js';
-import { createTerrain } from './render/scene/terrain.js';
+import { createTerrain, seasonPosition } from './render/scene/terrain.js';
 import {
   createMarqueeGraphics,
   createSelection,
@@ -477,6 +477,8 @@ async function main(options: GameOptions): Promise<void> {
       wanted: fieldHandsWanted(packed, at),
     };
   }
+  /** Dev-only: a season ramp position to show instead of the weather's. See __debug. */
+  let seasonOverride: number | null = null;
   /** The last PlayerState that crossed the boundary, for the dev inspection hook. */
   let lastPlayer: PlayerState | null = null;
   const herdScratch: number[] = [];
@@ -823,6 +825,12 @@ async function main(options: GameOptions): Promise<void> {
       // the world. Without it a browser-driven session can see that a match ended but
       // not what ended it, which cost an afternoon.
       player: () => lastPlayer,
+      // Show the veld at a season ramp position (0 wet, 1 dry, 2 drought), or null to
+      // follow the weather again. Render-side only; the simulation's weather is untouched.
+      season: (position: number | null) => {
+        seasonOverride = position;
+        terrain.setSeason(position ?? seasonPosition(lastPlayer?.drought ?? 0));
+      },
       count: () => view?.count ?? 0,
       // The fields as they last crossed the boundary, counted rather than listed. A
       // browser-driven session needs to be able to see that a gesture reached the
@@ -954,6 +962,9 @@ async function main(options: GameOptions): Promise<void> {
       panel.setRelations(message.player.relations);
       panel.setHerd(message.player.cullHead);
       panel.setSiteHands(message.player.siteHands);
+      // The veld follows the season (Phase B5). Cheap to call every message: the page
+      // only redraws when the ground would visibly change.
+      terrain.setSeason(seasonOverride ?? seasonPosition(message.player.drought));
       // Hungry means grain was actually owed last season, not merely that the year is
       // dry: the button turns amber when cutting the ration would have helped.
       panel.setRation(message.player.shortRation, message.player.shortfall > 0);

@@ -119,6 +119,44 @@ export interface TerrainRenderer {
   readonly chunkCount: number;
   visibleChunks: number;
   update(camera: Camera): void;
+  /**
+   * Show the ground at a point on the season ramp, 0 wet to 2 drought (Phase B5).
+   *
+   * The tops re-tone through the tile page (`TerrainTiles.setSeason`). The cliff faces
+   * are flat colours taken from each tile's wet average, so they are tinted toward the
+   * season instead — the one place this is a tint, and on the smallest thing on screen.
+   */
+  setSeason(position: number): void;
+}
+
+/**
+ * Where on the season ramp a drought reading falls: 0 the rains, 1 the dry season, 2
+ * drought.
+ *
+ * Held at each end rather than sliding the whole way, so the veld is plainly green
+ * through the wet months and plainly gold at the height of the dry, and the change is
+ * spent crossing between them. Thresholds in tuning/presentation.json — the simulation
+ * never reads what colour its grass is.
+ */
+export function seasonPosition(drought: number): number {
+  const r = presentation.terrain.seasonRamp;
+  if (drought <= r.wetUntil) return 0;
+  if (drought < r.dryFrom) return (drought - r.wetUntil) / (r.dryFrom - r.wetUntil);
+  if (drought <= r.dryUntil) return 1;
+  if (drought < r.droughtFrom) return 1 + (drought - r.dryUntil) / (r.droughtFrom - r.dryUntil);
+  return 2;
+}
+
+/** A packed colour from '#rrggbb'. */
+function parseColour(hex: string): number {
+  return Number.parseInt(hex.slice(1), 16);
+}
+
+/** Channel-wise blend of two packed colours. */
+function blendColour(a: number, b: number, t: number): number {
+  const mix = (shift: number): number =>
+    Math.round(((a >> shift) & 0xff) * (1 - t) + ((b >> shift) & 0xff) * t) << shift;
+  return mix(16) | mix(8) | mix(0);
 }
 
 /**
@@ -651,6 +689,14 @@ export function createTerrain(
         if (onScreen) visible++;
       }
       renderer.visibleChunks = visible;
+    },
+
+    setSeason(position: number): void {
+      tiles?.setSeason(position);
+      const tints = presentation.terrain.seasonRamp.faceTint.map(parseColour);
+      const clamped = position < 0 ? 0 : position > 2 ? 2 : position;
+      const lower = Math.min(Math.floor(clamped), 1);
+      faceLayer.tint = blendColour(tints[lower]!, tints[lower + 1]!, clamped - lower);
     },
   };
 

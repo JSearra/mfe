@@ -19,7 +19,19 @@
       "#c9ab74",
       "#574f45"
     ],
-    "eastFaceShade": 0.62,
+    "seasonRamp": {
+   "wetUntil": 0.2,
+   "dryFrom": 0.5,
+   "dryUntil": 0.62,
+   "droughtFrom": 0.85,
+   "steps": 8,
+   "faceTint": ["#ffffff", "#efe3c8", "#ddd0bb"]
+  },
+  "seasons": {
+   "dry": ["#6d6a33", "#857a3a", "#9d8a45", "#ad9953", "#ae8d58", "#aa663b", "#cdb07a", "#5a5147"],
+   "drought": ["#766b4e", "#817356", "#8b7a5c", "#937f63", "#978064", "#9a6645", "#c1a67c", "#5a5249"]
+  },
+  "eastFaceShade": 0.62,
     "southFaceShade": 0.46,
     "gridAlpha": 0.16,
     "cursorColour": "#e8d9a8",

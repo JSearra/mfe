@@ -20,6 +20,7 @@ const crop: TerrainTile = { texture: new Texture(), colour: 0x222222, uv: NO_UV 
 
 const tiles: TerrainTiles = {
   page: Texture.EMPTY,
+  setSeason: () => {},
   variants: () => [],
   transition: () => null,
   corner: () => null,
