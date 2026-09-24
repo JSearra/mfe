@@ -29,7 +29,23 @@ page.on('console', (message) => {
 page.on('pageerror', (error) => console.log('page error:', error.message));
 
 await page.goto(url, { waitUntil: 'load' });
-await page.waitForTimeout(2500);
+await page.waitForTimeout(1500);
+
+/*
+ * Get past the setup screen.
+ *
+ * It was added after this script was, and for a while the script quietly photographed
+ * the dialog instead of the game — a screenshot harness that cannot reach the game is
+ * worse than none, because it still returns a picture and the picture looks fine.
+ * Tolerant of the screen not being there, so the script keeps working if it moves again.
+ */
+const begin = page.getByRole('button', { name: /begin/i });
+if (await begin.count()) {
+  await begin.first().click();
+  await page.waitForTimeout(2500);
+} else {
+  await page.waitForTimeout(1000);
+}
 
 await page.mouse.move(340, 180);
 await page.mouse.down();
