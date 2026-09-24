@@ -383,15 +383,35 @@ def make_corner(tile: Image.Image, corner: int, seed: int = 0) -> Image.Image:
 # loss.
 #
 # VARIETY. Three generations a subject gave three tiles, and a large expanse of one
-# ground repeated visibly. Four quadrants of each gives twelve, from the same art, with
+# ground repeated visibly. Four cuts of each gives twelve, from the same art, with
 # identical lighting and colour — which is the thing that matters. Flipping or rotating
 # would have been cheaper and wrong: the style prompt pins "a single light source from
 # the upper left", and a mirrored tile lights from the upper right.
 #
+# THE CUTS OVERLAP, and that is the whole of the second number. Quadrants — four
+# non-overlapping halves — made the tile lattice glaringly visible in open ground: the
+# generated sources carry bush clumps and bare soil at roughly the size of one tile, so
+# a quadrant lands almost entirely inside a clump or entirely outside one, and the
+# neighbouring tile does the opposite. Twelve tiles that each showed all-bush or
+# all-bare, meeting along a hard diamond edge, read as a quilt rather than as veld.
+#
+# A cut has to be big enough to hold a fair sample of what the ground is made of.
+# Measured on the four grass subjects, as the spread of per-tile mean luminance across
+# the twelve cuts — which is the patchwork, since bare soil here is bright orange and
+# bush is dark green:
+#
+#     cut 0.50  spread 19.3 to 24.8      cut 0.80  spread  9.2 to 18.7
+#     cut 0.65  spread 14.5 to 20.8      cut 1.00  spread  6.8 to 14.7  (only 3 tiles)
+#
+# 0.80 takes roughly a third off the patchwork and still gives twelve cuts; going all
+# the way to the whole source buys little more and costs three quarters of the variety.
+# The floor of 7 to 15 is the three generations differing from each other, which no
+# choice of cut can touch.
+#
 # The vertical squash stays two-to-one whatever is cut, because a square of ground is a
 # 2:1 diamond on screen. That is the projection, not a loss.
-TILE_CROPS = ((0.0, 0.0), (0.5, 0.0), (0.0, 0.5), (0.5, 0.5))
-TILE_CROP_SIZE = 0.5
+TILE_CROPS = ((0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0))
+TILE_CROP_SIZE = 0.8
 
 
 def make_tile(
