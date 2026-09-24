@@ -64,13 +64,10 @@
     "cattleLore": "Cattle lore",
     "mountedCommando": "Mounted commando"
   },
-  "victory": {
-    "progress": "Village {held}/{needed}",
-    "holding": "Village {held}/{needed} — settling {pct}%",
-    "won": "Your village is settled",
-    "lost": "Defeat",
-    "eliminated": "You have nothing left",
-    "again": "Play again"
+  "village": {
+    "households": "Village {count}",
+    "emptied": "Nobody is left in your village",
+    "again": "Start a new village"
   },
   "panel": {
     "nothing": "Nothing selected",
@@ -114,8 +111,7 @@
     "relief": "An ally has sent grain",
     "starving": "People are going hungry",
     "fieldsFailing": "Fields are failing — send people to tend them",
-    "allianceOffered": "A neighbour asks for a standing tie",
-    "neighbourSettling": "A neighbouring village is full and holding — they are close to settling"
+    "allianceOffered": "A neighbour asks for a standing tie"
   },
   "setup": {
     "map": "Land",

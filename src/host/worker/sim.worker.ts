@@ -4,7 +4,7 @@ import { createCattleSystem } from '../../sim/cattle.js';
 import { createAi } from '../../sim/ai/opponent.js';
 import { createConstructionSystem } from '../../sim/construction.js';
 import { createTechState } from '../../sim/tech.js';
-import { createVictoryState, type VictoryState } from '../../sim/victory.js';
+import { createCensus, type Census } from '../../sim/census.js';
 import { createProductionSystem } from '../../sim/production.js';
 import { createEconomy, Ration, Resource, type Economy } from '../../sim/economy/ledger.js';
 import { createWoodland, packWoodland, type Woodland } from '../../sim/woodland.js';
@@ -53,7 +53,7 @@ let loop: SimLoop | null = null;
 let world: World | null = null;
 let economy: Economy | null = null;
 let fog: FogState | null = null;
-let victory: VictoryState | null = null;
+let census: Census | null = null;
 let viewerId = 0;
 let playerId = 0;
 let sequence = 0;
@@ -97,7 +97,7 @@ function start(message: InitMessage): void {
       Math.max(message.factions.length, message.viewerId + 1),
     )),
     tech: createTechState(Math.max(message.factions.length, message.viewerId + 1)),
-    victory: (victory = createVictoryState(
+    census: (census = createCensus(
       Math.max(message.factions.length, message.viewerId + 1),
     )),
     fog,
@@ -110,7 +110,7 @@ function start(message: InitMessage): void {
 }
 
 function tick(): void {
-  if (loop === null || world === null || economy === null || fog === null || victory === null)
+  if (loop === null || world === null || economy === null || fog === null || census === null)
     return;
 
   const now = performance.now();
@@ -166,12 +166,8 @@ function tick(): void {
     year: yearOf(world.tick, tuning.economy.seasonTicks),
     droughtTrend: trendOf(droughtNow, economy.drought(world.tick + LOOKAHEAD_TICKS)),
     droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
-    households: victory.households[viewerId] ?? 0,
-    householdsToSettle: tuning.victory.householdsToSettle,
-    holdProgress: Math.min(1, (victory.holdTicks[viewerId] ?? 0) / tuning.victory.holdTicks),
-    outcome: victory.outcome,
-    winner: victory.winner,
-    eliminated: victory.eliminated[viewerId] === 1,
+    households: census.households[viewerId] ?? 0,
+    emptied: census.emptied[viewerId] === 1,
   };
 
   let fogSlice: Uint8Array | null = null;

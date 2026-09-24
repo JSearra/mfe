@@ -28,8 +28,15 @@ export const EventType = {
   BuildingCompleted: 9,
   TechCompleted: 10,
   UnitTrained: 11,
-  VictoryDeclared: 12,
-  PlayerEliminated: 13,
+  /*
+   * 12 was `VictoryDeclared`. Retired with the win condition (ADR-0020) and left as a
+   * gap for the same reason as 6.
+   */
+  /**
+   * A village has had nobody in it for the whole grace period. Was `PlayerEliminated`,
+   * with the same value: the event is the same, but it no longer ends anything.
+   */
+  VillageEmptied: 13,
   /** A neighbour agreed a trade. `value` carries what came back. */
   Traded: 14,
   /** A neighbour said no. Worth telling the player, who cannot see their books. */
@@ -62,15 +69,10 @@ export const EventType = {
    * screen.
    */
   FieldsFailing: 22,
-  /**
-   * A neighbour has a full village and has begun holding it. `x` is that village.
-   *
-   * Word of a rival's good year would reach you, and without it the match simply ends:
-   * three playthroughs in a row met Defeat with nothing on screen having suggested
-   * anybody was close. It says who, not how far along — the hold is half a year, which
-   * is time enough to do something about it.
+  /*
+   * 23 was `NeighbourSettling`, the warning that a rival was close to winning. Retired
+   * with the win condition (ADR-0020) and left as a gap.
    */
-  NeighbourSettling: 23,
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];

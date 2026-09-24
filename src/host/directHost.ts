@@ -10,7 +10,7 @@ import type { Heightmap } from '../shared/heightmap.js';
 import { createCattleSystem, type CattleSystem } from '../sim/cattle.js';
 import { createAi } from '../sim/ai/opponent.js';
 import { createTechState, type TechState } from '../sim/tech.js';
-import { createVictoryState, type VictoryState } from '../sim/victory.js';
+import { createCensus, type Census } from '../sim/census.js';
 import { createProductionSystem, type ProductionSystem } from '../sim/production.js';
 import { createConstructionSystem, type ConstructionSystem } from '../sim/construction.js';
 import { createEconomy, Resource, type Economy } from '../sim/economy/ledger.js';
@@ -150,14 +150,8 @@ export interface PlayerState {
 
   /** Households standing in this player's village. */
   readonly households: number;
-  readonly householdsToSettle: number;
-  /** 0 to 1: how much of the hold requirement has elapsed. */
-  readonly holdProgress: number;
-  /** 0 ongoing, 1 cattle victory, 2 last standing. */
-  readonly outcome: number;
-  /** -1 while undecided. */
-  readonly winner: number;
-  readonly eliminated: boolean;
+  /** Nobody has lived in this village for the whole grace period. Ends nothing. */
+  readonly emptied: boolean;
 }
 
 export interface SimMessage {
@@ -266,7 +260,7 @@ export interface DirectSimHost extends SimHost {
   readonly farmland: Farmland;
   readonly alliance: Alliance;
   readonly tech: TechState;
-  readonly victory: VictoryState;
+  readonly census: Census;
   readonly fog: FogState;
 }
 
@@ -295,7 +289,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
   const woodland = createWoodland(map, seed);
   const farmland = createStartingFarmland(map, starts, seed);
   const tech = createTechState(Math.max(factions.length, viewerId + 1));
-  const victory = createVictoryState(Math.max(factions.length, viewerId + 1));
+  const census = createCensus(Math.max(factions.length, viewerId + 1));
   const fog = createFog(Math.max(factions.length, viewerId + 1), map);
   const alliance = createAlliance(Math.max(factions.length, viewerId + 1));
   const loop: SimLoop = createLoop({
@@ -309,7 +303,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     farmland,
     alliance,
     tech,
-    victory,
+    census,
     fog,
     map,
   });
@@ -350,7 +344,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     farmland,
     alliance,
     tech,
-    victory,
+    census,
     fog,
 
     get tick(): number {
@@ -430,12 +424,8 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         // A season ahead, which is far enough that the answer is not noise and near
         // enough that it is still about this year.
         droughtTrend: trendOf(droughtNow, economy.drought(world.tick + LOOKAHEAD_TICKS)),
-        households: victory.households[viewerId] ?? 0,
-        householdsToSettle: tuning.victory.householdsToSettle,
-        holdProgress: Math.min(1, (victory.holdTicks[viewerId] ?? 0) / tuning.victory.holdTicks),
-        outcome: victory.outcome,
-        winner: victory.winner,
-        eliminated: victory.eliminated[viewerId] === 1,
+        households: census.households[viewerId] ?? 0,
+        emptied: census.emptied[viewerId] === 1,
       };
 
       let fogSlice: Uint8Array | null = null;

@@ -372,8 +372,8 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
           // here charged the neutral faction, which has no ledger, and a driven herd
           // cost its owner nothing while still counting toward the cattle victory.
           //
-          // Resolved through the tether, which is how victory.ts has always counted the
-          // same animals. The two now agree about who holds a herd.
+          // Resolved through the tether, which is how the cattle victory counted the same
+          // animals. The two agreed about who holds a herd.
           const tether = world.tetheredTo[i]!;
           if (tether === NULL_HANDLE || !isAlive(world, tether)) continue;
           const driver = world.faction[handleIndex(tether)]!;

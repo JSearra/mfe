@@ -3,7 +3,7 @@ import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
 import type { CattleSystem } from './cattle.js';
 import type { ConstructionSystem } from './construction.js';
 import type { ProductionSystem } from './production.js';
-import type { VictoryState } from './victory.js';
+import type { Census } from './census.js';
 import type { AiController } from './ai/opponent.js';
 import { Modifier } from '../shared/tech/index.js';
 import type { TechState } from './tech.js';
@@ -37,7 +37,7 @@ export interface SimLoop {
   readonly farmland: Farmland;
   readonly alliance: Alliance;
   readonly tech: TechState;
-  readonly victory: VictoryState;
+  readonly census: Census;
   readonly fog: FogState;
   readonly map: Heightmap;
   /** Sorted by (tick, playerId, seq) from `cursor` onward. */
@@ -72,7 +72,7 @@ export interface SimSystems {
   farmland: Farmland;
   alliance: Alliance;
   tech: TechState;
-  victory: VictoryState;
+  census: Census;
   fog: FogState;
   map: Heightmap;
 }
@@ -105,7 +105,7 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
  * survives until the boundary.
  */
 export function step(loop: SimLoop): void {
-  const { world, movement, cattle, construction, production, economy, woodland, farmland, alliance, tech, victory, fog, map, pending, events } =
+  const { world, movement, cattle, construction, production, economy, woodland, farmland, alliance, tech, census, fog, map, pending, events } =
     loop;
 
   // Computer players act first, through exactly the same queue a human's clicks use.
@@ -239,7 +239,7 @@ export function step(loop: SimLoop): void {
   // only thing it writes is a nibble nothing else reads. See src/sim/roles.ts.
   updateRoles(world, farmland, world.tick);
   tech.update(world.tick, events);
-  victory.update(world, economy, events);
+  census.update(world, events);
   updateFog(world, map, fog, tech);
 
   // Emitted before the flush, while the entities still have positions to report.

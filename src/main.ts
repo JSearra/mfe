@@ -57,7 +57,7 @@ import { createCommandPanel } from './ui/commandPanel.js';
 import { createMinimap } from './ui/minimap.js';
 import { createAlerts } from './ui/alerts.js';
 import { showSetup } from './ui/setup.js';
-import { createOutcomeBanner } from './ui/outcomeBanner.js';
+import { createEmptiedBanner } from './ui/emptiedBanner.js';
 import { createResourceBar } from './ui/resourceBar.js';
 
 /**
@@ -553,7 +553,7 @@ async function main(options: GameOptions): Promise<void> {
   let statsVisible = false;
   let controlsOpen = true;
   const resourceBar = createResourceBar(root);
-  const outcomeBanner = createOutcomeBanner(root, { onRestart: () => void restart() });
+  const emptiedBanner = createEmptiedBanner(root, { onRestart: () => void restart() });
   const alerts = createAlerts();
   root.appendChild(alerts.element);
   const minimap = createMinimap(root, map, {
@@ -1110,7 +1110,7 @@ async function main(options: GameOptions): Promise<void> {
         message.player.trainCosts,
       );
       lastPlayer = message.player;
-      outcomeBanner.update(message.player, PLAYER);
+      emptiedBanner.update(message.player);
       fog.setFog(message.fog);
       // The wood arrives only when it has changed, which is the upkeep cycle rather
       // than the frame — the same contract the fog beside it uses.

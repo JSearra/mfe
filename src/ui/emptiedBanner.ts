@@ -2,69 +2,53 @@ import { t } from '../core/i18n/index.js';
 import type { PlayerState } from '../host/directHost.js';
 
 /**
- * The end of a match.
+ * Said once when nobody is left in the player's village.
  *
- * Shown once and left up. A result that flashes and clears leaves a player wondering
- * what happened, and the simulation keeps running underneath — stopping it is a
- * separate decision this does not make for them.
+ * This was the outcome banner, back when a match could be won or lost. Nothing ends a
+ * game now (ADR-0020), and this does not end one either: the simulation keeps running
+ * underneath. But a village with nobody in it cannot raise anybody, and a map of empty
+ * huts does not make that obvious, so it is said out loud and a fresh start is offered.
+ *
+ * Left up once shown. It clears itself if people come back, which the census allows.
  */
-export interface OutcomeBanner {
+export interface EmptiedBanner {
   readonly element: HTMLElement;
-  update(player: PlayerState, viewerId: number): void;
+  update(player: PlayerState): void;
 }
 
-export interface OutcomeBannerOptions {
-  /** Offered once the match is decided. Without it the banner is a dead end. */
+export interface EmptiedBannerOptions {
+  /** Offered alongside the notice. Without it the banner has nothing to suggest. */
   onRestart?: () => void;
 }
 
-const ONGOING = 0;
-
-export function createOutcomeBanner(
+export function createEmptiedBanner(
   parent: HTMLElement,
-  options: OutcomeBannerOptions = {},
-): OutcomeBanner {
+  options: EmptiedBannerOptions = {},
+): EmptiedBanner {
   const element = document.createElement('div');
-  element.className = 'outcome-banner';
+  element.className = 'emptied-banner';
   element.hidden = true;
   parent.appendChild(element);
 
   const message = document.createElement('div');
+  message.textContent = t('village.emptied');
   element.appendChild(message);
 
-  let shown = false;
-
-  function show(text: string, defeat: boolean): void {
-    message.textContent = text;
-    element.classList.toggle('is-defeat', defeat);
-    element.hidden = false;
-    shown = true;
-
-    if (options.onRestart === undefined) return;
+  if (options.onRestart !== undefined) {
     const again = document.createElement('button');
-    again.className = 'outcome-again';
-    again.textContent = t('victory.again');
+    again.className = 'emptied-again';
+    again.textContent = t('village.again');
     again.addEventListener('click', () => options.onRestart?.());
-    element.appendChild(again);
     // The banner is pointer-events:none so it never eats clicks on the map behind it;
     // the button has to opt back in or it cannot be pressed.
     again.style.pointerEvents = 'auto';
+    element.appendChild(again);
   }
 
   return {
     element,
-    update(player: PlayerState, viewerId: number): void {
-      if (shown) return;
-
-      if (player.outcome !== ONGOING) {
-        const won = player.winner === viewerId;
-        show(won ? t('victory.won') : t('victory.lost'), !won);
-        return;
-      }
-
-      if (player.eliminated) {
-        show(t('victory.eliminated'), true);
-      }
+    update(player: PlayerState): void {
+      element.hidden = !player.emptied;
     },
   };
 }

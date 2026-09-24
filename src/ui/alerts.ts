@@ -56,14 +56,7 @@ const WATCHED: Readonly<Record<number, MessageKey>> = {
   // position, so Space takes the player to the thing that needs hands on it.
   [EventType.FieldsFailing]: 'alert.fieldsFailing',
   [EventType.AllianceOffered]: 'alert.allianceOffered',
-  [EventType.NeighbourSettling]: 'alert.neighbourSettling',
 };
-
-/**
- * The one alert that is about somebody ELSE, so the viewer test runs the other way:
- * a village beginning to hold its own full size is not news to itself.
- */
-const ABOUT_OTHERS: ReadonlySet<number> = new Set([EventType.NeighbourSettling]);
 
 /**
  * Where an event names the village it concerns, for the ones that are not everybody's
@@ -91,7 +84,6 @@ const OWNER_FIELD: Readonly<Record<number, 'x' | 'y' | 'payload'>> = {
 const PLACELESS: ReadonlySet<number> = new Set([
   EventType.AllianceRelief,
   EventType.AllianceOffered,
-  EventType.NeighbourSettling,
 ]);
 
 export function createAlerts(): Alerts {
@@ -107,7 +99,6 @@ export function createAlerts(): Alerts {
       for (const event of events) {
         const key = WATCHED[event.type];
         if (key === undefined) continue;
-        if (ABOUT_OTHERS.has(event.type) && event.x === viewer) continue;
         const owner = OWNER_FIELD[event.type];
         if (owner !== undefined && event[owner] !== viewer) continue;
         // One alert per burst. A herd going over produces a StampedeBegan for every

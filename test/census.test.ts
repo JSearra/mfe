@@ -1,161 +1,98 @@
 import { describe, expect, it } from 'vitest';
 import { EventType, type SimEvent } from '../src/shared/events.js';
+import { BuildingType } from '../src/shared/buildings/index.js';
 import { Resource } from '../src/sim/economy/ledger.js';
-import { Outcome } from '../src/sim/victory.js';
 import { tuning } from '../src/sim/tuning.js';
 import { EntityKind, spawn } from '../src/sim/world.js';
-import { BuildingType } from '../src/shared/buildings/index.js';
 import { makeSim } from './simHarness.js';
 
-const V = tuning.victory;
+const GRACE = tuning.census.emptiedGraceTicks;
 
-function match(households = 3) {
+function village(households = 3) {
   const sim = makeSim(256, 11);
-  // Both sides have somebody, so nobody is eliminated by default.
   for (let i = 0; i < households; i++) spawn(sim.world, 5 + (i % 8) * 0.6, 5 + (i / 8 | 0) * 0.6, 0);
   for (let i = 0; i < 3; i++) spawn(sim.world, 25 + i, 25, 1);
 
   const events: SimEvent[] = [];
   const run = (ticks: number): void => {
     for (let i = 0; i < ticks; i++) {
-      sim.victory.update(sim.world, sim.economy, events);
+      sim.census.update(sim.world, events);
       sim.world.tick++;
     }
   };
-  return { ...sim, events, run };
-}
-
-describe('settling a village', () => {
-  /**
-   * The objective stopped being cattle on 2026-09-15 — see ADR-0019. It is now the
-   * village itself: settle a given number of households and keep them fed long enough
-   * that the place is established rather than briefly crowded.
-   *
-   * Holding matters more than it did under the old condition, not less. Population is
-   * trivially spiked — train until the granary is empty — and a village that doubles in
-   * a minute and starves in the next has settled nothing.
-   */
-  it('does not end a match that nobody is winning', () => {
-    const sim = match();
-    sim.run(V.holdTicks * 2);
-    expect(sim.victory.outcome).toBe(Outcome.Ongoing);
-    expect(sim.victory.winner).toBe(-1);
-  });
-
-  it('counts the people, not the herd', () => {
-    const sim = match(V.householdsToSettle);
-    // A vast herd is wealth and does not settle anybody.
-    sim.economy.add(0, Resource.Cattle, 5000);
-    sim.run(1);
-    expect(sim.victory.households[0]).toBe(V.householdsToSettle);
-  });
-
-  it('needs the village HELD at size, not merely reached', () => {
-    const sim = match(V.householdsToSettle);
-
-    sim.run(V.holdTicks - 10);
-    expect(sim.victory.outcome).toBe(Outcome.Ongoing);
-
-    // One household lost, a few ticks short of established.
-    sim.world.alive[0] = 0;
-    sim.run(1);
-    expect(sim.victory.holdTicks[0]).toBe(0);
-
-    sim.run(V.holdTicks * 2);
-    expect(sim.victory.outcome).toBe(Outcome.Ongoing);
-  });
-
-  it('declares a winner once the village has stood long enough', () => {
-    const sim = match(V.householdsToSettle);
-
-    sim.run(V.holdTicks + 2);
-    expect(sim.victory.outcome).toBe(Outcome.Settled);
-    expect(sim.victory.winner).toBe(0);
-    expect(sim.events.some((e) => e.type === EventType.VictoryDeclared)).toBe(true);
-  });
-
-  it('says when a neighbour begins holding a full village', () => {
-    // Three playthroughs in a row met Defeat with nothing on screen having suggested
-    // anybody was close. The hold is half a year; that is time enough to act on.
-    const sim = match(V.householdsToSettle);
-    sim.run(2);
-
-    const word = sim.events.filter((e) => e.type === EventType.NeighbourSettling);
-    expect(word.length).toBe(1);
-    expect(word[0]!.x).toBe(0);
-
-    // Once, as the hold begins, not every tick of it.
-    sim.run(50);
-    expect(sim.events.filter((e) => e.type === EventType.NeighbourSettling).length).toBe(1);
-  });
-
-  it('stops updating once decided, so a result cannot be overwritten', () => {
-    const sim = match(V.householdsToSettle);
-    sim.run(V.holdTicks + 2);
-    expect(sim.victory.winner).toBe(0);
-
-    for (let i = 0; i < V.householdsToSettle * 2; i++) spawn(sim.world, 40 + (i % 8) * 0.6, 40, 1);
-    sim.run(V.holdTicks * 2);
-    expect(sim.victory.winner).toBe(0);
-  });
-});
-
-describe('elimination', () => {
-  it('gives a grace period rather than counting out an empty-handed player at once', () => {
-    const sim = match();
+  const empty = (player: number): void => {
     for (let i = 0; i < sim.world.capacity; i++) {
-      if (sim.world.alive[i] === 1 && sim.world.faction[i] === 1) sim.world.alive[i] = 0;
-    }
-
-    sim.run(V.eliminationGraceTicks - 5);
-    // The window covers a last soldier dying while a homestead finishes a replacement.
-    expect(sim.victory.eliminated[1]).toBe(0);
-
-    sim.run(10);
-    expect(sim.victory.eliminated[1]).toBe(1);
-  });
-
-  it('resets the grace period if the player recovers', () => {
-    const sim = match();
-    for (let i = 0; i < sim.world.capacity; i++) {
-      if (sim.world.alive[i] === 1 && sim.world.faction[i] === 1) sim.world.alive[i] = 0;
-    }
-    sim.run(V.eliminationGraceTicks - 20);
-    spawn(sim.world, 30, 30, 1);
-    sim.run(1);
-    expect(sim.victory.graceTicks[1]).toBe(0);
-  });
-
-  it('counts out a village with no people left, whatever is still standing', () => {
-    const sim = match();
-    // A homestead of its own, finished. Until Phase V6 this alone kept a player in the
-    // match forever, because elimination also demanded every building be gone and only
-    // combat could knock one down. A starved-out village left its empty huts on the
-    // ground and the match ran on with nobody in it — measured at four AI matches in
-    // five ending that way.
-    sim.construction.place(sim.world, sim.economy, 1, BuildingType.Umuzi, 25, 25, []);
-    for (let i = 0; i < sim.world.capacity; i++) {
-      if (sim.world.alive[i] === 1 && sim.world.faction[i] === 1 && sim.world.kind[i] === EntityKind.Unit) {
+      if (sim.world.alive[i] === 1 && sim.world.faction[i] === player && sim.world.kind[i] === EntityKind.Unit) {
         sim.world.alive[i] = 0;
       }
     }
-    const standing = sim.world.kind.some(
-      (kind, i) => kind === EntityKind.Building && sim.world.alive[i] === 1 && sim.world.faction[i] === 1,
-    );
-    expect(standing).toBe(true);
+  };
+  return { ...sim, events, run, empty };
+}
 
-    sim.run(V.eliminationGraceTicks + 5);
-    expect(sim.victory.eliminated[1]).toBe(1);
+describe('the census', () => {
+  it('counts the people, not the herd', () => {
+    const sim = village(60);
+    // A vast herd is wealth and does not make a village bigger.
+    sim.economy.add(0, Resource.Cattle, 5000);
+    sim.run(1);
+    expect(sim.census.households[0]).toBe(60);
+    expect(sim.census.households[1]).toBe(3);
   });
 
-  it('hands the match to the last side standing', () => {
-    const sim = match();
-    for (let i = 0; i < sim.world.capacity; i++) {
-      if (sim.world.alive[i] === 1 && sim.world.faction[i] === 1) sim.world.alive[i] = 0;
-    }
+  it('has no size at which anything happens — there is no target (ADR-0020)', () => {
+    // The old objective settled a village at sixty and ended the match. Nothing
+    // should come of any size now, however large or however long it is held.
+    const sim = village(200);
+    sim.run(20_000);
+    expect(sim.events).toEqual([]);
+    expect(sim.census.emptied[0]).toBe(0);
+  });
+});
 
-    sim.run(V.eliminationGraceTicks + 5);
-    expect(sim.victory.outcome).toBe(Outcome.LastStanding);
-    expect(sim.victory.winner).toBe(0);
+describe('an emptied village', () => {
+  it('gives a grace period before calling a village empty', () => {
+    const sim = village();
+    sim.empty(1);
+
+    sim.run(GRACE - 5);
+    // The window covers a last villager dying while a homestead finishes a replacement.
+    expect(sim.census.emptied[1]).toBe(0);
+
+    sim.run(10);
+    expect(sim.census.emptied[1]).toBe(1);
+    expect(sim.events.filter((e) => e.type === EventType.VillageEmptied)).toHaveLength(1);
+  });
+
+  it('is emptied of people, whatever is still standing', () => {
+    const sim = village();
+    // Empty huts do not keep a village alive: nothing destroys a building any more, so
+    // requiring them gone would make this unreachable (see Phase V6).
+    sim.construction.place(sim.world, sim.economy, 1, BuildingType.Umuzi, 25, 25, []);
+    sim.empty(1);
+    sim.run(GRACE + 5);
+    expect(sim.census.emptied[1]).toBe(1);
+  });
+
+  it('does not end anything for anyone else', () => {
+    const sim = village();
+    sim.empty(1);
+    sim.run(GRACE * 3);
+    // The other village is simply still there. Nobody wins by being last.
+    expect(sim.census.emptied[0]).toBe(0);
+    expect(sim.census.households[0]).toBe(3);
+    expect(sim.events.filter((e) => e.type === EventType.VillageEmptied)).toHaveLength(1);
+  });
+
+  it('stops being empty when somebody lives there again', () => {
+    const sim = village();
+    sim.empty(1);
+    sim.run(GRACE + 5);
+    expect(sim.census.emptied[1]).toBe(1);
+
+    spawn(sim.world, 30, 30, 1);
+    sim.run(1);
+    expect(sim.census.emptied[1]).toBe(0);
+    expect(sim.census.graceTicks[1]).toBe(0);
   });
 });

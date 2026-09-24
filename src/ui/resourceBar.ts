@@ -91,18 +91,9 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
       });
       season.classList.toggle('is-severe', player.droughtSevere);
 
-      // The victory track, always visible. A win condition the player cannot see the
-      // progress of is one they cannot play toward.
-      const standing = Math.floor(player.households);
-      herd.textContent =
-        player.holdProgress > 0
-          ? t('victory.holding', {
-              held: standing,
-              needed: player.householdsToSettle,
-              pct: Math.round(player.holdProgress * 100),
-            })
-          : t('victory.progress', { held: standing, needed: player.householdsToSettle });
-      herd.classList.toggle('is-holding', player.holdProgress > 0);
+      // A count, not a track. There is no target to reach (ADR-0020); how big the
+      // village is matters only against what its land can feed, which is the next line.
+      herd.textContent = t('village.households', { count: Math.floor(player.households) });
 
       // Nothing until the first upkeep has actually been paid, or it reads as a deficit
       // the village does not have yet.
@@ -113,13 +104,10 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
           upkeep: Math.round(player.upkeep),
           feeds: Math.round(player.feeds),
         });
-        // Amber while the land cannot carry the village it is being asked for. That is
-        // not an emergency — it is the standing reason to break more ground — so it is
-        // a colour on a readout rather than an alert that interrupts.
-        margin.classList.toggle(
-          'is-negative',
-          net < 0 || player.feeds < player.householdsToSettle,
-        );
+        // Amber while the land cannot carry the village standing on it. That is not an
+        // emergency yet — it is the standing reason to break more ground before raising
+        // anyone else — so it is a colour on a readout rather than an alert.
+        margin.classList.toggle('is-negative', net < 0 || player.feeds < player.households);
       } else {
         margin.textContent = '';
       }

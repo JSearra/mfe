@@ -2,7 +2,7 @@ import { hashTypedArray } from '../shared/hash.js';
 import { createLoop, step } from './loop.js';
 import { createCattleSystem } from './cattle.js';
 import { createTechState } from './tech.js';
-import { createVictoryState } from './victory.js';
+import { createCensus } from './census.js';
 import { createProductionSystem } from './production.js';
 import { createConstructionSystem } from './construction.js';
 import { createEconomy } from './economy/ledger.js';
@@ -90,7 +90,7 @@ export function runReplay(
   const map = createHeightmap(REPLAY_MAP_SIZE, REPLAY_MAP_SIZE, seed);
   const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], seed);
   const tech = createTechState(2);
-  const victory = createVictoryState(2);
+  const census = createCensus(2);
   const fog = createFog(2, map);
   const alliance = createAlliance(2);
   const movement = createMovementSystem(map);
@@ -106,7 +106,7 @@ export function runReplay(
       farmland: createStartingFarmland(map, [], seed),
       alliance,
       tech,
-      victory,
+      census,
       fog,
       map,
     },

@@ -1,154 +1,74 @@
 import type { SimEvent } from '../shared/events.js';
 import { EventType, makeEvent } from '../shared/events.js';
-import type { Economy } from './economy/ledger.js';
 import { tuning } from './tuning.js';
 import { EntityKind, type World } from './world.js';
 
 /**
- * How a match ends.
+ * Who is still living in each village.
  *
- * A village is judged by whether it stands, not by what it has taken. The objective is
- * to settle a given number of households and keep them fed long enough that the village
- * is established rather than briefly crowded — see ADR-0019.
+ * This was `victory.ts`, which ran a race: settle sixty households, hold them fed for
+ * half a year, and win. ADR-0020 retired the race. The game is an open-ended builder
+ * now, and nothing ends it: a village that starves shrinks and can grow back. What is
+ * left is a count of households for the HUD, and a record of whether a village has
+ * emptied completely, so that its player can be told.
  *
- * This used to be measured in cattle: hold two hundred head and win. That put the herd
- * at the centre of the game, which was right, but it made the herd an end rather than a
- * means, and it meant a village could win by accumulating and never by enduring. Worse,
- * upkeep scales with cattle, so the objective actively worked against the economy that
- * had to sustain it.
- *
- * Holding is still what counts, and for a stronger reason than before. Population is
- * trivially spiked — train until the granary is empty — and a village that doubles in a
- * minute and starves in the next has not settled anything. The hold is what separates a
- * village from a crowd.
+ * An emptied village is NOT the end of a game, and nothing here stops the simulation.
+ * Knowing it is empty is simply information the player needs and cannot easily read off
+ * a map full of empty huts.
  */
 
-export const Outcome = {
-  Ongoing: 0,
-  /** A village reached its full size and kept it there. */
-  Settled: 1,
-  /** Everyone else is gone. */
-  LastStanding: 2,
-} as const;
-
-export type Outcome = (typeof Outcome)[keyof typeof Outcome];
-
-export interface VictoryState {
+export interface Census {
   readonly players: number;
-  outcome: Outcome;
-  /** -1 while the match is undecided. */
-  winner: number;
-  /** Consecutive ticks each player has been at or above the threshold. */
-  readonly holdTicks: Float64Array;
-  /** Households standing at the last check, for the UI. */
+  /** Households standing at the last count. */
   readonly households: Float64Array;
-  readonly eliminated: Uint8Array;
-  /** Ticks each player has been without means, before being counted out. */
+  /** 1 once a village has had nobody in it for the whole grace period. */
+  readonly emptied: Uint8Array;
+  /** Ticks each village has been empty, before it is announced as emptied. */
   readonly graceTicks: Float64Array;
 
-  update(world: World, economy: Economy, events: SimEvent[]): void;
+  update(world: World, events: SimEvent[]): void;
 }
 
-export function createVictoryState(players: number): VictoryState {
-  const state: VictoryState = {
+export function createCensus(players: number): Census {
+  const census: Census = {
     players,
-    outcome: Outcome.Ongoing,
-    winner: -1,
-    holdTicks: new Float64Array(players),
     households: new Float64Array(players),
-    eliminated: new Uint8Array(players),
+    emptied: new Uint8Array(players),
     graceTicks: new Float64Array(players),
 
-    update(world, economy, events): void {
-      if (state.outcome !== Outcome.Ongoing) return;
-
-      const v = tuning.victory;
+    update(world, events): void {
       const units = new Float64Array(players);
 
       for (let index = 0; index < world.capacity; index++) {
         if (world.alive[index] !== 1) continue;
         // Cattle belong to nobody's headcount. They are food and wealth, counted by the
         // ledger and eaten by the upkeep; a village's size is the people in it.
-        if (world.kind[index] === EntityKind.Cattle) continue;
-
+        if (world.kind[index] !== EntityKind.Unit) continue;
         const owner = world.faction[index]!;
-        if (owner >= players) continue;
-        if (world.kind[index] === EntityKind.Unit) units[owner]!++;
+        if (owner < players) units[owner]!++;
       }
-
-      for (let player = 0; player < players; player++) state.households[player] = units[player]!;
 
       for (let player = 0; player < players; player++) {
-        if (state.eliminated[player] === 1) continue;
+        census.households[player] = units[player]!;
 
-        // --- elimination ---------------------------------------------------
-        //
-        // Nobody left, for longer than it takes to raise somebody. The grace period is
-        // doing the real work: a village with a homestead and grain in it puts a new
-        // household up well inside four hundred ticks, and one that cannot is finished
-        // whatever is still standing on the ground.
-        //
-        // It used to also require every building to be gone, which was only ever
-        // satisfiable because combat could knock them down. Nothing destroys a building
-        // now (Phase V6), so that clause made elimination unreachable for anyone who had
-        // ever built anything: a village starved to the last villager left its empty
-        // huts standing and the match ran on forever with no one in it. Measured before
-        // the fix — four of five AI matches ended with every villager dead and the
-        // outcome still reported as ongoing.
-        const helpless = units[player] === 0;
-        if (helpless) {
-          state.graceTicks[player]!++;
-          if (state.graceTicks[player]! >= v.eliminationGraceTicks) {
-            state.eliminated[player] = 1;
-            events.push(makeEvent(world.tick, EventType.PlayerEliminated, 0, 0, 0, player));
+        // The grace period is longer than it takes to raise somebody, so a village that
+        // loses its last person while a homestead is finishing a new one is not
+        // announced. A village that empties and later has people again (a save edited,
+        // a household raised from a store that outlived everyone) stops being emptied.
+        if (units[player] === 0) {
+          if (census.emptied[player] === 1) continue;
+          census.graceTicks[player]!++;
+          if (census.graceTicks[player]! >= tuning.census.emptiedGraceTicks) {
+            census.emptied[player] = 1;
+            events.push(makeEvent(world.tick, EventType.VillageEmptied, 0, 0, 0, player));
           }
         } else {
-          state.graceTicks[player] = 0;
+          census.graceTicks[player] = 0;
+          census.emptied[player] = 0;
         }
-
-        // --- settled ---------------------------------------------------------
-        //
-        // At full size AND feeding itself. A village holding forty households on a
-        // granary that cannot cover the upkeep is not settled, it is a fortnight from
-        // empty — and without this clause the objective would reward exactly the spike
-        // the hold timer exists to prevent: train to the target, win before the next
-        // upkeep collects. `shortfall` is what the last upkeep failed to pay.
-        const fed = (economy.shortfall[player] ?? 0) <= 0;
-        if (fed && state.households[player]! >= v.householdsToSettle) {
-          // Said once, as the hold begins, rather than every tick of it.
-          if (state.holdTicks[player] === 0) {
-            events.push(makeEvent(world.tick, EventType.NeighbourSettling, 0, player));
-          }
-          state.holdTicks[player]!++;
-          if (state.holdTicks[player]! >= v.holdTicks) {
-            state.outcome = Outcome.Settled;
-            state.winner = player;
-            events.push(makeEvent(world.tick, EventType.VictoryDeclared, 0, 0, 0, player));
-            return;
-          }
-        } else {
-          // Reset rather than decay. Holding is the requirement, so a village that falls
-          // below its full size for one tick starts the count again — which is what a
-          // hard winter is supposed to cost.
-          state.holdTicks[player] = 0;
-        }
-      }
-
-      // --- last standing ------------------------------------------------------
-      let survivors = 0;
-      let survivor = -1;
-      for (let player = 0; player < players; player++) {
-        if (state.eliminated[player] === 1) continue;
-        survivors++;
-        survivor = player;
-      }
-      if (survivors === 1 && players > 1) {
-        state.outcome = Outcome.LastStanding;
-        state.winner = survivor;
-        events.push(makeEvent(world.tick, EventType.VictoryDeclared, 0, 0, 0, survivor));
       }
     },
   };
 
-  return state;
+  return census;
 }

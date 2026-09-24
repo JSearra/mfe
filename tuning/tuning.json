@@ -234,10 +234,8 @@
     "mountedCattle": 3,
     "mountedTicks": 260
   },
-  "victory": {
-    "householdsToSettle": 60,
-    "holdTicks": 6000.0,
-    "eliminationGraceTicks": 400
+  "census": {
+    "emptiedGraceTicks": 400
   },
   "roles": {
     "intervalTicks": 20,
