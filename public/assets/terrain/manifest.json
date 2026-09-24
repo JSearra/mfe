@@ -3,84 +3,348 @@
   "padding": 2,
   "tiles": [
     {
-      "file": "donga-floor_1000.png",
+      "file": "donga-floor_1000-0.png",
       "subject": "donga-floor",
       "width": 64,
       "height": 32,
       "band": 5,
-      "averageColour": "#ac6136",
+      "averageColour": "#ab6035",
       "seam": 0.1764,
       "x": 2,
       "y": 2
     },
     {
-      "file": "donga-floor_1001.png",
+      "file": "donga-floor_1000-1.png",
       "subject": "donga-floor",
       "width": 64,
       "height": 32,
       "band": 5,
-      "averageColour": "#b06438",
-      "seam": 0.1383,
+      "averageColour": "#ad6237",
+      "seam": 0.1764,
       "x": 70,
       "y": 2
     },
     {
-      "file": "donga-floor_1002.png",
+      "file": "donga-floor_1000-2.png",
       "subject": "donga-floor",
       "width": 64,
       "height": 32,
       "band": 5,
-      "averageColour": "#af6538",
-      "seam": 0.1126,
+      "averageColour": "#a85e35",
+      "seam": 0.1764,
       "x": 138,
       "y": 2
     },
     {
-      "file": "riverbed_1100.png",
-      "subject": "riverbed",
+      "file": "donga-floor_1000-3.png",
+      "subject": "donga-floor",
       "width": 64,
       "height": 32,
-      "band": 0,
-      "averageColour": "#566c44",
-      "seam": 0.2434,
+      "band": 5,
+      "averageColour": "#ad6136",
+      "seam": 0.1764,
       "x": 206,
       "y": 2
     },
     {
-      "file": "riverbed_1101.png",
-      "subject": "riverbed",
+      "file": "donga-floor_1001-0.png",
+      "subject": "donga-floor",
       "width": 64,
       "height": 32,
-      "band": 0,
-      "averageColour": "#5a6f45",
-      "seam": 0.2322,
+      "band": 5,
+      "averageColour": "#ac6237",
+      "seam": 0.1383,
       "x": 274,
       "y": 2
     },
     {
-      "file": "riverbed_1102.png",
-      "subject": "riverbed",
+      "file": "donga-floor_1001-1.png",
+      "subject": "donga-floor",
       "width": 64,
       "height": 32,
-      "band": 0,
-      "averageColour": "#596c43",
-      "seam": 0.231,
+      "band": 5,
+      "averageColour": "#af6337",
+      "seam": 0.1383,
       "x": 342,
       "y": 2
     },
     {
-      "file": "rock_1200.png",
-      "subject": "rock",
+      "file": "donga-floor_1001-2.png",
+      "subject": "donga-floor",
       "width": 64,
       "height": 32,
-      "band": 7,
-      "averageColour": "#564d43",
-      "seam": 0.1657,
+      "band": 5,
+      "averageColour": "#ad6237",
+      "seam": 0.1383,
       "x": 410,
       "y": 2
     },
     {
-      "file": "rock_1201.png",
+      "file": "donga-floor_1001-3.png",
+      "subject": "donga-floor",
+      "width": 64,
+      "height": 32,
+      "band": 5,
+      "averageColour": "#ae6337",
+      "seam": 0.1383,
+      "x": 478,
+      "y": 2
+    },
+    {
+      "file": "donga-floor_1002-0.png",
+      "subject": "donga-floor",
+      "width": 64,
+      "height": 32,
+      "band": 5,
+      "averageColour": "#b16639",
+      "seam": 0.1126,
+      "x": 2,
+      "y": 38
+    },
+    {
+      "file": "donga-floor_1002-1.png",
+      "subject": "donga-floor",
+      "width": 64,
+      "height": 32,
+      "band": 5,
+      "averageColour": "#ae6438",
+      "seam": 0.1126,
+      "x": 70,
+      "y": 38
+    },
+    {
+      "file": "donga-floor_1002-2.png",
+      "subject": "donga-floor",
+      "width": 64,
+      "height": 32,
+      "band": 5,
+      "averageColour": "#b16639",
+      "seam": 0.1126,
+      "x": 138,
+      "y": 38
+    },
+    {
+      "file": "donga-floor_1002-3.png",
+      "subject": "donga-floor",
+      "width": 64,
+      "height": 32,
+      "band": 5,
+      "averageColour": "#ae6438",
+      "seam": 0.1126,
+      "x": 206,
+      "y": 38
+    },
+    {
+      "file": "riverbed_1100-0.png",
+      "subject": "riverbed",
+      "width": 64,
+      "height": 32,
+      "band": 0,
+      "averageColour": "#586d46",
+      "seam": 0.2434,
+      "x": 274,
+      "y": 38
+    },
+    {
+      "file": "riverbed_1100-1.png",
+      "subject": "riverbed",
+      "width": 64,
+      "height": 32,
+      "band": 0,
+      "averageColour": "#566b43",
+      "seam": 0.2434,
+      "x": 342,
+      "y": 38
+    },
+    {
+      "file": "riverbed_1100-2.png",
+      "subject": "riverbed",
+      "width": 64,
+      "height": 32,
+      "band": 0,
+      "averageColour": "#576c45",
+      "seam": 0.2434,
+      "x": 410,
+      "y": 38
+    },
+    {
+      "file": "riverbed_1100-3.png",
+      "subject": "riverbed",
+      "width": 64,
+      "height": 32,
+      "band": 0,
+      "averageColour": "#576c44",
+      "seam": 0.2434,
+      "x": 478,
+      "y": 38
+    },
+    {
+      "file": "riverbed_1101-0.png",
+      "subject": "riverbed",
+      "width": 64,
+      "height": 32,
+      "band": 0,
+      "averageColour": "#5b6f47",
+      "seam": 0.2322,
+      "x": 2,
+      "y": 74
+    },
+    {
+      "file": "riverbed_1101-1.png",
+      "subject": "riverbed",
+      "width": 64,
+      "height": 32,
+      "band": 0,
+      "averageColour": "#5b6f47",
+      "seam": 0.2322,
+      "x": 70,
+      "y": 74
+    },
+    {
+      "file": "riverbed_1101-2.png",
+      "subject": "riverbed",
+      "width": 64,
+      "height": 32,
+      "band": 0,
+      "averageColour": "#5c7147",
+      "seam": 0.2322,
+      "x": 138,
+      "y": 74
+    },
+    {
+      "file": "riverbed_1101-3.png",
+      "subject": "riverbed",
+      "width": 64,
+      "height": 32,
+      "band": 0,
+      "averageColour": "#586c43",
+      "seam": 0.2322,
+      "x": 206,
+      "y": 74
+    },
+    {
+      "file": "riverbed_1102-0.png",
+      "subject": "riverbed",
+      "width": 64,
+      "height": 32,
+      "band": 0,
+      "averageColour": "#5b6f45",
+      "seam": 0.231,
+      "x": 274,
+      "y": 74
+    },
+    {
+      "file": "riverbed_1102-1.png",
+      "subject": "riverbed",
+      "width": 64,
+      "height": 32,
+      "band": 0,
+      "averageColour": "#576a40",
+      "seam": 0.231,
+      "x": 342,
+      "y": 74
+    },
+    {
+      "file": "riverbed_1102-2.png",
+      "subject": "riverbed",
+      "width": 64,
+      "height": 32,
+      "band": 0,
+      "averageColour": "#5c6f46",
+      "seam": 0.231,
+      "x": 410,
+      "y": 74
+    },
+    {
+      "file": "riverbed_1102-3.png",
+      "subject": "riverbed",
+      "width": 64,
+      "height": 32,
+      "band": 0,
+      "averageColour": "#576b41",
+      "seam": 0.231,
+      "x": 478,
+      "y": 74
+    },
+    {
+      "file": "rock_1200-0.png",
+      "subject": "rock",
+      "width": 64,
+      "height": 32,
+      "band": 7,
+      "averageColour": "#4c4843",
+      "seam": 0.1657,
+      "x": 2,
+      "y": 110
+    },
+    {
+      "file": "rock_1200-1.png",
+      "subject": "rock",
+      "width": 64,
+      "height": 32,
+      "band": 7,
+      "averageColour": "#4f4b46",
+      "seam": 0.1657,
+      "x": 70,
+      "y": 110
+    },
+    {
+      "file": "rock_1200-2.png",
+      "subject": "rock",
+      "width": 64,
+      "height": 32,
+      "band": 7,
+      "averageColour": "#514a43",
+      "seam": 0.1657,
+      "x": 138,
+      "y": 110
+    },
+    {
+      "file": "rock_1200-3.png",
+      "subject": "rock",
+      "width": 64,
+      "height": 32,
+      "band": 7,
+      "averageColour": "#544d44",
+      "seam": 0.1657,
+      "x": 206,
+      "y": 110
+    },
+    {
+      "file": "rock_1201-0.png",
+      "subject": "rock",
+      "width": 64,
+      "height": 32,
+      "band": 7,
+      "averageColour": "#544e47",
+      "seam": 0.1691,
+      "x": 274,
+      "y": 110
+    },
+    {
+      "file": "rock_1201-1.png",
+      "subject": "rock",
+      "width": 64,
+      "height": 32,
+      "band": 7,
+      "averageColour": "#554e47",
+      "seam": 0.1691,
+      "x": 342,
+      "y": 110
+    },
+    {
+      "file": "rock_1201-2.png",
+      "subject": "rock",
+      "width": 64,
+      "height": 32,
+      "band": 7,
+      "averageColour": "#554e47",
+      "seam": 0.1691,
+      "x": 410,
+      "y": 110
+    },
+    {
+      "file": "rock_1201-3.png",
       "subject": "rock",
       "width": 64,
       "height": 32,
@@ -88,32 +352,120 @@
       "averageColour": "#574f47",
       "seam": 0.1691,
       "x": 478,
-      "y": 2
+      "y": 110
     },
     {
-      "file": "rock_1202.png",
+      "file": "rock_1202-0.png",
       "subject": "rock",
       "width": 64,
       "height": 32,
       "band": 7,
-      "averageColour": "#544e46",
+      "averageColour": "#534e47",
       "seam": 0.1289,
       "x": 2,
-      "y": 38
+      "y": 146
     },
     {
-      "file": "sandstone_1300.png",
+      "file": "rock_1202-1.png",
+      "subject": "rock",
+      "width": 64,
+      "height": 32,
+      "band": 7,
+      "averageColour": "#524c43",
+      "seam": 0.1289,
+      "x": 70,
+      "y": 146
+    },
+    {
+      "file": "rock_1202-2.png",
+      "subject": "rock",
+      "width": 64,
+      "height": 32,
+      "band": 7,
+      "averageColour": "#524d46",
+      "seam": 0.1289,
+      "x": 138,
+      "y": 146
+    },
+    {
+      "file": "rock_1202-3.png",
+      "subject": "rock",
+      "width": 64,
+      "height": 32,
+      "band": 7,
+      "averageColour": "#565147",
+      "seam": 0.1289,
+      "x": 206,
+      "y": 146
+    },
+    {
+      "file": "sandstone_1300-0.png",
       "subject": "sandstone",
       "width": 64,
       "height": 32,
       "band": 6,
-      "averageColour": "#d4b57e",
+      "averageColour": "#cfb17c",
       "seam": 0.2302,
-      "x": 70,
-      "y": 38
+      "x": 274,
+      "y": 146
     },
     {
-      "file": "sandstone_1301.png",
+      "file": "sandstone_1300-1.png",
+      "subject": "sandstone",
+      "width": 64,
+      "height": 32,
+      "band": 6,
+      "averageColour": "#d2b47e",
+      "seam": 0.2302,
+      "x": 342,
+      "y": 146
+    },
+    {
+      "file": "sandstone_1300-2.png",
+      "subject": "sandstone",
+      "width": 64,
+      "height": 32,
+      "band": 6,
+      "averageColour": "#d0b27c",
+      "seam": 0.2302,
+      "x": 410,
+      "y": 146
+    },
+    {
+      "file": "sandstone_1300-3.png",
+      "subject": "sandstone",
+      "width": 64,
+      "height": 32,
+      "band": 6,
+      "averageColour": "#d1b37d",
+      "seam": 0.2302,
+      "x": 478,
+      "y": 146
+    },
+    {
+      "file": "sandstone_1301-0.png",
+      "subject": "sandstone",
+      "width": 64,
+      "height": 32,
+      "band": 6,
+      "averageColour": "#d1b47e",
+      "seam": 0.1382,
+      "x": 2,
+      "y": 182
+    },
+    {
+      "file": "sandstone_1301-1.png",
+      "subject": "sandstone",
+      "width": 64,
+      "height": 32,
+      "band": 6,
+      "averageColour": "#d0b27c",
+      "seam": 0.1382,
+      "x": 70,
+      "y": 182
+    },
+    {
+      "file": "sandstone_1301-2.png",
       "subject": "sandstone",
       "width": 64,
       "height": 32,
@@ -121,65 +473,241 @@
       "averageColour": "#d1b37d",
       "seam": 0.1382,
       "x": 138,
-      "y": 38
+      "y": 182
     },
     {
-      "file": "sandstone_1302.png",
+      "file": "sandstone_1301-3.png",
+      "subject": "sandstone",
+      "width": 64,
+      "height": 32,
+      "band": 6,
+      "averageColour": "#d1b37d",
+      "seam": 0.1382,
+      "x": 206,
+      "y": 182
+    },
+    {
+      "file": "sandstone_1302-0.png",
+      "subject": "sandstone",
+      "width": 64,
+      "height": 32,
+      "band": 6,
+      "averageColour": "#ceaf79",
+      "seam": 0.2126,
+      "x": 274,
+      "y": 182
+    },
+    {
+      "file": "sandstone_1302-1.png",
+      "subject": "sandstone",
+      "width": 64,
+      "height": 32,
+      "band": 6,
+      "averageColour": "#d1b27b",
+      "seam": 0.2126,
+      "x": 342,
+      "y": 182
+    },
+    {
+      "file": "sandstone_1302-2.png",
       "subject": "sandstone",
       "width": 64,
       "height": 32,
       "band": 6,
       "averageColour": "#d4b57d",
       "seam": 0.2126,
-      "x": 206,
-      "y": 38
+      "x": 410,
+      "y": 182
     },
     {
-      "file": "savanna-high_1400.png",
+      "file": "sandstone_1302-3.png",
+      "subject": "sandstone",
+      "width": 64,
+      "height": 32,
+      "band": 6,
+      "averageColour": "#ceb079",
+      "seam": 0.2126,
+      "x": 478,
+      "y": 182
+    },
+    {
+      "file": "savanna-high_1400-0.png",
+      "subject": "savanna-high",
+      "width": 64,
+      "height": 32,
+      "band": 3,
+      "averageColour": "#8e8742",
+      "seam": 0.2137,
+      "x": 2,
+      "y": 218
+    },
+    {
+      "file": "savanna-high_1400-1.png",
+      "subject": "savanna-high",
+      "width": 64,
+      "height": 32,
+      "band": 3,
+      "averageColour": "#8d8942",
+      "seam": 0.2137,
+      "x": 70,
+      "y": 218
+    },
+    {
+      "file": "savanna-high_1400-2.png",
+      "subject": "savanna-high",
+      "width": 64,
+      "height": 32,
+      "band": 3,
+      "averageColour": "#908743",
+      "seam": 0.2137,
+      "x": 138,
+      "y": 218
+    },
+    {
+      "file": "savanna-high_1400-3.png",
+      "subject": "savanna-high",
+      "width": 64,
+      "height": 32,
+      "band": 3,
+      "averageColour": "#85803e",
+      "seam": 0.2137,
+      "x": 206,
+      "y": 218
+    },
+    {
+      "file": "savanna-high_1401-0.png",
+      "subject": "savanna-high",
+      "width": 64,
+      "height": 32,
+      "band": 3,
+      "averageColour": "#998a45",
+      "seam": 0.0742,
+      "x": 274,
+      "y": 218
+    },
+    {
+      "file": "savanna-high_1401-1.png",
       "subject": "savanna-high",
       "width": 64,
       "height": 32,
       "band": 3,
       "averageColour": "#918843",
-      "seam": 0.2137,
-      "x": 274,
-      "y": 38
-    },
-    {
-      "file": "savanna-high_1401.png",
-      "subject": "savanna-high",
-      "width": 64,
-      "height": 32,
-      "band": 3,
-      "averageColour": "#908542",
       "seam": 0.0742,
       "x": 342,
-      "y": 38
+      "y": 218
     },
     {
-      "file": "savanna-high_1402.png",
+      "file": "savanna-high_1401-2.png",
       "subject": "savanna-high",
       "width": 64,
       "height": 32,
       "band": 3,
-      "averageColour": "#948542",
-      "seam": 0.1056,
+      "averageColour": "#948643",
+      "seam": 0.0742,
       "x": 410,
-      "y": 38
+      "y": 218
     },
     {
-      "file": "savanna-low_1500.png",
+      "file": "savanna-high_1401-3.png",
+      "subject": "savanna-high",
+      "width": 64,
+      "height": 32,
+      "band": 3,
+      "averageColour": "#898341",
+      "seam": 0.0742,
+      "x": 478,
+      "y": 218
+    },
+    {
+      "file": "savanna-high_1402-0.png",
+      "subject": "savanna-high",
+      "width": 64,
+      "height": 32,
+      "band": 3,
+      "averageColour": "#968844",
+      "seam": 0.1056,
+      "x": 2,
+      "y": 254
+    },
+    {
+      "file": "savanna-high_1402-1.png",
+      "subject": "savanna-high",
+      "width": 64,
+      "height": 32,
+      "band": 3,
+      "averageColour": "#948441",
+      "seam": 0.1056,
+      "x": 70,
+      "y": 254
+    },
+    {
+      "file": "savanna-high_1402-2.png",
+      "subject": "savanna-high",
+      "width": 64,
+      "height": 32,
+      "band": 3,
+      "averageColour": "#928341",
+      "seam": 0.1056,
+      "x": 138,
+      "y": 254
+    },
+    {
+      "file": "savanna-high_1402-3.png",
+      "subject": "savanna-high",
+      "width": 64,
+      "height": 32,
+      "band": 3,
+      "averageColour": "#958642",
+      "seam": 0.1056,
+      "x": 206,
+      "y": 254
+    },
+    {
+      "file": "savanna-low_1500-0.png",
       "subject": "savanna-low",
       "width": 64,
       "height": 32,
       "band": 1,
-      "averageColour": "#53712c",
+      "averageColour": "#4c6e2c",
       "seam": 0.1787,
-      "x": 478,
-      "y": 38
+      "x": 274,
+      "y": 254
     },
     {
-      "file": "savanna-low_1501.png",
+      "file": "savanna-low_1500-1.png",
+      "subject": "savanna-low",
+      "width": 64,
+      "height": 32,
+      "band": 1,
+      "averageColour": "#4a6c2c",
+      "seam": 0.1787,
+      "x": 342,
+      "y": 254
+    },
+    {
+      "file": "savanna-low_1500-2.png",
+      "subject": "savanna-low",
+      "width": 64,
+      "height": 32,
+      "band": 1,
+      "averageColour": "#506d2c",
+      "seam": 0.1787,
+      "x": 410,
+      "y": 254
+    },
+    {
+      "file": "savanna-low_1500-3.png",
+      "subject": "savanna-low",
+      "width": 64,
+      "height": 32,
+      "band": 1,
+      "averageColour": "#50712c",
+      "seam": 0.1787,
+      "x": 478,
+      "y": 254
+    },
+    {
+      "file": "savanna-low_1501-0.png",
       "subject": "savanna-low",
       "width": 64,
       "height": 32,
@@ -187,84 +715,348 @@
       "averageColour": "#50752a",
       "seam": 0.1702,
       "x": 2,
-      "y": 74
+      "y": 290
     },
     {
-      "file": "savanna-low_1502.png",
+      "file": "savanna-low_1501-1.png",
+      "subject": "savanna-low",
+      "width": 64,
+      "height": 32,
+      "band": 1,
+      "averageColour": "#50742a",
+      "seam": 0.1702,
+      "x": 70,
+      "y": 290
+    },
+    {
+      "file": "savanna-low_1501-2.png",
+      "subject": "savanna-low",
+      "width": 64,
+      "height": 32,
+      "band": 1,
+      "averageColour": "#50752a",
+      "seam": 0.1702,
+      "x": 138,
+      "y": 290
+    },
+    {
+      "file": "savanna-low_1501-3.png",
+      "subject": "savanna-low",
+      "width": 64,
+      "height": 32,
+      "band": 1,
+      "averageColour": "#50752a",
+      "seam": 0.1702,
+      "x": 206,
+      "y": 290
+    },
+    {
+      "file": "savanna-low_1502-0.png",
       "subject": "savanna-low",
       "width": 64,
       "height": 32,
       "band": 1,
       "averageColour": "#537128",
       "seam": 0.1993,
-      "x": 70,
-      "y": 74
+      "x": 274,
+      "y": 290
     },
     {
-      "file": "savanna-mid_1600.png",
+      "file": "savanna-low_1502-1.png",
+      "subject": "savanna-low",
+      "width": 64,
+      "height": 32,
+      "band": 1,
+      "averageColour": "#517128",
+      "seam": 0.1993,
+      "x": 342,
+      "y": 290
+    },
+    {
+      "file": "savanna-low_1502-2.png",
+      "subject": "savanna-low",
+      "width": 64,
+      "height": 32,
+      "band": 1,
+      "averageColour": "#527228",
+      "seam": 0.1993,
+      "x": 410,
+      "y": 290
+    },
+    {
+      "file": "savanna-low_1502-3.png",
+      "subject": "savanna-low",
+      "width": 64,
+      "height": 32,
+      "band": 1,
+      "averageColour": "#547028",
+      "seam": 0.1993,
+      "x": 478,
+      "y": 290
+    },
+    {
+      "file": "savanna-mid_1600-0.png",
       "subject": "savanna-mid",
       "width": 64,
       "height": 32,
       "band": 2,
-      "averageColour": "#658331",
+      "averageColour": "#608231",
+      "seam": 0.1714,
+      "x": 2,
+      "y": 326
+    },
+    {
+      "file": "savanna-mid_1600-1.png",
+      "subject": "savanna-mid",
+      "width": 64,
+      "height": 32,
+      "band": 2,
+      "averageColour": "#618130",
+      "seam": 0.1714,
+      "x": 70,
+      "y": 326
+    },
+    {
+      "file": "savanna-mid_1600-2.png",
+      "subject": "savanna-mid",
+      "width": 64,
+      "height": 32,
+      "band": 2,
+      "averageColour": "#648432",
       "seam": 0.1714,
       "x": 138,
-      "y": 74
+      "y": 326
     },
     {
-      "file": "savanna-mid_1601.png",
+      "file": "savanna-mid_1600-3.png",
       "subject": "savanna-mid",
       "width": 64,
       "height": 32,
       "band": 2,
-      "averageColour": "#6d8230",
-      "seam": 0.1904,
+      "averageColour": "#628030",
+      "seam": 0.1714,
       "x": 206,
-      "y": 74
+      "y": 326
     },
     {
-      "file": "savanna-mid_1602.png",
+      "file": "savanna-mid_1601-0.png",
       "subject": "savanna-mid",
       "width": 64,
       "height": 32,
       "band": 2,
-      "averageColour": "#698332",
-      "seam": 0.2001,
+      "averageColour": "#647f2f",
+      "seam": 0.1904,
       "x": 274,
-      "y": 74
+      "y": 326
     },
     {
-      "file": "thornveld_1700.png",
+      "file": "savanna-mid_1601-1.png",
+      "subject": "savanna-mid",
+      "width": 64,
+      "height": 32,
+      "band": 2,
+      "averageColour": "#6c8030",
+      "seam": 0.1904,
+      "x": 342,
+      "y": 326
+    },
+    {
+      "file": "savanna-mid_1601-2.png",
+      "subject": "savanna-mid",
+      "width": 64,
+      "height": 32,
+      "band": 2,
+      "averageColour": "#6a7e2f",
+      "seam": 0.1904,
+      "x": 410,
+      "y": 326
+    },
+    {
+      "file": "savanna-mid_1601-3.png",
+      "subject": "savanna-mid",
+      "width": 64,
+      "height": 32,
+      "band": 2,
+      "averageColour": "#6e8631",
+      "seam": 0.1904,
+      "x": 478,
+      "y": 326
+    },
+    {
+      "file": "savanna-mid_1602-0.png",
+      "subject": "savanna-mid",
+      "width": 64,
+      "height": 32,
+      "band": 2,
+      "averageColour": "#668031",
+      "seam": 0.2001,
+      "x": 2,
+      "y": 362
+    },
+    {
+      "file": "savanna-mid_1602-1.png",
+      "subject": "savanna-mid",
+      "width": 64,
+      "height": 32,
+      "band": 2,
+      "averageColour": "#678131",
+      "seam": 0.2001,
+      "x": 70,
+      "y": 362
+    },
+    {
+      "file": "savanna-mid_1602-2.png",
+      "subject": "savanna-mid",
+      "width": 64,
+      "height": 32,
+      "band": 2,
+      "averageColour": "#6e7f31",
+      "seam": 0.2001,
+      "x": 138,
+      "y": 362
+    },
+    {
+      "file": "savanna-mid_1602-3.png",
+      "subject": "savanna-mid",
+      "width": 64,
+      "height": 32,
+      "band": 2,
+      "averageColour": "#688131",
+      "seam": 0.2001,
+      "x": 206,
+      "y": 362
+    },
+    {
+      "file": "thornveld_1700-0.png",
       "subject": "thornveld",
       "width": 64,
       "height": 32,
       "band": 4,
-      "averageColour": "#9f7d48",
+      "averageColour": "#a27c47",
+      "seam": 0.1285,
+      "x": 274,
+      "y": 362
+    },
+    {
+      "file": "thornveld_1700-1.png",
+      "subject": "thornveld",
+      "width": 64,
+      "height": 32,
+      "band": 4,
+      "averageColour": "#a3824c",
       "seam": 0.1285,
       "x": 342,
-      "y": 74
+      "y": 362
     },
     {
-      "file": "thornveld_1701.png",
+      "file": "thornveld_1700-2.png",
       "subject": "thornveld",
       "width": 64,
       "height": 32,
       "band": 4,
-      "averageColour": "#a8824b",
-      "seam": 0.0792,
+      "averageColour": "#a4834d",
+      "seam": 0.1285,
       "x": 410,
-      "y": 74
+      "y": 362
     },
     {
-      "file": "thornveld_1702.png",
+      "file": "thornveld_1700-3.png",
       "subject": "thornveld",
       "width": 64,
       "height": 32,
       "band": 4,
-      "averageColour": "#ad814c",
+      "averageColour": "#9f7c47",
+      "seam": 0.1285,
+      "x": 478,
+      "y": 362
+    },
+    {
+      "file": "thornveld_1701-0.png",
+      "subject": "thornveld",
+      "width": 64,
+      "height": 32,
+      "band": 4,
+      "averageColour": "#a07f4b",
+      "seam": 0.0792,
+      "x": 2,
+      "y": 398
+    },
+    {
+      "file": "thornveld_1701-1.png",
+      "subject": "thornveld",
+      "width": 64,
+      "height": 32,
+      "band": 4,
+      "averageColour": "#a9824b",
+      "seam": 0.0792,
+      "x": 70,
+      "y": 398
+    },
+    {
+      "file": "thornveld_1701-2.png",
+      "subject": "thornveld",
+      "width": 64,
+      "height": 32,
+      "band": 4,
+      "averageColour": "#a27f4a",
+      "seam": 0.0792,
+      "x": 138,
+      "y": 398
+    },
+    {
+      "file": "thornveld_1701-3.png",
+      "subject": "thornveld",
+      "width": 64,
+      "height": 32,
+      "band": 4,
+      "averageColour": "#a5814c",
+      "seam": 0.0792,
+      "x": 206,
+      "y": 398
+    },
+    {
+      "file": "thornveld_1702-0.png",
+      "subject": "thornveld",
+      "width": 64,
+      "height": 32,
+      "band": 4,
+      "averageColour": "#9d7e4d",
+      "seam": 0.1147,
+      "x": 274,
+      "y": 398
+    },
+    {
+      "file": "thornveld_1702-1.png",
+      "subject": "thornveld",
+      "width": 64,
+      "height": 32,
+      "band": 4,
+      "averageColour": "#ac7f4b",
+      "seam": 0.1147,
+      "x": 342,
+      "y": 398
+    },
+    {
+      "file": "thornveld_1702-2.png",
+      "subject": "thornveld",
+      "width": 64,
+      "height": 32,
+      "band": 4,
+      "averageColour": "#a6804c",
+      "seam": 0.1147,
+      "x": 410,
+      "y": 398
+    },
+    {
+      "file": "thornveld_1702-3.png",
+      "subject": "thornveld",
+      "width": 64,
+      "height": 32,
+      "band": 4,
+      "averageColour": "#b0814b",
       "seam": 0.1147,
       "x": 478,
-      "y": 74
+      "y": 398
     },
     {
       "file": "transition-0-1-0.png",
@@ -275,10 +1067,10 @@
       "band": 0,
       "mask": 1,
       "variant": 0,
-      "averageColour": "#566c44",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 2,
-      "y": 110
+      "y": 434
     },
     {
       "file": "transition-0-1-1.png",
@@ -289,10 +1081,10 @@
       "band": 0,
       "mask": 1,
       "variant": 1,
-      "averageColour": "#566c44",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 70,
-      "y": 110
+      "y": 434
     },
     {
       "file": "transition-0-1-2.png",
@@ -303,10 +1095,10 @@
       "band": 0,
       "mask": 1,
       "variant": 2,
-      "averageColour": "#576d45",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 138,
-      "y": 110
+      "y": 434
     },
     {
       "file": "transition-0-1-3.png",
@@ -317,10 +1109,10 @@
       "band": 0,
       "mask": 1,
       "variant": 3,
-      "averageColour": "#566b43",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 206,
-      "y": 110
+      "y": 434
     },
     {
       "file": "transition-0-2-0.png",
@@ -331,10 +1123,10 @@
       "band": 0,
       "mask": 2,
       "variant": 0,
-      "averageColour": "#566c44",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 274,
-      "y": 110
+      "y": 434
     },
     {
       "file": "transition-0-2-1.png",
@@ -345,10 +1137,10 @@
       "band": 0,
       "mask": 2,
       "variant": 1,
-      "averageColour": "#566b43",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 342,
-      "y": 110
+      "y": 434
     },
     {
       "file": "transition-0-2-2.png",
@@ -359,10 +1151,10 @@
       "band": 0,
       "mask": 2,
       "variant": 2,
-      "averageColour": "#576c44",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 410,
-      "y": 110
+      "y": 434
     },
     {
       "file": "transition-0-2-3.png",
@@ -373,10 +1165,10 @@
       "band": 0,
       "mask": 2,
       "variant": 3,
-      "averageColour": "#576c44",
+      "averageColour": "#576c46",
       "seam": 0.0,
       "x": 478,
-      "y": 110
+      "y": 434
     },
     {
       "file": "transition-0-3-0.png",
@@ -387,10 +1179,10 @@
       "band": 0,
       "mask": 3,
       "variant": 0,
-      "averageColour": "#556b43",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 2,
-      "y": 146
+      "y": 470
     },
     {
       "file": "transition-0-4-0.png",
@@ -401,10 +1193,10 @@
       "band": 0,
       "mask": 4,
       "variant": 0,
-      "averageColour": "#566b44",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 70,
-      "y": 146
+      "y": 470
     },
     {
       "file": "transition-0-4-1.png",
@@ -415,10 +1207,10 @@
       "band": 0,
       "mask": 4,
       "variant": 1,
-      "averageColour": "#566c44",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 138,
-      "y": 146
+      "y": 470
     },
     {
       "file": "transition-0-4-2.png",
@@ -429,10 +1221,10 @@
       "band": 0,
       "mask": 4,
       "variant": 2,
-      "averageColour": "#566b43",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 206,
-      "y": 146
+      "y": 470
     },
     {
       "file": "transition-0-4-3.png",
@@ -443,10 +1235,10 @@
       "band": 0,
       "mask": 4,
       "variant": 3,
-      "averageColour": "#566b43",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 274,
-      "y": 146
+      "y": 470
     },
     {
       "file": "transition-0-5-0.png",
@@ -457,10 +1249,10 @@
       "band": 0,
       "mask": 5,
       "variant": 0,
-      "averageColour": "#556b43",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 342,
-      "y": 146
+      "y": 470
     },
     {
       "file": "transition-0-6-0.png",
@@ -471,10 +1263,10 @@
       "band": 0,
       "mask": 6,
       "variant": 0,
-      "averageColour": "#566b43",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 410,
-      "y": 146
+      "y": 470
     },
     {
       "file": "transition-0-7-0.png",
@@ -485,10 +1277,10 @@
       "band": 0,
       "mask": 7,
       "variant": 0,
-      "averageColour": "#576c44",
+      "averageColour": "#586c46",
       "seam": 0.0,
       "x": 478,
-      "y": 146
+      "y": 470
     },
     {
       "file": "transition-0-8-0.png",
@@ -499,10 +1291,10 @@
       "band": 0,
       "mask": 8,
       "variant": 0,
-      "averageColour": "#576c44",
+      "averageColour": "#576b45",
       "seam": 0.0,
       "x": 2,
-      "y": 182
+      "y": 506
     },
     {
       "file": "transition-0-8-1.png",
@@ -513,10 +1305,10 @@
       "band": 0,
       "mask": 8,
       "variant": 1,
-      "averageColour": "#576c44",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 70,
-      "y": 182
+      "y": 506
     },
     {
       "file": "transition-0-8-2.png",
@@ -527,10 +1319,10 @@
       "band": 0,
       "mask": 8,
       "variant": 2,
-      "averageColour": "#566c44",
+      "averageColour": "#586c46",
       "seam": 0.0,
       "x": 138,
-      "y": 182
+      "y": 506
     },
     {
       "file": "transition-0-8-3.png",
@@ -541,10 +1333,10 @@
       "band": 0,
       "mask": 8,
       "variant": 3,
-      "averageColour": "#566c44",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 206,
-      "y": 182
+      "y": 506
     },
     {
       "file": "transition-0-9-0.png",
@@ -555,10 +1347,10 @@
       "band": 0,
       "mask": 9,
       "variant": 0,
-      "averageColour": "#576c44",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 274,
-      "y": 182
+      "y": 506
     },
     {
       "file": "transition-0-10-0.png",
@@ -569,10 +1361,10 @@
       "band": 0,
       "mask": 10,
       "variant": 0,
-      "averageColour": "#576d45",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 342,
-      "y": 182
+      "y": 506
     },
     {
       "file": "transition-0-11-0.png",
@@ -583,10 +1375,10 @@
       "band": 0,
       "mask": 11,
       "variant": 0,
-      "averageColour": "#566c44",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 410,
-      "y": 182
+      "y": 506
     },
     {
       "file": "transition-0-12-0.png",
@@ -597,10 +1389,10 @@
       "band": 0,
       "mask": 12,
       "variant": 0,
-      "averageColour": "#566b43",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 478,
-      "y": 182
+      "y": 506
     },
     {
       "file": "transition-0-13-0.png",
@@ -611,10 +1403,10 @@
       "band": 0,
       "mask": 13,
       "variant": 0,
-      "averageColour": "#566b44",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 2,
-      "y": 218
+      "y": 542
     },
     {
       "file": "transition-0-14-0.png",
@@ -625,10 +1417,10 @@
       "band": 0,
       "mask": 14,
       "variant": 0,
-      "averageColour": "#566c44",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 70,
-      "y": 218
+      "y": 542
     },
     {
       "file": "transition-0-15-0.png",
@@ -639,10 +1431,10 @@
       "band": 0,
       "mask": 15,
       "variant": 0,
-      "averageColour": "#566c44",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 138,
-      "y": 218
+      "y": 542
     },
     {
       "file": "transition-1-1-0.png",
@@ -653,10 +1445,10 @@
       "band": 1,
       "mask": 1,
       "variant": 0,
-      "averageColour": "#4e6b2b",
+      "averageColour": "#4e722e",
       "seam": 0.0,
       "x": 206,
-      "y": 218
+      "y": 542
     },
     {
       "file": "transition-1-1-1.png",
@@ -667,10 +1459,10 @@
       "band": 1,
       "mask": 1,
       "variant": 1,
-      "averageColour": "#4f6d2b",
+      "averageColour": "#4d712d",
       "seam": 0.0,
       "x": 274,
-      "y": 218
+      "y": 542
     },
     {
       "file": "transition-1-1-2.png",
@@ -681,10 +1473,10 @@
       "band": 1,
       "mask": 1,
       "variant": 2,
-      "averageColour": "#4f6d2b",
+      "averageColour": "#4d712e",
       "seam": 0.0,
       "x": 342,
-      "y": 218
+      "y": 542
     },
     {
       "file": "transition-1-1-3.png",
@@ -695,10 +1487,10 @@
       "band": 1,
       "mask": 1,
       "variant": 3,
-      "averageColour": "#506e2c",
+      "averageColour": "#4c6f2d",
       "seam": 0.0,
       "x": 410,
-      "y": 218
+      "y": 542
     },
     {
       "file": "transition-1-2-0.png",
@@ -709,10 +1501,10 @@
       "band": 1,
       "mask": 2,
       "variant": 0,
-      "averageColour": "#5a782f",
+      "averageColour": "#496a2b",
       "seam": 0.0,
       "x": 478,
-      "y": 218
+      "y": 542
     },
     {
       "file": "transition-1-2-1.png",
@@ -723,10 +1515,10 @@
       "band": 1,
       "mask": 2,
       "variant": 1,
-      "averageColour": "#5c772e",
+      "averageColour": "#4b6c2c",
       "seam": 0.0,
       "x": 2,
-      "y": 254
+      "y": 578
     },
     {
       "file": "transition-1-2-2.png",
@@ -737,10 +1529,10 @@
       "band": 1,
       "mask": 2,
       "variant": 2,
-      "averageColour": "#5c792f",
+      "averageColour": "#4a6b2b",
       "seam": 0.0,
       "x": 70,
-      "y": 254
+      "y": 578
     },
     {
       "file": "transition-1-2-3.png",
@@ -751,10 +1543,10 @@
       "band": 1,
       "mask": 2,
       "variant": 3,
-      "averageColour": "#59772f",
+      "averageColour": "#4b6d2c",
       "seam": 0.0,
       "x": 138,
-      "y": 254
+      "y": 578
     },
     {
       "file": "transition-1-3-0.png",
@@ -765,10 +1557,10 @@
       "band": 1,
       "mask": 3,
       "variant": 0,
-      "averageColour": "#54722d",
+      "averageColour": "#4c6e2c",
       "seam": 0.0,
       "x": 206,
-      "y": 254
+      "y": 578
     },
     {
       "file": "transition-1-4-0.png",
@@ -779,10 +1571,10 @@
       "band": 1,
       "mask": 4,
       "variant": 0,
-      "averageColour": "#59762e",
+      "averageColour": "#48682a",
       "seam": 0.0,
       "x": 274,
-      "y": 254
+      "y": 578
     },
     {
       "file": "transition-1-4-1.png",
@@ -793,10 +1585,10 @@
       "band": 1,
       "mask": 4,
       "variant": 1,
-      "averageColour": "#58772f",
+      "averageColour": "#4a6b2b",
       "seam": 0.0,
       "x": 342,
-      "y": 254
+      "y": 578
     },
     {
       "file": "transition-1-4-2.png",
@@ -807,10 +1599,10 @@
       "band": 1,
       "mask": 4,
       "variant": 2,
-      "averageColour": "#59762e",
+      "averageColour": "#4b6c2c",
       "seam": 0.0,
       "x": 410,
-      "y": 254
+      "y": 578
     },
     {
       "file": "transition-1-4-3.png",
@@ -821,10 +1613,10 @@
       "band": 1,
       "mask": 4,
       "variant": 3,
-      "averageColour": "#58772e",
+      "averageColour": "#4a6a2b",
       "seam": 0.0,
       "x": 478,
-      "y": 254
+      "y": 578
     },
     {
       "file": "transition-1-5-0.png",
@@ -835,10 +1627,10 @@
       "band": 1,
       "mask": 5,
       "variant": 0,
-      "averageColour": "#54722d",
+      "averageColour": "#4c6e2c",
       "seam": 0.0,
       "x": 2,
-      "y": 290
+      "y": 614
     },
     {
       "file": "transition-1-6-0.png",
@@ -849,10 +1641,10 @@
       "band": 1,
       "mask": 6,
       "variant": 0,
-      "averageColour": "#57742e",
+      "averageColour": "#4a6b2b",
       "seam": 0.0,
       "x": 70,
-      "y": 290
+      "y": 614
     },
     {
       "file": "transition-1-7-0.png",
@@ -863,10 +1655,10 @@
       "band": 1,
       "mask": 7,
       "variant": 0,
-      "averageColour": "#54722d",
+      "averageColour": "#4c6e2c",
       "seam": 0.0,
       "x": 138,
-      "y": 290
+      "y": 614
     },
     {
       "file": "transition-1-8-0.png",
@@ -877,10 +1669,10 @@
       "band": 1,
       "mask": 8,
       "variant": 0,
-      "averageColour": "#4e6d2b",
+      "averageColour": "#4d712d",
       "seam": 0.0,
       "x": 206,
-      "y": 290
+      "y": 614
     },
     {
       "file": "transition-1-8-1.png",
@@ -891,10 +1683,10 @@
       "band": 1,
       "mask": 8,
       "variant": 1,
-      "averageColour": "#4b6b2b",
+      "averageColour": "#4e712e",
       "seam": 0.0,
       "x": 274,
-      "y": 290
+      "y": 614
     },
     {
       "file": "transition-1-8-2.png",
@@ -905,10 +1697,10 @@
       "band": 1,
       "mask": 8,
       "variant": 2,
-      "averageColour": "#4d6b2b",
+      "averageColour": "#4d712e",
       "seam": 0.0,
       "x": 342,
-      "y": 290
+      "y": 614
     },
     {
       "file": "transition-1-8-3.png",
@@ -919,10 +1711,10 @@
       "band": 1,
       "mask": 8,
       "variant": 3,
-      "averageColour": "#4c6a2a",
+      "averageColour": "#4d712e",
       "seam": 0.0,
       "x": 410,
-      "y": 290
+      "y": 614
     },
     {
       "file": "transition-1-9-0.png",
@@ -933,10 +1725,10 @@
       "band": 1,
       "mask": 9,
       "variant": 0,
-      "averageColour": "#4e6b2a",
+      "averageColour": "#4d702d",
       "seam": 0.0,
       "x": 478,
-      "y": 290
+      "y": 614
     },
     {
       "file": "transition-1-10-0.png",
@@ -947,10 +1739,10 @@
       "band": 1,
       "mask": 10,
       "variant": 0,
-      "averageColour": "#53712d",
+      "averageColour": "#4c6e2c",
       "seam": 0.0,
       "x": 2,
-      "y": 326
+      "y": 650
     },
     {
       "file": "transition-1-11-0.png",
@@ -961,10 +1753,10 @@
       "band": 1,
       "mask": 11,
       "variant": 0,
-      "averageColour": "#52702c",
+      "averageColour": "#4d6f2d",
       "seam": 0.0,
       "x": 70,
-      "y": 326
+      "y": 650
     },
     {
       "file": "transition-1-12-0.png",
@@ -975,10 +1767,10 @@
       "band": 1,
       "mask": 12,
       "variant": 0,
-      "averageColour": "#52712d",
+      "averageColour": "#4b6c2c",
       "seam": 0.0,
       "x": 138,
-      "y": 326
+      "y": 650
     },
     {
       "file": "transition-1-13-0.png",
@@ -989,10 +1781,10 @@
       "band": 1,
       "mask": 13,
       "variant": 0,
-      "averageColour": "#53702c",
+      "averageColour": "#4b6d2c",
       "seam": 0.0,
       "x": 206,
-      "y": 326
+      "y": 650
     },
     {
       "file": "transition-1-14-0.png",
@@ -1003,10 +1795,10 @@
       "band": 1,
       "mask": 14,
       "variant": 0,
-      "averageColour": "#53712d",
+      "averageColour": "#4c6e2d",
       "seam": 0.0,
       "x": 274,
-      "y": 326
+      "y": 650
     },
     {
       "file": "transition-1-15-0.png",
@@ -1017,10 +1809,10 @@
       "band": 1,
       "mask": 15,
       "variant": 0,
-      "averageColour": "#52712c",
+      "averageColour": "#4c6e2c",
       "seam": 0.0,
       "x": 342,
-      "y": 326
+      "y": 650
     },
     {
       "file": "transition-2-1-0.png",
@@ -1031,10 +1823,10 @@
       "band": 2,
       "mask": 1,
       "variant": 0,
-      "averageColour": "#678632",
+      "averageColour": "#628532",
       "seam": 0.0,
       "x": 410,
-      "y": 326
+      "y": 650
     },
     {
       "file": "transition-2-1-1.png",
@@ -1045,10 +1837,10 @@
       "band": 2,
       "mask": 1,
       "variant": 1,
-      "averageColour": "#678532",
+      "averageColour": "#618431",
       "seam": 0.0,
       "x": 478,
-      "y": 326
+      "y": 650
     },
     {
       "file": "transition-2-1-2.png",
@@ -1059,10 +1851,10 @@
       "band": 2,
       "mask": 1,
       "variant": 2,
-      "averageColour": "#658431",
+      "averageColour": "#628532",
       "seam": 0.0,
       "x": 2,
-      "y": 362
+      "y": 686
     },
     {
       "file": "transition-2-1-3.png",
@@ -1073,10 +1865,10 @@
       "band": 2,
       "mask": 1,
       "variant": 3,
-      "averageColour": "#698633",
+      "averageColour": "#638632",
       "seam": 0.0,
       "x": 70,
-      "y": 362
+      "y": 686
     },
     {
       "file": "transition-2-2-0.png",
@@ -1087,10 +1879,10 @@
       "band": 2,
       "mask": 2,
       "variant": 0,
-      "averageColour": "#698532",
+      "averageColour": "#638632",
       "seam": 0.0,
       "x": 138,
-      "y": 362
+      "y": 686
     },
     {
       "file": "transition-2-2-1.png",
@@ -1101,10 +1893,10 @@
       "band": 2,
       "mask": 2,
       "variant": 1,
-      "averageColour": "#678432",
+      "averageColour": "#648732",
       "seam": 0.0,
       "x": 206,
-      "y": 362
+      "y": 686
     },
     {
       "file": "transition-2-2-2.png",
@@ -1115,10 +1907,10 @@
       "band": 2,
       "mask": 2,
       "variant": 2,
-      "averageColour": "#698633",
+      "averageColour": "#658833",
       "seam": 0.0,
       "x": 274,
-      "y": 362
+      "y": 686
     },
     {
       "file": "transition-2-2-3.png",
@@ -1129,10 +1921,10 @@
       "band": 2,
       "mask": 2,
       "variant": 3,
-      "averageColour": "#688532",
+      "averageColour": "#658833",
       "seam": 0.0,
       "x": 342,
-      "y": 362
+      "y": 686
     },
     {
       "file": "transition-2-3-0.png",
@@ -1143,10 +1935,10 @@
       "band": 2,
       "mask": 3,
       "variant": 0,
-      "averageColour": "#678532",
+      "averageColour": "#628532",
       "seam": 0.0,
       "x": 410,
-      "y": 362
+      "y": 686
     },
     {
       "file": "transition-2-4-0.png",
@@ -1157,10 +1949,10 @@
       "band": 2,
       "mask": 4,
       "variant": 0,
-      "averageColour": "#638131",
+      "averageColour": "#5d7e2f",
       "seam": 0.0,
       "x": 478,
-      "y": 362
+      "y": 686
     },
     {
       "file": "transition-2-4-1.png",
@@ -1171,10 +1963,10 @@
       "band": 2,
       "mask": 4,
       "variant": 1,
-      "averageColour": "#628130",
+      "averageColour": "#608130",
       "seam": 0.0,
       "x": 2,
-      "y": 398
+      "y": 722
     },
     {
       "file": "transition-2-4-2.png",
@@ -1185,10 +1977,10 @@
       "band": 2,
       "mask": 4,
       "variant": 2,
-      "averageColour": "#658331",
+      "averageColour": "#5f8130",
       "seam": 0.0,
       "x": 70,
-      "y": 398
+      "y": 722
     },
     {
       "file": "transition-2-4-3.png",
@@ -1199,10 +1991,10 @@
       "band": 2,
       "mask": 4,
       "variant": 3,
-      "averageColour": "#648231",
+      "averageColour": "#5d7e2f",
       "seam": 0.0,
       "x": 138,
-      "y": 398
+      "y": 722
     },
     {
       "file": "transition-2-5-0.png",
@@ -1213,10 +2005,10 @@
       "band": 2,
       "mask": 5,
       "variant": 0,
-      "averageColour": "#658331",
+      "averageColour": "#618331",
       "seam": 0.0,
       "x": 206,
-      "y": 398
+      "y": 722
     },
     {
       "file": "transition-2-6-0.png",
@@ -1227,10 +2019,10 @@
       "band": 2,
       "mask": 6,
       "variant": 0,
-      "averageColour": "#668432",
+      "averageColour": "#608231",
       "seam": 0.0,
       "x": 274,
-      "y": 398
+      "y": 722
     },
     {
       "file": "transition-2-7-0.png",
@@ -1241,10 +2033,10 @@
       "band": 2,
       "mask": 7,
       "variant": 0,
-      "averageColour": "#658331",
+      "averageColour": "#608231",
       "seam": 0.0,
       "x": 342,
-      "y": 398
+      "y": 722
     },
     {
       "file": "transition-2-8-0.png",
@@ -1255,10 +2047,10 @@
       "band": 2,
       "mask": 8,
       "variant": 0,
-      "averageColour": "#608030",
+      "averageColour": "#5b7c2e",
       "seam": 0.0,
       "x": 410,
-      "y": 398
+      "y": 722
     },
     {
       "file": "transition-2-8-1.png",
@@ -1269,10 +2061,10 @@
       "band": 2,
       "mask": 8,
       "variant": 1,
-      "averageColour": "#628131",
+      "averageColour": "#5b7d2f",
       "seam": 0.0,
       "x": 478,
-      "y": 398
+      "y": 722
     },
     {
       "file": "transition-2-8-2.png",
@@ -1283,10 +2075,10 @@
       "band": 2,
       "mask": 8,
       "variant": 2,
-      "averageColour": "#618130",
+      "averageColour": "#5c7e2f",
       "seam": 0.0,
       "x": 2,
-      "y": 434
+      "y": 758
     },
     {
       "file": "transition-2-8-3.png",
@@ -1297,10 +2089,10 @@
       "band": 2,
       "mask": 8,
       "variant": 3,
-      "averageColour": "#618130",
+      "averageColour": "#5d7f2f",
       "seam": 0.0,
       "x": 70,
-      "y": 434
+      "y": 758
     },
     {
       "file": "transition-2-9-0.png",
@@ -1311,10 +2103,10 @@
       "band": 2,
       "mask": 9,
       "variant": 0,
-      "averageColour": "#638231",
+      "averageColour": "#5e8030",
       "seam": 0.0,
       "x": 138,
-      "y": 434
+      "y": 758
     },
     {
       "file": "transition-2-10-0.png",
@@ -1325,10 +2117,10 @@
       "band": 2,
       "mask": 10,
       "variant": 0,
-      "averageColour": "#648231",
+      "averageColour": "#5f8130",
       "seam": 0.0,
       "x": 206,
-      "y": 434
+      "y": 758
     },
     {
       "file": "transition-2-11-0.png",
@@ -1339,10 +2131,10 @@
       "band": 2,
       "mask": 11,
       "variant": 0,
-      "averageColour": "#658331",
+      "averageColour": "#5f8130",
       "seam": 0.0,
       "x": 274,
-      "y": 434
+      "y": 758
     },
     {
       "file": "transition-2-12-0.png",
@@ -1353,10 +2145,10 @@
       "band": 2,
       "mask": 12,
       "variant": 0,
-      "averageColour": "#628130",
+      "averageColour": "#5e8030",
       "seam": 0.0,
       "x": 342,
-      "y": 434
+      "y": 758
     },
     {
       "file": "transition-2-13-0.png",
@@ -1367,10 +2159,10 @@
       "band": 2,
       "mask": 13,
       "variant": 0,
-      "averageColour": "#648331",
+      "averageColour": "#608231",
       "seam": 0.0,
       "x": 410,
-      "y": 434
+      "y": 758
     },
     {
       "file": "transition-2-14-0.png",
@@ -1381,10 +2173,10 @@
       "band": 2,
       "mask": 14,
       "variant": 0,
-      "averageColour": "#648331",
+      "averageColour": "#608231",
       "seam": 0.0,
       "x": 478,
-      "y": 434
+      "y": 758
     },
     {
       "file": "transition-2-15-0.png",
@@ -1395,10 +2187,10 @@
       "band": 2,
       "mask": 15,
       "variant": 0,
-      "averageColour": "#658331",
+      "averageColour": "#608231",
       "seam": 0.0,
       "x": 2,
-      "y": 470
+      "y": 794
     },
     {
       "file": "transition-3-1-0.png",
@@ -1409,10 +2201,10 @@
       "band": 3,
       "mask": 1,
       "variant": 0,
-      "averageColour": "#88823f",
+      "averageColour": "#8a8441",
       "seam": 0.0,
       "x": 70,
-      "y": 470
+      "y": 794
     },
     {
       "file": "transition-3-1-1.png",
@@ -1423,10 +2215,10 @@
       "band": 3,
       "mask": 1,
       "variant": 1,
-      "averageColour": "#8d8541",
+      "averageColour": "#938d45",
       "seam": 0.0,
       "x": 138,
-      "y": 470
+      "y": 794
     },
     {
       "file": "transition-3-1-2.png",
@@ -1437,10 +2229,10 @@
       "band": 3,
       "mask": 1,
       "variant": 2,
-      "averageColour": "#8f8742",
+      "averageColour": "#8e8b44",
       "seam": 0.0,
       "x": 206,
-      "y": 470
+      "y": 794
     },
     {
       "file": "transition-3-1-3.png",
@@ -1451,10 +2243,10 @@
       "band": 3,
       "mask": 1,
       "variant": 3,
-      "averageColour": "#8d8541",
+      "averageColour": "#8e8a43",
       "seam": 0.0,
       "x": 274,
-      "y": 470
+      "y": 794
     },
     {
       "file": "transition-3-2-0.png",
@@ -1465,10 +2257,10 @@
       "band": 3,
       "mask": 2,
       "variant": 0,
-      "averageColour": "#938843",
+      "averageColour": "#968d45",
       "seam": 0.0,
       "x": 342,
-      "y": 470
+      "y": 794
     },
     {
       "file": "transition-3-2-1.png",
@@ -1479,10 +2271,10 @@
       "band": 3,
       "mask": 2,
       "variant": 1,
-      "averageColour": "#908541",
+      "averageColour": "#968d46",
       "seam": 0.0,
       "x": 410,
-      "y": 470
+      "y": 794
     },
     {
       "file": "transition-3-2-2.png",
@@ -1493,10 +2285,10 @@
       "band": 3,
       "mask": 2,
       "variant": 2,
-      "averageColour": "#958a44",
+      "averageColour": "#968d45",
       "seam": 0.0,
       "x": 478,
-      "y": 470
+      "y": 794
     },
     {
       "file": "transition-3-2-3.png",
@@ -1507,10 +2299,10 @@
       "band": 3,
       "mask": 2,
       "variant": 3,
-      "averageColour": "#928842",
+      "averageColour": "#938c44",
       "seam": 0.0,
       "x": 2,
-      "y": 506
+      "y": 830
     },
     {
       "file": "transition-3-3-0.png",
@@ -1521,10 +2313,10 @@
       "band": 3,
       "mask": 3,
       "variant": 0,
-      "averageColour": "#918843",
+      "averageColour": "#908943",
       "seam": 0.0,
       "x": 70,
-      "y": 506
+      "y": 830
     },
     {
       "file": "transition-3-4-0.png",
@@ -1535,10 +2327,10 @@
       "band": 3,
       "mask": 4,
       "variant": 0,
-      "averageColour": "#978b45",
+      "averageColour": "#8d8441",
       "seam": 0.0,
       "x": 138,
-      "y": 506
+      "y": 830
     },
     {
       "file": "transition-3-4-1.png",
@@ -1549,10 +2341,10 @@
       "band": 3,
       "mask": 4,
       "variant": 1,
-      "averageColour": "#958a44",
+      "averageColour": "#8e8341",
       "seam": 0.0,
       "x": 206,
-      "y": 506
+      "y": 830
     },
     {
       "file": "transition-3-4-2.png",
@@ -1563,10 +2355,10 @@
       "band": 3,
       "mask": 4,
       "variant": 2,
-      "averageColour": "#988c45",
+      "averageColour": "#8e8441",
       "seam": 0.0,
       "x": 274,
-      "y": 506
+      "y": 830
     },
     {
       "file": "transition-3-4-3.png",
@@ -1577,10 +2369,10 @@
       "band": 3,
       "mask": 4,
       "variant": 3,
-      "averageColour": "#968b44",
+      "averageColour": "#8d8341",
       "seam": 0.0,
       "x": 342,
-      "y": 506
+      "y": 830
     },
     {
       "file": "transition-3-5-0.png",
@@ -1591,10 +2383,10 @@
       "band": 3,
       "mask": 5,
       "variant": 0,
-      "averageColour": "#918842",
+      "averageColour": "#8f8843",
       "seam": 0.0,
       "x": 410,
-      "y": 506
+      "y": 830
     },
     {
       "file": "transition-3-6-0.png",
@@ -1605,10 +2397,10 @@
       "band": 3,
       "mask": 6,
       "variant": 0,
-      "averageColour": "#958a44",
+      "averageColour": "#918843",
       "seam": 0.0,
       "x": 478,
-      "y": 506
+      "y": 830
     },
     {
       "file": "transition-3-7-0.png",
@@ -1619,10 +2411,10 @@
       "band": 3,
       "mask": 7,
       "variant": 0,
-      "averageColour": "#938943",
+      "averageColour": "#8f8843",
       "seam": 0.0,
       "x": 2,
-      "y": 542
+      "y": 866
     },
     {
       "file": "transition-3-8-0.png",
@@ -1633,10 +2425,10 @@
       "band": 3,
       "mask": 8,
       "variant": 0,
-      "averageColour": "#908843",
+      "averageColour": "#86803f",
       "seam": 0.0,
       "x": 70,
-      "y": 542
+      "y": 866
     },
     {
       "file": "transition-3-8-1.png",
@@ -1647,10 +2439,10 @@
       "band": 3,
       "mask": 8,
       "variant": 1,
-      "averageColour": "#8f8842",
+      "averageColour": "#86803f",
       "seam": 0.0,
       "x": 138,
-      "y": 542
+      "y": 866
     },
     {
       "file": "transition-3-8-2.png",
@@ -1661,10 +2453,10 @@
       "band": 3,
       "mask": 8,
       "variant": 2,
-      "averageColour": "#8f8742",
+      "averageColour": "#87803f",
       "seam": 0.0,
       "x": 206,
-      "y": 542
+      "y": 866
     },
     {
       "file": "transition-3-8-3.png",
@@ -1675,10 +2467,10 @@
       "band": 3,
       "mask": 8,
       "variant": 3,
-      "averageColour": "#8f8742",
+      "averageColour": "#87813f",
       "seam": 0.0,
       "x": 274,
-      "y": 542
+      "y": 866
     },
     {
       "file": "transition-3-9-0.png",
@@ -1689,10 +2481,10 @@
       "band": 3,
       "mask": 9,
       "variant": 0,
-      "averageColour": "#8f8742",
+      "averageColour": "#8c8641",
       "seam": 0.0,
       "x": 342,
-      "y": 542
+      "y": 866
     },
     {
       "file": "transition-3-10-0.png",
@@ -1703,10 +2495,10 @@
       "band": 3,
       "mask": 10,
       "variant": 0,
-      "averageColour": "#928943",
+      "averageColour": "#8f8943",
       "seam": 0.0,
       "x": 410,
-      "y": 542
+      "y": 866
     },
     {
       "file": "transition-3-11-0.png",
@@ -1717,10 +2509,10 @@
       "band": 3,
       "mask": 11,
       "variant": 0,
-      "averageColour": "#928943",
+      "averageColour": "#8e8842",
       "seam": 0.0,
       "x": 478,
-      "y": 542
+      "y": 866
     },
     {
       "file": "transition-3-12-0.png",
@@ -1731,10 +2523,10 @@
       "band": 3,
       "mask": 12,
       "variant": 0,
-      "averageColour": "#958b44",
+      "averageColour": "#8e8843",
       "seam": 0.0,
       "x": 2,
-      "y": 578
+      "y": 902
     },
     {
       "file": "transition-3-13-0.png",
@@ -1745,10 +2537,10 @@
       "band": 3,
       "mask": 13,
       "variant": 0,
-      "averageColour": "#928943",
+      "averageColour": "#8e8742",
       "seam": 0.0,
       "x": 70,
-      "y": 578
+      "y": 902
     },
     {
       "file": "transition-3-14-0.png",
@@ -1759,10 +2551,10 @@
       "band": 3,
       "mask": 14,
       "variant": 0,
-      "averageColour": "#938943",
+      "averageColour": "#8f8843",
       "seam": 0.0,
       "x": 138,
-      "y": 578
+      "y": 902
     },
     {
       "file": "transition-3-15-0.png",
@@ -1773,10 +2565,10 @@
       "band": 3,
       "mask": 15,
       "variant": 0,
-      "averageColour": "#938943",
+      "averageColour": "#8f8843",
       "seam": 0.0,
       "x": 206,
-      "y": 578
+      "y": 902
     },
     {
       "file": "transition-4-1-0.png",
@@ -1787,10 +2579,10 @@
       "band": 4,
       "mask": 1,
       "variant": 0,
-      "averageColour": "#9f7e48",
+      "averageColour": "#a47d46",
       "seam": 0.0,
       "x": 274,
-      "y": 578
+      "y": 902
     },
     {
       "file": "transition-4-1-1.png",
@@ -1801,10 +2593,10 @@
       "band": 4,
       "mask": 1,
       "variant": 1,
-      "averageColour": "#9b7a46",
+      "averageColour": "#a37d47",
       "seam": 0.0,
       "x": 342,
-      "y": 578
+      "y": 902
     },
     {
       "file": "transition-4-1-2.png",
@@ -1815,10 +2607,10 @@
       "band": 4,
       "mask": 1,
       "variant": 2,
-      "averageColour": "#9c7a46",
+      "averageColour": "#a68049",
       "seam": 0.0,
       "x": 410,
-      "y": 578
+      "y": 902
     },
     {
       "file": "transition-4-1-3.png",
@@ -1829,10 +2621,10 @@
       "band": 4,
       "mask": 1,
       "variant": 3,
-      "averageColour": "#9c7b46",
+      "averageColour": "#a47f49",
       "seam": 0.0,
       "x": 478,
-      "y": 578
+      "y": 902
     },
     {
       "file": "transition-4-2-0.png",
@@ -1843,10 +2635,10 @@
       "band": 4,
       "mask": 2,
       "variant": 0,
-      "averageColour": "#a17e48",
+      "averageColour": "#9c7845",
       "seam": 0.0,
       "x": 2,
-      "y": 614
+      "y": 938
     },
     {
       "file": "transition-4-2-1.png",
@@ -1857,10 +2649,10 @@
       "band": 4,
       "mask": 2,
       "variant": 1,
-      "averageColour": "#9f7b46",
+      "averageColour": "#997846",
       "seam": 0.0,
       "x": 70,
-      "y": 614
+      "y": 938
     },
     {
       "file": "transition-4-2-2.png",
@@ -1871,10 +2663,10 @@
       "band": 4,
       "mask": 2,
       "variant": 2,
-      "averageColour": "#9d7945",
+      "averageColour": "#9c7946",
       "seam": 0.0,
       "x": 138,
-      "y": 614
+      "y": 938
     },
     {
       "file": "transition-4-2-3.png",
@@ -1885,10 +2677,10 @@
       "band": 4,
       "mask": 2,
       "variant": 3,
-      "averageColour": "#a17d47",
+      "averageColour": "#977443",
       "seam": 0.0,
       "x": 206,
-      "y": 614
+      "y": 938
     },
     {
       "file": "transition-4-3-0.png",
@@ -1899,10 +2691,10 @@
       "band": 4,
       "mask": 3,
       "variant": 0,
-      "averageColour": "#9e7b46",
+      "averageColour": "#a17b47",
       "seam": 0.0,
       "x": 274,
-      "y": 614
+      "y": 938
     },
     {
       "file": "transition-4-4-0.png",
@@ -1913,10 +2705,10 @@
       "band": 4,
       "mask": 4,
       "variant": 0,
-      "averageColour": "#a37f49",
+      "averageColour": "#a27b47",
       "seam": 0.0,
       "x": 342,
-      "y": 614
+      "y": 938
     },
     {
       "file": "transition-4-4-1.png",
@@ -1927,10 +2719,10 @@
       "band": 4,
       "mask": 4,
       "variant": 1,
-      "averageColour": "#a4814b",
+      "averageColour": "#a37c47",
       "seam": 0.0,
       "x": 410,
-      "y": 614
+      "y": 938
     },
     {
       "file": "transition-4-4-2.png",
@@ -1941,10 +2733,10 @@
       "band": 4,
       "mask": 4,
       "variant": 2,
-      "averageColour": "#a17e49",
+      "averageColour": "#a27b47",
       "seam": 0.0,
       "x": 478,
-      "y": 614
+      "y": 938
     },
     {
       "file": "transition-4-4-3.png",
@@ -1955,10 +2747,10 @@
       "band": 4,
       "mask": 4,
       "variant": 3,
-      "averageColour": "#a17e49",
+      "averageColour": "#a27a45",
       "seam": 0.0,
       "x": 2,
-      "y": 650
+      "y": 974
     },
     {
       "file": "transition-4-5-0.png",
@@ -1969,10 +2761,10 @@
       "band": 4,
       "mask": 5,
       "variant": 0,
-      "averageColour": "#9f7e49",
+      "averageColour": "#a37d47",
       "seam": 0.0,
       "x": 70,
-      "y": 650
+      "y": 974
     },
     {
       "file": "transition-4-6-0.png",
@@ -1983,10 +2775,10 @@
       "band": 4,
       "mask": 6,
       "variant": 0,
-      "averageColour": "#9e7d48",
+      "averageColour": "#a27b47",
       "seam": 0.0,
       "x": 138,
-      "y": 650
+      "y": 974
     },
     {
       "file": "transition-4-7-0.png",
@@ -1997,10 +2789,10 @@
       "band": 4,
       "mask": 7,
       "variant": 0,
-      "averageColour": "#9e7c47",
+      "averageColour": "#a27c47",
       "seam": 0.0,
       "x": 206,
-      "y": 650
+      "y": 974
     },
     {
       "file": "transition-4-8-0.png",
@@ -2011,10 +2803,10 @@
       "band": 4,
       "mask": 8,
       "variant": 0,
-      "averageColour": "#a1804a",
+      "averageColour": "#ab8048",
       "seam": 0.0,
       "x": 274,
-      "y": 650
+      "y": 974
     },
     {
       "file": "transition-4-8-1.png",
@@ -2025,10 +2817,10 @@
       "band": 4,
       "mask": 8,
       "variant": 1,
-      "averageColour": "#9d7d48",
+      "averageColour": "#ac844b",
       "seam": 0.0,
       "x": 342,
-      "y": 650
+      "y": 974
     },
     {
       "file": "transition-4-8-2.png",
@@ -2039,10 +2831,10 @@
       "band": 4,
       "mask": 8,
       "variant": 2,
-      "averageColour": "#9d7e49",
+      "averageColour": "#ad824a",
       "seam": 0.0,
       "x": 410,
-      "y": 650
+      "y": 974
     },
     {
       "file": "transition-4-8-3.png",
@@ -2053,10 +2845,10 @@
       "band": 4,
       "mask": 8,
       "variant": 3,
-      "averageColour": "#9e804b",
+      "averageColour": "#ac8149",
       "seam": 0.0,
       "x": 478,
-      "y": 650
+      "y": 974
     },
     {
       "file": "transition-4-9-0.png",
@@ -2067,10 +2859,10 @@
       "band": 4,
       "mask": 9,
       "variant": 0,
-      "averageColour": "#9e7d48",
+      "averageColour": "#a67f49",
       "seam": 0.0,
       "x": 2,
-      "y": 686
+      "y": 1010
     },
     {
       "file": "transition-4-10-0.png",
@@ -2081,10 +2873,10 @@
       "band": 4,
       "mask": 10,
       "variant": 0,
-      "averageColour": "#a07e48",
+      "averageColour": "#a37d48",
       "seam": 0.0,
       "x": 70,
-      "y": 686
+      "y": 1010
     },
     {
       "file": "transition-4-11-0.png",
@@ -2095,10 +2887,10 @@
       "band": 4,
       "mask": 11,
       "variant": 0,
-      "averageColour": "#a07d48",
+      "averageColour": "#a17b46",
       "seam": 0.0,
       "x": 138,
-      "y": 686
+      "y": 1010
     },
     {
       "file": "transition-4-12-0.png",
@@ -2109,10 +2901,10 @@
       "band": 4,
       "mask": 12,
       "variant": 0,
-      "averageColour": "#a2814b",
+      "averageColour": "#a57d47",
       "seam": 0.0,
       "x": 206,
-      "y": 686
+      "y": 1010
     },
     {
       "file": "transition-4-13-0.png",
@@ -2123,10 +2915,10 @@
       "band": 4,
       "mask": 13,
       "variant": 0,
-      "averageColour": "#9e7c48",
+      "averageColour": "#a37d47",
       "seam": 0.0,
       "x": 274,
-      "y": 686
+      "y": 1010
     },
     {
       "file": "transition-4-14-0.png",
@@ -2137,10 +2929,10 @@
       "band": 4,
       "mask": 14,
       "variant": 0,
-      "averageColour": "#a17e49",
+      "averageColour": "#a17c47",
       "seam": 0.0,
       "x": 342,
-      "y": 686
+      "y": 1010
     },
     {
       "file": "transition-4-15-0.png",
@@ -2151,10 +2943,10 @@
       "band": 4,
       "mask": 15,
       "variant": 0,
-      "averageColour": "#9f7d48",
+      "averageColour": "#a27b46",
       "seam": 0.0,
       "x": 410,
-      "y": 686
+      "y": 1010
     },
     {
       "file": "transition-5-1-0.png",
@@ -2165,10 +2957,10 @@
       "band": 5,
       "mask": 1,
       "variant": 0,
-      "averageColour": "#ab6036",
+      "averageColour": "#ab5f35",
       "seam": 0.0,
       "x": 478,
-      "y": 686
+      "y": 1010
     },
     {
       "file": "transition-5-1-1.png",
@@ -2179,10 +2971,10 @@
       "band": 5,
       "mask": 1,
       "variant": 1,
-      "averageColour": "#a95f35",
+      "averageColour": "#ad6136",
       "seam": 0.0,
       "x": 2,
-      "y": 722
+      "y": 1046
     },
     {
       "file": "transition-5-1-2.png",
@@ -2193,10 +2985,10 @@
       "band": 5,
       "mask": 1,
       "variant": 2,
-      "averageColour": "#a85e35",
+      "averageColour": "#a65c34",
       "seam": 0.0,
       "x": 70,
-      "y": 722
+      "y": 1046
     },
     {
       "file": "transition-5-1-3.png",
@@ -2207,10 +2999,10 @@
       "band": 5,
       "mask": 1,
       "variant": 3,
-      "averageColour": "#ab6036",
+      "averageColour": "#ac6036",
       "seam": 0.0,
       "x": 138,
-      "y": 722
+      "y": 1046
     },
     {
       "file": "transition-5-2-0.png",
@@ -2221,10 +3013,10 @@
       "band": 5,
       "mask": 2,
       "variant": 0,
-      "averageColour": "#ad6137",
+      "averageColour": "#aa5f35",
       "seam": 0.0,
       "x": 206,
-      "y": 722
+      "y": 1046
     },
     {
       "file": "transition-5-2-1.png",
@@ -2235,10 +3027,10 @@
       "band": 5,
       "mask": 2,
       "variant": 1,
-      "averageColour": "#aa6036",
+      "averageColour": "#b06237",
       "seam": 0.0,
       "x": 274,
-      "y": 722
+      "y": 1046
     },
     {
       "file": "transition-5-2-2.png",
@@ -2249,10 +3041,10 @@
       "band": 5,
       "mask": 2,
       "variant": 2,
-      "averageColour": "#ac6136",
+      "averageColour": "#ae6136",
       "seam": 0.0,
       "x": 342,
-      "y": 722
+      "y": 1046
     },
     {
       "file": "transition-5-2-3.png",
@@ -2263,10 +3055,10 @@
       "band": 5,
       "mask": 2,
       "variant": 3,
-      "averageColour": "#aa5f36",
+      "averageColour": "#ae6136",
       "seam": 0.0,
       "x": 410,
-      "y": 722
+      "y": 1046
     },
     {
       "file": "transition-5-3-0.png",
@@ -2277,10 +3069,10 @@
       "band": 5,
       "mask": 3,
       "variant": 0,
-      "averageColour": "#a95f35",
+      "averageColour": "#ad6036",
       "seam": 0.0,
       "x": 478,
-      "y": 722
+      "y": 1046
     },
     {
       "file": "transition-5-4-0.png",
@@ -2291,10 +3083,10 @@
       "band": 5,
       "mask": 4,
       "variant": 0,
-      "averageColour": "#af6237",
+      "averageColour": "#a95e35",
       "seam": 0.0,
       "x": 2,
-      "y": 758
+      "y": 1082
     },
     {
       "file": "transition-5-4-1.png",
@@ -2305,10 +3097,10 @@
       "band": 5,
       "mask": 4,
       "variant": 1,
-      "averageColour": "#ae6137",
+      "averageColour": "#ab6035",
       "seam": 0.0,
       "x": 70,
-      "y": 758
+      "y": 1082
     },
     {
       "file": "transition-5-4-2.png",
@@ -2319,10 +3111,10 @@
       "band": 5,
       "mask": 4,
       "variant": 2,
-      "averageColour": "#ab6036",
+      "averageColour": "#aa5f35",
       "seam": 0.0,
       "x": 138,
-      "y": 758
+      "y": 1082
     },
     {
       "file": "transition-5-4-3.png",
@@ -2333,10 +3125,10 @@
       "band": 5,
       "mask": 4,
       "variant": 3,
-      "averageColour": "#af6237",
+      "averageColour": "#aa5f35",
       "seam": 0.0,
       "x": 206,
-      "y": 758
+      "y": 1082
     },
     {
       "file": "transition-5-5-0.png",
@@ -2347,10 +3139,10 @@
       "band": 5,
       "mask": 5,
       "variant": 0,
-      "averageColour": "#aa5f35",
+      "averageColour": "#ac6036",
       "seam": 0.0,
       "x": 274,
-      "y": 758
+      "y": 1082
     },
     {
       "file": "transition-5-6-0.png",
@@ -2361,10 +3153,10 @@
       "band": 5,
       "mask": 6,
       "variant": 0,
-      "averageColour": "#ae6137",
+      "averageColour": "#a75d34",
       "seam": 0.0,
       "x": 342,
-      "y": 758
+      "y": 1082
     },
     {
       "file": "transition-5-7-0.png",
@@ -2375,10 +3167,10 @@
       "band": 5,
       "mask": 7,
       "variant": 0,
-      "averageColour": "#ac6136",
+      "averageColour": "#ab6035",
       "seam": 0.0,
       "x": 410,
-      "y": 758
+      "y": 1082
     },
     {
       "file": "transition-5-8-0.png",
@@ -2389,10 +3181,10 @@
       "band": 5,
       "mask": 8,
       "variant": 0,
-      "averageColour": "#ad6136",
+      "averageColour": "#a85e35",
       "seam": 0.0,
       "x": 478,
-      "y": 758
+      "y": 1082
     },
     {
       "file": "transition-5-8-1.png",
@@ -2403,10 +3195,10 @@
       "band": 5,
       "mask": 8,
       "variant": 1,
-      "averageColour": "#ae6237",
+      "averageColour": "#ac6036",
       "seam": 0.0,
       "x": 2,
-      "y": 794
+      "y": 1118
     },
     {
       "file": "transition-5-8-2.png",
@@ -2417,10 +3209,10 @@
       "band": 5,
       "mask": 8,
       "variant": 2,
-      "averageColour": "#ab6036",
+      "averageColour": "#ab5f35",
       "seam": 0.0,
       "x": 70,
-      "y": 794
+      "y": 1118
     },
     {
       "file": "transition-5-8-3.png",
@@ -2431,10 +3223,10 @@
       "band": 5,
       "mask": 8,
       "variant": 3,
-      "averageColour": "#ab6036",
+      "averageColour": "#ab5f35",
       "seam": 0.0,
       "x": 138,
-      "y": 794
+      "y": 1118
     },
     {
       "file": "transition-5-9-0.png",
@@ -2445,10 +3237,10 @@
       "band": 5,
       "mask": 9,
       "variant": 0,
-      "averageColour": "#ad6137",
+      "averageColour": "#ac6036",
       "seam": 0.0,
       "x": 206,
-      "y": 794
+      "y": 1118
     },
     {
       "file": "transition-5-10-0.png",
@@ -2459,10 +3251,10 @@
       "band": 5,
       "mask": 10,
       "variant": 0,
-      "averageColour": "#ac6036",
+      "averageColour": "#ad6036",
       "seam": 0.0,
       "x": 274,
-      "y": 794
+      "y": 1118
     },
     {
       "file": "transition-5-11-0.png",
@@ -2473,10 +3265,10 @@
       "band": 5,
       "mask": 11,
       "variant": 0,
-      "averageColour": "#ac6036",
+      "averageColour": "#ab5f35",
       "seam": 0.0,
       "x": 342,
-      "y": 794
+      "y": 1118
     },
     {
       "file": "transition-5-12-0.png",
@@ -2487,10 +3279,10 @@
       "band": 5,
       "mask": 12,
       "variant": 0,
-      "averageColour": "#ac6036",
+      "averageColour": "#ad6136",
       "seam": 0.0,
       "x": 410,
-      "y": 794
+      "y": 1118
     },
     {
       "file": "transition-5-13-0.png",
@@ -2501,10 +3293,10 @@
       "band": 5,
       "mask": 13,
       "variant": 0,
-      "averageColour": "#ac6136",
+      "averageColour": "#aa5f35",
       "seam": 0.0,
       "x": 478,
-      "y": 794
+      "y": 1118
     },
     {
       "file": "transition-5-14-0.png",
@@ -2515,10 +3307,10 @@
       "band": 5,
       "mask": 14,
       "variant": 0,
-      "averageColour": "#ad6136",
+      "averageColour": "#ac6036",
       "seam": 0.0,
       "x": 2,
-      "y": 830
+      "y": 1154
     },
     {
       "file": "transition-5-15-0.png",
@@ -2529,10 +3321,10 @@
       "band": 5,
       "mask": 15,
       "variant": 0,
-      "averageColour": "#ab6036",
+      "averageColour": "#ac6036",
       "seam": 0.0,
       "x": 70,
-      "y": 830
+      "y": 1154
     },
     {
       "file": "transition-6-1-0.png",
@@ -2543,10 +3335,10 @@
       "band": 6,
       "mask": 1,
       "variant": 0,
-      "averageColour": "#d6b780",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 138,
-      "y": 830
+      "y": 1154
     },
     {
       "file": "transition-6-1-1.png",
@@ -2557,10 +3349,10 @@
       "band": 6,
       "mask": 1,
       "variant": 1,
-      "averageColour": "#d7b780",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 206,
-      "y": 830
+      "y": 1154
     },
     {
       "file": "transition-6-1-2.png",
@@ -2571,10 +3363,10 @@
       "band": 6,
       "mask": 1,
       "variant": 2,
-      "averageColour": "#d7b880",
+      "averageColour": "#d0b27d",
       "seam": 0.0,
       "x": 274,
-      "y": 830
+      "y": 1154
     },
     {
       "file": "transition-6-1-3.png",
@@ -2585,10 +3377,10 @@
       "band": 6,
       "mask": 1,
       "variant": 3,
-      "averageColour": "#d7b780",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 342,
-      "y": 830
+      "y": 1154
     },
     {
       "file": "transition-6-2-0.png",
@@ -2599,10 +3391,10 @@
       "band": 6,
       "mask": 2,
       "variant": 0,
-      "averageColour": "#ceb07a",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 410,
-      "y": 830
+      "y": 1154
     },
     {
       "file": "transition-6-2-1.png",
@@ -2613,10 +3405,10 @@
       "band": 6,
       "mask": 2,
       "variant": 1,
-      "averageColour": "#cfb17b",
+      "averageColour": "#d1b27d",
       "seam": 0.0,
       "x": 478,
-      "y": 830
+      "y": 1154
     },
     {
       "file": "transition-6-2-2.png",
@@ -2627,10 +3419,10 @@
       "band": 6,
       "mask": 2,
       "variant": 2,
-      "averageColour": "#d1b37c",
+      "averageColour": "#d0b17c",
       "seam": 0.0,
       "x": 2,
-      "y": 866
+      "y": 1190
     },
     {
       "file": "transition-6-2-3.png",
@@ -2641,10 +3433,10 @@
       "band": 6,
       "mask": 2,
       "variant": 3,
-      "averageColour": "#cfb17b",
+      "averageColour": "#d0b27d",
       "seam": 0.0,
       "x": 70,
-      "y": 866
+      "y": 1190
     },
     {
       "file": "transition-6-3-0.png",
@@ -2655,10 +3447,10 @@
       "band": 6,
       "mask": 3,
       "variant": 0,
-      "averageColour": "#d2b37d",
+      "averageColour": "#d0b27c",
       "seam": 0.0,
       "x": 138,
-      "y": 866
+      "y": 1190
     },
     {
       "file": "transition-6-4-0.png",
@@ -2669,10 +3461,10 @@
       "band": 6,
       "mask": 4,
       "variant": 0,
-      "averageColour": "#d1b37c",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 206,
-      "y": 866
+      "y": 1190
     },
     {
       "file": "transition-6-4-1.png",
@@ -2683,10 +3475,10 @@
       "band": 6,
       "mask": 4,
       "variant": 1,
-      "averageColour": "#d4b57e",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 274,
-      "y": 866
+      "y": 1190
     },
     {
       "file": "transition-6-4-2.png",
@@ -2697,10 +3489,10 @@
       "band": 6,
       "mask": 4,
       "variant": 2,
-      "averageColour": "#d1b37c",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 342,
-      "y": 866
+      "y": 1190
     },
     {
       "file": "transition-6-4-3.png",
@@ -2711,10 +3503,10 @@
       "band": 6,
       "mask": 4,
       "variant": 3,
-      "averageColour": "#d3b47d",
+      "averageColour": "#d0b27c",
       "seam": 0.0,
       "x": 410,
-      "y": 866
+      "y": 1190
     },
     {
       "file": "transition-6-5-0.png",
@@ -2725,10 +3517,10 @@
       "band": 6,
       "mask": 5,
       "variant": 0,
-      "averageColour": "#d4b57e",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 478,
-      "y": 866
+      "y": 1190
     },
     {
       "file": "transition-6-6-0.png",
@@ -2739,10 +3531,10 @@
       "band": 6,
       "mask": 6,
       "variant": 0,
-      "averageColour": "#d2b47d",
+      "averageColour": "#d0b17c",
       "seam": 0.0,
       "x": 2,
-      "y": 902
+      "y": 1226
     },
     {
       "file": "transition-6-7-0.png",
@@ -2753,10 +3545,10 @@
       "band": 6,
       "mask": 7,
       "variant": 0,
-      "averageColour": "#d3b47e",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 70,
-      "y": 902
+      "y": 1226
     },
     {
       "file": "transition-6-8-0.png",
@@ -2767,10 +3559,10 @@
       "band": 6,
       "mask": 8,
       "variant": 0,
-      "averageColour": "#d9ba82",
+      "averageColour": "#ceb07c",
       "seam": 0.0,
       "x": 138,
-      "y": 902
+      "y": 1226
     },
     {
       "file": "transition-6-8-1.png",
@@ -2781,10 +3573,10 @@
       "band": 6,
       "mask": 8,
       "variant": 1,
-      "averageColour": "#d7b880",
+      "averageColour": "#cdaf7b",
       "seam": 0.0,
       "x": 206,
-      "y": 902
+      "y": 1226
     },
     {
       "file": "transition-6-8-2.png",
@@ -2795,10 +3587,10 @@
       "band": 6,
       "mask": 8,
       "variant": 2,
-      "averageColour": "#d9ba82",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 274,
-      "y": 902
+      "y": 1226
     },
     {
       "file": "transition-6-8-3.png",
@@ -2809,10 +3601,10 @@
       "band": 6,
       "mask": 8,
       "variant": 3,
-      "averageColour": "#d9b981",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 342,
-      "y": 902
+      "y": 1226
     },
     {
       "file": "transition-6-9-0.png",
@@ -2823,10 +3615,10 @@
       "band": 6,
       "mask": 9,
       "variant": 0,
-      "averageColour": "#d7b880",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 410,
-      "y": 902
+      "y": 1226
     },
     {
       "file": "transition-6-10-0.png",
@@ -2837,10 +3629,10 @@
       "band": 6,
       "mask": 10,
       "variant": 0,
-      "averageColour": "#d3b47d",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 478,
-      "y": 902
+      "y": 1226
     },
     {
       "file": "transition-6-11-0.png",
@@ -2851,10 +3643,10 @@
       "band": 6,
       "mask": 11,
       "variant": 0,
-      "averageColour": "#d3b47e",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 2,
-      "y": 938
+      "y": 1262
     },
     {
       "file": "transition-6-12-0.png",
@@ -2865,10 +3657,10 @@
       "band": 6,
       "mask": 12,
       "variant": 0,
-      "averageColour": "#d4b67f",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 70,
-      "y": 938
+      "y": 1262
     },
     {
       "file": "transition-6-13-0.png",
@@ -2879,10 +3671,10 @@
       "band": 6,
       "mask": 13,
       "variant": 0,
-      "averageColour": "#d4b57e",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 138,
-      "y": 938
+      "y": 1262
     },
     {
       "file": "transition-6-14-0.png",
@@ -2893,10 +3685,10 @@
       "band": 6,
       "mask": 14,
       "variant": 0,
-      "averageColour": "#d4b57e",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 206,
-      "y": 938
+      "y": 1262
     },
     {
       "file": "transition-6-15-0.png",
@@ -2907,10 +3699,10 @@
       "band": 6,
       "mask": 15,
       "variant": 0,
-      "averageColour": "#d3b57e",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 274,
-      "y": 938
+      "y": 1262
     },
     {
       "file": "transition-7-1-0.png",
@@ -2921,10 +3713,10 @@
       "band": 7,
       "mask": 1,
       "variant": 0,
-      "averageColour": "#554d45",
+      "averageColour": "#47443f",
       "seam": 0.0,
       "x": 342,
-      "y": 938
+      "y": 1262
     },
     {
       "file": "transition-7-1-1.png",
@@ -2935,10 +3727,10 @@
       "band": 7,
       "mask": 1,
       "variant": 1,
-      "averageColour": "#524c45",
+      "averageColour": "#484440",
       "seam": 0.0,
       "x": 410,
-      "y": 938
+      "y": 1262
     },
     {
       "file": "transition-7-1-2.png",
@@ -2949,10 +3741,10 @@
       "band": 7,
       "mask": 1,
       "variant": 2,
-      "averageColour": "#534b43",
+      "averageColour": "#4a4641",
       "seam": 0.0,
       "x": 478,
-      "y": 938
+      "y": 1262
     },
     {
       "file": "transition-7-1-3.png",
@@ -2963,10 +3755,10 @@
       "band": 7,
       "mask": 1,
       "variant": 3,
-      "averageColour": "#4f4943",
+      "averageColour": "#4b4742",
       "seam": 0.0,
       "x": 2,
-      "y": 974
+      "y": 1298
     },
     {
       "file": "transition-7-2-0.png",
@@ -2977,10 +3769,10 @@
       "band": 7,
       "mask": 2,
       "variant": 0,
-      "averageColour": "#5a5045",
+      "averageColour": "#4e4a45",
       "seam": 0.0,
       "x": 70,
-      "y": 974
+      "y": 1298
     },
     {
       "file": "transition-7-2-1.png",
@@ -2991,10 +3783,10 @@
       "band": 7,
       "mask": 2,
       "variant": 1,
-      "averageColour": "#5d5245",
+      "averageColour": "#4b4843",
       "seam": 0.0,
       "x": 138,
-      "y": 974
+      "y": 1298
     },
     {
       "file": "transition-7-2-2.png",
@@ -3005,10 +3797,10 @@
       "band": 7,
       "mask": 2,
       "variant": 2,
-      "averageColour": "#605345",
+      "averageColour": "#4a4742",
       "seam": 0.0,
       "x": 206,
-      "y": 974
+      "y": 1298
     },
     {
       "file": "transition-7-2-3.png",
@@ -3019,10 +3811,10 @@
       "band": 7,
       "mask": 2,
       "variant": 3,
-      "averageColour": "#5c5144",
+      "averageColour": "#4b4742",
       "seam": 0.0,
       "x": 274,
-      "y": 974
+      "y": 1298
     },
     {
       "file": "transition-7-3-0.png",
@@ -3033,10 +3825,10 @@
       "band": 7,
       "mask": 3,
       "variant": 0,
-      "averageColour": "#584f44",
+      "averageColour": "#4c4843",
       "seam": 0.0,
       "x": 342,
-      "y": 974
+      "y": 1298
     },
     {
       "file": "transition-7-4-0.png",
@@ -3047,10 +3839,10 @@
       "band": 7,
       "mask": 4,
       "variant": 0,
-      "averageColour": "#5d5042",
+      "averageColour": "#4c4844",
       "seam": 0.0,
       "x": 410,
-      "y": 974
+      "y": 1298
     },
     {
       "file": "transition-7-4-1.png",
@@ -3061,10 +3853,10 @@
       "band": 7,
       "mask": 4,
       "variant": 1,
-      "averageColour": "#5c5044",
+      "averageColour": "#4b4843",
       "seam": 0.0,
       "x": 478,
-      "y": 974
+      "y": 1298
     },
     {
       "file": "transition-7-4-2.png",
@@ -3075,10 +3867,10 @@
       "band": 7,
       "mask": 4,
       "variant": 2,
-      "averageColour": "#5e5144",
+      "averageColour": "#4f4b46",
       "seam": 0.0,
       "x": 2,
-      "y": 1010
+      "y": 1334
     },
     {
       "file": "transition-7-4-3.png",
@@ -3089,10 +3881,10 @@
       "band": 7,
       "mask": 4,
       "variant": 3,
-      "averageColour": "#5a4f44",
+      "averageColour": "#4d4944",
       "seam": 0.0,
       "x": 70,
-      "y": 1010
+      "y": 1334
     },
     {
       "file": "transition-7-5-0.png",
@@ -3103,10 +3895,10 @@
       "band": 7,
       "mask": 5,
       "variant": 0,
-      "averageColour": "#554d43",
+      "averageColour": "#4d4944",
       "seam": 0.0,
       "x": 138,
-      "y": 1010
+      "y": 1334
     },
     {
       "file": "transition-7-6-0.png",
@@ -3117,10 +3909,10 @@
       "band": 7,
       "mask": 6,
       "variant": 0,
-      "averageColour": "#574e43",
+      "averageColour": "#4b4742",
       "seam": 0.0,
       "x": 206,
-      "y": 1010
+      "y": 1334
     },
     {
       "file": "transition-7-7-0.png",
@@ -3131,10 +3923,10 @@
       "band": 7,
       "mask": 7,
       "variant": 0,
-      "averageColour": "#564d43",
+      "averageColour": "#4b4843",
       "seam": 0.0,
       "x": 274,
-      "y": 1010
+      "y": 1334
     },
     {
       "file": "transition-7-8-0.png",
@@ -3145,10 +3937,10 @@
       "band": 7,
       "mask": 8,
       "variant": 0,
-      "averageColour": "#4d4741",
+      "averageColour": "#4e4a45",
       "seam": 0.0,
       "x": 342,
-      "y": 1010
+      "y": 1334
     },
     {
       "file": "transition-7-8-1.png",
@@ -3159,10 +3951,10 @@
       "band": 7,
       "mask": 8,
       "variant": 1,
-      "averageColour": "#4f4943",
+      "averageColour": "#4e4a45",
       "seam": 0.0,
       "x": 410,
-      "y": 1010
+      "y": 1334
     },
     {
       "file": "transition-7-8-2.png",
@@ -3173,10 +3965,10 @@
       "band": 7,
       "mask": 8,
       "variant": 2,
-      "averageColour": "#4f4842",
+      "averageColour": "#4d4944",
       "seam": 0.0,
       "x": 478,
-      "y": 1010
+      "y": 1334
     },
     {
       "file": "transition-7-8-3.png",
@@ -3187,10 +3979,10 @@
       "band": 7,
       "mask": 8,
       "variant": 3,
-      "averageColour": "#4f4942",
+      "averageColour": "#4e4a45",
       "seam": 0.0,
       "x": 2,
-      "y": 1046
+      "y": 1370
     },
     {
       "file": "transition-7-9-0.png",
@@ -3201,10 +3993,10 @@
       "band": 7,
       "mask": 9,
       "variant": 0,
-      "averageColour": "#4f4943",
+      "averageColour": "#4c4844",
       "seam": 0.0,
       "x": 70,
-      "y": 1046
+      "y": 1370
     },
     {
       "file": "transition-7-10-0.png",
@@ -3215,10 +4007,10 @@
       "band": 7,
       "mask": 10,
       "variant": 0,
-      "averageColour": "#574e44",
+      "averageColour": "#4d4944",
       "seam": 0.0,
       "x": 138,
-      "y": 1046
+      "y": 1370
     },
     {
       "file": "transition-7-11-0.png",
@@ -3229,10 +4021,10 @@
       "band": 7,
       "mask": 11,
       "variant": 0,
-      "averageColour": "#554c43",
+      "averageColour": "#4c4944",
       "seam": 0.0,
       "x": 206,
-      "y": 1046
+      "y": 1370
     },
     {
       "file": "transition-7-12-0.png",
@@ -3243,10 +4035,10 @@
       "band": 7,
       "mask": 12,
       "variant": 0,
-      "averageColour": "#584e44",
+      "averageColour": "#4d4944",
       "seam": 0.0,
       "x": 274,
-      "y": 1046
+      "y": 1370
     },
     {
       "file": "transition-7-13-0.png",
@@ -3257,10 +4049,10 @@
       "band": 7,
       "mask": 13,
       "variant": 0,
-      "averageColour": "#554d43",
+      "averageColour": "#4d4944",
       "seam": 0.0,
       "x": 342,
-      "y": 1046
+      "y": 1370
     },
     {
       "file": "transition-7-14-0.png",
@@ -3271,10 +4063,10 @@
       "band": 7,
       "mask": 14,
       "variant": 0,
-      "averageColour": "#574e43",
+      "averageColour": "#4c4843",
       "seam": 0.0,
       "x": 410,
-      "y": 1046
+      "y": 1370
     },
     {
       "file": "transition-7-15-0.png",
@@ -3285,10 +4077,10 @@
       "band": 7,
       "mask": 15,
       "variant": 0,
-      "averageColour": "#564d43",
+      "averageColour": "#4d4944",
       "seam": 0.0,
       "x": 478,
-      "y": 1046
+      "y": 1370
     },
     {
       "file": "corner-0-0-0.png",
@@ -3298,10 +4090,10 @@
       "band": 0,
       "corner": 0,
       "variant": 0,
-      "averageColour": "#596f46",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 2,
-      "y": 1082
+      "y": 1406
     },
     {
       "file": "corner-0-0-1.png",
@@ -3311,10 +4103,10 @@
       "band": 0,
       "corner": 0,
       "variant": 1,
-      "averageColour": "#596f47",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 70,
-      "y": 1082
+      "y": 1406
     },
     {
       "file": "corner-0-0-2.png",
@@ -3324,10 +4116,10 @@
       "band": 0,
       "corner": 0,
       "variant": 2,
-      "averageColour": "#586e45",
+      "averageColour": "#596f47",
       "seam": 0.0,
       "x": 138,
-      "y": 1082
+      "y": 1406
     },
     {
       "file": "corner-0-0-3.png",
@@ -3337,10 +4129,10 @@
       "band": 0,
       "corner": 0,
       "variant": 3,
-      "averageColour": "#576c44",
+      "averageColour": "#596e47",
       "seam": 0.0,
       "x": 206,
-      "y": 1082
+      "y": 1406
     },
     {
       "file": "corner-0-1-0.png",
@@ -3350,10 +4142,10 @@
       "band": 0,
       "corner": 1,
       "variant": 0,
-      "averageColour": "#51673f",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 274,
-      "y": 1082
+      "y": 1406
     },
     {
       "file": "corner-0-1-1.png",
@@ -3363,10 +4155,10 @@
       "band": 0,
       "corner": 1,
       "variant": 1,
-      "averageColour": "#586e46",
+      "averageColour": "#576b45",
       "seam": 0.0,
       "x": 342,
-      "y": 1082
+      "y": 1406
     },
     {
       "file": "corner-0-1-2.png",
@@ -3376,10 +4168,10 @@
       "band": 0,
       "corner": 1,
       "variant": 2,
-      "averageColour": "#576c44",
+      "averageColour": "#566a44",
       "seam": 0.0,
       "x": 410,
-      "y": 1082
+      "y": 1406
     },
     {
       "file": "corner-0-1-3.png",
@@ -3389,10 +4181,10 @@
       "band": 0,
       "corner": 1,
       "variant": 3,
-      "averageColour": "#536840",
+      "averageColour": "#566b44",
       "seam": 0.0,
       "x": 478,
-      "y": 1082
+      "y": 1406
     },
     {
       "file": "corner-0-2-0.png",
@@ -3402,10 +4194,10 @@
       "band": 0,
       "corner": 2,
       "variant": 0,
-      "averageColour": "#586e46",
+      "averageColour": "#576b45",
       "seam": 0.0,
       "x": 2,
-      "y": 1118
+      "y": 1442
     },
     {
       "file": "corner-0-2-1.png",
@@ -3415,10 +4207,10 @@
       "band": 0,
       "corner": 2,
       "variant": 1,
-      "averageColour": "#596e46",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 70,
-      "y": 1118
+      "y": 1442
     },
     {
       "file": "corner-0-2-2.png",
@@ -3428,10 +4220,10 @@
       "band": 0,
       "corner": 2,
       "variant": 2,
-      "averageColour": "#586e46",
+      "averageColour": "#576b45",
       "seam": 0.0,
       "x": 138,
-      "y": 1118
+      "y": 1442
     },
     {
       "file": "corner-0-2-3.png",
@@ -3441,10 +4233,10 @@
       "band": 0,
       "corner": 2,
       "variant": 3,
-      "averageColour": "#586e46",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 206,
-      "y": 1118
+      "y": 1442
     },
     {
       "file": "corner-0-3-0.png",
@@ -3454,10 +4246,10 @@
       "band": 0,
       "corner": 3,
       "variant": 0,
-      "averageColour": "#586d45",
+      "averageColour": "#596f47",
       "seam": 0.0,
       "x": 274,
-      "y": 1118
+      "y": 1442
     },
     {
       "file": "corner-0-3-1.png",
@@ -3467,10 +4259,10 @@
       "band": 0,
       "corner": 3,
       "variant": 1,
-      "averageColour": "#586d45",
+      "averageColour": "#586c46",
       "seam": 0.0,
       "x": 342,
-      "y": 1118
+      "y": 1442
     },
     {
       "file": "corner-0-3-2.png",
@@ -3480,10 +4272,10 @@
       "band": 0,
       "corner": 3,
       "variant": 2,
-      "averageColour": "#576c45",
+      "averageColour": "#566b44",
       "seam": 0.0,
       "x": 410,
-      "y": 1118
+      "y": 1442
     },
     {
       "file": "corner-0-3-3.png",
@@ -3493,10 +4285,10 @@
       "band": 0,
       "corner": 3,
       "variant": 3,
-      "averageColour": "#586e46",
+      "averageColour": "#576b45",
       "seam": 0.0,
       "x": 478,
-      "y": 1118
+      "y": 1442
     },
     {
       "file": "corner-1-0-0.png",
@@ -3506,10 +4298,10 @@
       "band": 1,
       "corner": 0,
       "variant": 0,
-      "averageColour": "#546f2c",
+      "averageColour": "#4d712d",
       "seam": 0.0,
       "x": 2,
-      "y": 1154
+      "y": 1478
     },
     {
       "file": "corner-1-0-1.png",
@@ -3519,10 +4311,10 @@
       "band": 1,
       "corner": 0,
       "variant": 1,
-      "averageColour": "#466629",
+      "averageColour": "#496c2c",
       "seam": 0.0,
       "x": 70,
-      "y": 1154
+      "y": 1478
     },
     {
       "file": "corner-1-0-2.png",
@@ -3532,10 +4324,10 @@
       "band": 1,
       "corner": 0,
       "variant": 2,
-      "averageColour": "#526d2b",
+      "averageColour": "#4a6c2c",
       "seam": 0.0,
       "x": 138,
-      "y": 1154
+      "y": 1478
     },
     {
       "file": "corner-1-0-3.png",
@@ -3545,10 +4337,10 @@
       "band": 1,
       "corner": 0,
       "variant": 3,
-      "averageColour": "#4d6c2b",
+      "averageColour": "#4d702d",
       "seam": 0.0,
       "x": 206,
-      "y": 1154
+      "y": 1478
     },
     {
       "file": "corner-1-1-0.png",
@@ -3558,10 +4350,10 @@
       "band": 1,
       "corner": 1,
       "variant": 0,
-      "averageColour": "#638232",
+      "averageColour": "#4a6328",
       "seam": 0.0,
       "x": 274,
-      "y": 1154
+      "y": 1478
     },
     {
       "file": "corner-1-1-1.png",
@@ -3571,10 +4363,10 @@
       "band": 1,
       "corner": 1,
       "variant": 1,
-      "averageColour": "#648433",
+      "averageColour": "#4a682a",
       "seam": 0.0,
       "x": 342,
-      "y": 1154
+      "y": 1478
     },
     {
       "file": "corner-1-1-2.png",
@@ -3584,10 +4376,10 @@
       "band": 1,
       "corner": 1,
       "variant": 2,
-      "averageColour": "#638333",
+      "averageColour": "#486328",
       "seam": 0.0,
       "x": 410,
-      "y": 1154
+      "y": 1478
     },
     {
       "file": "corner-1-1-3.png",
@@ -3597,10 +4389,10 @@
       "band": 1,
       "corner": 1,
       "variant": 3,
-      "averageColour": "#608132",
+      "averageColour": "#49692a",
       "seam": 0.0,
       "x": 478,
-      "y": 1154
+      "y": 1478
     },
     {
       "file": "corner-1-2-0.png",
@@ -3610,10 +4402,10 @@
       "band": 1,
       "corner": 2,
       "variant": 0,
-      "averageColour": "#4f6d2b",
+      "averageColour": "#496c2c",
       "seam": 0.0,
       "x": 2,
-      "y": 1190
+      "y": 1514
     },
     {
       "file": "corner-1-2-1.png",
@@ -3623,10 +4415,10 @@
       "band": 1,
       "corner": 2,
       "variant": 1,
-      "averageColour": "#4e6b2b",
+      "averageColour": "#4c702d",
       "seam": 0.0,
       "x": 70,
-      "y": 1190
+      "y": 1514
     },
     {
       "file": "corner-1-2-2.png",
@@ -3636,10 +4428,10 @@
       "band": 1,
       "corner": 2,
       "variant": 2,
-      "averageColour": "#4f6b2b",
+      "averageColour": "#4a6c2c",
       "seam": 0.0,
       "x": 138,
-      "y": 1190
+      "y": 1514
     },
     {
       "file": "corner-1-2-3.png",
@@ -3649,10 +4441,10 @@
       "band": 1,
       "corner": 2,
       "variant": 3,
-      "averageColour": "#4e6b2b",
+      "averageColour": "#4b6e2c",
       "seam": 0.0,
       "x": 206,
-      "y": 1190
+      "y": 1514
     },
     {
       "file": "corner-1-3-0.png",
@@ -3662,10 +4454,10 @@
       "band": 1,
       "corner": 3,
       "variant": 0,
-      "averageColour": "#48692a",
+      "averageColour": "#4c6f2d",
       "seam": 0.0,
       "x": 274,
-      "y": 1190
+      "y": 1514
     },
     {
       "file": "corner-1-3-1.png",
@@ -3675,10 +4467,10 @@
       "band": 1,
       "corner": 3,
       "variant": 1,
-      "averageColour": "#47682a",
+      "averageColour": "#4c6f2d",
       "seam": 0.0,
       "x": 342,
-      "y": 1190
+      "y": 1514
     },
     {
       "file": "corner-1-3-2.png",
@@ -3688,10 +4480,10 @@
       "band": 1,
       "corner": 3,
       "variant": 2,
-      "averageColour": "#466629",
+      "averageColour": "#50752f",
       "seam": 0.0,
       "x": 410,
-      "y": 1190
+      "y": 1514
     },
     {
       "file": "corner-1-3-3.png",
@@ -3701,10 +4493,10 @@
       "band": 1,
       "corner": 3,
       "variant": 3,
-      "averageColour": "#47682a",
+      "averageColour": "#4f742f",
       "seam": 0.0,
       "x": 478,
-      "y": 1190
+      "y": 1514
     },
     {
       "file": "corner-2-0-0.png",
@@ -3714,10 +4506,10 @@
       "band": 2,
       "corner": 0,
       "variant": 0,
-      "averageColour": "#6a8733",
+      "averageColour": "#638632",
       "seam": 0.0,
       "x": 2,
-      "y": 1226
+      "y": 1550
     },
     {
       "file": "corner-2-0-1.png",
@@ -3727,10 +4519,10 @@
       "band": 2,
       "corner": 0,
       "variant": 1,
-      "averageColour": "#668532",
+      "averageColour": "#668a33",
       "seam": 0.0,
       "x": 70,
-      "y": 1226
+      "y": 1550
     },
     {
       "file": "corner-2-0-2.png",
@@ -3740,10 +4532,10 @@
       "band": 2,
       "corner": 0,
       "variant": 2,
-      "averageColour": "#608330",
+      "averageColour": "#5f8231",
       "seam": 0.0,
       "x": 138,
-      "y": 1226
+      "y": 1550
     },
     {
       "file": "corner-2-0-3.png",
@@ -3753,10 +4545,10 @@
       "band": 2,
       "corner": 0,
       "variant": 3,
-      "averageColour": "#617f30",
+      "averageColour": "#5c7e2f",
       "seam": 0.0,
       "x": 206,
-      "y": 1226
+      "y": 1550
     },
     {
       "file": "corner-2-1-0.png",
@@ -3766,10 +4558,10 @@
       "band": 2,
       "corner": 1,
       "variant": 0,
-      "averageColour": "#6a8633",
+      "averageColour": "#6a8e35",
       "seam": 0.0,
       "x": 274,
-      "y": 1226
+      "y": 1550
     },
     {
       "file": "corner-2-1-1.png",
@@ -3779,10 +4571,10 @@
       "band": 2,
       "corner": 1,
       "variant": 1,
-      "averageColour": "#618030",
+      "averageColour": "#678933",
       "seam": 0.0,
       "x": 342,
-      "y": 1226
+      "y": 1550
     },
     {
       "file": "corner-2-1-2.png",
@@ -3792,10 +4584,10 @@
       "band": 2,
       "corner": 1,
       "variant": 2,
-      "averageColour": "#5e7f2f",
+      "averageColour": "#5d7d2f",
       "seam": 0.0,
       "x": 410,
-      "y": 1226
+      "y": 1550
     },
     {
       "file": "corner-2-1-3.png",
@@ -3805,10 +4597,10 @@
       "band": 2,
       "corner": 1,
       "variant": 3,
-      "averageColour": "#5f8130",
+      "averageColour": "#658833",
       "seam": 0.0,
       "x": 478,
-      "y": 1226
+      "y": 1550
     },
     {
       "file": "corner-2-2-0.png",
@@ -3818,10 +4610,10 @@
       "band": 2,
       "corner": 2,
       "variant": 0,
-      "averageColour": "#5a7b2e",
+      "averageColour": "#53712a",
       "seam": 0.0,
       "x": 2,
-      "y": 1262
+      "y": 1586
     },
     {
       "file": "corner-2-2-1.png",
@@ -3831,10 +4623,10 @@
       "band": 2,
       "corner": 2,
       "variant": 1,
-      "averageColour": "#5d7b2e",
+      "averageColour": "#52702a",
       "seam": 0.0,
       "x": 70,
-      "y": 1262
+      "y": 1586
     },
     {
       "file": "corner-2-2-2.png",
@@ -3844,10 +4636,10 @@
       "band": 2,
       "corner": 2,
       "variant": 2,
-      "averageColour": "#5f7f2f",
+      "averageColour": "#54732b",
       "seam": 0.0,
       "x": 138,
-      "y": 1262
+      "y": 1586
     },
     {
       "file": "corner-2-2-3.png",
@@ -3857,10 +4649,10 @@
       "band": 2,
       "corner": 2,
       "variant": 3,
-      "averageColour": "#5b7b2e",
+      "averageColour": "#516f2a",
       "seam": 0.0,
       "x": 206,
-      "y": 1262
+      "y": 1586
     },
     {
       "file": "corner-2-3-0.png",
@@ -3870,10 +4662,10 @@
       "band": 2,
       "corner": 3,
       "variant": 0,
-      "averageColour": "#5d7f2f",
+      "averageColour": "#638632",
       "seam": 0.0,
       "x": 274,
-      "y": 1262
+      "y": 1586
     },
     {
       "file": "corner-2-3-1.png",
@@ -3883,10 +4675,10 @@
       "band": 2,
       "corner": 3,
       "variant": 1,
-      "averageColour": "#608030",
+      "averageColour": "#618431",
       "seam": 0.0,
       "x": 342,
-      "y": 1262
+      "y": 1586
     },
     {
       "file": "corner-2-3-2.png",
@@ -3896,10 +4688,10 @@
       "band": 2,
       "corner": 3,
       "variant": 2,
-      "averageColour": "#6d8934",
+      "averageColour": "#628532",
       "seam": 0.0,
       "x": 410,
-      "y": 1262
+      "y": 1586
     },
     {
       "file": "corner-2-3-3.png",
@@ -3909,10 +4701,10 @@
       "band": 2,
       "corner": 3,
       "variant": 3,
-      "averageColour": "#5e802f",
+      "averageColour": "#648733",
       "seam": 0.0,
       "x": 478,
-      "y": 1262
+      "y": 1586
     },
     {
       "file": "corner-3-0-0.png",
@@ -3922,10 +4714,10 @@
       "band": 3,
       "corner": 0,
       "variant": 0,
-      "averageColour": "#87803e",
+      "averageColour": "#a39b4d",
       "seam": 0.0,
       "x": 2,
-      "y": 1298
+      "y": 1622
     },
     {
       "file": "corner-3-0-1.png",
@@ -3935,10 +4727,10 @@
       "band": 3,
       "corner": 0,
       "variant": 1,
-      "averageColour": "#928642",
+      "averageColour": "#9c964a",
       "seam": 0.0,
       "x": 70,
-      "y": 1298
+      "y": 1622
     },
     {
       "file": "corner-3-0-2.png",
@@ -3948,10 +4740,10 @@
       "band": 3,
       "corner": 0,
       "variant": 2,
-      "averageColour": "#8d8440",
+      "averageColour": "#a49e4e",
       "seam": 0.0,
       "x": 138,
-      "y": 1298
+      "y": 1622
     },
     {
       "file": "corner-3-0-3.png",
@@ -3961,10 +4753,10 @@
       "band": 3,
       "corner": 0,
       "variant": 3,
-      "averageColour": "#847d3d",
+      "averageColour": "#a1964a",
       "seam": 0.0,
       "x": 206,
-      "y": 1298
+      "y": 1622
     },
     {
       "file": "corner-3-1-0.png",
@@ -3974,10 +4766,10 @@
       "band": 3,
       "corner": 1,
       "variant": 0,
-      "averageColour": "#988b44",
+      "averageColour": "#8c8341",
       "seam": 0.0,
       "x": 274,
-      "y": 1298
+      "y": 1622
     },
     {
       "file": "corner-3-1-1.png",
@@ -3987,10 +4779,10 @@
       "band": 3,
       "corner": 1,
       "variant": 1,
-      "averageColour": "#a29148",
+      "averageColour": "#979348",
       "seam": 0.0,
       "x": 342,
-      "y": 1298
+      "y": 1622
     },
     {
       "file": "corner-3-1-2.png",
@@ -4000,10 +4792,10 @@
       "band": 3,
       "corner": 1,
       "variant": 2,
-      "averageColour": "#a49349",
+      "averageColour": "#958d46",
       "seam": 0.0,
       "x": 410,
-      "y": 1298
+      "y": 1622
     },
     {
       "file": "corner-3-1-3.png",
@@ -4013,10 +4805,10 @@
       "band": 3,
       "corner": 1,
       "variant": 3,
-      "averageColour": "#9a8c45",
+      "averageColour": "#9a8e47",
       "seam": 0.0,
       "x": 478,
-      "y": 1298
+      "y": 1622
     },
     {
       "file": "corner-3-2-0.png",
@@ -4026,10 +4818,10 @@
       "band": 3,
       "corner": 2,
       "variant": 0,
-      "averageColour": "#9c9147",
+      "averageColour": "#696833",
       "seam": 0.0,
       "x": 2,
-      "y": 1334
+      "y": 1658
     },
     {
       "file": "corner-3-2-1.png",
@@ -4039,10 +4831,10 @@
       "band": 3,
       "corner": 2,
       "variant": 1,
-      "averageColour": "#a3944a",
+      "averageColour": "#716a34",
       "seam": 0.0,
       "x": 70,
-      "y": 1334
+      "y": 1658
     },
     {
       "file": "corner-3-2-2.png",
@@ -4052,10 +4844,10 @@
       "band": 3,
       "corner": 2,
       "variant": 2,
-      "averageColour": "#918642",
+      "averageColour": "#897c3e",
       "seam": 0.0,
       "x": 138,
-      "y": 1334
+      "y": 1658
     },
     {
       "file": "corner-3-2-3.png",
@@ -4065,10 +4857,10 @@
       "band": 3,
       "corner": 2,
       "variant": 3,
-      "averageColour": "#988e46",
+      "averageColour": "#7f783b",
       "seam": 0.0,
       "x": 206,
-      "y": 1334
+      "y": 1658
     },
     {
       "file": "corner-3-3-0.png",
@@ -4078,10 +4870,10 @@
       "band": 3,
       "corner": 3,
       "variant": 0,
-      "averageColour": "#85813e",
+      "averageColour": "#918f45",
       "seam": 0.0,
       "x": 274,
-      "y": 1334
+      "y": 1658
     },
     {
       "file": "corner-3-3-1.png",
@@ -4091,10 +4883,10 @@
       "band": 3,
       "corner": 3,
       "variant": 1,
-      "averageColour": "#857f3d",
+      "averageColour": "#8d8942",
       "seam": 0.0,
       "x": 342,
-      "y": 1334
+      "y": 1658
     },
     {
       "file": "corner-3-3-2.png",
@@ -4104,10 +4896,10 @@
       "band": 3,
       "corner": 3,
       "variant": 2,
-      "averageColour": "#88833f",
+      "averageColour": "#858340",
       "seam": 0.0,
       "x": 410,
-      "y": 1334
+      "y": 1658
     },
     {
       "file": "corner-3-3-3.png",
@@ -4117,10 +4909,10 @@
       "band": 3,
       "corner": 3,
       "variant": 3,
-      "averageColour": "#8c8440",
+      "averageColour": "#858640",
       "seam": 0.0,
       "x": 478,
-      "y": 1334
+      "y": 1658
     },
     {
       "file": "corner-4-0-0.png",
@@ -4130,10 +4922,10 @@
       "band": 4,
       "corner": 0,
       "variant": 0,
-      "averageColour": "#9d7b45",
+      "averageColour": "#9b7945",
       "seam": 0.0,
       "x": 2,
-      "y": 1370
+      "y": 1694
     },
     {
       "file": "corner-4-0-1.png",
@@ -4143,10 +4935,10 @@
       "band": 4,
       "corner": 0,
       "variant": 1,
-      "averageColour": "#a07e48",
+      "averageColour": "#926f3e",
       "seam": 0.0,
       "x": 70,
-      "y": 1370
+      "y": 1694
     },
     {
       "file": "corner-4-0-2.png",
@@ -4156,10 +4948,10 @@
       "band": 4,
       "corner": 0,
       "variant": 2,
-      "averageColour": "#9a7642",
+      "averageColour": "#957341",
       "seam": 0.0,
       "x": 138,
-      "y": 1370
+      "y": 1694
     },
     {
       "file": "corner-4-0-3.png",
@@ -4169,10 +4961,10 @@
       "band": 4,
       "corner": 0,
       "variant": 3,
-      "averageColour": "#a07b45",
+      "averageColour": "#937241",
       "seam": 0.0,
       "x": 206,
-      "y": 1370
+      "y": 1694
     },
     {
       "file": "corner-4-1-0.png",
@@ -4182,10 +4974,10 @@
       "band": 4,
       "corner": 1,
       "variant": 0,
-      "averageColour": "#9d7a46",
+      "averageColour": "#9b7241",
       "seam": 0.0,
       "x": 274,
-      "y": 1370
+      "y": 1694
     },
     {
       "file": "corner-4-1-1.png",
@@ -4195,10 +4987,10 @@
       "band": 4,
       "corner": 1,
       "variant": 1,
-      "averageColour": "#ae834a",
+      "averageColour": "#8d6b3e",
       "seam": 0.0,
       "x": 342,
-      "y": 1370
+      "y": 1694
     },
     {
       "file": "corner-4-1-2.png",
@@ -4208,10 +5000,10 @@
       "band": 4,
       "corner": 1,
       "variant": 2,
-      "averageColour": "#a57d47",
+      "averageColour": "#926d3f",
       "seam": 0.0,
       "x": 410,
-      "y": 1370
+      "y": 1694
     },
     {
       "file": "corner-4-1-3.png",
@@ -4221,10 +5013,10 @@
       "band": 4,
       "corner": 1,
       "variant": 3,
-      "averageColour": "#a57d47",
+      "averageColour": "#967142",
       "seam": 0.0,
       "x": 478,
-      "y": 1370
+      "y": 1694
     },
     {
       "file": "corner-4-2-0.png",
@@ -4234,10 +5026,10 @@
       "band": 4,
       "corner": 2,
       "variant": 0,
-      "averageColour": "#9d7e49",
+      "averageColour": "#aa834b",
       "seam": 0.0,
       "x": 2,
-      "y": 1406
+      "y": 1730
     },
     {
       "file": "corner-4-2-1.png",
@@ -4247,10 +5039,10 @@
       "band": 4,
       "corner": 2,
       "variant": 1,
-      "averageColour": "#a3804a",
+      "averageColour": "#aa8049",
       "seam": 0.0,
       "x": 70,
-      "y": 1406
+      "y": 1730
     },
     {
       "file": "corner-4-2-2.png",
@@ -4260,10 +5052,10 @@
       "band": 4,
       "corner": 2,
       "variant": 2,
-      "averageColour": "#a3834d",
+      "averageColour": "#a98149",
       "seam": 0.0,
       "x": 138,
-      "y": 1406
+      "y": 1730
     },
     {
       "file": "corner-4-2-3.png",
@@ -4273,10 +5065,10 @@
       "band": 4,
       "corner": 2,
       "variant": 3,
-      "averageColour": "#a5854d",
+      "averageColour": "#ab814a",
       "seam": 0.0,
       "x": 206,
-      "y": 1406
+      "y": 1730
     },
     {
       "file": "corner-4-3-0.png",
@@ -4286,10 +5078,10 @@
       "band": 4,
       "corner": 3,
       "variant": 0,
-      "averageColour": "#a2804b",
+      "averageColour": "#b1844a",
       "seam": 0.0,
       "x": 274,
-      "y": 1406
+      "y": 1730
     },
     {
       "file": "corner-4-3-1.png",
@@ -4299,10 +5091,10 @@
       "band": 4,
       "corner": 3,
       "variant": 1,
-      "averageColour": "#a6844d",
+      "averageColour": "#ac8149",
       "seam": 0.0,
       "x": 342,
-      "y": 1406
+      "y": 1730
     },
     {
       "file": "corner-4-3-2.png",
@@ -4312,10 +5104,10 @@
       "band": 4,
       "corner": 3,
       "variant": 2,
-      "averageColour": "#967745",
+      "averageColour": "#ad8249",
       "seam": 0.0,
       "x": 410,
-      "y": 1406
+      "y": 1730
     },
     {
       "file": "corner-4-3-3.png",
@@ -4325,10 +5117,10 @@
       "band": 4,
       "corner": 3,
       "variant": 3,
-      "averageColour": "#ad884e",
+      "averageColour": "#af834a",
       "seam": 0.0,
       "x": 478,
-      "y": 1406
+      "y": 1730
     },
     {
       "file": "corner-5-0-0.png",
@@ -4338,10 +5130,10 @@
       "band": 5,
       "corner": 0,
       "variant": 0,
-      "averageColour": "#a85e35",
+      "averageColour": "#a55c34",
       "seam": 0.0,
       "x": 2,
-      "y": 1442
+      "y": 1766
     },
     {
       "file": "corner-5-0-1.png",
@@ -4351,10 +5143,10 @@
       "band": 5,
       "corner": 0,
       "variant": 1,
-      "averageColour": "#a85e35",
+      "averageColour": "#a75d34",
       "seam": 0.0,
       "x": 70,
-      "y": 1442
+      "y": 1766
     },
     {
       "file": "corner-5-0-2.png",
@@ -4364,10 +5156,10 @@
       "band": 5,
       "corner": 0,
       "variant": 2,
-      "averageColour": "#9e5932",
+      "averageColour": "#ae6136",
       "seam": 0.0,
       "x": 138,
-      "y": 1442
+      "y": 1766
     },
     {
       "file": "corner-5-0-3.png",
@@ -4377,10 +5169,10 @@
       "band": 5,
       "corner": 0,
       "variant": 3,
-      "averageColour": "#a65d35",
+      "averageColour": "#b66639",
       "seam": 0.0,
       "x": 206,
-      "y": 1442
+      "y": 1766
     },
     {
       "file": "corner-5-1-0.png",
@@ -4390,10 +5182,10 @@
       "band": 5,
       "corner": 1,
       "variant": 0,
-      "averageColour": "#b56639",
+      "averageColour": "#bb693b",
       "seam": 0.0,
       "x": 274,
-      "y": 1442
+      "y": 1766
     },
     {
       "file": "corner-5-1-1.png",
@@ -4403,10 +5195,10 @@
       "band": 5,
       "corner": 1,
       "variant": 1,
-      "averageColour": "#a55c34",
+      "averageColour": "#b36438",
       "seam": 0.0,
       "x": 342,
-      "y": 1442
+      "y": 1766
     },
     {
       "file": "corner-5-1-2.png",
@@ -4416,10 +5208,10 @@
       "band": 5,
       "corner": 1,
       "variant": 2,
-      "averageColour": "#ab6036",
+      "averageColour": "#b66639",
       "seam": 0.0,
       "x": 410,
-      "y": 1442
+      "y": 1766
     },
     {
       "file": "corner-5-1-3.png",
@@ -4429,10 +5221,10 @@
       "band": 5,
       "corner": 1,
       "variant": 3,
-      "averageColour": "#a15a33",
+      "averageColour": "#ba683a",
       "seam": 0.0,
       "x": 478,
-      "y": 1442
+      "y": 1766
     },
     {
       "file": "corner-5-2-0.png",
@@ -4442,10 +5234,10 @@
       "band": 5,
       "corner": 2,
       "variant": 0,
-      "averageColour": "#ac6036",
+      "averageColour": "#a95e35",
       "seam": 0.0,
       "x": 2,
-      "y": 1478
+      "y": 1802
     },
     {
       "file": "corner-5-2-1.png",
@@ -4455,10 +5247,10 @@
       "band": 5,
       "corner": 2,
       "variant": 1,
-      "averageColour": "#b56539",
+      "averageColour": "#95532e",
       "seam": 0.0,
       "x": 70,
-      "y": 1478
+      "y": 1802
     },
     {
       "file": "corner-5-2-2.png",
@@ -4468,10 +5260,10 @@
       "band": 5,
       "corner": 2,
       "variant": 2,
-      "averageColour": "#b76639",
+      "averageColour": "#a25a32",
       "seam": 0.0,
       "x": 138,
-      "y": 1478
+      "y": 1802
     },
     {
       "file": "corner-5-2-3.png",
@@ -4481,10 +5273,10 @@
       "band": 5,
       "corner": 2,
       "variant": 3,
-      "averageColour": "#b66639",
+      "averageColour": "#a75d34",
       "seam": 0.0,
       "x": 206,
-      "y": 1478
+      "y": 1802
     },
     {
       "file": "corner-5-3-0.png",
@@ -4494,10 +5286,10 @@
       "band": 5,
       "corner": 3,
       "variant": 0,
-      "averageColour": "#9e5a32",
+      "averageColour": "#b26438",
       "seam": 0.0,
       "x": 274,
-      "y": 1478
+      "y": 1802
     },
     {
       "file": "corner-5-3-1.png",
@@ -4507,10 +5299,10 @@
       "band": 5,
       "corner": 3,
       "variant": 1,
-      "averageColour": "#a25b33",
+      "averageColour": "#a55c34",
       "seam": 0.0,
       "x": 342,
-      "y": 1478
+      "y": 1802
     },
     {
       "file": "corner-5-3-2.png",
@@ -4520,10 +5312,10 @@
       "band": 5,
       "corner": 3,
       "variant": 2,
-      "averageColour": "#a85e35",
+      "averageColour": "#ab5f35",
       "seam": 0.0,
       "x": 410,
-      "y": 1478
+      "y": 1802
     },
     {
       "file": "corner-5-3-3.png",
@@ -4533,10 +5325,10 @@
       "band": 5,
       "corner": 3,
       "variant": 3,
-      "averageColour": "#a15b33",
+      "averageColour": "#bb683a",
       "seam": 0.0,
       "x": 478,
-      "y": 1478
+      "y": 1802
     },
     {
       "file": "corner-6-0-0.png",
@@ -4546,10 +5338,10 @@
       "band": 6,
       "corner": 0,
       "variant": 0,
-      "averageColour": "#d4b57e",
+      "averageColour": "#d1b27d",
       "seam": 0.0,
       "x": 2,
-      "y": 1514
+      "y": 1838
     },
     {
       "file": "corner-6-0-1.png",
@@ -4559,10 +5351,10 @@
       "band": 6,
       "corner": 0,
       "variant": 1,
-      "averageColour": "#d3b47d",
+      "averageColour": "#d0b27d",
       "seam": 0.0,
       "x": 70,
-      "y": 1514
+      "y": 1838
     },
     {
       "file": "corner-6-0-2.png",
@@ -4572,10 +5364,10 @@
       "band": 6,
       "corner": 0,
       "variant": 2,
-      "averageColour": "#d8b880",
+      "averageColour": "#d4b57f",
       "seam": 0.0,
       "x": 138,
-      "y": 1514
+      "y": 1838
     },
     {
       "file": "corner-6-0-3.png",
@@ -4585,10 +5377,10 @@
       "band": 6,
       "corner": 0,
       "variant": 3,
-      "averageColour": "#d8b881",
+      "averageColour": "#d2b47e",
       "seam": 0.0,
       "x": 206,
-      "y": 1514
+      "y": 1838
     },
     {
       "file": "corner-6-1-0.png",
@@ -4598,10 +5390,10 @@
       "band": 6,
       "corner": 1,
       "variant": 0,
-      "averageColour": "#c3a873",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 274,
-      "y": 1514
+      "y": 1838
     },
     {
       "file": "corner-6-1-1.png",
@@ -4611,10 +5403,10 @@
       "band": 6,
       "corner": 1,
       "variant": 1,
-      "averageColour": "#bfa471",
+      "averageColour": "#d0b27c",
       "seam": 0.0,
       "x": 342,
-      "y": 1514
+      "y": 1838
     },
     {
       "file": "corner-6-1-2.png",
@@ -4624,10 +5416,10 @@
       "band": 6,
       "corner": 1,
       "variant": 2,
-      "averageColour": "#aa9463",
+      "averageColour": "#cfb17c",
       "seam": 0.0,
       "x": 410,
-      "y": 1514
+      "y": 1838
     },
     {
       "file": "corner-6-1-3.png",
@@ -4637,10 +5429,10 @@
       "band": 6,
       "corner": 1,
       "variant": 3,
-      "averageColour": "#c5a974",
+      "averageColour": "#d3b57f",
       "seam": 0.0,
       "x": 478,
-      "y": 1514
+      "y": 1838
     },
     {
       "file": "corner-6-2-0.png",
@@ -4650,10 +5442,10 @@
       "band": 6,
       "corner": 2,
       "variant": 0,
-      "averageColour": "#d8b881",
+      "averageColour": "#cdaf7b",
       "seam": 0.0,
       "x": 2,
-      "y": 1550
+      "y": 1874
     },
     {
       "file": "corner-6-2-1.png",
@@ -4663,10 +5455,10 @@
       "band": 6,
       "corner": 2,
       "variant": 1,
-      "averageColour": "#d6b67f",
+      "averageColour": "#ccae7a",
       "seam": 0.0,
       "x": 70,
-      "y": 1550
+      "y": 1874
     },
     {
       "file": "corner-6-2-2.png",
@@ -4676,10 +5468,10 @@
       "band": 6,
       "corner": 2,
       "variant": 2,
-      "averageColour": "#daba82",
+      "averageColour": "#cbad7a",
       "seam": 0.0,
       "x": 138,
-      "y": 1550
+      "y": 1874
     },
     {
       "file": "corner-6-2-3.png",
@@ -4689,10 +5481,10 @@
       "band": 6,
       "corner": 2,
       "variant": 3,
-      "averageColour": "#d9b981",
+      "averageColour": "#ccaf7b",
       "seam": 0.0,
       "x": 206,
-      "y": 1550
+      "y": 1874
     },
     {
       "file": "corner-6-3-0.png",
@@ -4702,10 +5494,10 @@
       "band": 6,
       "corner": 3,
       "variant": 0,
-      "averageColour": "#dabb83",
+      "averageColour": "#d2b47e",
       "seam": 0.0,
       "x": 274,
-      "y": 1550
+      "y": 1874
     },
     {
       "file": "corner-6-3-1.png",
@@ -4715,10 +5507,10 @@
       "band": 6,
       "corner": 3,
       "variant": 1,
-      "averageColour": "#d8b881",
+      "averageColour": "#d0b17c",
       "seam": 0.0,
       "x": 342,
-      "y": 1550
+      "y": 1874
     },
     {
       "file": "corner-6-3-2.png",
@@ -4728,10 +5520,10 @@
       "band": 6,
       "corner": 3,
       "variant": 2,
-      "averageColour": "#d8b981",
+      "averageColour": "#d4b57f",
       "seam": 0.0,
       "x": 410,
-      "y": 1550
+      "y": 1874
     },
     {
       "file": "corner-6-3-3.png",
@@ -4741,10 +5533,10 @@
       "band": 6,
       "corner": 3,
       "variant": 3,
-      "averageColour": "#d8b881",
+      "averageColour": "#d1b37d",
       "seam": 0.0,
       "x": 478,
-      "y": 1550
+      "y": 1874
     },
     {
       "file": "corner-7-0-0.png",
@@ -4754,10 +5546,10 @@
       "band": 7,
       "corner": 0,
       "variant": 0,
-      "averageColour": "#4c463f",
+      "averageColour": "#54504a",
       "seam": 0.0,
       "x": 2,
-      "y": 1586
+      "y": 1910
     },
     {
       "file": "corner-7-0-1.png",
@@ -4767,10 +5559,10 @@
       "band": 7,
       "corner": 0,
       "variant": 1,
-      "averageColour": "#504b44",
+      "averageColour": "#46433f",
       "seam": 0.0,
       "x": 70,
-      "y": 1586
+      "y": 1910
     },
     {
       "file": "corner-7-0-2.png",
@@ -4780,10 +5572,10 @@
       "band": 7,
       "corner": 0,
       "variant": 2,
-      "averageColour": "#4e4a44",
+      "averageColour": "#4e4a45",
       "seam": 0.0,
       "x": 138,
-      "y": 1586
+      "y": 1910
     },
     {
       "file": "corner-7-0-3.png",
@@ -4793,10 +5585,10 @@
       "band": 7,
       "corner": 0,
       "variant": 3,
-      "averageColour": "#4c4842",
+      "averageColour": "#46433f",
       "seam": 0.0,
       "x": 206,
-      "y": 1586
+      "y": 1910
     },
     {
       "file": "corner-7-1-0.png",
@@ -4806,10 +5598,10 @@
       "band": 7,
       "corner": 1,
       "variant": 0,
-      "averageColour": "#715f48",
+      "averageColour": "#5c5751",
       "seam": 0.0,
       "x": 274,
-      "y": 1586
+      "y": 1910
     },
     {
       "file": "corner-7-1-1.png",
@@ -4819,10 +5611,10 @@
       "band": 7,
       "corner": 1,
       "variant": 1,
-      "averageColour": "#6f5c46",
+      "averageColour": "#534f49",
       "seam": 0.0,
       "x": 342,
-      "y": 1586
+      "y": 1910
     },
     {
       "file": "corner-7-1-2.png",
@@ -4832,10 +5624,10 @@
       "band": 7,
       "corner": 1,
       "variant": 2,
-      "averageColour": "#736048",
+      "averageColour": "#59554e",
       "seam": 0.0,
       "x": 410,
-      "y": 1586
+      "y": 1910
     },
     {
       "file": "corner-7-1-3.png",
@@ -4845,10 +5637,10 @@
       "band": 7,
       "corner": 1,
       "variant": 3,
-      "averageColour": "#655643",
+      "averageColour": "#57524c",
       "seam": 0.0,
       "x": 478,
-      "y": 1586
+      "y": 1910
     },
     {
       "file": "corner-7-2-0.png",
@@ -4858,10 +5650,10 @@
       "band": 7,
       "corner": 2,
       "variant": 0,
-      "averageColour": "#514a43",
+      "averageColour": "#544f4a",
       "seam": 0.0,
       "x": 2,
-      "y": 1622
+      "y": 1946
     },
     {
       "file": "corner-7-2-1.png",
@@ -4871,10 +5663,10 @@
       "band": 7,
       "corner": 2,
       "variant": 1,
-      "averageColour": "#51473f",
+      "averageColour": "#3b3835",
       "seam": 0.0,
       "x": 70,
-      "y": 1622
+      "y": 1946
     },
     {
       "file": "corner-7-2-2.png",
@@ -4884,10 +5676,10 @@
       "band": 7,
       "corner": 2,
       "variant": 2,
-      "averageColour": "#514740",
+      "averageColour": "#484440",
       "seam": 0.0,
       "x": 138,
-      "y": 1622
+      "y": 1946
     },
     {
       "file": "corner-7-2-3.png",
@@ -4897,10 +5689,10 @@
       "band": 7,
       "corner": 2,
       "variant": 3,
-      "averageColour": "#4b443d",
+      "averageColour": "#4a4742",
       "seam": 0.0,
       "x": 206,
-      "y": 1622
+      "y": 1946
     },
     {
       "file": "corner-7-3-0.png",
@@ -4910,10 +5702,10 @@
       "band": 7,
       "corner": 3,
       "variant": 0,
-      "averageColour": "#4b4843",
+      "averageColour": "#484440",
       "seam": 0.0,
       "x": 274,
-      "y": 1622
+      "y": 1946
     },
     {
       "file": "corner-7-3-1.png",
@@ -4923,10 +5715,10 @@
       "band": 7,
       "corner": 3,
       "variant": 1,
-      "averageColour": "#4a4742",
+      "averageColour": "#44413d",
       "seam": 0.0,
       "x": 342,
-      "y": 1622
+      "y": 1946
     },
     {
       "file": "corner-7-3-2.png",
@@ -4936,10 +5728,10 @@
       "band": 7,
       "corner": 3,
       "variant": 2,
-      "averageColour": "#4a4742",
+      "averageColour": "#4d4a45",
       "seam": 0.0,
       "x": 410,
-      "y": 1622
+      "y": 1946
     },
     {
       "file": "corner-7-3-3.png",
@@ -4949,10 +5741,10 @@
       "band": 7,
       "corner": 3,
       "variant": 3,
-      "averageColour": "#4d4a45",
+      "averageColour": "#413e3a",
       "seam": 0.0,
       "x": 478,
-      "y": 1622
+      "y": 1946
     },
     {
       "file": "shore-1-0.png",
@@ -4962,10 +5754,10 @@
       "band": 0,
       "mask": 1,
       "variant": 0,
-      "averageColour": "#576d45",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 2,
-      "y": 1658
+      "y": 1982
     },
     {
       "file": "shore-1-1.png",
@@ -4975,10 +5767,10 @@
       "band": 0,
       "mask": 1,
       "variant": 1,
-      "averageColour": "#576c44",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 70,
-      "y": 1658
+      "y": 1982
     },
     {
       "file": "shore-1-2.png",
@@ -4988,10 +5780,10 @@
       "band": 0,
       "mask": 1,
       "variant": 2,
-      "averageColour": "#576c44",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 138,
-      "y": 1658
+      "y": 1982
     },
     {
       "file": "shore-1-3.png",
@@ -5001,10 +5793,10 @@
       "band": 0,
       "mask": 1,
       "variant": 3,
-      "averageColour": "#576d45",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 206,
-      "y": 1658
+      "y": 1982
     },
     {
       "file": "shore-2-0.png",
@@ -5014,10 +5806,10 @@
       "band": 0,
       "mask": 2,
       "variant": 0,
-      "averageColour": "#556b43",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 274,
-      "y": 1658
+      "y": 1982
     },
     {
       "file": "shore-2-1.png",
@@ -5027,10 +5819,10 @@
       "band": 0,
       "mask": 2,
       "variant": 1,
-      "averageColour": "#566b43",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 342,
-      "y": 1658
+      "y": 1982
     },
     {
       "file": "shore-2-2.png",
@@ -5040,10 +5832,10 @@
       "band": 0,
       "mask": 2,
       "variant": 2,
-      "averageColour": "#576c44",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 410,
-      "y": 1658
+      "y": 1982
     },
     {
       "file": "shore-2-3.png",
@@ -5053,10 +5845,10 @@
       "band": 0,
       "mask": 2,
       "variant": 3,
-      "averageColour": "#566b43",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 478,
-      "y": 1658
+      "y": 1982
     },
     {
       "file": "shore-3-0.png",
@@ -5066,10 +5858,10 @@
       "band": 0,
       "mask": 3,
       "variant": 0,
-      "averageColour": "#566b43",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 2,
-      "y": 1694
+      "y": 2018
     },
     {
       "file": "shore-4-0.png",
@@ -5079,10 +5871,10 @@
       "band": 0,
       "mask": 4,
       "variant": 0,
-      "averageColour": "#556a43",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 70,
-      "y": 1694
+      "y": 2018
     },
     {
       "file": "shore-4-1.png",
@@ -5092,10 +5884,10 @@
       "band": 0,
       "mask": 4,
       "variant": 1,
-      "averageColour": "#556a43",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 138,
-      "y": 1694
+      "y": 2018
     },
     {
       "file": "shore-4-2.png",
@@ -5105,10 +5897,10 @@
       "band": 0,
       "mask": 4,
       "variant": 2,
-      "averageColour": "#566b43",
+      "averageColour": "#586c46",
       "seam": 0.0,
       "x": 206,
-      "y": 1694
+      "y": 2018
     },
     {
       "file": "shore-4-3.png",
@@ -5118,10 +5910,10 @@
       "band": 0,
       "mask": 4,
       "variant": 3,
-      "averageColour": "#566b43",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 274,
-      "y": 1694
+      "y": 2018
     },
     {
       "file": "shore-5-0.png",
@@ -5131,10 +5923,10 @@
       "band": 0,
       "mask": 5,
       "variant": 0,
-      "averageColour": "#566c44",
+      "averageColour": "#586c46",
       "seam": 0.0,
       "x": 342,
-      "y": 1694
+      "y": 2018
     },
     {
       "file": "shore-6-0.png",
@@ -5144,10 +5936,10 @@
       "band": 0,
       "mask": 6,
       "variant": 0,
-      "averageColour": "#566c44",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 410,
-      "y": 1694
+      "y": 2018
     },
     {
       "file": "shore-7-0.png",
@@ -5157,10 +5949,10 @@
       "band": 0,
       "mask": 7,
       "variant": 0,
-      "averageColour": "#566b44",
+      "averageColour": "#586c46",
       "seam": 0.0,
       "x": 478,
-      "y": 1694
+      "y": 2018
     },
     {
       "file": "shore-8-0.png",
@@ -5170,10 +5962,10 @@
       "band": 0,
       "mask": 8,
       "variant": 0,
-      "averageColour": "#566b43",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 2,
-      "y": 1730
+      "y": 2054
     },
     {
       "file": "shore-8-1.png",
@@ -5183,10 +5975,10 @@
       "band": 0,
       "mask": 8,
       "variant": 1,
-      "averageColour": "#576c44",
+      "averageColour": "#586c46",
       "seam": 0.0,
       "x": 70,
-      "y": 1730
+      "y": 2054
     },
     {
       "file": "shore-8-2.png",
@@ -5196,10 +5988,10 @@
       "band": 0,
       "mask": 8,
       "variant": 2,
-      "averageColour": "#576d45",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 138,
-      "y": 1730
+      "y": 2054
     },
     {
       "file": "shore-8-3.png",
@@ -5209,10 +6001,10 @@
       "band": 0,
       "mask": 8,
       "variant": 3,
-      "averageColour": "#576d45",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 206,
-      "y": 1730
+      "y": 2054
     },
     {
       "file": "shore-9-0.png",
@@ -5222,10 +6014,10 @@
       "band": 0,
       "mask": 9,
       "variant": 0,
-      "averageColour": "#556b43",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 274,
-      "y": 1730
+      "y": 2054
     },
     {
       "file": "shore-10-0.png",
@@ -5235,10 +6027,10 @@
       "band": 0,
       "mask": 10,
       "variant": 0,
-      "averageColour": "#576d45",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 342,
-      "y": 1730
+      "y": 2054
     },
     {
       "file": "shore-11-0.png",
@@ -5248,10 +6040,10 @@
       "band": 0,
       "mask": 11,
       "variant": 0,
-      "averageColour": "#576c44",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 410,
-      "y": 1730
+      "y": 2054
     },
     {
       "file": "shore-12-0.png",
@@ -5261,10 +6053,10 @@
       "band": 0,
       "mask": 12,
       "variant": 0,
-      "averageColour": "#576c44",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 478,
-      "y": 1730
+      "y": 2054
     },
     {
       "file": "shore-13-0.png",
@@ -5274,10 +6066,10 @@
       "band": 0,
       "mask": 13,
       "variant": 0,
-      "averageColour": "#566c44",
+      "averageColour": "#586c46",
       "seam": 0.0,
       "x": 2,
-      "y": 1766
+      "y": 2090
     },
     {
       "file": "shore-14-0.png",
@@ -5290,7 +6082,7 @@
       "averageColour": "#576c45",
       "seam": 0.0,
       "x": 70,
-      "y": 1766
+      "y": 2090
     },
     {
       "file": "shore-15-0.png",
@@ -5300,10 +6092,10 @@
       "band": 0,
       "mask": 15,
       "variant": 0,
-      "averageColour": "#566c44",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 138,
-      "y": 1766
+      "y": 2090
     },
     {
       "file": "shore-corner-0-0.png",
@@ -5313,10 +6105,10 @@
       "band": 0,
       "corner": 0,
       "variant": 0,
-      "averageColour": "#576d45",
+      "averageColour": "#5a6f47",
       "seam": 0.0,
       "x": 206,
-      "y": 1766
+      "y": 2090
     },
     {
       "file": "shore-corner-0-1.png",
@@ -5326,10 +6118,10 @@
       "band": 0,
       "corner": 0,
       "variant": 1,
-      "averageColour": "#596e46",
+      "averageColour": "#596f47",
       "seam": 0.0,
       "x": 274,
-      "y": 1766
+      "y": 2090
     },
     {
       "file": "shore-corner-0-2.png",
@@ -5339,10 +6131,10 @@
       "band": 0,
       "corner": 0,
       "variant": 2,
-      "averageColour": "#576d45",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 342,
-      "y": 1766
+      "y": 2090
     },
     {
       "file": "shore-corner-0-3.png",
@@ -5352,10 +6144,10 @@
       "band": 0,
       "corner": 0,
       "variant": 3,
-      "averageColour": "#546a42",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 410,
-      "y": 1766
+      "y": 2090
     },
     {
       "file": "shore-corner-1-0.png",
@@ -5365,10 +6157,10 @@
       "band": 0,
       "corner": 1,
       "variant": 0,
-      "averageColour": "#50663e",
+      "averageColour": "#576b45",
       "seam": 0.0,
       "x": 478,
-      "y": 1766
+      "y": 2090
     },
     {
       "file": "shore-corner-1-1.png",
@@ -5378,10 +6170,10 @@
       "band": 0,
       "corner": 1,
       "variant": 1,
-      "averageColour": "#586e46",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 2,
-      "y": 1802
+      "y": 2126
     },
     {
       "file": "shore-corner-1-2.png",
@@ -5391,10 +6183,10 @@
       "band": 0,
       "corner": 1,
       "variant": 2,
-      "averageColour": "#536940",
+      "averageColour": "#596e46",
       "seam": 0.0,
       "x": 70,
-      "y": 1802
+      "y": 2126
     },
     {
       "file": "shore-corner-1-3.png",
@@ -5404,10 +6196,10 @@
       "band": 0,
       "corner": 1,
       "variant": 3,
-      "averageColour": "#566b43",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 138,
-      "y": 1802
+      "y": 2126
     },
     {
       "file": "shore-corner-2-0.png",
@@ -5417,10 +6209,10 @@
       "band": 0,
       "corner": 2,
       "variant": 0,
-      "averageColour": "#586e46",
+      "averageColour": "#586d46",
       "seam": 0.0,
       "x": 206,
-      "y": 1802
+      "y": 2126
     },
     {
       "file": "shore-corner-2-1.png",
@@ -5430,10 +6222,10 @@
       "band": 0,
       "corner": 2,
       "variant": 1,
-      "averageColour": "#586e46",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 274,
-      "y": 1802
+      "y": 2126
     },
     {
       "file": "shore-corner-2-2.png",
@@ -5443,10 +6235,10 @@
       "band": 0,
       "corner": 2,
       "variant": 2,
-      "averageColour": "#586e46",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 342,
-      "y": 1802
+      "y": 2126
     },
     {
       "file": "shore-corner-2-3.png",
@@ -5456,10 +6248,10 @@
       "band": 0,
       "corner": 2,
       "variant": 3,
-      "averageColour": "#596e46",
+      "averageColour": "#576c45",
       "seam": 0.0,
       "x": 410,
-      "y": 1802
+      "y": 2126
     },
     {
       "file": "shore-corner-3-0.png",
@@ -5469,10 +6261,10 @@
       "band": 0,
       "corner": 3,
       "variant": 0,
-      "averageColour": "#596e46",
+      "averageColour": "#576b45",
       "seam": 0.0,
       "x": 478,
-      "y": 1802
+      "y": 2126
     },
     {
       "file": "shore-corner-3-1.png",
@@ -5482,10 +6274,10 @@
       "band": 0,
       "corner": 3,
       "variant": 1,
-      "averageColour": "#546a42",
+      "averageColour": "#596e47",
       "seam": 0.0,
       "x": 2,
-      "y": 1838
+      "y": 2162
     },
     {
       "file": "shore-corner-3-2.png",
@@ -5495,10 +6287,10 @@
       "band": 0,
       "corner": 3,
       "variant": 2,
-      "averageColour": "#556a43",
+      "averageColour": "#596e47",
       "seam": 0.0,
       "x": 70,
-      "y": 1838
+      "y": 2162
     },
     {
       "file": "shore-corner-3-3.png",
@@ -5508,10 +6300,10 @@
       "band": 0,
       "corner": 3,
       "variant": 3,
-      "averageColour": "#566b43",
+      "averageColour": "#586e46",
       "seam": 0.0,
       "x": 138,
-      "y": 1838
+      "y": 2162
     },
     {
       "file": "field-0-broken.png",
@@ -5520,10 +6312,10 @@
       "height": 32,
       "band": 0,
       "field": "broken",
-      "averageColour": "#464a26",
+      "averageColour": "#474b28",
       "seam": 0.0,
       "x": 206,
-      "y": 1838
+      "y": 2162
     },
     {
       "file": "field-0-crop.png",
@@ -5532,10 +6324,10 @@
       "height": 32,
       "band": 0,
       "field": "crop",
-      "averageColour": "#4e7c30",
+      "averageColour": "#507d31",
       "seam": 0.0,
       "x": 274,
-      "y": 1838
+      "y": 2162
     },
     {
       "file": "field-1-broken.png",
@@ -5544,10 +6336,10 @@
       "height": 32,
       "band": 1,
       "field": "broken",
-      "averageColour": "#434e19",
+      "averageColour": "#3d4c19",
       "seam": 0.0,
       "x": 342,
-      "y": 1838
+      "y": 2162
     },
     {
       "file": "field-1-crop.png",
@@ -5556,10 +6348,10 @@
       "height": 32,
       "band": 1,
       "field": "crop",
-      "averageColour": "#4b821f",
+      "averageColour": "#457e1f",
       "seam": 0.0,
       "x": 410,
-      "y": 1838
+      "y": 2162
     },
     {
       "file": "field-2-broken.png",
@@ -5568,10 +6360,10 @@
       "height": 32,
       "band": 2,
       "field": "broken",
-      "averageColour": "#525b1c",
+      "averageColour": "#4e5a1c",
       "seam": 0.0,
       "x": 478,
-      "y": 1838
+      "y": 2162
     },
     {
       "file": "field-2-crop.png",
@@ -5580,10 +6372,10 @@
       "height": 32,
       "band": 2,
       "field": "crop",
-      "averageColour": "#5c9723",
+      "averageColour": "#589622",
       "seam": 0.0,
       "x": 2,
-      "y": 1874
+      "y": 2198
     },
     {
       "file": "field-3-broken.png",
@@ -5592,10 +6384,10 @@
       "height": 32,
       "band": 3,
       "field": "broken",
-      "averageColour": "#765e26",
+      "averageColour": "#735d26",
       "seam": 0.0,
       "x": 70,
-      "y": 1874
+      "y": 2198
     },
     {
       "file": "field-3-crop.png",
@@ -5604,10 +6396,10 @@
       "height": 32,
       "band": 3,
       "field": "crop",
-      "averageColour": "#859c2f",
+      "averageColour": "#829b2f",
       "seam": 0.0,
       "x": 138,
-      "y": 1874
+      "y": 2198
     },
     {
       "file": "field-4-broken.png",
@@ -5616,10 +6408,10 @@
       "height": 32,
       "band": 4,
       "field": "broken",
-      "averageColour": "#815629",
+      "averageColour": "#845628",
       "seam": 0.0,
       "x": 206,
-      "y": 1874
+      "y": 2198
     },
     {
       "file": "field-4-crop.png",
@@ -5628,10 +6420,10 @@
       "height": 32,
       "band": 4,
       "field": "crop",
-      "averageColour": "#919033",
+      "averageColour": "#948f32",
       "seam": 0.0,
       "x": 274,
-      "y": 1874
+      "y": 2198
     },
     {
       "file": "field-5-broken.png",
@@ -5640,10 +6432,10 @@
       "height": 32,
       "band": 5,
       "field": "broken",
-      "averageColour": "#8c431f",
+      "averageColour": "#8a421e",
       "seam": 0.0,
       "x": 342,
-      "y": 1874
+      "y": 2198
     },
     {
       "file": "field-5-crop.png",
@@ -5652,10 +6444,10 @@
       "height": 32,
       "band": 5,
       "field": "crop",
-      "averageColour": "#9d6f26",
+      "averageColour": "#9c6e26",
       "seam": 0.0,
       "x": 410,
-      "y": 1874
+      "y": 2198
     },
     {
       "file": "field-6-broken.png",
@@ -5664,10 +6456,10 @@
       "height": 32,
       "band": 6,
       "field": "broken",
-      "averageColour": "#ac7d48",
+      "averageColour": "#a87a47",
       "seam": 0.0,
       "x": 478,
-      "y": 1874
+      "y": 2198
     },
     {
       "file": "field-6-crop.png",
@@ -5676,10 +6468,10 @@
       "height": 32,
       "band": 6,
       "field": "crop",
-      "averageColour": "#c2d15a",
+      "averageColour": "#bdcc58",
       "seam": 0.0,
       "x": 2,
-      "y": 1910
+      "y": 2234
     },
     {
       "file": "field-7-broken.png",
@@ -5688,10 +6480,10 @@
       "height": 32,
       "band": 7,
       "field": "broken",
-      "averageColour": "#453526",
+      "averageColour": "#3d3226",
       "seam": 0.0,
       "x": 70,
-      "y": 1910
+      "y": 2234
     },
     {
       "file": "field-7-crop.png",
@@ -5700,10 +6492,10 @@
       "height": 32,
       "band": 7,
       "field": "crop",
-      "averageColour": "#4e5830",
+      "averageColour": "#455330",
       "seam": 0.0,
       "x": 138,
-      "y": 1910
+      "y": 2234
     }
   ]
 }

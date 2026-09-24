@@ -336,8 +336,41 @@ def make_corner(tile: Image.Image, corner: int, seed: int = 0) -> Image.Image:
     return Image.fromarray(pixels, "RGBA")
 
 
-def make_tile(source: Image.Image, band: np.ndarray, strength: float) -> Image.Image:
-    """Resize to the tile footprint, harmonise to the band, and mask to the diamond."""
+# Which part of a generation each tile is cut from.
+#
+# Four quadrants rather than the whole frame, and it buys two things at once.
+#
+# DETAIL. The source is 512px and a tile is 64x32, so squashing the whole frame into one
+# was an eight-to-one downscale horizontally and sixteen-to-one vertically — which
+# averages fine detail into flat colour. generate_tiles.py complains about exactly that
+# in two of its prompt notes: "fine detail" had to be avoided, and "pitting and fine
+# cracks do not survive an eight-to-one downscale". Cutting a 256px quadrant halves the
+# loss.
+#
+# VARIETY. Three generations a subject gave three tiles, and a large expanse of one
+# ground repeated visibly. Four quadrants of each gives twelve, from the same art, with
+# identical lighting and colour — which is the thing that matters. Flipping or rotating
+# would have been cheaper and wrong: the style prompt pins "a single light source from
+# the upper left", and a mirrored tile lights from the upper right.
+#
+# The vertical squash stays two-to-one whatever is cut, because a square of ground is a
+# 2:1 diamond on screen. That is the projection, not a loss.
+TILE_CROPS = ((0.0, 0.0), (0.5, 0.0), (0.0, 0.5), (0.5, 0.5))
+TILE_CROP_SIZE = 0.5
+
+
+def make_tile(
+    source: Image.Image,
+    band: np.ndarray,
+    strength: float,
+    crop: tuple[float, float] | None = None,
+) -> Image.Image:
+    """Cut, resize to the tile footprint, harmonise to the band, and mask to the diamond."""
+    if crop is not None:
+        span = int(min(source.width, source.height) * TILE_CROP_SIZE)
+        left = int(crop[0] * (source.width - span))
+        top = int(crop[1] * (source.height - span))
+        source = source.crop((left, top, left + span, top + span))
     resized = source.convert("RGBA").resize((TILE_W, TILE_H), Image.Resampling.LANCZOS)
     toned = harmonise(resized, band, strength)
 
@@ -556,22 +589,23 @@ def command_tile(args: argparse.Namespace) -> int:
 
         with Image.open(path) as image:
             seam = tileability(image)
-            tile = make_tile(image, band, args.strength)
-        out = target / path.name
-        tile.save(out)
-        packed.append((path.name, tile))
-        manifest.append(
-            {
-                "file": path.name,
-                "subject": subject,
-                "width": TILE_W,
-                "height": TILE_H,
-                "band": band_index,
-                "averageColour": average_colour(tile),
-                "seam": round(seam, 4),
-            }
-        )
-        print(f"  {path.name}: seam {seam:.3f}")
+            cuts = [make_tile(image, band, args.strength, crop) for crop in TILE_CROPS]
+        for index, tile in enumerate(cuts):
+            name = f"{path.stem}-{index}.png"
+            tile.save(target / name)
+            packed.append((name, tile))
+            manifest.append(
+                {
+                    "file": name,
+                    "subject": subject,
+                    "width": TILE_W,
+                    "height": TILE_H,
+                    "band": band_index,
+                    "averageColour": average_colour(tile),
+                    "seam": round(seam, 4),
+                }
+            )
+        print(f"  {path.name}: seam {seam:.3f}, {len(cuts)} cuts")
 
     # --- transitions -------------------------------------------------------------
     #
