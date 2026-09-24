@@ -1,4 +1,5 @@
-import { buildPermutation, fbm, smoothstep } from './noise.js';
+import { fbm, smoothstep } from '../../shared/noise.js';
+import { buildPermutation } from './seededNoise.js';
 import type { Heightmap } from '../../shared/heightmap.js';
 import { tuning } from '../tuning.js';
 import { carveRiver, gradeBanks } from './water.js';

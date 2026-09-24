@@ -46,7 +46,14 @@ const TOUCHING_DY = [-1, -1, 0, 0] as const;
  * toward it and hang the whole map off a lip — a bug that would look like the map
  * curling at the edges and would be hard to read back to this line.
  */
-function heightAtCorner(map: Heightmap, cornerX: number, cornerY: number, own: number): number {
+function heightAtCorner(
+  map: Heightmap,
+  cornerX: number,
+  cornerY: number,
+  own: number,
+  ownX: number,
+  ownY: number,
+): number {
   let sum = 0;
   let count = 0;
 
@@ -55,10 +62,25 @@ function heightAtCorner(map: Heightmap, cornerX: number, cornerY: number, own: n
     const tileY = cornerY + TOUCHING_DY[i]!;
     if (!inBounds(map, tileX, tileY)) continue;
     const height = heightAt(map, tileX, tileY);
-    // A cliff anywhere on this corner and the corner does not blend at all. Tested
-    // against the ASKING tile rather than pairwise between neighbours: what matters is
-    // whether this tile's ground breaks away here, not whether two other grounds do.
-    if (height - own > MAX_CLIMB || own - height > MAX_CLIMB) return own;
+
+    /*
+     * A cliff across an EDGE snaps the corner; a diagonal does not.
+     *
+     * Tested against the ASKING tile rather than pairwise between neighbours: what
+     * matters is whether this tile's ground breaks away here, not whether two other
+     * grounds do. But only where the two actually share a side — a cliff is an
+     * orthogonal fact in this project, which is how `isCliff` is used against adjacent
+     * heights and how `derivePassability` blocks an edge.
+     *
+     * Testing the diagonal as well is a defect that shipped and was visible: on the
+     * standard map there are ZERO orthogonal cliffs and 491 diagonal jumps past
+     * MAX_CLIMB, so 491 saddles snapped their corners flat, each leaving a small shaded
+     * face across ground nothing is blocked by. On screen it was a diamond lattice of
+     * dark lines over every slope with relief in it — the tile grid, drawn back on top
+     * of the mesh that exists to hide it.
+     */
+    const sharesAnEdge = tileX === ownX || tileY === ownY;
+    if (sharesAnEdge && (height - own > MAX_CLIMB || own - height > MAX_CLIMB)) return own;
     sum += height;
     count++;
   }
@@ -77,7 +99,14 @@ export function tileCorners(map: Heightmap, tileX: number, tileY: number, out: F
   const own = heightAt(map, tileX, tileY);
 
   for (let corner = 0; corner < CORNER_COUNT; corner++) {
-    out[corner] = heightAtCorner(map, tileX + CORNER_DX[corner]!, tileY + CORNER_DY[corner]!, own);
+    out[corner] = heightAtCorner(
+      map,
+      tileX + CORNER_DX[corner]!,
+      tileY + CORNER_DY[corner]!,
+      own,
+      tileX,
+      tileY,
+    );
   }
 }
 

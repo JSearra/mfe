@@ -12,6 +12,7 @@ import { createWorkerSimHost } from './host/worker/workerHost.js';
 import { createHeightmap } from './sim/terrain/generate.js';
 import { MAP_SCRIPTS, generateMap, type MapScript } from './sim/terrain/maps.js';
 import { bandShiftFor } from './render/scene/terrainBand.js';
+import { createGroundField } from './render/scene/ground.js';
 import { FactionId } from './shared/factions/index.js';
 import { createWorld } from './sim/world.js';
 import { treeSlot, WOODLAND_STRIDE } from './shared/woodland.js';
@@ -489,7 +490,15 @@ async function main(options: GameOptions): Promise<void> {
   // How dry this country is drawn. A statement about the landscape, which is the one
   // thing a heightmap was never able to make — see render/scene/terrainBand.ts.
   const bandShift = bandShiftFor(options.mapScript);
-  const terrain = createTerrain(map, terrainTiles, bandShift);
+  /**
+   * Which ground each tile is drawn with, worked out once for the whole map.
+   *
+   * Not the tile's height, which is what it used to be — see render/scene/ground.ts for
+   * the 18%-of-all-adjacent-pairs measurement that changed it. Held here because both
+   * the terrain and the fields need the same answer.
+   */
+  const groundField = createGroundField(map, mapSeed, map.levels);
+  const terrain = createTerrain(map, terrainTiles, bandShift, groundField);
   const cursor = createTileCursor();
   // Null if the atlas is missing or malformed, and the entity layer then falls back to
   // drawing shapes. Art is not worth failing to start over, and the build runs without
@@ -503,7 +512,7 @@ async function main(options: GameOptions): Promise<void> {
     faction: PLAYER,
   });
   const damage = createDamageFlashes();
-  const fields = createFieldLayer(map, terrainTiles, bandShift);
+  const fields = createFieldLayer(map, terrainTiles, groundField, bandShift);
   const fog = createFogRenderer(map);
   // Above the ground and below everything that stands on it.
   terrain.container.addChild(fields.container);

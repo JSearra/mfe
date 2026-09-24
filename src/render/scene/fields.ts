@@ -47,6 +47,11 @@ export interface FieldLayer {
 export function createFieldLayer(
   map: Heightmap,
   tiles: TerrainTiles | null,
+  /**
+   * The ground each tile wears. A field is broken out of the soil it stands in, and
+   * that soil stopped being the tile's height when the ground field landed.
+   */
+  ground: Uint8Array | null = null,
   // A field is broken out of the ground it stands on, so it takes the same shift along
   // the ramp that ground does. Without it a Karoo field would be green earth in a
   // thornveld.
@@ -74,7 +79,11 @@ export function createFieldLayer(
         const resting = fieldFallow(packed, at);
 
         const level = heightAt(map, tileX, tileY);
-        const tile = tiles.field(groundBand(level < 0 ? 0 : level, bandShift, map.levels), established && !resting);
+        const soil =
+          ground === null
+            ? (level < 0 ? 0 : level)
+            : ground[tileY * map.width + tileX] ?? 0;
+        const tile = tiles.field(groundBand(soil, bandShift, map.levels), established && !resting);
         if (tile === null) continue;
 
         let sprite = sprites[i];

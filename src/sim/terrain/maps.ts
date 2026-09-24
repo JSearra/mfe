@@ -3,7 +3,8 @@ import { MapScript } from '../../shared/maps.js';
 import { carveCoast, carveRiver, gradeBanks } from './water.js';
 import { createRng, nextInt, nextU32 } from '../math/rng.js';
 import { cos, sin, TWO_PI } from '../math/trig.js';
-import { buildPermutation, fbm, smoothstep } from './noise.js';
+import { fbm, smoothstep } from '../../shared/noise.js';
+import { buildPermutation } from './seededNoise.js';
 
 /**
  * The four named maps from the original brief, as heightmap functions.

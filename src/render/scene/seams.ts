@@ -1,4 +1,4 @@
-import { heightAt, isWater, type Heightmap } from '../../shared/heightmap.js';
+import { heightAt, inBounds, isWater, type Heightmap } from '../../shared/heightmap.js';
 import { isCliff } from '../../shared/iso.js';
 
 /**
@@ -53,19 +53,33 @@ const CORNER_DY = [-1, 1, 1, -1] as const;
  * Written into a sparse array so the common case, a tile with no boundary at all, costs
  * four height lookups and no allocation beyond it. Returns how many bands were found.
  */
-export function edgeSeams(map: Heightmap, tileX: number, tileY: number, out: number[]): number {
-  const own = map.data[tileY * map.width + tileX]!;
+export function edgeSeams(
+  map: Heightmap,
+  ground: Uint8Array,
+  tileX: number,
+  tileY: number,
+  out: number[],
+): number {
+  const own = ground[tileY * map.width + tileX]!;
   let found = 0;
 
   for (let bit = 0; bit < 4; bit++) {
-    const neighbour = heightAt(map, tileX + EDGE_DX[bit]!, tileY + EDGE_DY[bit]!);
+    const x = tileX + EDGE_DX[bit]!;
+    const y = tileY + EDGE_DY[bit]!;
+    if (!inBounds(map, x, y)) continue;
+    const neighbour = ground[y * map.width + x]!;
     if (neighbour <= own) continue;
     // Only where the two grounds actually meet. Across a cliff they do not: there is a
     // face between them, the upper surface is metres above and behind, and bleeding its
     // texture onto the floor below reads as a smear down the drop rather than as a
     // transition. A cliff is meant to be a hard edge — that is the whole of ADR-0006 —
     // and softening it would undo the one boundary that should be legible at a glance.
-    if (isCliff(neighbour, own)) continue;
+    // A cliff is still a cliff. Ground no longer tracks height, so the two can now
+    // disagree — but where a real face stands between two grounds the upper surface is
+    // metres above and behind, and bleeding its texture down the drop reads as a smear
+    // rather than a transition. That is ADR-0006 and it is unchanged; what changed is
+    // that the test now has to ask the HEIGHTS, because the bands no longer are them.
+    if (isCliff(heightAt(map, x, y), heightAt(map, tileX, tileY))) continue;
     if (out[neighbour] === undefined) {
       out[neighbour] = 0;
       found++;
@@ -89,26 +103,37 @@ export function edgeSeams(map: Heightmap, tileX: number, tileY: number, out: num
  */
 export function cornerSeams(
   map: Heightmap,
+  ground: Uint8Array,
   tileX: number,
   tileY: number,
   out: Int8Array,
 ): number {
-  const own = map.data[tileY * map.width + tileX]!;
+  const own = ground[tileY * map.width + tileX]!;
   let found = 0;
+
+  /** A neighbour's ground, or -1 off the map. */
+  const at = (dx: number, dy: number): number => {
+    const x = tileX + dx;
+    const y = tileY + dy;
+    return inBounds(map, x, y) ? ground[y * map.width + x]! : -1;
+  };
 
   for (let corner = 0; corner < SEAM_CORNERS; corner++) {
     out[corner] = -1;
 
-    const neighbour = heightAt(map, tileX + CORNER_DX[corner]!, tileY + CORNER_DY[corner]!);
-    if (neighbour <= own || isCliff(neighbour, own)) continue;
+    const dx = CORNER_DX[corner]!;
+    const dy = CORNER_DY[corner]!;
+    const neighbour = at(dx, dy);
+    if (neighbour <= own) continue;
+    if (isCliff(heightAt(map, tileX + dx, tileY + dy), heightAt(map, tileX, tileY))) continue;
 
     // The two edges this corner sits between. Either one carrying a blend of its own
     // covers the corner already.
     const before = corner;
     const after = (corner + 1) % 4;
     if (
-      heightAt(map, tileX + EDGE_DX[before]!, tileY + EDGE_DY[before]!) > own ||
-      heightAt(map, tileX + EDGE_DX[after]!, tileY + EDGE_DY[after]!) > own
+      at(EDGE_DX[before]!, EDGE_DY[before]!) > own ||
+      at(EDGE_DX[after]!, EDGE_DY[after]!) > own
     ) {
       continue;
     }

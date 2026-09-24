@@ -88,6 +88,13 @@ describe('tileCorners', () => {
 
   it('averages only the grounds that actually meet at a corner', () => {
     // The south corner of tile (0,0) is world point (1,1), touched by all four tiles.
+    //
+    // This case used to assert [0, 0, 0, 0]: the 2 at the DIAGONAL was treated as a
+    // cliff and snapped the whole tile flat. It is not one — a cliff is an orthogonal
+    // fact here, which is how `isCliff` is used against adjacent heights and how
+    // `derivePassability` blocks an edge — and treating it as one drew a lattice of
+    // dark faces across every slope on the map. The diagonal is averaged in like any
+    // other ground that meets the corner.
     const map = heightmapFrom(
       [
         [0, 0],
@@ -96,9 +103,7 @@ describe('tileCorners', () => {
       8,
     );
     tileCorners(map, 0, 0, out);
-    // (0+0+0+2)/4. Two is within MAX_CLIMB of nothing here — 2-0 is a cliff — so it
-    // snaps instead.
-    expect([...out]).toEqual([0, 0, 0, 0]);
+    expect([...out]).toEqual([0, 0, 0.5, 0]);
 
     const gentle = heightmapFrom(
       [
@@ -109,5 +114,46 @@ describe('tileCorners', () => {
     );
     tileCorners(gentle, 0, 0, out);
     expect(out[2]).toBeCloseTo(0.25);
+  });
+});
+
+describe('a diagonal is not a cliff', () => {
+  it('does not snap a corner for ground it only touches at a point', () => {
+    /*
+     * A saddle: every ORTHOGONAL step is one level and walkable, but the two diagonals
+     * are two apart. `isCliff` and `derivePassability` both work on edges — a cliff is
+     * an orthogonal fact — and testing the diagonal made 491 places on the shipped map
+     * snap their corners flat, each leaving a small shaded face on ground nothing is
+     * actually blocked by. On screen that was a diamond lattice of dark lines across
+     * every slope with relief in it.
+     */
+    const saddle = heightmapFrom(
+      [
+        [4, 3, 3],
+        [3, 2, 2],
+        [3, 2, 2],
+      ],
+      8,
+    );
+    // Tile (1,1) stands at 2. Every orthogonal neighbour is 3 — one step, walkable —
+    // and only the DIAGONAL at (0,0) is 4, two apart. Its north corner is the lattice
+    // point all four meet at, so it should be their mean, (4 + 3 + 3 + 2) / 4.
+    tileCorners(saddle, 1, 1, out);
+    expect(out[0], 'a diagonal snapped the corner flat').toBeCloseTo(3);
+  });
+
+  it('still snaps for a real cliff across an edge', () => {
+    // The case the snap exists for is unchanged: an orthogonal neighbour a long way
+    // down is a cliff, and the corner must stay hard so the face survives.
+    const scarp = heightmapFrom(
+      [
+        [0, 4, 4],
+        [0, 4, 4],
+        [0, 4, 4],
+      ],
+      8,
+    );
+    tileCorners(scarp, 1, 1, out);
+    expect([...out]).toEqual([4, 4, 4, 4]);
   });
 });

@@ -13,6 +13,7 @@ import { presentation } from '../presentation.js';
 import type { TerrainTile, TerrainTiles } from '../assets.js';
 import { CORNER_COUNT, tileCorners } from './surface.js';
 import { blendVariant, groundBand } from './terrainBand.js';
+import { createGroundField } from './ground.js';
 import {
   cornerSeams,
   edgeSeams,
@@ -168,8 +169,8 @@ function tileHash(tileX: number, tileY: number, salt: number): number {
  * the tile whose height the geometry was drawn at, so a patch of high ground appeared
  * in a hollow. The seam is handled by `transitionsFor` below, so this can be honest.
  */
-function bandFor(map: Heightmap, tileX: number, tileY: number, shift: number): number {
-  return groundBand(map.data[tileY * map.width + tileX]!, shift, map.levels);
+function bandFor(map: Heightmap, ground: Uint8Array, tileX: number, tileY: number, shift: number): number {
+  return groundBand(ground[tileY * map.width + tileX]!, shift, map.levels);
 }
 
 function variantFor(tiles: readonly TerrainTile[], tileX: number, tileY: number): TerrainTile {
@@ -325,6 +326,7 @@ function drawTile(
   overlay: MeshBuild,
   scratch: TileScratch,
   bandShift: number,
+  ground: Uint8Array,
 ): void {
   const level = map.data[tileY * map.width + tileX]!;
   const { corners, positions, neighbourCorners, bleed, corner } = scratch;
@@ -363,7 +365,9 @@ function drawTile(
   // meander tile after tile along a straight seam, which reads as a scalloped sawtooth.
   const cut = blendVariant(tileX, tileY);
   const tile =
-    tiles === null ? null : (variantFor(tiles.variants(bandFor(map, tileX, tileY, bandShift)), tileX, tileY) ?? null);
+    tiles === null
+      ? null
+      : (variantFor(tiles.variants(bandFor(map, ground, tileX, tileY, bandShift)), tileX, tileY) ?? null);
   // The faces take the tile's own average colour rather than the palette's, so a flat
   // shaded cliff matches the textured surface it drops away from.
   const faceColour = tile === null ? colourForLevel(level) : tile.colour;
@@ -419,7 +423,7 @@ function drawTile(
   // Higher ground bleeding over the seams. Same page as the tile under it, so these
   // cost vertices but not a draw call, and only boundary tiles have any.
   bleed.length = 0;
-  if (edgeSeams(map, tileX, tileY, bleed) > 0) {
+  if (edgeSeams(map, ground, tileX, tileY, bleed) > 0) {
     for (let band = 0; band < bleed.length; band++) {
       const mask = bleed[band];
       if (mask === undefined) continue;
@@ -434,7 +438,7 @@ function drawTile(
   // And the diagonals. Ground that meets this tile at a single point contributed
   // nothing before, so every diagonal boundary on the map ended in a sharp notch where
   // the two edge blends beside it stopped.
-  if (cornerSeams(map, tileX, tileY, corner) > 0) {
+  if (cornerSeams(map, ground, tileX, tileY, corner) > 0) {
     for (let at = 0; at < SEAM_CORNERS; at++) {
       const band = corner[at]!;
       if (band < 0) continue;
@@ -519,6 +523,7 @@ function buildChunk(
   chunkY: number,
   tiles: TerrainTiles | null,
   bandShift: number,
+  ground: Uint8Array,
 ): Chunk {
   const graphics = new Graphics();
   const base = emptyBuild();
@@ -543,7 +548,7 @@ function buildChunk(
     for (let tileX = startX; tileX < endX; tileX++) {
       const tileY = sum - tileX;
       if (tileY < startY || tileY >= endY) continue;
-      drawTile(graphics, map, tileX, tileY, tiles, base, overlay, scratch, bandShift);
+      drawTile(graphics, map, tileX, tileY, tiles, base, overlay, scratch, bandShift, ground);
     }
   }
 
@@ -567,6 +572,12 @@ export function createTerrain(
   map: Heightmap,
   tiles: TerrainTiles | null = null,
   bandShift = 0,
+  /**
+   * Which ground each tile wears — no longer simply its height. Passed in rather than
+   * derived here because the field layer needs the same answer, and two derivations of
+   * one fact is how they come to disagree.
+   */
+  ground: Uint8Array = createGroundField(map, 0, map.levels),
 ): TerrainRenderer {
   const container = new Container();
   const chunksX = Math.ceil(map.width / chunkSize);
@@ -589,7 +600,7 @@ export function createTerrain(
     for (let chunkX = 0; chunkX < chunksX; chunkX++) {
       const chunkY = sum - chunkX;
       if (chunkY < 0 || chunkY >= chunksY) continue;
-      const chunk = buildChunk(map, chunkX, chunkY, tiles, bandShift);
+      const chunk = buildChunk(map, chunkX, chunkY, tiles, bandShift, ground);
       chunks.push(chunk);
       faceLayer.addChild(chunk.graphics);
       if (chunk.tops !== null) topLayer.addChild(chunk.tops);
