@@ -1,5 +1,5 @@
 import { UPDATE_PRIORITY } from 'pixi.js';
-import { t } from './core/i18n/index.js';
+import { t, type MessageKey } from './core/i18n/index.js';
 import { heightAt, isWater } from './shared/heightmap.js';
 import { worldToScreenX, worldToScreenY } from './shared/iso.js';
 import { NO_TILE, pickTileIndex, tileX, tileY } from './shared/picking.js';
@@ -22,7 +22,7 @@ import { createHeightmap } from './sim/terrain/generate.js';
 import { MAP_SCRIPTS, generateMap, type MapScript } from './sim/terrain/maps.js';
 import { bandShiftFor } from './render/scene/terrainBand.js';
 import { createGroundField } from './render/scene/ground.js';
-import { FactionId } from './shared/factions/index.js';
+import { FACTIONS, FactionId } from './shared/factions/index.js';
 import { createWorld } from './sim/world.js';
 import { treeSlot, WOODLAND_STRIDE } from './shared/woodland.js';
 import { createRenderer } from './render/app.js';
@@ -436,6 +436,10 @@ async function main(options: GameOptions): Promise<void> {
       sim.sendCommand(CommandKind.SetRation, short ? 1 : 0);
     },
   });
+  // The neighbour by the people it is, not "Village 2" (ADR-0021).
+  panel.setVillageNames(
+    [options.playerFaction, options.enemyFaction].map((id) => t(FACTIONS[id].nameKey as MessageKey)),
+  );
 
   let view: InterpolatedView | null = null;
   /**

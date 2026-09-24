@@ -85,6 +85,14 @@ export interface CommandPanel {
   /** Hands a building site asks for, as the simulation reckons it. */
   setSiteHands(hands: number): void;
   /**
+   * What to call each village, by player index — the people it is, where known.
+   *
+   * The rows said "Village 2". The neighbour is a people with a name the setup screen
+   * chose (ADR-0021: a trade screen and a party to ties, so the name is most of what the
+   * player knows of it). Falls back to the numbered form for any index not given.
+   */
+  setVillageNames(names: readonly string[]): void;
+  /**
    * What the neighbours will trade, and at what rate.
    *
    * A row of its own, always shown, because trade belongs to the village rather than to
@@ -217,6 +225,7 @@ export function createCommandPanel(
    */
   let signature = '';
   let siteHands = 0;
+  let villageNames: readonly string[] = [];
 
   /**
    * What the village holds, and what it knows.
@@ -404,7 +413,7 @@ export function createCommandPanel(
 
       alliance.replaceChildren();
       for (const relation of relations) {
-        const village = t('panel.village', { index: relation.partner + 1 });
+        const village = villageNames[relation.partner] ?? t('panel.village', { index: relation.partner + 1 });
         const standing = Math.round(relation.standing * 100);
 
         if (relation.allied) {
@@ -476,6 +485,11 @@ export function createCommandPanel(
 
     setSiteHands(hands): void {
       siteHands = hands;
+    },
+
+    setVillageNames(names): void {
+      villageNames = names;
+      relationSignature = '';
     },
 
     update(view, selected, field): void {
