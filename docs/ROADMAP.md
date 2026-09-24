@@ -807,3 +807,74 @@ left that strikes a body.
 nothing about walking a beat between two points needs a fight at the end of it, and a
 herder covering ground wants exactly that. `orderMode`, `patrolX` and `patrolY` stay with
 it; `OrderMode.AttackMove` is a numbered gap beside them.
+
+# Part III — the builder
+
+**The game changed shape again on 2026-09-24. See ADR-0020.** Part II made the game a
+village and kept it a race: two villages competing to settle sixty households. Part III
+removes the race. The game is an open-ended builder closer to Tropico than to an RTS: no
+win, no population cap and no end, with starvation as the thing to avoid rather than the
+usual way a game ends.
+
+The ordering follows the same argument as Part II. The objective goes first because
+everything else is balanced against it. Labour comes before the retune because it moves
+every number the retune would be aiming at.
+
+## Phase B1 — the game never ends
+
+Remove the win condition. What is left of `victory.ts` is a census: how many households
+each village has, and whether a village has emptied completely. An emptied village is
+announced to its player, with an offer to start again, and the simulation keeps running.
+The "Village 24/60" readout becomes a plain count, and the amber on the harvest readout
+now means *the land cannot feed the village you have* rather than the village the
+objective asked for.
+
+*Done when:* nothing in the simulation can end a game; `Outcome` and the hold timer are
+gone; `EventType.VictoryDeclared` and `NeighbourSettling` are numbered gaps; and the
+golden replay reproduces its old checkpoints exactly, because the victory state was never
+hashed. The tuning hash moves, and nothing else does.
+
+## Phase B2 — work finds its own people
+
+Fields, kraals, fishing spots and building sites take workers from nearby homesteads
+without being told to. The player decides what exists and where, and does not route
+people around by hand. `roles.ts` already works out a role from where someone is
+standing. This phase makes the relationship go the other way: a place that needs hands
+pulls them in.
+
+Direct orders stay as an override for urgent jobs, above all taking a herd. The herding
+gesture from Part II is kept, not replaced.
+
+*Needs a design pass before code:* how many hands a place asks for, who decides between
+two places that both want the same person, and what the player sees about it. A
+worksite's readout ("3 of 4 hands") is half of this mechanic, the same way `builders`
+was.
+
+## Phase B3 — hunger is survivable
+
+Retune, after B2, so that a village played well rarely starves. It is measured the way
+Part II measured everything: on a properly seeded opening, several seeds, with numbers
+recorded both before and after. No tuning is done in the same commit as a rule change.
+
+## Phase B4 — neighbours off the map
+
+Neighbours become a trade screen, not villages simulated on the map. The trade valuation
+in `trade.ts` carries over unchanged, since it already prices from the neighbour's own
+stores. What the neighbour's stores are when nobody simulates its village is the design
+question here. Alliances need rethinking because their tithe and relief assumed two
+herds on the map. ADR-0020 leaves the fate of lockstep multiplayer open, and this phase
+is where it has to be decided.
+
+The soak harness loses its second player with this phase and has to stay honest without
+it; see the rule on seeding a starting force in `CLAUDE.md`.
+
+## Phase B5 — the veld shows the season
+
+Green in the wet season, gold then grey-brown in the dry, and harsher in a drought.
+Terrain bands need seasonal versions from the art pipeline, not only a tint. Look at it
+and measure it, per `CLAUDE.md`.
+
+## Already built
+
+Rivers with dry crossings, coastlines and fishing (commit `4f7d310`). ADR-0020 asked for
+rivers that matter to where a village sits, and they already do.
