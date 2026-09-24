@@ -18,7 +18,8 @@ import { largestRegion, snapToRegion } from '../sim/terrain/placement.js';
  */
 
 export const PLAYER = 0;
-export const ENEMY = 1;
+/** The neighbour, in the ledger. Off the map: see ADR-0021. */
+export const NEIGHBOUR = 1;
 const KIND_UNIT = 0;
 
 export const STARTING_UNITS = 24;
@@ -36,7 +37,6 @@ export const HERD_SIZE = 12;
 /** How far the ring of dwellings stands from the cattle enclosure at the centre. */
 export const VILLAGE_RADIUS = 6.5;
 export const VILLAGE_HUTS = 5;
-export const ENEMY_UNITS = 16;
 
 export type Send = (kind: CommandKind, a?: number, b?: number, c?: number, d?: number) => void;
 
@@ -146,16 +146,9 @@ export function seedOpening(send: Send, map: Heightmap, centre: number): void {
     send(CommandKind.Spawn, at.x, at.y, PLAYER, KIND_UNIT);
   }
 
-  // The neighbouring village, laid out the same way. It is a village and not a war
-  // party: the same form, the same ring, a day's walk off.
-  const enemyHome = place(centre + 34, centre + 26);
-  foundVillage(enemyHome, ENEMY);
-  for (let i = 0; i < ENEMY_UNITS; i++) {
-    const angle = (i / ENEMY_UNITS) * Math.PI * 2;
-    const ring = VILLAGE_RADIUS * (1.35 + ((i % 3) * 0.12));
-    const at = place(enemyHome.x + Math.cos(angle) * ring, enemyHome.y + Math.sin(angle) * ring);
-    send(CommandKind.Spawn, at.x, at.y, ENEMY, KIND_UNIT);
-  }
+  // No neighbouring village. The neighbours are off the map now (ADR-0021): a trade
+  // screen and a party to ties, whose seasons run on their books in
+  // src/sim/neighbours.ts. They are player NEIGHBOUR in the ledger and have nobody here.
 
   // Where the herds graze, as offsets from the centre of the map.
   //
@@ -165,22 +158,17 @@ export function seedOpening(send: Send, map: Heightmap, centre: number): void {
   // It is still far enough off that the troops do not frighten it — nothing stampedes
   // in the opening minute.
   //
-  // The rest are mirrored about the midpoint between the two starts, so neither side is
-  // handed a herd the other cannot reach on the same terms. Each gets one on its
-  // doorstep at about eleven tiles, one close by at twelve, and one out at twenty-eight
-  // that has to be ranged for. A raid means driving a herd home over ground the other
-  // side also wants, and holding it once you have — which is the game this project is
-  // named for.
-  //
-  // Measured rather than eyeballed: with the player at the centre and the enemy at
-  // (+36, +28), these sit at 10.8 / 12.2 / 27.9 tiles from each start respectively.
+  // The rest were laid out as mirrors between two villages when there were two on the
+  // map. With the neighbour gone (ADR-0021) they are simply wild herds at a range of
+  // distances — one close by at twelve tiles, the others out to forty — so taking cattle
+  // is a thing to range for, not only to reach out and do.
   const HERD_SITES: readonly (readonly [number, number])[] = [
     [0, 0], // in the isibaya at the centre of the player's own village
-    [27, 22], // the enemy's, its mirror
+    [27, 22], // out to the south-east, where the neighbour's village used to stand
     [2, -12], // near the player
-    [34, 40], // near the enemy, its mirror
-    [-10, 26], // out in open country, player's side
-    [46, 2], // out in open country, enemy's side
+    [34, 40], // beyond it
+    [-10, 26], // out in open country
+    [46, 2], // out in open country, far side
   ];
 
   for (const [rawX, rawY] of HERD_SITES) {

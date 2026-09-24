@@ -938,6 +938,21 @@ is where it has to be decided.
 The soak harness loses its second player with this phase and has to stay honest without
 it; see the rule on seeding a starting force in `CLAUDE.md`.
 
+**Done (2026-09-24). See ADR-0021.** The neighbour is a ledger row with `Economy.offMap`
+set. `src/sim/neighbours.ts` runs its season. Its granary goes back toward `grainHeld`,
+and the weather pushes it around that level on the same `1 − d²` curve as an open field,
+so it swings roughly 200–670 through a year and runs out in a full-severity drought. Its
+herd and wood recover toward what a village like it holds. It answers and asks for ties
+as the AI did, never breaks one, and never starts a trade. `alliance.ts` and `trade.ts`
+are unchanged. The AI no longer runs in a match. It is kept as the soak's
+`SOAK_POLICY=ai` autoplayer and for its tests. Lockstep multiplayer is shelved, not
+removed.
+
+Measured with `npm run soak`, four years, veld: stampedes fell from 115–140 (five years,
+with the neighbour on the map) to 0–9. An untouched village and an AI-played one (113 and
+122 people by year 4) lost nobody. What killed people on the map was the second village
+driving its whole spare workforce at the herds.
+
 ## Phase B5 — the veld shows the season
 
 Green in the wet season, gold then grey-brown in the dry, and harsher in a drought.

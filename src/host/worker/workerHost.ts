@@ -55,6 +55,8 @@ export interface WorkerSimHostOptions {
   playerId?: number;
   factions: readonly FactionId[];
   aiPlayers?: readonly number[];
+  /** Villages kept off the map (ADR-0021). */
+  neighbours?: readonly number[];
   starts?: readonly { readonly x: number; readonly y: number }[];
 }
 
@@ -105,6 +107,7 @@ export function createWorkerSimHost(options: WorkerSimHostOptions): SimHost {
     playerId: options.playerId ?? 0,
     factions: options.factions,
     aiPlayers: options.aiPlayers ?? [],
+    neighbours: options.neighbours ?? [],
     starts: options.starts ?? [],
   });
 

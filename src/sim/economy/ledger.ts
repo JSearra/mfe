@@ -101,6 +101,15 @@ export interface Economy {
   readonly reserve: Float64Array;
   /** What each village is eating. Simulation state, and saved. */
   readonly ration: Uint8Array;
+  /**
+   * 1 for a village that is not on the map (ADR-0021).
+   *
+   * Its books are kept here like anybody's — trade prices from them and ties move cattle
+   * and grain between them — but nothing on the map feeds or eats for it, so the upkeep
+   * below skips it and src/sim/neighbours.ts runs its seasons instead. Set once by the
+   * host from the match setup; a fact about the match, not state that changes in it.
+   */
+  readonly offMap: Uint8Array;
 
   balance(player: number, resource: Resource): number;
   /** Set a village's ration. Reversible, and one village's business alone. */
@@ -193,6 +202,7 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
   const feeds = new Float64Array(players);
   const reserve = new Float64Array(players);
   const ration = new Uint8Array(players);
+  const offMap = new Uint8Array(players);
 
   for (let player = 0; player < players; player++) {
     const config = factions[player]!;
@@ -214,6 +224,7 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
     feeds,
     reserve,
     ration,
+    offMap,
 
     balance(player, resource) {
       return amounts[player * RESOURCE_COUNT + resource] ?? 0;
@@ -387,6 +398,8 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
       }
 
       for (let player = 0; player < players; player++) {
+        // Nobody on the map eats for a village that is not on it. See `offMap`.
+        if (offMap[player] === 1) continue;
         const config = factions[player]!;
 
         // Cattle on the ledger are the standing herd; cattle on the map are the ones

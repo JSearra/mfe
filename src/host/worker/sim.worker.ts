@@ -80,6 +80,7 @@ function start(message: InitMessage): void {
       : generateMap(message.mapScript, message.mapSize, message.mapSize, message.mapSeed);
   world = createWorld(message.capacity, message.worldSeed);
   economy = createEconomy(message.factions, message.worldSeed);
+  for (const player of message.neighbours) economy.offMap[player] = 1;
   fog = createFog(Math.max(message.factions.length, message.viewerId + 1), map);
   viewerId = message.viewerId;
   playerId = message.playerId;

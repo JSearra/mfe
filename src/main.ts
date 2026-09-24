@@ -67,7 +67,7 @@ import { createAlerts } from './ui/alerts.js';
 import { showSetup } from './ui/setup.js';
 import { createEmptiedBanner } from './ui/emptiedBanner.js';
 import { createResourceBar } from './ui/resourceBar.js';
-import { ENEMY, PLAYER, seedOpening } from './host/opening.js';
+import { NEIGHBOUR, PLAYER, seedOpening } from './host/opening.js';
 
 /**
  * Phase 3 entry point: the simulation now runs behind a boundary.
@@ -282,10 +282,8 @@ async function main(options: GameOptions): Promise<void> {
   // Where each side begins. The hosts lay arable land out around these, and the unit
   // seeding below uses the same numbers, so the fields are where the people are.
   const centre = MAP_SIZE / 2;
-  const starts = [
-    { x: centre, y: centre },
-    { x: centre + 34, y: centre + 26 },
-  ];
+  // One start: the neighbour is off the map (ADR-0021) and has no fields here.
+  const starts = [{ x: centre, y: centre }];
 
   // Worker by default now that the boundary discipline has held. ?sim=direct keeps the
   // main-thread host one query parameter away, because stepping through a simulation in
@@ -301,7 +299,7 @@ async function main(options: GameOptions): Promise<void> {
         viewerId: PLAYER,
         playerId: PLAYER,
         factions: [options.playerFaction, options.enemyFaction],
-        aiPlayers: [ENEMY],
+        neighbours: [NEIGHBOUR],
         starts,
       })
     : createDirectSimHost({
@@ -309,7 +307,7 @@ async function main(options: GameOptions): Promise<void> {
         map,
         viewerId: PLAYER,
         playerId: PLAYER,
-        aiPlayers: [ENEMY],
+        neighbours: [NEIGHBOUR],
         factions: [options.playerFaction, options.enemyFaction],
         starts,
       });

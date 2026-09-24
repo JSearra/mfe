@@ -25,6 +25,8 @@ export interface InitMessage {
   readonly playerId: number;
   readonly factions: readonly FactionId[];
   readonly aiPlayers: readonly number[];
+  /** Villages kept off the map (ADR-0021). */
+  readonly neighbours: readonly number[];
   readonly starts: readonly { readonly x: number; readonly y: number }[];
 }
 

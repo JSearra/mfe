@@ -26,7 +26,8 @@ export interface Census {
   /** Ticks each village has been empty, before it is announced as emptied. */
   readonly graceTicks: Float64Array;
 
-  update(world: World, events: SimEvent[]): void;
+  /** `offMap` names villages not on the map, which have nobody to count and never empty. */
+  update(world: World, events: SimEvent[], offMap?: Uint8Array): void;
 }
 
 export function createCensus(players: number): Census {
@@ -36,7 +37,7 @@ export function createCensus(players: number): Census {
     emptied: new Uint8Array(players),
     graceTicks: new Float64Array(players),
 
-    update(world, events): void {
+    update(world, events, offMap): void {
       const units = new Float64Array(players);
 
       for (let index = 0; index < world.capacity; index++) {
@@ -50,6 +51,9 @@ export function createCensus(players: number): Census {
 
       for (let player = 0; player < players; player++) {
         census.households[player] = units[player]!;
+        // A village that is not on the map has nobody on it to count, and has not emptied
+        // for it (ADR-0021). Its books live in the ledger.
+        if (offMap?.[player] === 1) continue;
 
         // The grace period is longer than it takes to raise somebody, so a village that
         // loses its last person while a homestead is finishing a new one is not

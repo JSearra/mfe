@@ -231,6 +231,11 @@ export interface DirectSimHostOptions {
   factions?: readonly FactionId[];
   /** Players driven by the computer. Each is simply another command source. */
   aiPlayers?: readonly number[];
+  /**
+   * Villages kept off the map: a ledger, a trade screen and a party to ties, with no
+   * huts or people on the map (ADR-0021). src/sim/neighbours.ts runs their seasons.
+   */
+  neighbours?: readonly number[];
   /** Where each player begins. Arable land is laid out around these. */
   starts?: readonly { readonly x: number; readonly y: number }[];
   seed?: number;
@@ -298,6 +303,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     maxPendingEvents = DEFAULT_MAX_PENDING_EVENTS,
     factions = [FactionId.Zulu, FactionId.Sotho],
     aiPlayers = [],
+    neighbours = [],
     starts = [],
     seed = 0,
   } = options;
@@ -309,6 +315,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
   // Explicit plots win; otherwise lay them out around the starts. Without either,
   // grain income is zero and every player starves — see sim/economy/plots.ts.
   const economy = createEconomy(factions, seed);
+  for (const player of neighbours) economy.offMap[player] = 1;
   const woodland = createWoodland(map, seed);
   const farmland = createStartingFarmland(map, starts, seed);
   const tech = createTechState(Math.max(factions.length, viewerId + 1));

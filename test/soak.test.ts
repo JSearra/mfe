@@ -1,6 +1,7 @@
 import { describe, it } from 'vitest';
 import { createDirectSimHost } from '../src/host/directHost.js';
-import { ENEMY, PLAYER, seedOpening } from '../src/host/opening.js';
+import { NEIGHBOUR, PLAYER, seedOpening } from '../src/host/opening.js';
+import { createAi } from '../src/sim/ai/opponent.js';
 import { EventType } from '../src/shared/events.js';
 import { FactionId } from '../src/shared/factions/index.js';
 import { Resource } from '../src/sim/economy/ledger.js';
@@ -65,13 +66,13 @@ export function soak(seed: number, years = YEARS, script: MapScript | '' = SCRIP
     map,
     viewerId: PLAYER,
     playerId: PLAYER,
-    aiPlayers: [ENEMY],
+    neighbours: [NEIGHBOUR],
     factions: [FactionId.Zulu, FactionId.Sotho],
-    starts: [
-      { x: centre, y: centre },
-      { x: centre + 34, y: centre + 26 },
-    ],
+    starts: [{ x: centre, y: centre }],
   });
+  // SOAK_POLICY=ai: the computer plays player 0, as a village "played well" — the AI
+  // no longer runs in the game (ADR-0021), and this is what it is kept for.
+  if (process.env.SOAK_POLICY === 'ai') host.loop.ai.push({ player: PLAYER, controller: createAi(PLAYER) });
   seedOpening((kind, a, b, c, d) => host.sendCommand(kind, a, b, c, d), map, centre);
 
   const players: Tally[] = [0, 1].map(() => ({
@@ -140,7 +141,7 @@ export function soak(seed: number, years = YEARS, script: MapScript | '' = SCRIP
     if (process.env.SOAK_TRACE === '1' && world.tick % (tuning.economy.seasonTicks / 4) < season) {
       const e = host.economy;
       console.log(
-        `TRACE y${(world.tick / tuning.economy.seasonTicks).toFixed(2)} p0 people ${people(0)} cattle ${Math.round(e.balance(0, Resource.Cattle))} grain ${Math.round(e.balance(0, Resource.Grain))} harvest ${Math.round(e.harvested[0] ?? 0)} upkeep ${Math.round(e.upkeep[0] ?? 0)} drought ${e.drought(world.tick).toFixed(2)} short ${host.labour.short[0]}`,
+        `TRACE y${(world.tick / tuning.economy.seasonTicks).toFixed(2)} p0 people ${people(0)} cattle ${Math.round(e.balance(0, Resource.Cattle))} grain ${Math.round(e.balance(0, Resource.Grain))} harvest ${Math.round(e.harvested[0] ?? 0)} upkeep ${Math.round(e.upkeep[0] ?? 0)} drought ${e.drought(world.tick).toFixed(2)} short ${host.labour.short[0]} | nbr grain ${Math.round(e.balance(1, Resource.Grain))} cattle ${Math.round(e.balance(1, Resource.Cattle))} wood ${Math.round(e.balance(1, Resource.Wood))} hungry ${e.shortfall[1]}`,
       );
     }
     for (const owner of [0, 1]) {
@@ -180,7 +181,7 @@ describe.runIf(process.env.SOAK === '1')('soak', () => {
         rows.push(
           [
             `0x${seed.toString(16).padEnd(9)}`,
-            owner === 0 ? (process.env.SOAK_POLICY === 'greedy' ? 'grdy' : 'idle') : 'ai  ',
+            owner === 0 ? (process.env.SOAK_POLICY ?? 'idle').slice(0, 4).padEnd(4) : 'nbr ',
             String(t.hungrySeasons).padStart(6),
             String(t.starved).padStart(7),
             `${t.deaths} (${t.hungerDeaths})`.padStart(15),
@@ -195,7 +196,7 @@ describe.runIf(process.env.SOAK === '1')('soak', () => {
     for (const owner of [0, 1]) {
       const s = sums[owner]!;
       rows.push(
-        `mean ${owner === 0 ? 'idle' : 'ai'}: hungry seasons ${(s.hungry / s.n).toFixed(1)}, deaths ${(s.deaths / s.n).toFixed(1)}, people at end ${(s.end / s.n).toFixed(1)}`,
+        `mean ${owner === 0 ? (process.env.SOAK_POLICY ?? 'idle') : 'neighbour'}: hungry seasons ${(s.hungry / s.n).toFixed(1)}, deaths ${(s.deaths / s.n).toFixed(1)}, people at end ${(s.end / s.n).toFixed(1)}`,
       );
     }
     console.log(`\nSOAK ${YEARS} years, map ${SCRIPT === '' ? 'veld' : SCRIPT}\n${rows.join('\n')}`);

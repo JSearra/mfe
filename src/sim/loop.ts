@@ -13,6 +13,7 @@ import { updateAlliance, type Alliance } from './alliance.js';
 import { reap } from './mortality.js';
 import { updateRoles } from './roles.js';
 import { updateFishing } from './fishing.js';
+import { updateNeighbours } from './neighbours.js';
 import type { Labour } from './labour.js';
 import { harvestOf, updateFarmland, type Farmland } from './economy/farmland.js';
 import { tuning } from './tuning.js';
@@ -192,6 +193,9 @@ export function step(loop: SimLoop): void {
   // pay this cycle and one trampled this cycle pays less for it.
   if (world.tick !== 0 && world.tick % tuning.economy.upkeepIntervalTicks === 0) {
     updateFarmland(world, farmland, economy.players, events);
+    // The villages that are not on the map live their season on their books alone.
+    // Before the alliances, so one that went hungry can be sent relief. ADR-0021.
+    updateNeighbours(economy, alliance, events, world.tick);
     // Before the ledger, not after: relief is sent on LAST cycle's shortfall, so grain
     // from an ally reaches the granary in time to be eaten this cycle rather than
     // arriving a season after the famine it answers. See src/sim/alliance.ts.
@@ -245,7 +249,7 @@ export function step(loop: SimLoop): void {
   // only thing it writes is a nibble nothing else reads. See src/sim/roles.ts.
   updateRoles(world, farmland, world.tick);
   tech.update(world.tick, events);
-  census.update(world, events);
+  census.update(world, events, economy.offMap);
   updateFog(world, map, fog, tech);
 
   // Emitted before the flush, while the entities still have positions to report.
