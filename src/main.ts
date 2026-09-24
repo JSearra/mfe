@@ -829,7 +829,9 @@ async function main(options: GameOptions): Promise<void> {
       // follow the weather again. Render-side only; the simulation's weather is untouched.
       season: (position: number | null) => {
         seasonOverride = position;
-        terrain.setSeason(position ?? seasonPosition(lastPlayer?.drought ?? 0));
+        const season = position ?? seasonPosition(lastPlayer?.drought ?? 0);
+        terrain.setSeason(season);
+        entities.setSeason(season);
       },
       count: () => view?.count ?? 0,
       // The fields as they last crossed the boundary, counted rather than listed. A
@@ -964,7 +966,9 @@ async function main(options: GameOptions): Promise<void> {
       panel.setSiteHands(message.player.siteHands);
       // The veld follows the season (Phase B5). Cheap to call every message: the page
       // only redraws when the ground would visibly change.
-      terrain.setSeason(seasonOverride ?? seasonPosition(message.player.drought));
+      const season = seasonOverride ?? seasonPosition(message.player.drought);
+      terrain.setSeason(season);
+      entities.setSeason(season);
       // Hungry means grain was actually owed last season, not merely that the year is
       // dry: the button turns amber when cutting the ration would have helped.
       panel.setRation(message.player.shortRation, message.player.shortfall > 0);

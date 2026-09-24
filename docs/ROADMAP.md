@@ -975,7 +975,11 @@ same view went from mean `#7f7b42` through `#92844c` to `#837557`, with the grai
 19–22 throughout. Looked at: green-olive, then gold, then grey-brown, with the red earth
 and the rock hardly moving. `__debug.season(position)` shows any point on the ramp.
 
-*Not done:* tree canopies are separate sprites and stay green all year.
+*Since:* trees and scrub follow the season too, as a per-species tint in
+`seasonRamp.treeTint`. Acacia, marula, baobab and scrub go olive-khaki, the evergreen
+yellowwood barely moves, and aloes, being succulents, are left alone. *Not done:* a tint
+can only take green toward olive, not bare. A baobab in the dry is leafless, and that
+needs dry-season sprites from the Blender pipeline.
 
 ## Already built
 

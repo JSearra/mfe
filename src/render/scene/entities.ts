@@ -245,6 +245,16 @@ export interface EntityLayer {
    */
   setWoodland(packed: Float32Array | null): void;
   /**
+   * The trees at a point on the season ramp, 0 wet to 2 drought (Phase B5).
+   *
+   * Per species, because the botany differs: acacia, marula and baobab are deciduous and
+   * go yellow and thin through the dry season, and the yellowwood is evergreen and barely
+   * changes. A tint per species is an approximation — a baobab in the dry is bare, which
+   * wants its own sprite from the art pipeline — but a wood that stays spring-green
+   * while the veld under it goes grey was the one thing on screen that ignored the year.
+   */
+  setSeason(position: number): void;
+  /**
    * Goats and chickens around the dwellings of a village.
    *
    * Derived entirely from the buildings already in the view: no simulation state, no
@@ -489,6 +499,23 @@ export function createEntityLayer(
   let sceneryCount = 0;
   /** Sprites for the standing wood, replaced wholesale when the wood changes. */
   const treeSprites: Sprite[] = [];
+  /** Species index per tree sprite, so a season change can re-tint without the packing. */
+  const treeKinds: number[] = [];
+  let seasonPosition = 0;
+  const parseTints = (hexes: readonly string[]): number[] =>
+    hexes.map((hex) => Number.parseInt(hex.slice(1), 16));
+  const treeTints = TREE_KINDS.map((kind) => parseTints(presentation.terrain.seasonRamp.treeTint[kind]));
+  const scrubTints = parseTints(presentation.terrain.seasonRamp.treeTint.scrub);
+  const tintAt = (tints: readonly number[]): number => {
+    const lower = Math.min(Math.floor(seasonPosition), 1);
+    const t = seasonPosition - lower;
+    const a = tints[lower]!;
+    const b = tints[lower + 1]!;
+    const mix = (shift: number): number =>
+      Math.round(((a >> shift) & 0xff) * (1 - t) + ((b >> shift) & 0xff) * t) << shift;
+    return mix(16) | mix(8) | mix(0);
+  };
+  const treeTint = (species: number): number => tintAt(treeTints[species] ?? treeTints[0]!);
   /** Trees currently in `props`, so livestock can be appended after them. */
   let treeCount = 0;
   const stockSprites: Sprite[] = [];
@@ -511,9 +538,12 @@ export function createEntityLayer(
     return sprite;
   }
 
+  /** The scrub among the scenery, which browns in the dry season. Aloes do not. */
+  const scrub: Sprite[] = [];
   if (atlas !== null) {
     for (const decoration of decorations) {
-      placeProp(decoration.kind, decoration.variant, decoration.worldX, decoration.worldY);
+      const sprite = placeProp(decoration.kind, decoration.variant, decoration.worldX, decoration.worldY);
+      if (sprite !== null && decoration.kind === 'scrub') scrub.push(sprite);
     }
   }
   sceneryCount = props.length;
@@ -620,9 +650,10 @@ export function createEntityLayer(
           props.push({ sprite, depth: worldX + worldY, x: worldX, y: worldY });
         }
         // A slot is reused when a tree comes down and another takes root, and the new
-        // one is often a different kind — so the tint has to be cleared as well as the
+        // one is often a different kind — so the tint is set afresh as well as the
         // texture, or a felled marula leaves its colour on the acacia that replaces it.
-        sprite.tint = 0xffffff;
+        treeKinds[i] = species;
+        sprite.tint = treeTint(species);
       }
 
       // Trees that came down. Hidden rather than destroyed, because the wood regrows and
@@ -631,6 +662,17 @@ export function createEntityLayer(
 
       treeCount = props.length - sceneryCount;
       rehandle();
+    },
+
+    setSeason(position: number): void {
+      const clamped = position < 0 ? 0 : position > 2 ? 2 : position;
+      if (clamped === seasonPosition) return;
+      seasonPosition = clamped;
+      for (let i = 0; i < treeSprites.length; i++) {
+        treeSprites[i]!.tint = treeTint(treeKinds[i] ?? 0);
+      }
+      const scrubTint = tintAt(scrubTints);
+      for (const sprite of scrub) sprite.tint = scrubTint;
     },
 
     setLivestock(view: InterpolatedView): void {

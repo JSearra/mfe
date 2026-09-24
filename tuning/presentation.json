@@ -25,7 +25,14 @@
    "dryUntil": 0.62,
    "droughtFrom": 0.85,
    "steps": 8,
-   "faceTint": ["#ffffff", "#efe3c8", "#ddd0bb"]
+   "faceTint": ["#ffffff", "#efe3c8", "#ddd0bb"],
+   "treeTint": {
+    "acacia": ["#ffffff", "#eedc9c", "#d8c49a"],
+    "marula": ["#ffffff", "#e9cf92", "#cdb58e"],
+    "yellowwood": ["#ffffff", "#f7f4e6", "#ece6d2"],
+    "baobab": ["#ffffff", "#e6ce98", "#cbb592"],
+    "scrub": ["#ffffff", "#e8d499", "#cbb690"]
+   }
   },
   "seasons": {
    "dry": ["#6d6a33", "#857a3a", "#9d8a45", "#ad9953", "#ae8d58", "#aa663b", "#cdb07a", "#5a5147"],
