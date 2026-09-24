@@ -202,17 +202,24 @@ def cmd_bands(args: argparse.Namespace) -> int:
         if tile["subject"] not in DERIVED:
             by_subject[(tile["band"], tile["subject"])].append(tile)
 
+    def seed_of(tile: dict) -> str:
+        # "sandstone_1301-2.png" -> "1301": which generation this cut came out of.
+        return tile["file"].split("_")[-1].split("-")[0]
+
     print(f"{'band':24s} {'n':>3s} {'dTone':>6s} {'contrast':>9s} {'spread':>7s}  {'darkest':>7s}")
+    odd = []
     for (band, subject), tiles in sorted(by_subject.items()):
-        contrasts, darkest = [], []
+        measured = {}
         for tile in tiles:
             values = sorted(
                 page.lum(tile["x"] + x, tile["y"] + y)
                 for y in range(tile["height"])
                 for x in range(tile["width"])
             )
-            contrasts.append(statistics.pstdev(values))
-            darkest.append(values[len(values) // 50])
+            measured[id(tile)] = (statistics.pstdev(values), values[len(values) // 50])
+
+        contrasts = [measured[id(t)][0] for t in tiles]
+        darkest = [measured[id(t)][1] for t in tiles]
         tone = sum(luminance(parse(t["averageColour"])) for t in tiles) / len(tiles)
         drift = tone - luminance(parse(palette[band]))
         spread = max(contrasts) - min(contrasts)
@@ -220,8 +227,37 @@ def cmd_bands(args: argparse.Namespace) -> int:
             f"{band} {subject:20s} {len(tiles):3d} {drift:+6.1f} "
             f"{statistics.mean(contrasts):9.1f} {spread:7.1f}  {statistics.mean(darkest):7.1f}"
         )
+
+        """
+        Which GENERATION the spread came out of, which is the actionable half.
+
+        A subject's cuts all come from a handful of sources, and when one subject is
+        uneven it is almost always one source disagreeing with its siblings rather than
+        every cut differing a little. Sandstone seed 1301 came back with slabs at twice
+        the scale of 1300 and 1302 — contrast 11 to 17 against 19 to 35 — so the ground
+        changed grain size from one tile to the next. Naming the seed turns "this band
+        is uneven" into "regenerate this one image".
+        """
+        per_seed = collections.defaultdict(list)
+        for tile in tiles:
+            per_seed[seed_of(tile)].append(measured[id(tile)][0])
+        if len(per_seed) > 1:
+            middles = {seed: statistics.mean(v) for seed, v in per_seed.items()}
+            typical = statistics.median(middles.values())
+            for seed, value in sorted(middles.items()):
+                gap = abs(value - typical)
+                mark = "  <-- out of step" if gap > 0.35 * max(typical, 1e-9) else ""
+                if args.sources or mark:
+                    print(f"      seed {seed}: contrast {value:5.1f}{mark}")
+                if mark:
+                    odd.append((subject, seed))
+
     print("\ndTone: tile against its palette entry. spread: how unevenly busy the cuts of")
     print("one subject are — this is the quilt, and it wants to be small.")
+    if odd:
+        print("\nout of step with their siblings, so worth looking at:")
+        for subject, seed in odd:
+            print(f"  {subject} {seed}")
     return 0
 
 
@@ -256,6 +292,7 @@ def main() -> int:
     stripe.set_defaults(func=cmd_stripe)
 
     bands = sub.add_parser("bands", help="tone against palette and contrast spread per band")
+    bands.add_argument("--sources", action="store_true", help="every seed, not only the odd ones")
     bands.set_defaults(func=cmd_bands)
 
     profile = sub.add_parser("profile", help="luminance along a line across a screenshot")

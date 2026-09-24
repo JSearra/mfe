@@ -90,6 +90,15 @@ SUBJECTS = {
     # Clarens sandstone, which is cream to honey rather than red — it is the pale
     # rampart the dark basalt sits on, and photographs of the escarpment describe it
     # glowing gold. Asking for "orange-red sandstone" made it a second donga.
+    # Leave the vegetation alone, and this cost a generation pass to learn. Sandstone is
+    # the palest ground in the set, so a dark tuft lands on it at maximum contrast and
+    # the cuts holding one measure very differently from the cuts that do not — which
+    # looks, from the tile sheet, exactly like the unevenness that the crop width cured
+    # elsewhere. Adding "no plants, no bushes, no grass, no moss" did not remove a
+    # single tuft from six generations; schnell draws the nouns it is given whether or
+    # not they are negated. It did push the gaps between slabs orange, which is the
+    # second-donga failure the note above already warns about, so the attempt made the
+    # band worse on the one axis it was not trying to change.
     "sandstone": (
         "pale cream and honey-gold sandstone seen from directly above, weathered into "
         "irregular rounded slabs, soft shadowed gaps between them, warm buff and pale "
@@ -135,9 +144,18 @@ SUBJECTS = {
 # It did NOT catch seed 1504, which has no periodicity at all and is a mat of rosette
 # plants split by branching orange channels — wrong ground, scored clean. The number
 # finds the repeat; the eye finds everything else.
+# The other failure, and the commoner one: a generation that is RIGHT but at the wrong
+# SIZE. Asked for the same ground three times, the model varies how big it makes things,
+# and one source coming back with clumps or slabs at twice its siblings' scale means the
+# ground changes grain from one tile to the next. `measure.py bands` names these by
+# comparing each seed's mean contrast against the median of its siblings; a source out
+# of step by more than about a third is worth going to look at.
 REJECTED: dict[str, dict[int, str]] = {
     "savanna-low": {
         1501: "regular parallel rows - ploughed field, corduroy across the veld",
+    },
+    "thornveld": {
+        1700: "bush clumps at twice the scale of the rest of the set",
     },
 }
 
