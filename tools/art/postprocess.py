@@ -416,6 +416,21 @@ TRANSITION_REACH = 1.3
 # frays the edge into noise, and 0.35 has bays and headlands that hold together.
 TRANSITION_ROUGHNESS = 0.35
 
+# How many cuts of each boundary-tiling mask to bake.
+#
+# Four, which is what AoE2's blendomatic carries for each of its directional masks and
+# selects between on "the lower 2 bits of tile destination x or y". One cut per
+# configuration stamps the same meander tile after tile along a straight seam, and the
+# result is a regular scalloped sawtooth: the repetition is as legible as the straight
+# edge it replaced, only at a different frequency.
+#
+# Cut only for the masks that actually tile a boundary — the four single-edge ones and
+# the four corner wedges. The multi-edge combinations happen at kinks in a boundary and
+# are almost never adjacent to a copy of themselves, so cutting them would quadruple a
+# third of the page to fix a repetition nobody can see.
+BLEND_VARIANTS = 4
+TILING_MASKS = (1, 2, 4, 8)
+
 # The four diamond POINTS a diagonal neighbour arrives at, in (nx, ny): east, south,
 # west, north. Corner i sits between edges i and (i + 1) % 4, which is the order
 # seams.ts walks them in — changing one without the other puts the wedge on the wrong
@@ -524,27 +539,35 @@ def command_tile(args: argparse.Namespace) -> int:
     for entry, (name, tile) in zip(manifest, packed):
         first_of_band.setdefault(entry["band"], (name, tile))
 
+    transition_count = 0
     for band_index in sorted(first_of_band):
         _, tile = first_of_band[band_index]
         for mask in range(1, 16):
-            name = f"transition-{band_index}-{mask}.png"
-            blended = make_transition(tile, mask, seed=band_index)
-            blended.save(target / name)
-            packed.append((name, blended))
-            manifest.append(
-                {
-                    "file": name,
-                    "subject": "transition",
-                    "frontWander": round(front_wander(edge_falloff(TILE_W, TILE_H, mask, band_index)), 3),
-                    "width": TILE_W,
-                    "height": TILE_H,
-                    "band": band_index,
-                    "mask": mask,
-                    "averageColour": average_colour(blended),
-                    "seam": 0.0,
-                }
-            )
-    print(f"  {15 * len(first_of_band)} transition tiles over {len(first_of_band)} bands")
+            cuts = BLEND_VARIANTS if mask in TILING_MASKS else 1
+            for variant in range(cuts):
+                name = f"transition-{band_index}-{mask}-{variant}.png"
+                seed = band_index * 101 + variant * 7919
+                blended = make_transition(tile, mask, seed=seed)
+                blended.save(target / name)
+                packed.append((name, blended))
+                manifest.append(
+                    {
+                        "file": name,
+                        "subject": "transition",
+                        "frontWander": round(
+                            front_wander(edge_falloff(TILE_W, TILE_H, mask, seed)), 3
+                        ),
+                        "width": TILE_W,
+                        "height": TILE_H,
+                        "band": band_index,
+                        "mask": mask,
+                        "variant": variant,
+                        "averageColour": average_colour(blended),
+                        "seam": 0.0,
+                    }
+                )
+                transition_count += 1
+    print(f"  {transition_count} transition tiles over {len(first_of_band)} bands")
 
     # --- corners -----------------------------------------------------------------
     #
@@ -555,23 +578,25 @@ def command_tile(args: argparse.Namespace) -> int:
     for band_index in sorted(first_of_band):
         _, tile = first_of_band[band_index]
         for corner in range(len(TRANSITION_CORNERS)):
-            name = f"corner-{band_index}-{corner}.png"
-            wedge = make_corner(tile, corner, seed=band_index)
-            wedge.save(target / name)
-            packed.append((name, wedge))
-            manifest.append(
-                {
-                    "file": name,
-                    "subject": "corner",
-                    "width": TILE_W,
-                    "height": TILE_H,
-                    "band": band_index,
-                    "corner": corner,
-                    "averageColour": average_colour(wedge),
-                    "seam": 0.0,
-                }
-            )
-    print(f"  {len(TRANSITION_CORNERS) * len(first_of_band)} corner tiles")
+            for variant in range(BLEND_VARIANTS):
+                name = f"corner-{band_index}-{corner}-{variant}.png"
+                wedge = make_corner(tile, corner, seed=band_index * 101 + variant * 7919)
+                wedge.save(target / name)
+                packed.append((name, wedge))
+                manifest.append(
+                    {
+                        "file": name,
+                        "subject": "corner",
+                        "width": TILE_W,
+                        "height": TILE_H,
+                        "band": band_index,
+                        "corner": corner,
+                        "variant": variant,
+                        "averageColour": average_colour(wedge),
+                        "seam": 0.0,
+                    }
+                )
+    print(f"  {len(TRANSITION_CORNERS) * BLEND_VARIANTS * len(first_of_band)} corner tiles")
 
     # --- shore -------------------------------------------------------------------
     #
@@ -590,41 +615,48 @@ def command_tile(args: argparse.Namespace) -> int:
         (tile for name, tile in packed if name.startswith("riverbed")),
         first_of_band[min(first_of_band)][1],
     )
+    shore_count = 0
     for mask in range(1, 16):
-        name = f"shore-{mask}.png"
-        bank = make_transition(shore_source, mask, seed=97)
-        bank.save(target / name)
-        packed.append((name, bank))
-        manifest.append(
-            {
-                "file": name,
-                "subject": "shore",
-                "width": TILE_W,
-                "height": TILE_H,
-                "band": 0,
-                "mask": mask,
-                "averageColour": average_colour(bank),
-                "seam": 0.0,
-            }
-        )
+        for variant in range(BLEND_VARIANTS if mask in TILING_MASKS else 1):
+            name = f"shore-{mask}-{variant}.png"
+            bank = make_transition(shore_source, mask, seed=97 + variant * 7919)
+            bank.save(target / name)
+            packed.append((name, bank))
+            manifest.append(
+                {
+                    "file": name,
+                    "subject": "shore",
+                    "width": TILE_W,
+                    "height": TILE_H,
+                    "band": 0,
+                    "mask": mask,
+                    "variant": variant,
+                    "averageColour": average_colour(bank),
+                    "seam": 0.0,
+                }
+            )
+            shore_count += 1
     for corner in range(len(TRANSITION_CORNERS)):
-        name = f"shore-corner-{corner}.png"
-        bank = make_corner(shore_source, corner, seed=97)
-        bank.save(target / name)
-        packed.append((name, bank))
-        manifest.append(
-            {
-                "file": name,
-                "subject": "shore",
-                "width": TILE_W,
-                "height": TILE_H,
-                "band": 0,
-                "corner": corner,
-                "averageColour": average_colour(bank),
-                "seam": 0.0,
-            }
-        )
-    print(f"  {15 + len(TRANSITION_CORNERS)} shore tiles")
+        for variant in range(BLEND_VARIANTS):
+            name = f"shore-corner-{corner}-{variant}.png"
+            bank = make_corner(shore_source, corner, seed=97 + variant * 7919)
+            bank.save(target / name)
+            packed.append((name, bank))
+            manifest.append(
+                {
+                    "file": name,
+                    "subject": "shore",
+                    "width": TILE_W,
+                    "height": TILE_H,
+                    "band": 0,
+                    "corner": corner,
+                    "variant": variant,
+                    "averageColour": average_colour(bank),
+                    "seam": 0.0,
+                }
+            )
+            shore_count += 1
+    print(f"  {shore_count} shore tiles")
 
     # --- fields ------------------------------------------------------------------
     #

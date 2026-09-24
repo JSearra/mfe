@@ -1,6 +1,7 @@
 import { Assets, Rectangle, Texture } from 'pixi.js';
 import { diamondUvs, QUAD_FLOATS } from './scene/terrainGeometry.js';
 import { SEAM_CORNERS } from './scene/seams.js';
+import { BLEND_VARIANTS } from './scene/terrainBand.js';
 
 /**
  * Loads the sprite atlas and hands out textures by meaning rather than by coordinate.
@@ -161,6 +162,11 @@ interface TerrainTileEntry {
    * south, west, north — for ground that touches the tile only diagonally.
    */
   readonly corner?: number;
+  /**
+   * Which cut of a boundary-tiling mask this is. Absent on the multi-edge masks, which
+   * are baked once — see BLEND_VARIANTS.
+   */
+  readonly variant?: number;
   /** Set on field tiles: 'broken' for turned earth, 'crop' for a standing crop. */
   readonly field?: string;
   readonly averageColour: string;
@@ -209,7 +215,7 @@ export interface TerrainTiles {
    * produced a set for that band, which simply leaves the seam hard rather than
    * failing to draw the map.
    */
-  transition(band: number, mask: number): TerrainTile | null;
+  transition(band: number, mask: number, variant: number): TerrainTile | null;
   /**
    * A band's ground bleeding in from one diamond point, or null.
    *
@@ -218,7 +224,7 @@ export interface TerrainTiles {
    * thousand tiles — for a wedge whose shape does not depend on how many of them a tile
    * has. A tile with two diagonal neighbours draws two.
    */
-  corner(band: number, corner: number): TerrainTile | null;
+  corner(band: number, corner: number, variant: number): TerrainTile | null;
   /**
    * The bank where dry ground meets water, bleeding in from `mask`'s edges, or null.
    *
@@ -226,9 +232,9 @@ export interface TerrainTiles {
    * a waterline's softness lives on the land side of it, and a bank is wet sand and
    * pebbles whatever the hinterland behind it happens to be.
    */
-  shore(mask: number): TerrainTile | null;
+  shore(mask: number, variant: number): TerrainTile | null;
   /** The same, arriving at one diamond point — a bend in a river, or a spit. */
-  shoreCorner(corner: number): TerrainTile | null;
+  shoreCorner(corner: number, variant: number): TerrainTile | null;
   /**
    * A field on this band's ground, either broken earth or a standing crop.
    *
@@ -240,6 +246,22 @@ export interface TerrainTiles {
 
 /** Edge bits of the four orthogonal neighbours, clockwise from the upper right. */
 export const TRANSITION_MASKS = 16;
+
+/**
+ * One cut of a mask, falling back to cut zero.
+ *
+ * The fallback is what lets the multi-edge masks be baked once while the four that tile
+ * a boundary are baked four times: asking for cut three of a mask that has only one
+ * answers the one it has, rather than a hole in the map.
+ */
+function pick(
+  row: (TerrainTile | null)[] | undefined,
+  index: number,
+  variant: number,
+): TerrainTile | null {
+  if (row === undefined) return null;
+  return row[index * BLEND_VARIANTS + variant] ?? row[index * BLEND_VARIANTS] ?? null;
+}
 
 /**
  * Load the terrain tile page.
@@ -261,14 +283,16 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
     page.source.scaleMode = 'nearest';
 
     const byBand: TerrainTile[][] = [];
-    // band -> mask -> tile. Dense and small: sixteen slots a band, fifteen of them used.
+    // band -> mask * BLEND_VARIANTS + variant -> tile. Dense and small, and the stride
+    // means a mask with only one cut simply leaves three slots null; `pick` below reads
+    // those back as cut zero.
     const transitions: (TerrainTile | null)[][] = [];
     // band -> corner -> tile. Four a band, one per diamond point.
     const corners: (TerrainTile | null)[][] = [];
     // band -> [broken, crop]
     const fields: (TerrainTile | null)[][] = [];
-    const shores = new Array<TerrainTile | null>(TRANSITION_MASKS).fill(null);
-    const shoreCorners = new Array<TerrainTile | null>(SEAM_CORNERS).fill(null);
+    const shores = new Array<TerrainTile | null>(TRANSITION_MASKS * BLEND_VARIANTS).fill(null);
+    const shoreCorners = new Array<TerrainTile | null>(SEAM_CORNERS * BLEND_VARIANTS).fill(null);
 
     const pageWidth = page.source.width;
     const pageHeight = page.source.height;
@@ -291,20 +315,23 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
         continue;
       }
       if (entry.subject === 'shore') {
-        if (entry.corner !== undefined) shoreCorners[entry.corner] = tile;
-        else if (entry.mask !== undefined) shores[entry.mask] = tile;
+        const cut = entry.variant ?? 0;
+        if (entry.corner !== undefined) shoreCorners[entry.corner * BLEND_VARIANTS + cut] = tile;
+        else if (entry.mask !== undefined) shores[entry.mask * BLEND_VARIANTS + cut] = tile;
         continue;
       }
       if (entry.corner !== undefined) {
-        const row = (corners[entry.band] ??= new Array<TerrainTile | null>(SEAM_CORNERS).fill(null));
-        row[entry.corner] = tile;
+        const row = (corners[entry.band] ??= new Array<TerrainTile | null>(
+          SEAM_CORNERS * BLEND_VARIANTS,
+        ).fill(null));
+        row[entry.corner * BLEND_VARIANTS + (entry.variant ?? 0)] = tile;
         continue;
       }
       if (entry.mask !== undefined) {
         const row = (transitions[entry.band] ??= new Array<TerrainTile | null>(
-          TRANSITION_MASKS,
+          TRANSITION_MASKS * BLEND_VARIANTS,
         ).fill(null));
-        row[entry.mask] = tile;
+        row[entry.mask * BLEND_VARIANTS + (entry.variant ?? 0)] = tile;
         continue;
       }
       (byBand[entry.band] ??= []).push(tile);
@@ -328,20 +355,20 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
         return [];
       },
 
-      transition(band: number, mask: number) {
-        return transitions[band]?.[mask] ?? null;
+      transition(band: number, mask: number, variant: number) {
+        return pick(transitions[band], mask, variant);
       },
 
-      corner(band: number, corner: number) {
-        return corners[band]?.[corner] ?? null;
+      corner(band: number, corner: number, variant: number) {
+        return pick(corners[band], corner, variant);
       },
 
-      shore(mask: number) {
-        return shores[mask] ?? null;
+      shore(mask: number, variant: number) {
+        return pick(shores, mask, variant);
       },
 
-      shoreCorner(corner: number) {
-        return shoreCorners[corner] ?? null;
+      shoreCorner(corner: number, variant: number) {
+        return pick(shoreCorners, corner, variant);
       },
 
       field(band: number, crop: boolean) {

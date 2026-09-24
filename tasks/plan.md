@@ -371,3 +371,31 @@ about it. Same rules: a failing test first, one commit each, the Definition of D
       150 timber it cannot spend.
       *Done when:* the cause is identified rather than tuned around, and a match on
       generated terrain ends with both villages standing.
+
+---
+
+# Part IV — smoother ground
+
+Asked for directly on 2026-09-24, with the suggestion to look at how Age of Empires 2
+and Red Alert 1 did it. Both were researched before anything was changed, and both
+turned out to answer the same way from opposite directions — see the commits for what
+each actually does and which parts were worth taking.
+
+- [x] **Y1 — Blend fronts that meander.** The masks were a dead-straight alpha ramp
+      parallel to the tile edge, reaching under half a tile, identical on every tile.
+      Now: reach 1.3 of a possible 2.0 so the mask decides where the boundary runs
+      rather than the grid, and three octaves of noise perturbing the front so it has
+      bays and headlands. Calibrated against a measured front-wander figure, and that
+      figure is recorded in the manifest and asserted by a test, because a flat blend
+      front passes every other gate this project has.
+- [x] **Y2 — Four cuts of every boundary-tiling mask.** One cut per configuration
+      stamps the same meander tile after tile along a straight seam, which reads as a
+      scalloped sawtooth — the repetition is as legible as the straight edge it
+      replaced, only at a different frequency. AoE2 carries four cuts of each
+      directional mask for exactly this; the choice is hashed rather than taken from the
+      low bits of x or y, because an isometric seam runs diagonally and `x & 3` lines up
+      with it.
+
+*Left alone deliberately:* the fields. They draw as hard-edged diamonds and that is not
+the same defect — a worked field has a definite boundary, as AoE2's farms do. If they
+want softening it is a decision about what a field IS, not about how tiles meet.

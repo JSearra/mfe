@@ -46,3 +46,29 @@ export function groundBand(height: number, shift: number, bands: number): number
   if (shifted < 0) return 0;
   return shifted > bands - 1 ? bands - 1 : shifted;
 }
+
+
+/**
+ * How many cuts of each boundary-tiling mask the pipeline produces.
+ *
+ * Four, which is what AoE2's blendomatic carries for each of its directional masks. One
+ * cut per configuration stamps the same meander tile after tile along a straight seam,
+ * and the result is a regular scalloped sawtooth — the repetition is as legible as the
+ * straight edge it replaced, only at a different frequency.
+ */
+export const BLEND_VARIANTS = 4;
+
+/**
+ * Which cut of a mask this tile uses.
+ *
+ * Hashed rather than read off the low bits of x or y, which is how AoE2 does it. `x & 3`
+ * repeats every four tiles along a row, an isometric boundary runs DIAGONALLY, and the
+ * two line up — trading a sawtooth every tile for a sawtooth every four. The hash is the
+ * one the base tile variant already uses, under its own salt, so it holds still between
+ * frames and agrees between two players looking at the same ground.
+ */
+export function blendVariant(tileX: number, tileY: number): number {
+  let hash = (tileX * 0x1f1f1f1f) ^ (tileY * 0x85ebca6b) ^ Math.imul(11, 0x9e3779b9);
+  hash = Math.imul(hash ^ (hash >>> 15), 0x2c1b3c6d);
+  return ((hash ^ (hash >>> 13)) >>> 0) % BLEND_VARIANTS;
+}

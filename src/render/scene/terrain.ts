@@ -12,7 +12,7 @@ import type { Camera } from '../camera.js';
 import { presentation } from '../presentation.js';
 import type { TerrainTile, TerrainTiles } from '../assets.js';
 import { CORNER_COUNT, tileCorners } from './surface.js';
-import { groundBand } from './terrainBand.js';
+import { blendVariant, groundBand } from './terrainBand.js';
 import {
   cornerSeams,
   edgeSeams,
@@ -359,6 +359,9 @@ function drawTile(
     return;
   }
 
+  // Which cut of each mask this tile uses. One cut per configuration stamps the same
+  // meander tile after tile along a straight seam, which reads as a scalloped sawtooth.
+  const cut = blendVariant(tileX, tileY);
   const tile =
     tiles === null ? null : (variantFor(tiles.variants(bandFor(map, tileX, tileY, bandShift)), tileX, tileY) ?? null);
   // The faces take the tile's own average colour rather than the palette's, so a flat
@@ -402,13 +405,13 @@ function drawTile(
   // than under it.
   const wet = waterEdgeMask(map, tileX, tileY);
   if (wet !== 0) {
-    const bank = tiles.shore(wet);
+    const bank = tiles.shore(wet, cut);
     if (bank !== null) pushQuad(overlay, positions, bank.uv);
   }
   if (waterCornerSeams(map, tileX, tileY, corner) > 0) {
     for (let at = 0; at < SEAM_CORNERS; at++) {
       if (corner[at]! < 0) continue;
-      const bank = tiles.shoreCorner(at);
+      const bank = tiles.shoreCorner(at, cut);
       if (bank !== null) pushQuad(overlay, positions, bank.uv);
     }
   }
@@ -422,7 +425,7 @@ function drawTile(
       if (mask === undefined) continue;
       // Shifted like the base tile: a seam is the neighbouring GROUND bleeding over,
       // and it has to be the same ground the neighbour is actually drawn with.
-      const blend = tiles.transition(groundBand(band, bandShift, map.levels), mask);
+      const blend = tiles.transition(groundBand(band, bandShift, map.levels), mask, cut);
       if (blend === null) continue;
       pushQuad(overlay, positions, blend.uv);
     }
@@ -435,7 +438,7 @@ function drawTile(
     for (let at = 0; at < SEAM_CORNERS; at++) {
       const band = corner[at]!;
       if (band < 0) continue;
-      const wedge = tiles.corner(groundBand(band, bandShift, map.levels), at);
+      const wedge = tiles.corner(groundBand(band, bandShift, map.levels), at, cut);
       if (wedge === null) continue;
       pushQuad(overlay, positions, wedge.uv);
     }
