@@ -843,9 +843,26 @@ def command_tile(args: argparse.Namespace) -> int:
     for entry in manifest:
         entry["x"], entry["y"] = placement[entry["file"]]
 
+    """
+    Anything in the directory that this run did not write is stale, and goes.
+
+    Tiles are named after the source they were cut from, so dropping a generation leaves
+    its tiles behind under names nothing will ever write again — sixteen orphans sat in
+    here after one selection pass. The manifest was right and the game was fine, which
+    is what makes it worth removing: `git status` showed sixteen unexplained files and
+    the only way to find out they were harmless was to go and look. generate_tiles.py
+    already clears its own stale output for the same reason.
+    """
+    written = {entry["file"] for entry in manifest} | {"tiles.png", "manifest.json"}
+    stale = sorted(p.name for p in target.glob("*.png") if p.name not in written)
+    for name in stale:
+        (target / name).unlink()
+
     (target / "manifest.json").write_text(
         json.dumps({"page": "tiles.png", "padding": TILE_PAD, "tiles": manifest}, indent=2) + "\n"
     )
+    if stale:
+        print(f"  {len(stale)} stale tiles removed")
     print(f"[postprocess] {len(manifest)} tiles -> {target}")
     return 0
 
