@@ -153,9 +153,36 @@ SUBJECTS = {
 REJECTED: dict[str, dict[int, str]] = {
     "savanna-low": {
         1501: "regular parallel rows - ploughed field, corduroy across the veld",
+        # Named in the note above and never listed, so widening the set to six variants
+        # regenerated it. Listed now, which is the point of the list.
+        1504: "a mat of rosette plants split by branching orange channels - wrong ground",
+        1507: "a rosette mat again, without the channels - sourveld is tussock, not rosettes",
+    },
+    "savanna-mid": {
+        1605: "a lawn ending in a bank - an edge, which is a subject",
+    },
+    "sandstone": {
+        1304: "a centred rosette - a picture of a thing, not a texture",
+        1306: "a slab with a band of grass across its foot - an edge",
+    },
+    "rock": {
+        1203: "slabs at half the scale of the rest of the set",
+    },
+    "riverbed": {
+        1104: "a knitted, banded weave unlike any sibling",
+        # Caught by the stripe score in postprocess (0.92 @17) and confirmed by eye: a
+        # grid of repeated rectangular gravel cells, a tiled image rather than ground.
+        1106: "a grid of repeated gravel cells - tiled, stripe 0.92",
     },
     "thornveld": {
         1700: "bush clumps at twice the scale of the rest of the set",
+        1705: "clumps gathered at twice the scale of the rest of the set",
+        1706: "one big central clump - a subject, and twice the scale",
+        1707: "clumps at twice the scale of the rest of the set",
+        1709: "a central clump of five bushes - a subject",
+        # The fourth clump in a row. Thornveld ships with five variants rather than six;
+        # the model reads "thorn scrub" as one bush and asking again keeps proving it.
+        1710: "two clumps at twice the scale - fourth clump running",
     },
 }
 

@@ -421,7 +421,11 @@ disagreed with it in specific, correctable ways.
 
 ## Left to do, in the order worth doing it
 
-- [ ] **Z3 — Clothing from references.** `tools/art/make_unit.py`. The figures wear a
+- [ ] **Z3 — Clothing from references.** *Partly done:* the villagers already wore the
+      isidwaba, the umutsha/ibheshu and the elder's isicoco; an ordinary `villager` kind
+      now wears the umutsha and the umqhele (commit 7a0803f), and the pelvis defect that
+      put a ball between every villager's ankles is fixed. Open: the isicholo for married
+      women (it competes with the carrier's head-load for the same silhouette). Was: `tools/art/make_unit.py`. The figures wear a
       generic wrap. The vocabulary is specific and well documented: **ibheshu** (the
       calf-skin back apron, knee-length on a young man), **isinene** (the front, rolled
       rope-like hide strings), **umqhele** (the fur headband), **isicoco** (the head-ring
@@ -429,7 +433,12 @@ disagreed with it in specific, correctable ways.
       **isicholo** (the wide hat that marks a married woman). Status is legible in it —
       leopard skin is royal and restricted, which is worth honouring rather than
       scattering about.
-- [ ] **Z4 — The triangle, for the player's colour.** Zulu beadwork's basic geometric
+- [ ] **Z4 — The triangle, for the player's colour.** *Moot for now:* the livery rides
+      on the impi's shield overlay, and since ADR-0021 there is one village on the map
+      and ordinary villagers are no longer drawn as the impi — only the mounted figure
+      shows a livery, with nothing to tell it apart from. The setup screen's "Shields"
+      choice is therefore nearly invisible; whether to drop it or move the colour onto
+      villagers is the owner's call. Was: Zulu beadwork's basic geometric
       shape is the triangle, and `impi-shield` / `impi-team` already exist as the overlay
       the player's colour is painted on. Worth noting before using it: the orientations
       carry specific meaning — a triangle pointing down is an unmarried woman, up an
@@ -437,10 +446,20 @@ disagreed with it in specific, correctable ways.
       as a visual vocabulary without claiming those meanings for a faction colour. The
       *isishunka* palette (white, light blue, dark green, pale yellow, pink, red, black)
       is the reference for the colours themselves.
-- [ ] **Z5 — More base-tile variants.** A large expanse of one ground repeats visibly at
+- [x] **Z5 — More base-tile variants.** Done: six sources a band (five for riverbed and
+      thornveld), 20-24 tiles a band against 12. Thirteen generations were looked at and
+      rejected, each recorded in `REJECTED` in generate_tiles.py — including seed 1504,
+      which the note there named but the list never held, so widening the set made it
+      again; and riverbed 1106, a tiled gravel grid the new stripe score caught at 0.92.
+      Thornveld stops at five: four tries at a sixth all came back as one big clump.
+      Tone per band unchanged. Was: A large expanse of one ground repeats visibly at
       three variants per band — the sandstone plateau on Thaba Bosiu shows it. Six would
       cost 24 more tiles on a page that is already 427.
-- [ ] **Z6 — Fields still draw as hard diamonds.** Raised twice and deferred twice on the
+- [x] **Z6 — Fields still draw as hard diamonds.** Done: fields are always single
+      tiles (minSpacing 1.6), so their outline is a superellipse (FIELD_ROUNDNESS 1.5)
+      between the diamond and an oval, keeping its points and its definite dissolving
+      edge; spill is measured against that outline. A homestead's insimu is an irregular
+      patch, not a surveyed square. Was: Raised twice and deferred twice on the
       grounds that a worked field has a definite boundary, as AoE2's farms do. Against
       the softened ground they are now the most artificial thing on screen, so the
       argument has weakened. A decision about what a field IS, not about how tiles meet.
@@ -487,7 +506,10 @@ Left open, in the order they seem worth doing:
       beside the seam score, printed per source, so a ploughed field is caught when it is
       generated rather than after it ships. It must not become a gate on its own: seed
       1504 scored clean and was unusable.
-- [ ] **V4 — The remaining lattice.** Open ground is much improved but faint diamond
+- [ ] **V4 — The remaining lattice.** *Eased by Z5:* twice the sources a band means a
+      given feature sits at the same tile-relative position in far fewer of the tiles
+      around it; not visible at default zoom on open savanna. Not re-measured at close
+      zoom. Was: Open ground is much improved but faint diamond
       outlines are still visible at close zoom. The overlapping cuts share 80% of their
       source, so a large feature sits at nearly the same tile-relative position in all
       four — the opposite failure to the one just fixed, and the two trade against each

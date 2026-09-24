@@ -290,6 +290,10 @@ def make_field(tile: Image.Image, broken: bool) -> Image.Image:
     return Image.fromarray(pixels.astype(np.uint8), "RGBA")
 
 
+FIELD_ROUNDNESS = 1.5
+"""Superellipse power for a field's outline: 1 is the tile's diamond, 2 an ellipse."""
+
+
 def field_alpha(width: int, height: int, broken: bool) -> np.ndarray:
     """
     A field's edge: solid to its own diamond, then dissolving a little past it.
@@ -315,7 +319,14 @@ def field_alpha(width: int, height: int, broken: bool) -> np.ndarray:
     ys, xs = np.mgrid[0:height, 0:width]
     nx = np.abs((xs + 0.5) - width / 2) / (width / 2)
     ny = np.abs((ys + 0.5) - height / 2) / (height / 2)
-    distance = nx + ny
+    # Rounded, not a diamond (plan Z6). Fields are sited at least `minSpacing` apart, so
+    # every field is a single tile standing alone, and a lone diamond is the most drawn
+    # shape on the map. A hand-hoed homestead field — insimu — is an irregular patch, not
+    # a surveyed square. A superellipse between the diamond (p = 1) and the ellipse
+    # (p = 2) keeps the diamond's points, so it still sits in its tile, and fills its
+    # sides out toward an oval.
+    power = FIELD_ROUNDNESS
+    distance = (nx**power + ny**power) ** (1.0 / power)
 
     reach = FIELD_SPILL_BROKEN if broken else FIELD_SPILL_CROP
     near = np.clip(1.0 - (distance - 1.0) / reach, 0.0, 1.0)
@@ -971,12 +982,17 @@ def command_tile(args: argparse.Namespace) -> int:
             name = f"field-{band_index}-{state}.png"
             field = make_field(tile, broken)
             field.save(target / name)
+            # How much alpha survives in a band just outside the field's OWN outline —
+            # the superellipse field_alpha draws, not the tile's diamond. Measured against
+            # the diamond, rounding the outline (plan Z6) would read as spill, when all
+            # that moved is the shape; the softness of the margin is unchanged.
             spill = float(
                 (np.array(field)[:, :, 3][
                     (lambda d: (d >= 1.0) & (d < 1.3))(
-                        (lambda ys, xs: np.abs((xs + 0.5) - TILE_W / 2) / (TILE_W / 2)
-                         + np.abs((ys + 0.5) - TILE_H / 2) / (TILE_H / 2))(
-                            *np.mgrid[0:TILE_H, 0:TILE_W])
+                        (lambda ys, xs: (
+                            (np.abs((xs + 0.5) - TILE_W / 2) / (TILE_W / 2)) ** FIELD_ROUNDNESS
+                            + (np.abs((ys + 0.5) - TILE_H / 2) / (TILE_H / 2)) ** FIELD_ROUNDNESS
+                        ) ** (1.0 / FIELD_ROUNDNESS))(*np.mgrid[0:TILE_H, 0:TILE_W])
                     )
                 ] / 255.0).mean()
             )
