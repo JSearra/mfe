@@ -243,8 +243,8 @@
     "buildingRadius": 2.6
   },
   "neighbours": {
-    "grainHeld": 450.0,
-    "harvestSwing": 160.0,
+    "grainHeld": 700.0,
+    "harvestSwing": 140.0,
     "meanHarvest": 0.8,
     "cattleHeld": 140.0,
     "woodHeld": 320.0,

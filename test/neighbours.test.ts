@@ -92,13 +92,13 @@ describe('a neighbour off the map', () => {
   it('goes hungry when its granary cannot cover a bad season', () => {
     const { economy, alliance } = setup();
     economy.spend(1, Resource.Grain, economy.balance(1, Resource.Grain));
-    let dry = -1;
+    // The worst season in five years: a full-severity drought, which is when a
+    // neighbour's granary is supposed to give out — and only then.
+    let dry = SEASON;
     for (let t = SEASON; t < tuning.economy.seasonTicks * 5; t += SEASON) {
-      if (economy.drought(t) > 0.7) {
-        dry = t;
-        break;
-      }
+      if (economy.drought(t) > economy.drought(dry)) dry = t;
     }
+    expect(economy.drought(dry)).toBeGreaterThan(0.8);
     updateNeighbours(economy, alliance, [], dry);
     expect(economy.shortfall[1]).toBeGreaterThan(0);
   });
