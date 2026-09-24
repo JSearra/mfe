@@ -711,6 +711,37 @@ def pack_tiles(tiles: list[tuple[str, Image.Image]], target: pathlib.Path) -> di
     return placement
 
 
+STRIPE_LOOK = 0.9
+"""Stripe score above which a source is flagged for a look. Not a gate — see stripe_score."""
+
+
+def stripe_score(image: Image.Image) -> tuple[float, int]:
+    """
+    How much a source looks woven: its strongest row or column periodicity.
+
+    The same measure as `measure.py stripe` (plan V3), so a ploughed field is caught when
+    it is generated rather than after it ships. Row and column luminance means, then the
+    strongest periodic component between 4 and 64 pixels as a multiple of the signal's
+    own spread. Ordinary ground scores 0.14 to 0.7 — clumping, which every natural
+    ground has. Seed 1501, the ploughed field, scored 1.16. And seed 1504 scored clean
+    and was unusable, which is why this prints and never refuses.
+    """
+    rgb = np.array(image.convert("RGB"), dtype=np.float64)
+    lum = rgb[:, :, 0] * 0.299 + rgb[:, :, 1] * 0.587 + rgb[:, :, 2] * 0.114
+    best, best_period = 0.0, 0
+    for signal in (lum[:, ::2].mean(axis=1), lum[::2, :].mean(axis=0)):
+        centred = signal - signal.mean()
+        spread = centred.std() or 1e-9
+        index = np.arange(len(centred))
+        for period in range(4, 65):
+            angle = 2 * np.pi * index / period
+            amplitude = 2 * np.hypot((centred * np.cos(angle)).sum(), (centred * np.sin(angle)).sum()) / len(centred)
+            score = amplitude / spread
+            if score > best:
+                best, best_period = score, period
+    return best, best_period
+
+
 def command_tile(args: argparse.Namespace) -> int:
     palette = load_palette(pathlib.Path(args.palette))
     source = pathlib.Path(args.input)
@@ -731,6 +762,7 @@ def command_tile(args: argparse.Namespace) -> int:
 
         with Image.open(path) as image:
             seam = tileability(image)
+            stripe, stripe_period = stripe_score(image)
             cuts = [make_tile(image, band, args.strength, crop) for crop in TILE_CROPS]
         for index, tile in enumerate(cuts):
             name = f"{path.stem}-{index}.png"
@@ -747,7 +779,11 @@ def command_tile(args: argparse.Namespace) -> int:
                     "seam": round(seam, 4),
                 }
             )
-        print(f"  {path.name}: seam {seam:.3f}, {len(cuts)} cuts")
+        # Printed, never enforced: a ploughed field shipped once at 1.16 against 0.14-0.7
+        # for ordinary ground, and a seed that scored clean was still unusable. A number
+        # over the line means go and look at the source, not that it is wrong.
+        look = "  <-- stripe: look at this source" if stripe > STRIPE_LOOK else ""
+        print(f"  {path.name}: seam {seam:.3f}, stripe {stripe:.2f} @{stripe_period}, {len(cuts)} cuts{look}")
 
     # --- transitions -------------------------------------------------------------
     #

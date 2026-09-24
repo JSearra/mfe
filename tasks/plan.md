@@ -476,7 +476,9 @@ Left open, in the order they seem worth doing:
       tried three times and came back as flat orange, because they do not survive an
       eight-to-one downscale. The open question is the contrast of the shadow, not the
       size of the plates.
-- [ ] **V3 — A periodicity check in the pipeline.** The row/column measure that caught
+- [x] **V3 — A periodicity check in the pipeline.** Done: `stripe_score` in postprocess.py
+      prints `stripe N @period` for every source beside its seam score, flagging over 0.9
+      and refusing nothing; it agrees with `measure.py stripe` to two places. Was: The row/column measure that caught
       seed 1501 lives only in this session's scratch. It belongs in `postprocess.py`
       beside the seam score, printed per source, so a ploughed field is caught when it is
       generated rather than after it ships. It must not become a gate on its own: seed
