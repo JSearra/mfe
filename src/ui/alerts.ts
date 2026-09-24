@@ -59,6 +59,8 @@ const WATCHED: Readonly<Record<number, MessageKey>> = {
   // Work finds its own people now, so what needs saying is that there are not enough of
   // them. Carries the place that is waiting, so Space shows it.
   [EventType.HandsShort]: 'alert.handsShort',
+  // Head dying for want of fodder: the cull would have made grain of them.
+  [EventType.HerdHungry]: 'alert.herdHungry',
 };
 
 /**
@@ -74,6 +76,7 @@ const OWNER_FIELD: Readonly<Record<number, 'x' | 'y' | 'payload'>> = {
   [EventType.FieldsFailing]: 'payload',
   [EventType.AllianceOffered]: 'y',
   [EventType.HandsShort]: 'payload',
+  [EventType.HerdHungry]: 'payload',
 };
 
 /**
@@ -88,6 +91,8 @@ const OWNER_FIELD: Readonly<Record<number, 'x' | 'y' | 'payload'>> = {
 const PLACELESS: ReadonlySet<number> = new Set([
   EventType.AllianceRelief,
   EventType.AllianceOffered,
+  // The herd on the ledger has no place of its own; the kraal is not where it starved.
+  EventType.HerdHungry,
 ]);
 
 export function createAlerts(): Alerts {

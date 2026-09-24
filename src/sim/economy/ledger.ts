@@ -462,9 +462,40 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
           reserve[player] = reserve[player]! - drawn;
           missing -= drawn;
 
+          /*
+           * The people eat first; the herd eats what is left (ADR-0020, Phase B3).
+           *
+           * The two were charged as one bill, so a shortfall fell on the people however
+           * much of it the herd had run up. Measured on the real opening with nobody
+           * giving orders, the herd grew 120 to 550 head over four years — 137 grain a
+           * season against the people's 24 — and when the grain ran out every person
+           * died while every beast lived. That is starvation ending a village, which
+           * ADR-0020 says it must not: a village that eats its fodder bill before its
+           * dinner has the order wrong.
+           *
+           * So a short season falls on the herd until the herd's share is gone, and only
+           * then on anybody. Unfed cattle die off — for nothing: meat is what the cull
+           * is for, and a herd let starve is wealth thrown away rather than eaten, which
+           * keeps the slaughter the better decision. People go hungry only when the
+           * grain cannot feed the PEOPLE, which is the thing the harvest/upkeep readout
+           * has always been asking the player to watch.
+           */
+          const forHerdNow = totalCattle * e.grainPerCattle * config.upkeepMultiplier;
+          const herdMissing = missing < forHerdNow ? missing : forHerdNow;
+          missing -= herdMissing;
+          if (herdMissing > 0 && onLedger > 0) {
+            const unfedHead = herdMissing / (e.grainPerCattle * config.upkeepMultiplier);
+            const lost = Math.min(onLedger, unfedHead * tuning.herd.hungryLossShare);
+            if (lost > 0) {
+              economy.spend(player, Resource.Cattle, lost);
+              events.push(makeEvent(world.tick, EventType.HerdHungry, 0, 0, 0, player));
+            }
+          }
+
+          const peopleNeeded = needed - forHerdNow;
           shortfall[player] = missing;
           // In proportion to what was missed, not to the fact of missing. See `starve`.
-          if (missing > 0) starve(world, player, events, needed > 0 ? missing / needed : 1);
+          if (missing > 0) starve(world, player, events, peopleNeeded > 0 ? missing / peopleNeeded : 1);
         }
       }
     },

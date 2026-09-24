@@ -91,7 +91,8 @@
   },
   "herd": {
     "cullSize": 10.0,
-    "grainPerBeast": 14.0
+    "grainPerBeast": 14.0,
+    "hungryLossShare": 0.5
   },
   "woodland": {
     "capacity": 1400,

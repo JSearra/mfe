@@ -125,6 +125,7 @@
     "starving": "People are going hungry",
     "fieldsFailing": "Fields are failing — not enough hands to tend them",
     "handsShort": "Work is waiting and nobody is free to do it",
+    "herdHungry": "Cattle are dying for want of fodder — slaughter some while they are worth meat",
     "allianceOffered": "A neighbour asks for a standing tie"
   },
   "setup": {

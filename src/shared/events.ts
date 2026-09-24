@@ -81,6 +81,14 @@ export const EventType = {
    * in that field" but "there are not enough of you for what you have built".
    */
   HandsShort: 24,
+  /**
+   * The herd went unfed this season and head died of it.
+   *
+   * `payload` is the village. The people eat before the cattle now (Phase B3), so a herd
+   * that has outgrown the land shrinks rather than starving the village — and a player
+   * has to hear about it, because the cull would have turned those head into grain.
+   */
+  HerdHungry: 25,
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];

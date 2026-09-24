@@ -104,3 +104,57 @@ describe('starvation', () => {
     expect(softened.lost).toBeLessThan(bad.lost);
   });
 });
+
+describe('the people eat before the herd (Phase B3)', () => {
+  /**
+   * Measured on the real opening with nobody giving orders: the herd grew 120 to 550
+   * head in four years, ate 137 grain a season against the people's 24, and when the
+   * grain ran out every person died while every beast lived. Starvation must shrink a
+   * village, not end it (ADR-0020) — and a herd that has outgrown the land is the herd's
+   * problem first.
+   */
+  function withHerd(units: number, head: number, grain: number) {
+    const world = villageOf(units);
+    const economy = createEconomy(PLAYERS, 1);
+    economy.spend(0, Resource.Grain, economy.balance(0, Resource.Grain));
+    economy.spend(0, Resource.Cattle, economy.balance(0, Resource.Cattle));
+    economy.add(0, Resource.Grain, grain);
+    economy.add(0, Resource.Cattle, head);
+    const events: SimEvent[] = [];
+    world.tick = E.upkeepIntervalTicks;
+    economy.update(world, events);
+    return {
+      events,
+      cattle: economy.balance(0, Resource.Cattle),
+      shortfall: economy.shortfall[0]!,
+      starved: events.filter((e) => e.type === EventType.Starved).length,
+      hungryHerd: events.filter((e) => e.type === EventType.HerdHungry && e.payload === 0).length,
+    };
+  }
+
+  it('lets nobody go hungry while the grain would feed the people alone', () => {
+    // Twenty people and four hundred head: enough grain for the people, not the herd.
+    const peopleCost = 20 * E.grainPerUnit;
+    const r = withHerd(20, 400, peopleCost * 1.5);
+    expect(r.starved).toBe(0);
+    expect(r.shortfall).toBe(0);
+  });
+
+  it('takes the shortfall out of the herd instead, and says so', () => {
+    const r = withHerd(20, 400, 20 * E.grainPerUnit * 1.5);
+    expect(r.cattle).toBeLessThan(400);
+    expect(r.hungryHerd).toBe(1);
+  });
+
+  it('still starves the people when there is not enough for them either', () => {
+    const r = withHerd(20, 400, 0);
+    expect(r.starved).toBe(20);
+    expect(r.shortfall).toBeGreaterThan(0);
+  });
+
+  it('costs the herd nothing in a season that feeds everyone', () => {
+    const r = withHerd(20, 100, 5000);
+    expect(r.hungryHerd).toBe(0);
+    expect(r.cattle).toBeGreaterThanOrEqual(100);
+  });
+});

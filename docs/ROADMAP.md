@@ -896,6 +896,36 @@ Retune, after B2, so that a village played well rarely starves. It is measured t
 Part II measured everything: on a properly seeded opening, several seeds, with numbers
 recorded both before and after. No tuning is done in the same commit as a rule change.
 
+**Done (2026-09-24) — and it took a rule, not a retune.** Measured with `npm run soak`
+on the real opening (`src/host/opening.ts`, which main.ts also calls), five years, veld,
+seeds `0x4d666563`, `0xbeef`, `0xa11ce`:
+
+| | hungry seasons | hunger deaths | people at year 5 |
+|---|---|---|---|
+| untouched village, after B2 | 48 / 85 / 101 | 22 / 24 / 20 | **0 / 0 / 0** |
+| untouched village, people eat first | 0 / 0 / 0 | 0 / 0 / 0 | 22 / 24 / 23 |
+| greedy village (raises every season), people eat first | 20 / 26 / 64 | 2 / 0 / 62 | 73 / 110 / 75 |
+| AI neighbour, people eat first | 0 / 0 / 0 | 0 / 0 / 0 | 151 / 167 / 258 |
+
+After B2 alone the fields were always worked and nobody went hungry for three years. The
+starvation that remained came from one place: the herd. It breeds on its own, eats 0.25
+grain a head, and grew 120 to 550 head until it ate 137 grain a season against the
+people's 24. When the grain ran out, every person died and every beast lived. That is
+starvation ending a village, which ADR-0020 rules out, and no number fixes it. The upkeep
+charged the people and the herd as one bill.
+
+**The rule: the people eat first.** A short season falls on the herd's share first. Unfed
+cattle die (`herd.hungryLossShare` of the unfed head a season), for nothing, so the cull
+stays the better move, and `HerdHungry` says so. People go hungry only when the grain
+cannot feed the people. The untouched village now keeps all its people. The greedy one
+goes hungry from year 1.4, shrinks and carries on, which is what bad decisions should
+cost. On karoo the AI goes hungry two to five seasons in year 4.5 and loses nobody.
+
+No tuning change was needed after the rule, so none was made. What kills people now is
+stampedes. The AI loses 75–107 people a match to crush, from its herding branch sending
+every spare hand at the herds. That is an AI problem, and Phase B4 takes the AI off the
+map.
+
 ## Phase B4 — neighbours off the map
 
 Neighbours become a trade screen, not villages simulated on the map. The trade valuation
