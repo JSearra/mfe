@@ -280,6 +280,11 @@ export interface DirectSimHost extends SimHost {
   readonly census: Census;
   readonly labour: Labour;
   readonly fog: FogState;
+  /**
+   * The loop itself, for tooling that has to run faster than real time — the soak
+   * harness runs years of a match, and `pump` caps catch-up at a handful of ticks.
+   */
+  readonly loop: SimLoop;
 }
 
 export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHost {
@@ -367,6 +372,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     census,
     labour,
     fog,
+    loop,
 
     get tick(): number {
       return world.tick;

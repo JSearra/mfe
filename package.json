@@ -13,6 +13,7 @@
     "replay": "vitest run test/replay.test.ts",
     "verify": "npm run typecheck && npm run lint && npm test",
     "replay:record": "RECORD_GOLDEN=1 vitest run test/record-replay.test.ts",
+    "soak": "SOAK=1 vitest run test/soak.test.ts --silent=false --reporter=verbose",
     "perf:terrain": "node scripts/perf-terrain.mjs",
     "perf:pathing": "vitest run --config vitest.perf.config.ts"
   },
