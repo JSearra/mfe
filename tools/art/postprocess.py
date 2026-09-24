@@ -286,8 +286,43 @@ def make_field(tile: Image.Image, broken: bool) -> Image.Image:
         pixels[:, :, channel] *= shade
 
     pixels[:, :, :3] = np.clip(pixels[:, :, :3], 0, 255)
-    pixels[:, :, 3] = np.where(diamond_mask(width, height), 255, 0)
+    pixels[:, :, 3] = field_alpha(width, height, broken)
     return Image.fromarray(pixels.astype(np.uint8), "RGBA")
+
+
+def field_alpha(width: int, height: int, broken: bool) -> np.ndarray:
+    """
+    A field's edge: solid to its own diamond, then dissolving a little past it.
+
+    Fields were hard diamonds, so a patch of six tiles read as six lozenges rather than
+    as one field, and its outer boundary was a staircase. Against ground that now
+    dissolves everywhere else, they became the most obviously drawn thing on the map.
+
+    **This works for fields and NOT for terrain, and the difference is the renderer.**
+    Terrain tops are a watertight mesh whose quads share corner positions exactly, so
+    spilling past a tile would open a gap rather than overlap a neighbour — which is why
+    the same idea, read off rubberduck's sheets, was rejected there. Fields are SPRITES
+    drawn at the full 64x32 rect, so a field tile already overlaps its neighbours'
+    rectangles and has somewhere to spill into.
+
+    Inside a patch the spill lands on ground the neighbouring tile already owns solidly,
+    so the union stays opaque and no lattice of half-lit joins appears. Only the outside
+    of a patch has nothing under it, and that is exactly where the dissolve should show.
+
+    Broken earth spills further than a standing crop: turned ground has a scuffed,
+    indefinite margin where a crop has been sown to a line.
+    """
+    ys, xs = np.mgrid[0:height, 0:width]
+    nx = np.abs((xs + 0.5) - width / 2) / (width / 2)
+    ny = np.abs((ys + 0.5) - height / 2) / (height / 2)
+    distance = nx + ny
+
+    reach = FIELD_SPILL_BROKEN if broken else FIELD_SPILL_CROP
+    near = np.clip(1.0 - (distance - 1.0) / reach, 0.0, 1.0)
+    alpha = near * near * (3.0 - 2.0 * near)
+    # The same grain the ground's seams use, so a field's margin belongs to the same
+    # picture as the boundary between two grasses.
+    return np.clip(dissolve(alpha, 6607 if broken else 8017) * 255.0, 0, 255).astype(np.uint8)
 
 
 def make_transition(tile: Image.Image, mask: int, seed: int = 0) -> Image.Image:
@@ -492,6 +527,19 @@ TRANSITION_ROUGHNESS = 0.35
 # the gradient itself clean, and a clean gradient at this size reads as an airbrush.
 # This is noise in the alpha itself.
 TRANSITION_DISSOLVE = 0.55
+
+# How far a field spills past its own diamond, in the diamond's own metric.
+#
+# Small: a worked field HAS a definite boundary — it is ploughed to a line, and AoE2's
+# farms are crisp rectangles for the same reason. What was wrong was never that the edge
+# was hard, it was that the edge was a DIAMOND, and that six tiles of one field read as
+# six lozenges. A short dissolve breaks the lozenge without pretending a field fades
+# into the veld.
+#
+# Broken earth reaches further than a standing crop: turned ground has a scuffed,
+# indefinite margin where a crop has been sown to a line.
+FIELD_SPILL_BROKEN = 0.30
+FIELD_SPILL_CROP = 0.18
 
 # How many cuts of each boundary-tiling mask to bake.
 #
@@ -746,6 +794,15 @@ def command_tile(args: argparse.Namespace) -> int:
             name = f"field-{band_index}-{state}.png"
             field = make_field(tile, broken)
             field.save(target / name)
+            spill = float(
+                (np.array(field)[:, :, 3][
+                    (lambda d: (d >= 1.0) & (d < 1.3))(
+                        (lambda ys, xs: np.abs((xs + 0.5) - TILE_W / 2) / (TILE_W / 2)
+                         + np.abs((ys + 0.5) - TILE_H / 2) / (TILE_H / 2))(
+                            *np.mgrid[0:TILE_H, 0:TILE_W])
+                    )
+                ] / 255.0).mean()
+            )
             packed.append((name, field))
             manifest.append(
                 {
@@ -755,6 +812,7 @@ def command_tile(args: argparse.Namespace) -> int:
                     "height": TILE_H,
                     "band": band_index,
                     "field": state,
+                    "spill": round(spill, 3),
                     "averageColour": average_colour(field),
                     "seam": 0.0,
                 }

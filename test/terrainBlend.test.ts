@@ -21,7 +21,17 @@ import { describe, expect, it } from 'vitest';
 
 const manifest = JSON.parse(
   fs.readFileSync(path.resolve('public/assets/terrain/manifest.json'), 'utf8'),
-) as { tiles: { subject: string; mask?: number; band: number; frontWander?: number }[] };
+) as {
+  tiles: {
+    subject: string;
+    mask?: number;
+    band: number;
+    frontWander?: number;
+    field?: string;
+    spill?: number;
+    file: string;
+  }[];
+};
 
 const transitions = manifest.tiles.filter((tile) => tile.subject === 'transition');
 
@@ -64,6 +74,53 @@ describe('the shipped blend masks', () => {
     // is a whole ground type with a ruled edge around it.
     for (const tile of transitions.filter((t) => SINGLE_EDGE.includes(t.mask ?? 0))) {
       expect(tile.frontWander ?? 0, `band ${tile.band} mask ${tile.mask} is flat`).toBeGreaterThan(0.5);
+    }
+  });
+});
+
+describe('the shipped field tiles', () => {
+  const fields = manifest.tiles.filter((tile) => tile.field !== undefined);
+
+  it('exists in both states for every band a field can be sited on', () => {
+    expect(fields.length).toBeGreaterThan(0);
+    for (const tile of fields) {
+      expect(typeof tile.spill, `no spill recorded for ${tile.file}`).toBe('number');
+    }
+  });
+
+  it('spills past its own diamond, so a patch is not a row of lozenges', () => {
+    /*
+     * Fields were hard diamonds, so six tiles of one field read as six lozenges and its
+     * outer boundary was a staircase. Against ground that dissolves everywhere else
+     * they became the most obviously drawn thing on the map.
+     *
+     * This works for fields and not for terrain because fields are SPRITES drawn at the
+     * full rect, so a tile already overlaps its neighbours and has somewhere to spill
+     * into. Terrain tops are a watertight mesh whose quads share corners exactly, and
+     * the same idea there opens gaps instead — see docs/REFERENCES.md.
+     */
+    for (const tile of fields) {
+      expect(tile.spill ?? 0, `${tile.file} stops dead at its diamond`).toBeGreaterThan(0.1);
+    }
+  });
+
+  it('keeps a crop tighter than turned earth', () => {
+    // A crop is sown to a line; turned ground has a scuffed, indefinite margin. If the
+    // two were the same the distinction would be decoration rather than a reading.
+    const broken = fields.filter((t) => t.field === 'broken');
+    const crop = fields.filter((t) => t.field === 'crop');
+    expect(broken.length).toBeGreaterThan(0);
+    expect(crop.length).toBeGreaterThan(0);
+    const mean = (xs: typeof fields) => xs.reduce((s, t) => s + (t.spill ?? 0), 0) / xs.length;
+    expect(mean(broken)).toBeGreaterThan(mean(crop));
+  });
+
+  it('still stops well short of the tile corner, so a field keeps an edge', () => {
+    // A worked field HAS a definite boundary — it is ploughed to a line. What was wrong
+    // was never that the edge was hard, only that it was a diamond. A field that faded
+    // away into the veld would be a different error.
+    for (const tile of fields) {
+      expect(tile.spill ?? 0, `${tile.file} bleeds away into the veld`).toBeLessThan(0.75);
     }
   });
 });

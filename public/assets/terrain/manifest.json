@@ -6312,7 +6312,8 @@
       "height": 32,
       "band": 0,
       "field": "broken",
-      "averageColour": "#474b28",
+      "spill": 0.527,
+      "averageColour": "#484c28",
       "seam": 0.0,
       "x": 206,
       "y": 2162
@@ -6324,7 +6325,8 @@
       "height": 32,
       "band": 0,
       "field": "crop",
-      "averageColour": "#507d31",
+      "spill": 0.322,
+      "averageColour": "#507d32",
       "seam": 0.0,
       "x": 274,
       "y": 2162
@@ -6336,7 +6338,8 @@
       "height": 32,
       "band": 1,
       "field": "broken",
-      "averageColour": "#3d4c19",
+      "spill": 0.527,
+      "averageColour": "#3e4d19",
       "seam": 0.0,
       "x": 342,
       "y": 2162
@@ -6348,7 +6351,8 @@
       "height": 32,
       "band": 1,
       "field": "crop",
-      "averageColour": "#457e1f",
+      "spill": 0.322,
+      "averageColour": "#458020",
       "seam": 0.0,
       "x": 410,
       "y": 2162
@@ -6360,7 +6364,8 @@
       "height": 32,
       "band": 2,
       "field": "broken",
-      "averageColour": "#4e5a1c",
+      "spill": 0.527,
+      "averageColour": "#4e5b1c",
       "seam": 0.0,
       "x": 478,
       "y": 2162
@@ -6372,7 +6377,8 @@
       "height": 32,
       "band": 2,
       "field": "crop",
-      "averageColour": "#589622",
+      "spill": 0.322,
+      "averageColour": "#589623",
       "seam": 0.0,
       "x": 2,
       "y": 2198
@@ -6384,7 +6390,8 @@
       "height": 32,
       "band": 3,
       "field": "broken",
-      "averageColour": "#735d26",
+      "spill": 0.527,
+      "averageColour": "#765f26",
       "seam": 0.0,
       "x": 70,
       "y": 2198
@@ -6396,7 +6403,8 @@
       "height": 32,
       "band": 3,
       "field": "crop",
-      "averageColour": "#829b2f",
+      "spill": 0.322,
+      "averageColour": "#839e30",
       "seam": 0.0,
       "x": 138,
       "y": 2198
@@ -6408,7 +6416,8 @@
       "height": 32,
       "band": 4,
       "field": "broken",
-      "averageColour": "#845628",
+      "spill": 0.527,
+      "averageColour": "#875729",
       "seam": 0.0,
       "x": 206,
       "y": 2198
@@ -6420,7 +6429,8 @@
       "height": 32,
       "band": 4,
       "field": "crop",
-      "averageColour": "#948f32",
+      "spill": 0.322,
+      "averageColour": "#959033",
       "seam": 0.0,
       "x": 274,
       "y": 2198
@@ -6432,7 +6442,8 @@
       "height": 32,
       "band": 5,
       "field": "broken",
-      "averageColour": "#8a421e",
+      "spill": 0.527,
+      "averageColour": "#8e441f",
       "seam": 0.0,
       "x": 342,
       "y": 2198
@@ -6444,7 +6455,8 @@
       "height": 32,
       "band": 5,
       "field": "crop",
-      "averageColour": "#9c6e26",
+      "spill": 0.322,
+      "averageColour": "#9e6f26",
       "seam": 0.0,
       "x": 410,
       "y": 2198
@@ -6456,7 +6468,8 @@
       "height": 32,
       "band": 6,
       "field": "broken",
-      "averageColour": "#a87a47",
+      "spill": 0.527,
+      "averageColour": "#aa7c47",
       "seam": 0.0,
       "x": 478,
       "y": 2198
@@ -6468,7 +6481,8 @@
       "height": 32,
       "band": 6,
       "field": "crop",
-      "averageColour": "#bdcc58",
+      "spill": 0.322,
+      "averageColour": "#becd59",
       "seam": 0.0,
       "x": 2,
       "y": 2234
@@ -6480,7 +6494,8 @@
       "height": 32,
       "band": 7,
       "field": "broken",
-      "averageColour": "#3d3226",
+      "spill": 0.527,
+      "averageColour": "#3f3327",
       "seam": 0.0,
       "x": 70,
       "y": 2234
@@ -6492,7 +6507,8 @@
       "height": 32,
       "band": 7,
       "field": "crop",
-      "averageColour": "#455330",
+      "spill": 0.322,
+      "averageColour": "#465431",
       "seam": 0.0,
       "x": 138,
       "y": 2234
