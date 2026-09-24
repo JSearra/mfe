@@ -66,6 +66,18 @@ python tools/art/generate_tiles.py --out tools/art/raw --variants 4
 python tools/art/postprocess.py tile --in tools/art/raw --out public/assets/terrain
 ```
 
+Then measure what came out, which costs nothing and runs on the system Python:
+
+```
+python tools/art/measure.py stripe   # did the model give a ploughed field?
+python tools/art/measure.py bands    # tone against palette, and contrast spread
+```
+
+`stripe` is the one to run on every fresh generation. Ordinary ground scores 0.14 to
+0.7; a subject over about 0.9 has a weave in it and wants looking at. Neither number is
+a gate — see the note at the top of `measure.py` for the seed that scored clean and was
+still unusable.
+
 `generate_tiles.py` pins light direction, palette and projection in every prompt, and
 derives seeds rather than randomising them, so the same invocation reproduces the same
 set. `postprocess.py tile` then does the work that makes the output usable: toning each

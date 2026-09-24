@@ -4,6 +4,7 @@
  *
  *    npm run dev &
  * 	  node scripts/screenshot.mjs out.png
+ * 	  node scripts/screenshot.mjs crop.png 9000 --clip=640,130,400,230
  *
  * Exists because looking at the output is the only thing that has reliably caught the
  * defects in this project's art and rendering, and because driving Chrome by hand does
@@ -20,6 +21,20 @@ import { chromium } from 'playwright';
 const out = process.argv[2] ?? 'game.png';
 const settleMs = Number(process.argv[3] ?? 9000);
 const url = process.env.GAME_URL ?? 'http://localhost:5173/';
+
+/*
+ * An optional region, as --clip x,y,w,h.
+ *
+ * Worth having because the picture is the expensive part of looking at this game, and
+ * most questions are about a few hundred pixels of ground rather than the whole window.
+ * Cropping here rather than afterwards means the big frame never has to exist at all.
+ */
+const clipArg = process.argv.find((arg) => arg.startsWith('--clip='));
+const clip = clipArg
+  ? (([x, y, width, height]) => ({ x, y, width, height }))(
+      clipArg.slice('--clip='.length).split(',').map(Number),
+    )
+  : undefined;
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 820 } });
@@ -55,6 +70,6 @@ await page.waitForTimeout(300);
 await page.mouse.click(760, 640, { button: 'right' });
 
 await page.waitForTimeout(settleMs);
-await page.screenshot({ path: out });
+await page.screenshot({ path: out, ...(clip ? { clip } : {}) });
 console.log(`[screenshot] ${out}`);
 await browser.close();

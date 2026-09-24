@@ -153,6 +153,24 @@ that destroyed texture, decapitated sprites, a repeating hoop across the veld, a
 colour overflow that rendered the entire page black. None was reachable from types, tests
 or output size.
 
+**And measure it, because looking is not enough on its own.** `tools/art/measure.py`
+runs on the system Python with nothing installed. Three defects got past looking:
+
+- A map-edge fade rendered at flat full opacity with a hard cut at its inner edge. On
+  screen it read as a soft fade that was perhaps still a touch crisp. `measure.py
+  profile` across the boundary gave `17, 17, 17, … 129` and settled it in one line.
+- Open veld read as a quilt of hard diamonds. The obvious suspect was tone, and tone was
+  innocent — postprocess tones every tile to its band palette, so the average colours
+  were always within a few units. What differed was per-tile CONTRAST. `measure.py
+  bands` names the two apart, and only the second one is the quilt.
+- A grass tile that was a ploughed field — regular rows, tiling into corduroy across the
+  veld. `measure.py stripe` put it at 1.16 against 0.14 to 0.7 for every other source.
+
+Neither half substitutes for the other, and **neither is a gate**. The seed that scored
+best on stripe of anything generated that day was unusable: rosette plants split by
+branching orange channels, no periodicity to find. The numbers find the repeat, the jump
+and the flat; the eye finds wrong. A measurement here says *go and look*, never *ship*.
+
 If `replay` reports a **tuning mismatch**, the tuning file changed: re-record with
 `npm run replay:record` and say why in the commit message. If it reports **divergence at
 tick N**, determinism broke — that is a bug, not a fixture to re-record.
