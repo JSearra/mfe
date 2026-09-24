@@ -115,7 +115,7 @@ function spriteKind(kind: number, subtype: number, handle: number, role = 0): st
   if (subtype === CLASS_MOUNTED) return 'commando';
   // A villager is drawn as whatever she is doing. The role rides in the high nibble of
   // the flags byte the snapshot already carries — see src/sim/roles.ts.
-  return VILLAGER_KINDS[role] ?? 'impi';
+  return VILLAGER_KINDS[role] ?? 'villager';
 }
 
 /**
@@ -124,7 +124,11 @@ function spriteKind(kind: number, subtype: number, handle: number, role = 0): st
  * Anything without a figure of its own falls back to the default one rather than
  * vanishing, which is what an unknown role would otherwise do.
  */
-const VILLAGER_KINDS: readonly string[] = ['impi', 'herd-boy', 'field-hand', 'carrier', 'elder'];
+// Role.None is the plain villager, not the impi. Everybody without a role of their own
+// — walking to work, building, fishing, standing about — was drawn with a war shield and
+// a stabbing spear, and after work began finding its own people (Phase B2) that was most
+// of a village on any given frame.
+const VILLAGER_KINDS: readonly string[] = ['villager', 'herd-boy', 'field-hand', 'carrier', 'elder'];
 
 /**
  * Ground decoration: the shadow that stops a sprite floating, the selection ring, and

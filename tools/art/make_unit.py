@@ -186,6 +186,27 @@ VILLAGERS = {
         # the recorded origin and not the drawn size.
         "target": 1.15,
     },
+    # The villager with nothing in particular to do: walking to work, building, fishing,
+    # standing about. The role code draws everyone without a role as this figure, and it
+    # was the impi — isihlangu and stabbing spear — so after work began finding its own
+    # people (Phase B2) most of a village going about its day was drawn as a regiment.
+    # An upright man in the umutsha with empty hands, and the umqhele, the fur headband,
+    # at the brow. Told apart from the impi by what is missing: the shield is the largest
+    # thing in the soldier's outline, and this outline has none.
+    "villager": {
+        "stature": 1.0,
+        "head_scale": 1.0,
+        "build": 1.0,
+        "stoop": 4.0,
+        "skin": (0.20, 0.110, 0.068),
+        "cloth": (0.105, 0.080, 0.058),
+        "skirt": None,
+        "prop": None,
+        "stride": 24.0,
+        "free_arm": "both",
+        "ortho": 2.2,
+        "target": 0.76,
+    },
     "elder": {
         "stature": 0.92,
         "head_scale": 1.0,
@@ -710,7 +731,11 @@ def build_villager(kind: str):
     waist.data.materials.append(skin)
     waist.parent = spine
 
-    pelvis = blob("pelvis", (0.28 * girth, 0.31 * girth, 0.23 * stature), (0, 0, 0.05), **facet)
+    # At the HIP, on the root. The hips do not pitch with the back, so the root is the
+    # right parent — but the root stands on the ground, and this was placed as if it hung
+    # from the spine, at 0.05. Every villager carried a ball of pelvis between its ankles:
+    # hidden by the legs at rest, and plain between them at every stride of the walk.
+    pelvis = blob("pelvis", (0.28 * girth, 0.31 * girth, 0.23 * stature), (0, 0, hip_z + 0.05), **facet)
     pelvis.data.materials.append(skin)
     pelvis.parent = root
 
@@ -787,6 +812,16 @@ def build_villager(kind: str):
                     (0, 0, torso + neck + head_d * 0.62))
         ring.data.materials.append(cloth)
         ring.parent = spine
+
+    if kind == "villager":
+        # The umqhele: a band of fur round the brow. Low on the skull and thick, so it
+        # reads as a band and not as the elder's headring, which sits on the crown.
+        # Barely wider than the skull (0.82 x 0.80 of head_d): any wider and at play size
+        # it read as a brimmed hat — a pith helmet, of all things.
+        band = blob("umqhele", (head_d * 0.90, head_d * 0.88, head_d * 0.22),
+                    (0, 0, torso + neck + head_d * 0.42))
+        band.data.materials.append(material("fur", (0.14, 0.10, 0.065)))
+        band.parent = spine
 
     limbs = {"spine": spine}
     for side, y in (("l", 1.0), ("r", -1.0)):
@@ -1224,6 +1259,10 @@ def animate_villager(kind: str, limbs: dict, anim: str, frames: int) -> None:
                 arm_l = -swing * 0.65
             elif free == "r":
                 arm_r = swing * 0.65
+            elif free == "both":
+                # Empty hands, so both arms swing against the legs.
+                arm_l = -swing * 0.6
+                arm_r = swing * 0.6
             # The whole body rises and falls a little over a stride. On the carrier this
             # is the only thing that says the load is heavy.
             pitch += math.radians(2.0) * math.sin(phase * 2)
@@ -1255,6 +1294,12 @@ def animate_villager(kind: str, limbs: dict, anim: str, frames: int) -> None:
             sway = math.radians(4.5) * math.sin(phase)
             hip_l, hip_r = sway, -sway
             arm_l = math.radians(7.0) * math.sin(phase)
+        elif kind == "villager":
+            # Standing: a slow shift of weight, arms loose.
+            sway = math.radians(3.0) * math.sin(phase)
+            hip_l, hip_r = sway, -sway
+            arm_l = math.radians(3.0) * math.sin(phase)
+            arm_r = -arm_l
         else:  # elder
             sway = math.radians(2.0) * math.sin(phase)
             hip_l, hip_r = sway, -sway
