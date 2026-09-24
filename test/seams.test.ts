@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { heightmapFrom, heightmapWithWater } from '../src/shared/heightmap.js';
+import { heightmapFrom, heightmapWithWater, isWater } from '../src/shared/heightmap.js';
 import {
   cornerSeams,
   edgeSeams,
@@ -7,6 +7,8 @@ import {
   waterCornerSeams,
   waterDepth,
   waterEdgeMask,
+  landSeams,
+  smoothWaterDepth,
 } from '../src/render/scene/seams.js';
 
 /**
@@ -204,5 +206,117 @@ describe('waterDepth', () => {
     );
     expect(waterDepth(narrow, 1, 1)).toBe(2);
     expect(waterDepth(narrow, 1, 0)).toBe(1);
+  });
+});
+
+describe('land bleeding over water', () => {
+  /*
+   * The waterline was hard on BOTH sides and only softened on one.
+   *
+   * A dry tile beside water gets a bank drawn on it (`waterEdgeMask`), which softens
+   * the land. Nothing was ever drawn on the water, so the water's own edge stayed a
+   * dead diamond and a river read as a staircase of blue lozenges however good the bank
+   * on the far side of it was. A shore is two grounds meeting; it needs both halves.
+   */
+  const river = heightmapWithWater(
+    [
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+    ],
+    8,
+    [
+      [0, 1, 0, 0],
+      [0, 1, 0, 0],
+      [0, 1, 1, 0],
+      [0, 0, 1, 0],
+    ],
+  );
+  const ground = new Uint8Array(16).fill(3);
+
+  it('finds the land on a water tile s edges', () => {
+    bleed.length = 0;
+    // The water at (1,0) has dry land at (0,0) and (2,0) — its upper-left and
+    // lower-right edges — and water above and below it.
+    const found = landSeams(river, ground, 1, 0, bleed);
+    expect(found).toBe(1);
+    expect(bleed[3]).toBeGreaterThan(0);
+  });
+
+  it('finds nothing on open water', () => {
+    const pan = heightmapWithWater(
+      [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+      8,
+      [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+    );
+    bleed.length = 0;
+    expect(landSeams(pan, new Uint8Array(9).fill(2), 1, 1, bleed)).toBe(0);
+  });
+
+  it('finds nothing on dry land, which has a bank of its own instead', () => {
+    bleed.length = 0;
+    expect(landSeams(river, ground, 0, 0, bleed)).toBe(0);
+  });
+
+  it('carries the neighbour s own ground, so a bank matches the country behind it', () => {
+    const mixed = new Uint8Array(16).fill(3);
+    mixed[0 * 4 + 0] = 5;
+    bleed.length = 0;
+    landSeams(river, mixed, 1, 0, bleed);
+    expect(bleed[5], 'the band-5 neighbour did not bleed').toBeGreaterThan(0);
+  });
+});
+
+describe('smoothWaterDepth', () => {
+  it('runs shallow at a bank and deep in the open', () => {
+    const pan = heightmapWithWater(
+      [
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+      ],
+      8,
+      [
+        [0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 0],
+        [0, 1, 1, 1, 0],
+        [0, 1, 1, 1, 0],
+        [0, 0, 0, 0, 0],
+      ],
+    );
+    expect(smoothWaterDepth(pan, 2, 2)).toBeGreaterThan(smoothWaterDepth(pan, 1, 1));
+  });
+
+  it('varies less between neighbours than the raw count does', () => {
+    /*
+     * The quilt this exists to remove. `waterDepth` is a count of eight neighbours, so
+     * it steps by whole numbers between adjacent tiles — and each water tile is filled
+     * with one flat colour, so those steps drew a patchwork of visibly different blue
+     * lozenges across every river on the map.
+     */
+    const river = heightmapWithWater(
+      Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => 0)),
+      8,
+      Array.from({ length: 9 }, (_, y) =>
+        Array.from({ length: 9 }, (_, x) => (Math.abs(x - 4) <= 1 + (y % 2) ? 1 : 0)),
+      ),
+    );
+    let rawJump = 0;
+    let smoothJump = 0;
+    for (let y = 1; y < 8; y++) {
+      for (let x = 1; x < 8; x++) {
+        if (!isWater(river, x, y) || !isWater(river, x + 1, y)) continue;
+        rawJump = Math.max(rawJump, Math.abs(waterDepth(river, x, y) - waterDepth(river, x + 1, y)));
+        smoothJump = Math.max(
+          smoothJump,
+          Math.abs(smoothWaterDepth(river, x, y) - smoothWaterDepth(river, x + 1, y)),
+        );
+      }
+    }
+    expect(rawJump).toBeGreaterThan(0);
+    expect(smoothJump).toBeLessThan(rawJump);
   });
 });

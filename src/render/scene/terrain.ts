@@ -17,9 +17,10 @@ import { createGroundField } from './ground.js';
 import {
   cornerSeams,
   edgeSeams,
+  landSeams,
   SEAM_CORNERS,
+  smoothWaterDepth,
   waterCornerSeams,
-  waterDepth,
   waterEdgeMask,
 } from './seams.js';
 import { cornerPositions, faceTrapezoid, QUAD_FLOATS } from './terrainGeometry.js';
@@ -330,6 +331,10 @@ function drawTile(
 ): void {
   const level = map.data[tileY * map.width + tileX]!;
   const { corners, positions, neighbourCorners, bleed, corner } = scratch;
+  // Which cut of each mask this tile uses. One cut per configuration stamps the same
+  // meander tile after tile along a straight seam, which reads as a scalloped sawtooth.
+  // Hoisted above the water branch, which needs it too now that a bank creeps in.
+  const cut = blendVariant(tileX, tileY);
 
   tileCorners(map, tileX, tileY, corners);
   cornerPositions(tileX, tileY, corners, positions);
@@ -357,13 +362,31 @@ function drawTile(
     graphics.lineTo(southX, southY);
     graphics.lineTo(westX, westY);
     graphics.closePath();
-    graphics.fill({ color: waterFill(waterDepth(map, tileX, tileY)) });
+    graphics.fill({ color: waterFill(smoothWaterDepth(map, tileX, tileY)) });
+
+    /*
+     * And the bank creeping in over it.
+     *
+     * A shore is two grounds meeting. The land beside water already gets a bank drawn
+     * on it, and nothing was ever drawn on the water — so its own edge stayed a dead
+     * diamond and a river read as a staircase of blue lozenges however good the far
+     * side was. These are the same dissolving masks every other seam uses, carrying the
+     * neighbour's OWN ground, so the margin matches the country standing behind it.
+     */
+    if (tiles !== null) {
+      bleed.length = 0;
+      if (landSeams(map, ground, tileX, tileY, bleed) > 0) {
+        for (let band = 0; band < bleed.length; band++) {
+          const mask = bleed[band];
+          if (mask === undefined) continue;
+          const blend = tiles.transition(groundBand(band, bandShift, map.levels), mask, cut);
+          if (blend !== null) pushQuad(overlay, positions, blend.uv);
+        }
+      }
+    }
     return;
   }
 
-  // Which cut of each mask this tile uses. One cut per configuration stamps the same
-  // meander tile after tile along a straight seam, which reads as a scalloped sawtooth.
-  const cut = blendVariant(tileX, tileY);
   const tile =
     tiles === null
       ? null

@@ -223,3 +223,71 @@ export function waterDepth(map: Heightmap, tileX: number, tileY: number): number
   }
   return count;
 }
+
+/**
+ * For a WATER tile: which land grounds bleed over its edges, indexed by band.
+ *
+ * The waterline was hard on both sides and softened on only one. A dry tile beside
+ * water gets a bank drawn on it — `waterEdgeMask` above — so the land dissolved into
+ * the shore nicely, and nothing was ever drawn on the water itself. Its own edge stayed
+ * a dead diamond, and a river read as a staircase of blue lozenges however good the
+ * bank on the far side of it was. A shore is two grounds meeting and it needs both
+ * halves.
+ *
+ * Indexed by the neighbour's own ground rather than by a single shore colour, so the
+ * bank that creeps into the water matches the country standing behind it: a river
+ * through the sourveld carries sourveld into its margin, one through a donga carries
+ * red earth.
+ *
+ * Written into a sparse array like `edgeSeams`, and returns how many bands were found.
+ */
+export function landSeams(
+  map: Heightmap,
+  ground: Uint8Array,
+  tileX: number,
+  tileY: number,
+  out: number[],
+): number {
+  if (!isWater(map, tileX, tileY)) return 0;
+
+  let found = 0;
+  for (let bit = 0; bit < 4; bit++) {
+    const x = tileX + EDGE_DX[bit]!;
+    const y = tileY + EDGE_DY[bit]!;
+    if (!inBounds(map, x, y) || isWater(map, x, y)) continue;
+
+    const band = ground[y * map.width + x]!;
+    if (out[band] === undefined) {
+      out[band] = 0;
+      found++;
+    }
+    out[band]! |= 1 << bit;
+  }
+  return found;
+}
+
+/**
+ * How enclosed by water a tile is, averaged with its neighbours.
+ *
+ * `waterDepth` counts eight neighbours, so it steps by whole numbers between adjacent
+ * tiles — and a water tile is filled with ONE flat colour, so those steps drew a
+ * patchwork of visibly different blue lozenges across every river on the map. The
+ * colour has to vary as slowly as a body of water does.
+ *
+ * Averaged over the four orthogonal neighbours and itself, counting only the wet ones:
+ * letting dry neighbours contribute zero would drag every margin tile toward the
+ * shallow end twice, once through its own count and once through theirs.
+ */
+export function smoothWaterDepth(map: Heightmap, tileX: number, tileY: number): number {
+  let sum = waterDepth(map, tileX, tileY);
+  let count = 1;
+
+  for (let bit = 0; bit < 4; bit++) {
+    const x = tileX + EDGE_DX[bit]!;
+    const y = tileY + EDGE_DY[bit]!;
+    if (!isWater(map, x, y)) continue;
+    sum += waterDepth(map, x, y);
+    count++;
+  }
+  return sum / count;
+}
