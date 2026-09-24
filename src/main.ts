@@ -571,9 +571,8 @@ async function main(options: GameOptions): Promise<void> {
       return;
     }
 
-    // T raises a spearman at every homestead we own. Buildings are not selectable yet
-    // — that needs the selection panel — so this broadcasts, and anything that is not a
-    // trainer refuses harmlessly.
+    // T raises a household at every homestead we own. It broadcasts rather than acting
+    // on a selection, and anything that is not a homestead refuses harmlessly.
     if ((event.key === 't' || event.key === 'T') && view !== null) {
       for (let i = 0; i < view.count; i++) {
         if (view.kind[i] !== KIND_BUILDING || view.faction[i] !== PLAYER) continue;

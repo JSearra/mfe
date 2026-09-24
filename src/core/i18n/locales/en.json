@@ -79,8 +79,7 @@
     "building": "{name}",
     "buildingSite": "{name} — {pct}% built",
     "queue": "Queue {count}/{limit}",
-    "trainInfantry": "Raise spearman",
-    "trainMounted": "Raise horseman",
+    "trainHousehold": "Raise a household",
     "buildHeading": "Build",
     "researchHeading": "Research",
     "costs": "{grain} grain · {cattle} cattle",
@@ -174,7 +173,7 @@
   },
   "controls": {
     "select": "Left-drag selects · right-click orders · shift queues",
-    "build": "1-3 build · T trains · R researches",
+    "build": "1-3 build · T raises households · R researches",
     "land": "F plants a field · G rests the one under the cursor",
     "groups": "Ctrl+4-9 groups · 4-9 recalls · P patrols",
     "time": "` pauses · +/- speed · Space jumps to an alert",

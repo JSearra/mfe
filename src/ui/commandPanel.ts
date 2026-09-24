@@ -47,7 +47,6 @@ const ROLE_KEYS: Readonly<Record<SummaryRole, MessageKey>> = {
 const KIND_UNIT = 0;
 const KIND_BUILDING = 2;
 const MOVEMENT_INFANTRY = 0;
-const MOVEMENT_MOUNTED = 2;
 
 export interface CommandPanelHandlers {
   onTrain(buildingHandle: number, movementClass: number): void;
@@ -245,10 +244,10 @@ export function createCommandPanel(
     if (kind === KIND_BUILDING) {
       const spec = buildingSpec(subtype);
       if (!spec.trains) return;
-      for (const [movementClass, label] of [
-        [MOVEMENT_INFANTRY, 'panel.trainInfantry'],
-        [MOVEMENT_MOUNTED, 'panel.trainMounted'],
-      ] as const) {
+      // One button: a homestead raises a household. It offered a spearman and a
+      // horseman, which is the war this game stopped being (ADR-0019, ADR-0020); the
+      // simulation keeps its mounted class, but nothing a village does now calls for it.
+      for (const [movementClass, label] of [[MOVEMENT_INFANTRY, 'panel.trainHousehold']] as const) {
         const cost = trainCosts[movementClass] ?? { grain: 0, cattle: 0 };
         // The queue is not in the snapshot, so the panel cannot see its depth and
         // passes zero. QueueFull is therefore a refusal this surface never reports,
@@ -269,7 +268,7 @@ export function createCommandPanel(
       return;
     }
 
-    // Troops selected: what they can put up, and what the nation can learn.
+    // People selected: what they can put up, and what the village can learn.
     for (const spec of Object.values(BUILDINGS)) {
       const refusal = buildAvailability(spec, purse);
       actions.append(
