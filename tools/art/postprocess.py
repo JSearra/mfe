@@ -115,7 +115,12 @@ def _value_noise(shape: tuple[int, int], cells: tuple[int, int], seed: int) -> n
     return top + (bottom - top) * fy
 
 
-def _fbm_normalised(shape: tuple[int, int], seed: int, octaves: int = 3) -> np.ndarray:
+def _fbm_normalised(
+    shape: tuple[int, int],
+    seed: int,
+    octaves: int = 3,
+    base: tuple[int, int] = (2, 4),
+) -> np.ndarray:
     """
     `_fbm` rescaled to zero mean and unit standard deviation.
 
@@ -126,12 +131,12 @@ def _fbm_normalised(shape: tuple[int, int], seed: int, octaves: int = 3) -> np.n
     which is nothing on a 64px tile. Normalising makes the knob mean standard
     deviations, which is a quantity that can be reasoned about and calibrated.
     """
-    noise = _fbm(shape, seed, octaves)
+    noise = _fbm(shape, seed, octaves, base)
     spread = float(noise.std())
     return (noise - float(noise.mean())) / (spread if spread > 1e-9 else 1.0)
 
 
-def _fbm(shape: tuple[int, int], seed: int, octaves: int = 3) -> np.ndarray:
+def _fbm(shape: tuple[int, int], seed: int, octaves: int = 3, base: tuple[int, int] = (2, 4)) -> np.ndarray:
     """
     Octaves of value noise, in 0..1.
 
@@ -144,7 +149,7 @@ def _fbm(shape: tuple[int, int], seed: int, octaves: int = 3) -> np.ndarray:
     amplitude = 1.0
     norm = 0.0
     for octave in range(octaves):
-        cells = (2 * 2**octave, 4 * 2**octave)
+        cells = (base[0] * 2**octave, base[1] * 2**octave)
         total += _value_noise(shape, cells, seed + octave * 977) * amplitude
         norm += amplitude
         amplitude *= 0.5
@@ -190,7 +195,28 @@ def edge_falloff(width: int, height: int, mask: int, seed: int = 0) -> np.ndarra
         # Smoothstep, so the blend has no visible start or end line.
         alpha = np.maximum(alpha, near * near * (3.0 - 2.0 * near))
 
-    return alpha
+    return dissolve(alpha, seed * 31 + mask * 7 + 4409)
+
+
+def dissolve(alpha: np.ndarray, seed: int) -> np.ndarray:
+    """
+    Break the fading edge into grain, so the two grounds interleave rather than blend.
+
+    Weighted by `alpha * (1 - alpha)`, which peaks halfway through the fade and is zero
+    at both ends. That is the whole trick: the solid part of a mask stays solid and the
+    empty part stays empty, so no amount of grain can punch a hole through the middle of
+    a ground or leave specks floating in open country. Only the band that is already
+    half-transparent — the part a viewer reads as the boundary — gets roughened.
+
+    A FINE lattice — sixteen cells across the tile, halving to two-pixel detail — so the
+    grain is the size of a tuft. The first attempt reused the same noise the boundary's
+    meander uses, which starts at four cells across a 64px tile: sixteen-pixel blobs,
+    which shift the edge about rather than break it up. Speckle has to be near the size
+    of a pixel to read as speckle.
+    """
+    grain = _fbm_normalised(alpha.shape, seed, octaves=3, base=(8, 16))
+    band = alpha * (1.0 - alpha) * 4.0
+    return np.clip(alpha + grain * TRANSITION_DISSOLVE * band, 0.0, 1.0)
 
 
 def front_wander(alpha: np.ndarray) -> float:
@@ -298,7 +324,7 @@ def corner_falloff(width: int, height: int, corner: int, seed: int = 0) -> np.nd
     rough = _fbm_normalised((height, width), seed * 31 + corner * 13 + 101) * TRANSITION_ROUGHNESS
     depth = np.clip(distance / CORNER_REACH, 0.0, 1.0)
     near = np.clip(1.0 - (distance + rough * depth) / CORNER_REACH, 0.0, 1.0)
-    return near * near * (3.0 - 2.0 * near)
+    return dissolve(near * near * (3.0 - 2.0 * near), seed * 31 + corner * 13 + 7717)
 
 
 def make_corner(tile: Image.Image, corner: int, seed: int = 0) -> Image.Image:
@@ -415,6 +441,24 @@ TRANSITION_REACH = 1.3
 # composed boundary at 0.2, 0.35 and 0.5: 0.2 still shows the tile grid through it, 0.5
 # frays the edge into noise, and 0.35 has bays and headlands that hold together.
 TRANSITION_ROUGHNESS = 0.35
+
+# How far the fading edge breaks up into grain.
+#
+# Taken from rubberduck's CC0 isometric ground sheets on OpenGameArt, which are the same
+# 64x32 tile this project uses and so are directly comparable. Reading the alpha of one
+# of their grass-to-nothing transitions across its fade gives
+#
+#     @@%%%%@###*+++==++--=:-::...
+#
+# which is not monotonic. Their edge does not ramp, it DISSOLVES: the alpha breaks into
+# speckle so the two grounds interleave pixel by pixel instead of cross-fading. AoE2's
+# blendomatic names a mode for the same thing — "rough hard edges, spraylike" — so two
+# independent references land on it.
+#
+# Ours perturbed the POSITION of a smooth ramp, which meanders the boundary but leaves
+# the gradient itself clean, and a clean gradient at this size reads as an airbrush.
+# This is noise in the alpha itself.
+TRANSITION_DISSOLVE = 0.55
 
 # How many cuts of each boundary-tiling mask to bake.
 #
