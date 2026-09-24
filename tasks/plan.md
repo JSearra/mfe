@@ -399,3 +399,55 @@ each actually does and which parts were worth taking.
 *Left alone deliberately:* the fields. They draw as hard-edged diamonds and that is not
 the same defect — a worked field has a definite boundary, as AoE2's farms do. If they
 want softening it is a decision about what a field IS, not about how tiles meet.
+
+---
+
+# Part V — the place it is actually set
+
+Asked for on 2026-09-24: look up KwaZulu-Natal grasslands, the Drakensberg, Zulu
+buildings, patterns and clothing, and make the terrain and buildings more like them.
+The art had been generated from prompts rather than from references, and the references
+disagreed with it in specific, correctable ways.
+
+- [x] **Z1 — Ground from the Drakensberg.** The section was upside down: the range is
+      Clarens sandstone capped by dark Jurassic basalt, and ours had the rock PALER than
+      the sandstone below it. Sandstone is cream and honey now, basalt near-black. The
+      low grassland prompt led with "deep orange-red earth" and got the Karoo again; it
+      is summer-rainfall sourveld now — dense, tussocky, green.
+- [x] **Z2 — Beehive huts with thatch courses.** The one most recognisable feature of an
+      iQhugwane and it was entirely absent. Eight rings following the dome's profile, a
+      low doorway facing the yard, taller proportions, warmer thatch. The ikhanda and
+      indlunkulu with them, because they are the same building larger.
+
+## Left to do, in the order worth doing it
+
+- [ ] **Z3 — Clothing from references.** `tools/art/make_unit.py`. The figures wear a
+      generic wrap. The vocabulary is specific and well documented: **ibheshu** (the
+      calf-skin back apron, knee-length on a young man), **isinene** (the front, rolled
+      rope-like hide strings), **umqhele** (the fur headband), **isicoco** (the head-ring
+      a married man wears), and for women **isidwaba** (the cowhide skirt) and
+      **isicholo** (the wide hat that marks a married woman). Status is legible in it —
+      leopard skin is royal and restricted, which is worth honouring rather than
+      scattering about.
+- [ ] **Z4 — The triangle, for the player's colour.** Zulu beadwork's basic geometric
+      shape is the triangle, and `impi-shield` / `impi-team` already exist as the overlay
+      the player's colour is painted on. Worth noting before using it: the orientations
+      carry specific meaning — a triangle pointing down is an unmarried woman, up an
+      unmarried man, two joined at the base a married woman — so the motif can be taken
+      as a visual vocabulary without claiming those meanings for a faction colour. The
+      *isishunka* palette (white, light blue, dark green, pale yellow, pink, red, black)
+      is the reference for the colours themselves.
+- [ ] **Z5 — More base-tile variants.** A large expanse of one ground repeats visibly at
+      three variants per band — the sandstone plateau on Thaba Bosiu shows it. Six would
+      cost 24 more tiles on a page that is already 427.
+- [ ] **Z6 — Fields still draw as hard diamonds.** Raised twice and deferred twice on the
+      grounds that a worked field has a definite boundary, as AoE2's farms do. Against
+      the softened ground they are now the most artificial thing on screen, so the
+      argument has weakened. A decision about what a field IS, not about how tiles meet.
+
+*Note for whoever picks this up:* `tools/art/generate_tiles.py` drives a local FLUX
+model and the weights ARE cached (~9GB in ~/.cache/huggingface), so terrain subjects can
+be regenerated — about 45 seconds an image, three per subject. `make_unit.py` and
+`make_building.py` need Blender, which is on this machine. The atlas is REPACKED rather
+than rebuilt: origins for the 2,600 unit frames are recovered from the shipped
+atlas.json, because the origins file they were written with is long gone.
