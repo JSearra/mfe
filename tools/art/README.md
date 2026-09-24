@@ -64,7 +64,13 @@ mflux built-in name that is *not* pre-quantised is 22GB or more.
 ```bash
 python tools/art/generate_tiles.py --out tools/art/raw --variants 4
 python tools/art/postprocess.py tile --in tools/art/raw --out public/assets/terrain
+python tools/art/season.py   # the dry and drought pages, from the page just written
 ```
+
+`season.py` must follow every `postprocess.py tile`: it re-tones the page it finds into
+`tiles-dry.png` and `tiles-drought.png` and records them in the manifest, which the tile
+command rewrites without them. The water-surface overlay tiles are procedural
+(`make_water_surface`) and come out of the tile command with everything else.
 
 Then measure what came out, which costs nothing and runs on the system Python:
 

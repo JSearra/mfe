@@ -170,6 +170,8 @@ interface TerrainTileEntry {
   readonly variant?: number;
   /** Set on field tiles: 'broken' for turned earth, 'crop' for a standing crop. */
   readonly field?: string;
+  /** For the water-surface overlay: which cell of its repeating block this tile is. */
+  readonly cell?: readonly [number, number];
   readonly averageColour: string;
   readonly x: number;
   readonly y: number;
@@ -218,6 +220,14 @@ export interface TerrainTiles {
    * would visibly change. A no-op when the pipeline shipped no seasonal pages.
    */
   setSeason(position: number): void;
+  /**
+   * The ripple overlay for open water at this tile, or null.
+   *
+   * Picked by world position, not hashed: the ripples are one continuous field that
+   * repeats every few tiles, and each tile is its own square of it, so neighbouring
+   * tiles meet without a seam. See `make_water_surface` in tools/art/postprocess.py.
+   */
+  waterSurface(tileX: number, tileY: number): TerrainTile | null;
   /** Variants available for a height level, nearest band if that level has none. */
   variants(level: number): readonly TerrainTile[];
   /**
@@ -307,6 +317,8 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
     // band -> [broken, crop]
     const fields: (TerrainTile | null)[][] = [];
     const shores = new Array<TerrainTile | null>(TRANSITION_MASKS * BLEND_VARIANTS).fill(null);
+    // cell y -> cell x -> tile. Square, and its side is however many the pipeline made.
+    const water: (TerrainTile | null)[][] = [];
     const shoreCorners = new Array<TerrainTile | null>(SEAM_CORNERS * BLEND_VARIANTS).fill(null);
 
     const pageWidth = page.source.width;
@@ -327,6 +339,10 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
       if (entry.field !== undefined) {
         const row = (fields[entry.band] ??= [null, null]);
         row[entry.field === 'crop' ? 1 : 0] = tile;
+        continue;
+      }
+      if (entry.subject === 'water' && entry.cell !== undefined) {
+        (water[entry.cell[1]] ??= [])[entry.cell[0]] = tile;
         continue;
       }
       if (entry.subject === 'shore') {
@@ -358,6 +374,13 @@ export async function loadTerrainTiles(base = 'assets/terrain'): Promise<Terrain
 
       setSeason(position: number) {
         seasonal?.set(position);
+      },
+
+      waterSurface(tileX: number, tileY: number) {
+        const period = water.length;
+        if (period === 0) return null;
+        const row = water[((tileY % period) + period) % period];
+        return row?.[((tileX % period) + period) % period] ?? null;
       },
 
       variants(level: number) {

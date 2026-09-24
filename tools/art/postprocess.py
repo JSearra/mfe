@@ -591,6 +591,80 @@ CORNER_REACH = 0.85
 TILE_PAD = 2
 
 
+WATER_PERIOD = 4
+"""Tiles before the water's ripple pattern repeats, along each axis."""
+
+
+def make_water_surface(cell_x: int, cell_y: int) -> Image.Image:
+    """
+    One tile of the ripple overlay drawn over open water.
+
+    The water was a flat fill: over fifteen thousand river pixels, a luminance spread of
+    1.5 against 15 to 21 for any land, and it read as a plastic sheet. Varying it per
+    TILE was tried and brought back a quilt of blue lozenges, so this varies inside the
+    tile instead, and is continuous across tile edges.
+
+    The pattern is a sum of waves over WORLD position with integer frequencies per
+    WATER_PERIOD tiles, so it repeats exactly every four tiles and has no seam anywhere:
+    each of the sixteen tiles samples its own square of the same field. Frequencies are
+    high enough that a ripple is an eighth to a quarter of a tile — detail under the
+    tile, never a feature at its scale.
+
+    It is an OVERLAY, not a colour: white where the surface catches light, near-black in
+    the troughs, at low alpha. The renderer keeps drawing the depth-shaded fill beneath
+    (shallows at the margin, deep in the channel) and lays this over it, so the colour
+    story is unchanged and only the flatness goes.
+    """
+    ys, xs = np.mgrid[0:TILE_H, 0:TILE_W].astype(np.float64)
+    # Pixel -> position inside the tile's world square, for a 2:1 diamond.
+    sx = (xs + 0.5 - TILE_W / 2) / (TILE_W / 2)
+    sy = (ys + 0.5) / (TILE_H / 2)
+    u = (sy + sx) / 2.0
+    v = (sy - sx) / 2.0
+    wx = (cell_x + u) / WATER_PERIOD
+    wy = (cell_y + v) / WATER_PERIOD
+
+    rng = np.random.default_rng(4242)
+    field = np.zeros_like(xs)
+    weight = 0.0
+    for _ in range(16):
+        fx = int(rng.integers(10, 22)) * (1 if rng.random() < 0.5 else -1)
+        fy = int(rng.integers(3, 12)) * (1 if rng.random() < 0.5 else -1)
+        amplitude = 1.0 / (1.0 + 0.08 * (abs(fx) + abs(fy)))
+        phase = rng.random() * 2 * np.pi
+        field += amplitude * np.sin(2 * np.pi * (fx * wx + fy * wy) + phase)
+        weight += amplitude * amplitude / 2.0
+    # In standard deviations. A sum of sines has an exact variance, so this is the same
+    # constant for all sixteen tiles and they stay continuous at their edges.
+    field /= np.sqrt(weight)
+
+    # A slow swell over the ripples, still periodic in WATER_PERIOD, so the glints gather
+    # in patches and leave calm stretches between. Without it nine waves interfere into a
+    # regular lattice of dots, which is a pattern rather than a surface.
+    envelope = np.zeros_like(xs)
+    for fx, fy in ((1, 2), (2, -1), (-1, 1)):
+        envelope += np.sin(2 * np.pi * (fx * wx + fy * wy) + rng.random() * 2 * np.pi)
+    envelope = 0.4 + 0.6 * np.clip(0.5 + envelope / 4.0, 0.0, 1.0)
+    field *= envelope
+
+    # Crests are narrow and bright, troughs broad and faint, which is how light on moving
+    # water actually falls: a glint is a line, a shadow is a wash.
+    crest = np.clip((field - 0.7) / 1.4, 0.0, 1.0) ** 1.3
+    trough = np.clip((-field - 0.3) / 1.6, 0.0, 1.0)
+    out = np.zeros((TILE_H, TILE_W, 4), dtype=np.float64)
+    light = np.array([232.0, 244.0, 248.0])
+    dark = np.array([8.0, 22.0, 32.0])
+    alpha_light = crest * 0.34
+    alpha_dark = trough * 0.22
+    alpha = alpha_light + alpha_dark
+    safe = np.where(alpha > 1e-6, alpha, 1.0)
+    rgb = (light[None, None, :] * alpha_light[:, :, None] + dark[None, None, :] * alpha_dark[:, :, None]) / safe[:, :, None]
+    out[:, :, :3] = rgb
+    out[:, :, 3] = alpha * 255.0
+    out[~diamond_mask(TILE_W, TILE_H)] = 0
+    return Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), "RGBA")
+
+
 def average_colour(tile: Image.Image) -> str:
     """Mean colour of a tile's opaque pixels, as #rrggbb.
 
@@ -839,6 +913,28 @@ def command_tile(args: argparse.Namespace) -> int:
             )
     print(f"  {2 * len(first_of_band)} field tiles")
 
+    # --- water surface -----------------------------------------------------------
+    #
+    # Appended last so every tile above keeps its place on the page.
+    for gy in range(WATER_PERIOD):
+        for gx in range(WATER_PERIOD):
+            name = f"water-surface-{gx}-{gy}.png"
+            surface = make_water_surface(gx, gy)
+            surface.save(target / name)
+            packed.append((name, surface))
+            manifest.append(
+                {
+                    "file": name,
+                    "subject": "water",
+                    "width": TILE_W,
+                    "height": TILE_H,
+                    "cell": [gx, gy],
+                    "averageColour": average_colour(surface),
+                    "seam": 0.0,
+                }
+            )
+    print(f"  {WATER_PERIOD * WATER_PERIOD} water surface tiles")
+
     placement = pack_tiles(packed, target)
     for entry in manifest:
         entry["x"], entry["y"] = placement[entry["file"]]
@@ -854,7 +950,11 @@ def command_tile(args: argparse.Namespace) -> int:
     already clears its own stale output for the same reason.
     """
     written = {entry["file"] for entry in manifest} | {"tiles.png", "manifest.json"}
-    stale = sorted(p.name for p in target.glob("*.png") if p.name not in written)
+    # The seasonal pages are tools/art/season.py's, derived from this page and rewritten
+    # by it — run it after this. They are not stale, only not ours.
+    stale = sorted(
+        p.name for p in target.glob("*.png") if p.name not in written and not p.name.startswith("tiles-")
+    )
     for name in stale:
         (target / name).unlink()
 

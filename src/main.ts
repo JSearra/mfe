@@ -1,6 +1,6 @@
 import { UPDATE_PRIORITY } from 'pixi.js';
 import { t } from './core/i18n/index.js';
-import { heightAt } from './shared/heightmap.js';
+import { heightAt, isWater } from './shared/heightmap.js';
 import { worldToScreenX, worldToScreenY } from './shared/iso.js';
 import { NO_TILE, pickTileIndex, tileX, tileY } from './shared/picking.js';
 import {
@@ -825,6 +825,29 @@ async function main(options: GameOptions): Promise<void> {
       // the world. Without it a browser-driven session can see that a match ended but
       // not what ended it, which cost an afternoon.
       player: () => lastPlayer,
+      // Centre the camera on a tile, for looking at a particular piece of ground.
+      lookAt: (tileX: number, tileY: number) => {
+        camera.x = worldToScreenX(tileX + 0.5, tileY + 0.5);
+        camera.y = worldToScreenY(tileX + 0.5, tileY + 0.5, heightAt(map, tileX, tileY));
+      },
+      // The open-water tile nearest the camera's tile with water on every side, from the
+      // renderer's own copy of the map, or null on a dry map.
+      nearestWater: () => {
+        let best: [number, number] | null = null;
+        let bestDistance = Infinity;
+        for (let y = 1; y < map.height - 1; y++) {
+          for (let x = 1; x < map.width - 1; x++) {
+            if (!isWater(map, x, y) || !isWater(map, x + 1, y) || !isWater(map, x - 1, y)) continue;
+            if (!isWater(map, x, y + 1) || !isWater(map, x, y - 1)) continue;
+            const d = (x - map.width / 2) ** 2 + (y - map.height / 2) ** 2;
+            if (d < bestDistance) {
+              bestDistance = d;
+              best = [x, y];
+            }
+          }
+        }
+        return best;
+      },
       // Show the veld at a season ramp position (0 wet, 1 dry, 2 drought), or null to
       // follow the weather again. Render-side only; the simulation's weather is untouched.
       season: (position: number | null) => {

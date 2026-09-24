@@ -50,7 +50,7 @@ import zlib
 TERRAIN = pathlib.Path("public/assets/terrain")
 RAW = pathlib.Path("tools/art/raw")
 # Subjects that are not a ground band in their own right.
-DERIVED = ("transition", "corner", "shore", "field")
+DERIVED = ("transition", "corner", "shore", "field", "water")
 
 
 class Png:

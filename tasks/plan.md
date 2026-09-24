@@ -455,7 +455,11 @@ as a quilt; savanna-low seed 1501, a ploughed field, is rejected and replaced.
 
 Left open, in the order they seem worth doing:
 
-- [ ] **V1 — Water is flat.** Measured over 15,586 river pixels: luminance sd 1.53 and
+- [x] **V1 — Water is flat.** Done: a procedural ripple overlay (`make_water_surface` in
+      postprocess.py) — sixteen tiles sampling one wave field that repeats every four
+      tiles, so it is continuous across tile edges — drawn in the top mesh over the
+      unchanged depth-shaded fill. In the game, 31,648 river pixels: luminance sd 7.8,
+      2,235 colours. No draw calls added. Was: measured over 15,586 river pixels: luminance sd 1.53 and
       five near-identical colours, against 15 to 21 for land. It reads as a plastic
       sheet. `terrain.ts` records a deliberate decision not to texture it — "at this
       scale a river reads as a colour and a shape, and a textured one would read as more

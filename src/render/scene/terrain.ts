@@ -403,6 +403,19 @@ function drawTile(
     graphics.fill({ color: waterFill(smoothWaterDepth(map, tileX, tileY)) });
 
     /*
+     * Ripples over the fill, as an overlay in the top mesh.
+     *
+     * The fill alone was a plastic sheet — a luminance spread of 1.5 against 15 to 21
+     * for land. Varying the fill per tile brings back the quilt of blue lozenges that
+     * `smoothWaterDepth` was written to remove, so the variation is inside the tile:
+     * white glints and dark troughs at low alpha, from one continuous field that repeats
+     * every few tiles. The depth-shaded colour underneath is untouched. Into `base`, so
+     * the banks bleeding in below still draw over it.
+     */
+    const surface = tiles?.waterSurface(tileX, tileY) ?? null;
+    if (surface !== null) pushQuad(base, positions, surface.uv);
+
+    /*
      * And the bank creeping in over it.
      *
      * A shore is two grounds meeting. The land beside water already gets a bank drawn
