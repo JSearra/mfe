@@ -113,7 +113,7 @@ describe('the people eat before the herd (Phase B3)', () => {
    * village, not end it (ADR-0020) — and a herd that has outgrown the land is the herd's
    * problem first.
    */
-  function withHerd(units: number, head: number, grain: number) {
+  function withHerd(units: number, head: number, grain: number, season = 1) {
     const world = villageOf(units);
     const economy = createEconomy(PLAYERS, 1);
     economy.spend(0, Resource.Grain, economy.balance(0, Resource.Grain));
@@ -121,7 +121,7 @@ describe('the people eat before the herd (Phase B3)', () => {
     economy.add(0, Resource.Grain, grain);
     economy.add(0, Resource.Cattle, head);
     const events: SimEvent[] = [];
-    world.tick = E.upkeepIntervalTicks;
+    world.tick = E.upkeepIntervalTicks * season;
     economy.update(world, events);
     return {
       events,
@@ -141,9 +141,17 @@ describe('the people eat before the herd (Phase B3)', () => {
   });
 
   it('takes the shortfall out of the herd instead, and says so', () => {
-    const r = withHerd(20, 400, 20 * E.grainPerUnit * 1.5);
+    const warn = tuning.farmland.warnEverySeasons;
+    const r = withHerd(20, 400, 20 * E.grainPerUnit * 1.5, warn);
     expect(r.cattle).toBeLessThan(400);
     expect(r.hungryHerd).toBe(1);
+  });
+
+  it('says so every few seasons, not every one', () => {
+    // It fired 16 to 52 times in four years when it spoke every season.
+    const quiet = withHerd(20, 400, 20 * E.grainPerUnit * 1.5, tuning.farmland.warnEverySeasons + 1);
+    expect(quiet.cattle).toBeLessThan(400);
+    expect(quiet.hungryHerd).toBe(0);
   });
 
   it('still starves the people when there is not enough for them either', () => {

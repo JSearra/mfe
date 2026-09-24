@@ -48,6 +48,8 @@ interface Tally {
   minGrain: number;
   endGrain: number;
   firstHungryYear: number;
+  /** Alerts this village's player would have seen, by kind — to catch nagging. */
+  alerts: Record<string, number>;
 }
 
 export interface SoakResult {
@@ -86,6 +88,7 @@ export function soak(seed: number, years = YEARS, script: MapScript | '' = SCRIP
     minGrain: Infinity,
     endGrain: 0,
     firstHungryYear: -1,
+    alerts: {},
   }));
   let stampedes = 0;
   /** Handle -> tick it last went hungry. */
@@ -123,6 +126,17 @@ export function soak(seed: number, years = YEARS, script: MapScript | '' = SCRIP
     runTicks(host.loop, season);
     for (const event of host.loop.events) {
       if (event.type === EventType.StampedeBegan) stampedes++;
+      const watched: [number, string, 'payload' | 'y'][] = [
+        [EventType.HandsShort, 'hands', 'payload'],
+        [EventType.HerdHungry, 'herd', 'payload'],
+        [EventType.FieldsFailing, 'fields', 'payload'],
+        [EventType.AllianceOffered, 'offered', 'y'],
+      ];
+      for (const [type, name, field] of watched) {
+        if (event.type !== type) continue;
+        const owner = event[field];
+        if (owner === 0 || owner === 1) players[owner]!.alerts[name] = (players[owner]!.alerts[name] ?? 0) + 1;
+      }
       if (event.type === EventType.Starved || event.type === EventType.Died) {
         const owner = world.faction[handleIndex(event.handle)]!;
         if (owner > 1) continue;
@@ -166,7 +180,7 @@ describe.runIf(process.env.SOAK === '1')('soak', () => {
   it('prints a table', { timeout: 0 }, () => {
     const rows: string[] = [];
     const head =
-      'seed        | who  | hungry | starved | deaths (hunger) | people s/peak/end | grain min/end | 1st hungry yr | stampedes';
+      'seed        | who  | hungry | starved | deaths (hunger) | people s/peak/end | grain min/end | 1st hungry yr | stampedes | alerts';
     rows.push(head);
     const sums = [0, 1].map(() => ({ hungry: 0, deaths: 0, end: 0, n: 0 }));
     for (const seed of SEEDS) {
@@ -188,7 +202,8 @@ describe.runIf(process.env.SOAK === '1')('soak', () => {
             `${t.start}/${t.peak}/${t.end}`.padStart(17),
             `${Math.round(t.minGrain)}/${Math.round(t.endGrain)}`.padStart(13),
             (t.firstHungryYear < 0 ? '-' : t.firstHungryYear.toFixed(2)).padStart(13),
-            owner === 0 ? String(r.stampedes).padStart(9) : '',
+            owner === 0 ? String(r.stampedes).padStart(9) : ''.padStart(9),
+            Object.entries(t.alerts).map(([k, v]) => `${k} ${v}`).join(', '),
           ].join(' | '),
         );
       }

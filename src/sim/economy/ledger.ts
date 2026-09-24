@@ -501,7 +501,13 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
             const lost = Math.min(onLedger, unfedHead * tuning.herd.hungryLossShare);
             if (lost > 0) {
               economy.spend(player, Resource.Cattle, lost);
-              events.push(makeEvent(world.tick, EventType.HerdHungry, 0, 0, 0, player));
+              // Said every few seasons while it lasts, not every season: measured, it fired
+              // 16 to 52 times in four years and buried everything else in the alert bar.
+              // The same cadence, and the same stateless rule, as the failing-fields warning.
+              const every = tuning.farmland.warnEverySeasons;
+              if (every <= 1 || Math.round(tick / e.upkeepIntervalTicks) % every === 0) {
+                events.push(makeEvent(world.tick, EventType.HerdHungry, 0, 0, 0, player));
+              }
             }
           }
 
