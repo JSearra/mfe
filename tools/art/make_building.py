@@ -34,6 +34,11 @@ ISIBAYA_RADIUS = 3.4
 HUT_RADIUS = 1.15
 GRANARY_RADIUS = 0.85
 
+# Set per build() call; the thatch-course and doorway helpers read them. Declared here
+# so the module is legible without having to find where they are assigned.
+BANDING = None
+SHADOW = None
+
 KINDS = (
     "isibaya",
     "umuzi",
@@ -73,6 +78,71 @@ def dome(name, radius, height, location):
     obj.scale = (radius, radius, height)
     bpy.ops.object.shade_smooth()
     return obj
+
+
+def thatch_courses(root, radius, height, band, location=(0.0, 0.0, 0.0), courses=8):
+    """
+    The horizontal grass courses that run round a beehive hut.
+
+    This is the single most recognisable thing about an iQhugwane and the domes had
+    none of it: photographs of them show strong horizontal banding all the way up,
+    from the courses of grass themselves and from the braided rope that binds each one
+    down. Without it a beehive hut is a smooth shell, which is what ours were — closer
+    to a plastic bowl than to thatch.
+
+    Each ring sits on the dome's own profile, so they hug the surface rather than
+    floating off it: at a fraction `t` of the way to the apex the surface is at
+    `sin(t·π/2)` of the height and `cos(t·π/2)` of the radius.
+
+    Eight thin ones rather than six fat ones. The first pass used a minor radius of
+    0.052 of the hut and they read as stacked tyres — a hoop standing proud of the shell
+    rather than a course lying in it. Thatch banding is a shadow line, so what is wanted
+    is many shallow ones.
+    """
+    for i in range(courses):
+        t = (i + 0.5) / courses
+        ring_radius = math.cos(t * math.pi / 2) * radius
+        # Too small to read, and a torus that tight renders as a blob at the apex.
+        if ring_radius < radius * 0.18:
+            continue
+        bpy.ops.mesh.primitive_torus_add(
+            major_radius=ring_radius,
+            minor_radius=radius * 0.032,
+            major_segments=20,
+            minor_segments=6,
+            location=(location[0], location[1], location[2] + math.sin(t * math.pi / 2) * height),
+        )
+        ring = bpy.context.active_object
+        ring.name = f"course_{i}"
+        ring.data.materials.append(band)
+        ring.parent = root
+
+
+def doorway(root, radius, facing, dark, location=(0.0, 0.0, 0.0)):
+    """
+    The low entrance.
+
+    Deliberately low: the door of an iQhugwane is small enough to stoop through, which
+    holds the heat in and controls who comes in and how. At this size it is one dark
+    notch, and a dark notch is most of what tells a viewer which way a hut faces.
+    """
+    bpy.ops.mesh.primitive_cylinder_add(
+        vertices=12,
+        radius=radius * 0.26,
+        # Shallow, so it breaks the shell as a notch rather than sticking out of it as
+        # a spout. A door is four pixels at the size this is actually seen.
+        depth=radius * 0.25,
+        location=(
+            location[0] + math.cos(facing) * radius * 0.91,
+            location[1] + math.sin(facing) * radius * 0.91,
+            location[2] + radius * 0.24,
+        ),
+        rotation=(math.pi / 2, 0.0, facing),
+    )
+    door = bpy.context.active_object
+    door.name = "door"
+    door.data.materials.append(dark)
+    door.parent = root
 
 
 def build_isibaya(root, stage, thatch, timber, earth):
@@ -141,9 +211,14 @@ def build_umuzi(root, stage, thatch, timber, earth):
                 arc.parent = root
             continue
 
-        hut = dome(f"hut_{i}", HUT_RADIUS, HUT_RADIUS * 0.85, (x, y, 0.02))
+        # Taller than it was. References for the iQhugwane describe it as notably
+        # taller than wide; ours was 0.85 of its own radius, which is a squashed bowl.
+        hut = dome(f"hut_{i}", HUT_RADIUS, HUT_RADIUS * 1.05, (x, y, 0.02))
         hut.data.materials.append(thatch)
         hut.parent = root
+        thatch_courses(root, HUT_RADIUS, HUT_RADIUS * 1.05, BANDING, (x, y, 0.02))
+        # Doors face the yard, which is what a homestead's huts actually do.
+        doorway(root, HUT_RADIUS, angle + math.pi, SHADOW, (x, y, 0.02))
 
 
 def build_grain_store(root, stage, thatch, timber, earth):
@@ -404,12 +479,17 @@ def build_ikhanda(root, stage, thatch, timber, earth):
     huts = 5 if stage == 1 else 9
     for i in range(huts):
         angle = (i / huts) * math.tau
-        hut = dome(
-            f"hut_{i}", HUT_RADIUS * 1.05, HUT_RADIUS * 0.8,
-            (math.cos(angle) * radius * 0.78, math.sin(angle) * radius * 0.78, 0.02),
-        )
+        hut_radius = HUT_RADIUS * 1.05
+        hut_height = HUT_RADIUS * 1.0
+        at = (math.cos(angle) * radius * 0.78, math.sin(angle) * radius * 0.78, 0.02)
+        hut = dome(f"hut_{i}", hut_radius, hut_height, at)
         hut.data.materials.append(thatch)
         hut.parent = root
+        # The same thatched courses. An ikhanda is a homestead laid out like any other,
+        # larger and around the king's authority rather than a family's — the huts in it
+        # are the same iQhugwane.
+        thatch_courses(root, hut_radius, hut_height, BANDING, at)
+        doorway(root, hut_radius, angle + math.pi, SHADOW, at)
 
     if stage < 2:
         return
@@ -450,6 +530,10 @@ def build_indlunkulu(root, stage, thatch, timber, earth):
 
     height = 1.05 if stage == 1 else 1.5
     hut = dome("great_house", 1.72, height, (0, 0, 0.08))
+    # The indlunkulu is the biggest iQhugwane on the map rather than a different kind of
+    # building, so it is coursed like the rest — with more of them, because it is larger
+    # and the banding should stay roughly the same size on screen.
+    thatch_courses(root, 1.72, height, BANDING, (0, 0, 0.08), courses=11)
     hut.data.materials.append(thatch)
     hut.parent = root
 
@@ -499,9 +583,21 @@ def build(kind, stage):
     # it: 0.8 linear came back at 185, which is the sRGB curve and not a lighting
     # problem. These sit in the same range as the unit skin, which has looked right
     # since it was set the same way.
-    thatch = material("thatch", (0.20, 0.13, 0.05))
+    # Warmer and lighter than it was. References for the iQhugwane describe golden-brown
+    # to tan thatch; 0.20/0.13/0.05 read as a flat mid brown with no straw in it.
+    thatch = material("thatch", (0.27, 0.175, 0.062))
     timber = material("timber", (0.085, 0.052, 0.028))
     earth = material("earth", (0.125, 0.088, 0.052))
+
+    # Module-level rather than threaded through eight builder signatures, and set fresh
+    # on every call because `build` reads factory settings first and every material in
+    # the file goes with the old scene. The helpers that need them reach for them here.
+    global BANDING, SHADOW
+    # The rope and the shadow under each grass course: the same thatch, darker, so the
+    # banding reads as depth rather than as a painted stripe.
+    BANDING = material("banding", (0.155, 0.098, 0.034))
+    # A doorway is a hole. Nearly black, because at this size that is all it can be.
+    SHADOW = material("shadow", (0.018, 0.013, 0.008))
 
     root = bpy.data.objects.new("building", None)
     bpy.context.scene.collection.objects.link(root)
