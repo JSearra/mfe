@@ -3,7 +3,7 @@ import { createAi } from '../src/sim/ai/opponent.js';
 import { runTicks } from '../src/sim/loop.js';
 import { Resource } from '../src/sim/economy/ledger.js';
 import { EntityKind, spawn } from '../src/sim/world.js';
-import { makeSim } from './simHarness.js';
+import { foundHomestead, makeSim } from './simHarness.js';
 
 /**
  * The neighbour obeys the rule the game states.
@@ -25,6 +25,8 @@ function match(seed: number, ticks: number) {
   const sim = makeSim(512, seed, undefined, []);
   for (let i = 0; i < 14; i++) spawn(sim.world, 8 + (i % 4), 8 + (i >> 2), 0);
   for (let i = 0; i < 14; i++) spawn(sim.world, 24 + (i % 4), 24 + (i >> 2), 1);
+  foundHomestead(sim, 0, 8, 8);
+  foundHomestead(sim, 1, 24, 24);
   sim.loop.ai.push({ player: 0, controller: createAi(0) });
   sim.loop.ai.push({ player: 1, controller: createAi(1) });
   runTicks(sim.loop, ticks);

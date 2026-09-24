@@ -5,6 +5,7 @@ import { createAi } from '../../sim/ai/opponent.js';
 import { createConstructionSystem } from '../../sim/construction.js';
 import { createTechState } from '../../sim/tech.js';
 import { createCensus, type Census } from '../../sim/census.js';
+import { createLabour, idleOf } from '../../sim/labour.js';
 import { createProductionSystem } from '../../sim/production.js';
 import { createEconomy, Ration, Resource, type Economy } from '../../sim/economy/ledger.js';
 import { createWoodland, packWoodland, type Woodland } from '../../sim/woodland.js';
@@ -100,6 +101,7 @@ function start(message: InitMessage): void {
     census: (census = createCensus(
       Math.max(message.factions.length, message.viewerId + 1),
     )),
+    labour: createLabour(Math.max(message.factions.length, message.viewerId + 1)),
     fog,
     map,
   });
@@ -168,6 +170,9 @@ function tick(): void {
     droughtSevere: droughtNow >= tuning.economy.droughtThreshold,
     households: census.households[viewerId] ?? 0,
     emptied: census.emptied[viewerId] === 1,
+    idle: idleOf(world, viewerId),
+    handsShort: loop.labour.short[viewerId] ?? 0,
+    siteHands: tuning.labour.siteHands,
   };
 
   let fogSlice: Uint8Array | null = null;

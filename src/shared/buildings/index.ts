@@ -133,6 +133,16 @@ export interface BuildingSpec {
   readonly hardyGrainYield: number;
   /** Cattle added at each upkeep once complete. */
   readonly cattleYield: number;
+  /**
+   * People it takes to run, once built. Zero for a building that runs itself.
+   *
+   * What it yields is scaled by how many of these are actually there: a granary with
+   * one of its two hands pays half (ADR-0020, roadmap Phase B2 — the owner asked for
+   * every producing building to need people, Tropico-fashion). Dwellings are zero because
+   * they are where the hands come FROM, and the pit and the weir are zero because they
+   * produce nothing to staff.
+   */
+  readonly hands: number;
   /** Terrain must be this flat across the footprint. */
   readonly maxHeightVariation: number;
   /** Whether troops can be raised here. */
@@ -183,6 +193,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
      * ignored the herd entirely and put up two kraals won faster than one who raided.
      */
     cattleYield: 0.5,
+    hands: 2,
     maxHeightVariation: 0,
     holdsCattle: true,
     trains: false,
@@ -215,6 +226,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     grainYield: 1,
     hardyGrainYield: 0,
     cattleYield: 0,
+    hands: 0,
     maxHeightVariation: 0,
     // A homestead is where people come from, so this is where troops are raised.
     holdsCattle: false,
@@ -241,6 +253,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     grainYield: 0,
     hardyGrainYield: 0,
     cattleYield: 0,
+    hands: 0,
     maxHeightVariation: 0,
     holdsCattle: false,
     trains: true,
@@ -261,6 +274,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     // indlunkulu would be strictly better — the same cattle plus grain — and the
     // building actually named for cattle would be the wrong thing to build.
     cattleYield: 0.15,
+    hands: 1,
     maxHeightVariation: 0,
     holdsCattle: false,
     trains: false,
@@ -284,6 +298,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     grainYield: 0,
     hardyGrainYield: 0,
     cattleYield: 0,
+    hands: 0,
     maxHeightVariation: 0,
     holdsCattle: false,
     trains: false,
@@ -308,6 +323,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     grainYield: 0,
     hardyGrainYield: 0,
     cattleYield: 0,
+    hands: 0,
     maxHeightVariation: 0,
     holdsCattle: false,
     trains: false,
@@ -340,6 +356,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
      */
     hardyGrainYield: 4.5,
     cattleYield: 0,
+    hands: 1,
     maxHeightVariation: 0,
     holdsCattle: false,
     trains: false,
@@ -357,6 +374,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     grainYield: 9,
     hardyGrainYield: 0,
     cattleYield: 0,
+    hands: 2,
     maxHeightVariation: 0,
     holdsCattle: false,
     trains: false,

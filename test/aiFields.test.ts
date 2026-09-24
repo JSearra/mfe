@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createAi } from '../src/sim/ai/opponent.js';
 import { runTicks } from '../src/sim/loop.js';
 import { EntityKind, spawn } from '../src/sim/world.js';
-import { makeSim, flatMap } from './simHarness.js';
+import { foundHomestead, makeSim, flatMap } from './simHarness.js';
 import { createHeightmap } from '../src/sim/terrain/generate.js';
 
 /**
@@ -29,6 +29,8 @@ function match(map: ReturnType<typeof flatMap>, ticks: number) {
   const sim = makeSim(512, 0x0a1, map, []);
   for (let i = 0; i < 14; i++) spawn(sim.world, 8 + (i % 4), 8 + (i >> 2), 0);
   for (let i = 0; i < 14; i++) spawn(sim.world, 24 + (i % 4), 24 + (i >> 2), 1);
+  foundHomestead(sim, 0, 8, 8);
+  foundHomestead(sim, 1, 24, 24);
   sim.loop.ai.push({ player: 0, controller: createAi(0) });
   sim.loop.ai.push({ player: 1, controller: createAi(1) });
   runTicks(sim.loop, ticks);

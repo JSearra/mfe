@@ -73,6 +73,14 @@ export const EventType = {
    * 23 was `NeighbourSettling`, the warning that a rival was close to winning. Retired
    * with the win condition (ADR-0020) and left as a gap.
    */
+  /**
+   * A place that needs hands has nobody, and nobody is free to send.
+   *
+   * `x`/`y` are the place, `payload` the village. Work finds its own people now
+   * (src/sim/labour.ts), so the thing a player has to be told is no longer "go and stand
+   * in that field" but "there are not enough of you for what you have built".
+   */
+  HandsShort: 24,
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];

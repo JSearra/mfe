@@ -850,6 +850,46 @@ two places that both want the same person, and what the player sees about it. A
 worksite's readout ("3 of 4 hands") is half of this mechanic, the same way `builders`
 was.
 
+**Done (2026-09-24).** The design, as built in `src/sim/labour.ts`:
+
+- *What asks.* A field asks for one pair of hands, or its full `maxHands` while it is
+  being broken or is below `fieldRecoverBelow`; nothing while it rests. A finished
+  building asks for its spec's `hands` — kraal 2, granary 2, fold 1, great house 1 —
+  and **pays in proportion to the hands at it** (the owner's call: every producing
+  building needs people). Dwellings, the pit and the weir run themselves. A building
+  site asks for `siteHands`. The water asks for two anglers at each of up to three
+  spaced shore tiles nearest a dwelling.
+- *Only near home.* A place asks only within `homeRadius` of one of its village's
+  finished dwellings. Work comes from homesteads; a field across the valley needs
+  sending.
+- *Who wins a person.* Two rounds: every place gets one pair of hands, then any place
+  gets more, in the order fields (worst first), buildings, sites, water. The nearest
+  free villager goes, ties on entity index. Whoever is already working somewhere that
+  still wants them stays.
+- *The override.* A move, patrol or leash holds the villager out of the pool until the
+  order is done and `holdTicks` have passed; nobody is released while holding a
+  tether.
+- *What it pays by is unchanged.* Fields, sites and banks still pay whoever stands at
+  them, so a hand sent by hand counts the same.
+- *The readout.* "N of M hands" on a selected building or site, "N tending, asks for
+  M" on the field under the pointer, `N idle` or `N hands short` on the resource bar,
+  and a `HandsShort` alert when a place waits with nobody free.
+
+What building it turned up, all older than B2 and all invisible while nobody walked
+anywhere on their own:
+
+- The match script founded **both** villages for player 0 — Build took its owner from
+  provenance — so the player owned the neighbour's kraal and huts forty tiles off.
+- The AI sent `d: player` on every Build after `d` came to mean "found it free and
+  standing", so player 1 built everything for nothing all match. Founding is now
+  refused after the first upkeep. Part II's AI measurements were taken on that.
+- Villagers spawned on the ring the huts stand on, some inside footprints for good; and
+  up to four of ten starting fields came out under a founded hut. Founding now moves a
+  field it lands on.
+- A penned herd never calmed with anyone within four tiles, so a field hand beside the
+  kraal wound it to a stampede in a few minutes. A beast in a village's kraal is now
+  used to that village's people, as a driven one is to its drover.
+
 ## Phase B3 — hunger is survivable
 
 Retune, after B2, so that a village played well rarely starves. It is measured the way

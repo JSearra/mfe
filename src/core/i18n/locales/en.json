@@ -64,6 +64,10 @@
     "cattleLore": "Cattle lore",
     "mountedCommando": "Mounted commando"
   },
+  "labour": {
+    "idle": "{count} idle",
+    "short": "{count} hands short"
+  },
   "village": {
     "households": "Village {count}",
     "emptied": "Nobody is left in your village",
@@ -96,7 +100,16 @@
     "allyWaiting": "Waiting on {village}",
     "allyWithdraw": "Withdraw the offer",
     "siteIdle": "{name} — {pct}% built · nobody working it",
-    "siteBuilding": "{name} — {pct}% built · {builders} building",
+    "siteBuilding": "{name} — {pct}% built · {builders} of {wanted} hands",
+    "staffed": "{name} — {hands} of {wanted} hands",
+    "unstaffed": "{name} — nobody working it, producing nothing",
+    "field": {
+      "heading": "Field",
+      "worked": "{condition}% condition · {hands} tending, asks for {wanted}",
+      "breaking": "Breaking new ground · {hands} working, asks for {wanted}",
+      "resting": "Resting, {condition}% condition · {hands} standing in it",
+      "far": "{condition}% condition · {hands} tending · too far from a homestead for work to find it"
+    },
     "rationShort": "Cut the ration",
     "rationFull": "Restore the ration",
     "rationShortHint": "The village eats less and works slower. Grain lasts, building does not.",
@@ -110,7 +123,8 @@
     "jump": "press Space to look",
     "relief": "An ally has sent grain",
     "starving": "People are going hungry",
-    "fieldsFailing": "Fields are failing — send people to tend them",
+    "fieldsFailing": "Fields are failing — not enough hands to tend them",
+    "handsShort": "Work is waiting and nobody is free to do it",
     "allianceOffered": "A neighbour asks for a standing tie"
   },
   "setup": {

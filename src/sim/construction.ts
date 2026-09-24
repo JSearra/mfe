@@ -86,7 +86,10 @@ export interface ConstructionSystem {
     events: SimEvent[],
     labour?: (player: number) => number,
   ): void;
-  /** Grain and cattle produced per upkeep by this player's finished buildings. */
+  /**
+   * Grain and cattle produced per upkeep by this player's finished buildings, each
+   * scaled by the share of its hands that are there.
+   */
   yieldFor(world: World, owner: number): { grain: number; hardyGrain: number; cattle: number };
 }
 
@@ -96,6 +99,8 @@ export function createConstructionSystem(
 ): ConstructionSystem {
   const stats: ConstructionStats = { placed: 0, completed: 0, refused: 0 };
   const neighbours: number[] = [];
+  /** Finished buildings that need staff, rebuilt each tick. */
+  const staffed: number[] = [];
   /** Footprint origin per building, so completion and demolition know their tiles. */
   const origins = new Map<number, { tileX: number; tileY: number; type: BuildingType }>();
 
@@ -228,12 +233,55 @@ export function createConstructionSystem(
     update(world, grid, events, labour): void {
       const b = tuning.buildings;
 
+      /*
+       * Hands at the finished buildings that need them (ADR-0020, Phase B2).
+       *
+       * Counted from where people stand, like every other place of work, and each person
+       * counted ONCE, at the nearest such building. A granary and a kraal a few tiles
+       * apart would otherwise both claim whoever stood between them, and a village could
+       * staff two buildings with one pair of hands. Nearest, ties broken on the building's
+       * index, so the answer does not depend on scan order.
+       */
+      staffed.length = 0;
+      for (let index = 0; index < world.capacity; index++) {
+        if (world.alive[index] !== 1 || world.kind[index] !== EntityKind.Building) continue;
+        const spec = buildingSpec(world.buildingType[index]!);
+        if (spec.hands === 0 || world.buildProgress[index]! < spec.work) continue;
+        world.builders[index] = 0;
+        staffed.push(index);
+      }
+      if (staffed.length > 0) {
+        const reachSq = tuning.labour.buildingReach * tuning.labour.buildingReach;
+        for (let unit = 0; unit < world.capacity; unit++) {
+          if (world.alive[unit] !== 1 || world.kind[unit] !== EntityKind.Unit) continue;
+          let nearest = -1;
+          let nearestSq = Infinity;
+          for (const building of staffed) {
+            if (world.faction[building] !== world.faction[unit]) continue;
+            const dx = world.posX[building]! - world.posX[unit]!;
+            const dy = world.posY[building]! - world.posY[unit]!;
+            const distanceSq = dx * dx + dy * dy;
+            if (distanceSq > reachSq) continue;
+            // Strictly nearer, so a tie keeps the lower index (staffed is in index order).
+            if (distanceSq < nearestSq) {
+              nearestSq = distanceSq;
+              nearest = building;
+            }
+          }
+          if (nearest !== -1 && world.builders[nearest]! < 255) {
+            world.builders[nearest] = world.builders[nearest]! + 1;
+          }
+        }
+      }
+
       for (let index = 0; index < world.capacity; index++) {
         if (world.alive[index] !== 1 || world.kind[index] !== EntityKind.Building) continue;
 
         const spec = buildingSpec(world.buildingType[index]!);
         if (world.buildProgress[index]! >= spec.work) {
-          world.builders[index] = 0;
+          // A building that needs staff keeps the count taken above; one that runs
+          // itself has nobody to count.
+          if (spec.hands === 0) world.builders[index] = 0;
           continue;
         }
 
@@ -294,9 +342,14 @@ export function createConstructionSystem(
 
         const spec = buildingSpec(world.buildingType[index]!);
         if (world.buildProgress[index]! < spec.work) continue;
-        grain += spec.grainYield;
-        hardyGrain += spec.hardyGrainYield;
-        cattle += spec.cattleYield;
+        // Paid in proportion to the hands actually there. An unstaffed granary stores
+        // nothing and an unkept kraal breeds nothing (ADR-0020, Phase B2).
+        const present = world.builders[index]!;
+        const share =
+          spec.hands === 0 ? 1 : (present < spec.hands ? present : spec.hands) / spec.hands;
+        grain += spec.grainYield * share;
+        hardyGrain += spec.hardyGrainYield * share;
+        cattle += spec.cattleYield * share;
       }
       return { grain, hardyGrain, cattle };
     },

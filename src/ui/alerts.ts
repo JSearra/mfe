@@ -56,6 +56,9 @@ const WATCHED: Readonly<Record<number, MessageKey>> = {
   // position, so Space takes the player to the thing that needs hands on it.
   [EventType.FieldsFailing]: 'alert.fieldsFailing',
   [EventType.AllianceOffered]: 'alert.allianceOffered',
+  // Work finds its own people now, so what needs saying is that there are not enough of
+  // them. Carries the place that is waiting, so Space shows it.
+  [EventType.HandsShort]: 'alert.handsShort',
 };
 
 /**
@@ -70,6 +73,7 @@ const OWNER_FIELD: Readonly<Record<number, 'x' | 'y' | 'payload'>> = {
   [EventType.AllianceRelief]: 'y',
   [EventType.FieldsFailing]: 'payload',
   [EventType.AllianceOffered]: 'y',
+  [EventType.HandsShort]: 'payload',
 };
 
 /**

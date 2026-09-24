@@ -13,6 +13,7 @@ import { updateAlliance, type Alliance } from './alliance.js';
 import { reap } from './mortality.js';
 import { updateRoles } from './roles.js';
 import { updateFishing } from './fishing.js';
+import type { Labour } from './labour.js';
 import { harvestOf, updateFarmland, type Farmland } from './economy/farmland.js';
 import { tuning } from './tuning.js';
 import { effectAt, effectTotal } from './buildingEffects.js';
@@ -38,6 +39,7 @@ export interface SimLoop {
   readonly alliance: Alliance;
   readonly tech: TechState;
   readonly census: Census;
+  readonly labour: Labour;
   readonly fog: FogState;
   readonly map: Heightmap;
   /** Sorted by (tick, playerId, seq) from `cursor` onward. */
@@ -73,6 +75,7 @@ export interface SimSystems {
   alliance: Alliance;
   tech: TechState;
   census: Census;
+  labour: Labour;
   fog: FogState;
   map: Heightmap;
 }
@@ -105,7 +108,7 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
  * survives until the boundary.
  */
 export function step(loop: SimLoop): void {
-  const { world, movement, cattle, construction, production, economy, woodland, farmland, alliance, tech, census, fog, map, pending, events } =
+  const { world, movement, cattle, construction, production, economy, woodland, farmland, alliance, tech, census, labour, fog, map, pending, events } =
     loop;
 
   // Computer players act first, through exactly the same queue a human's clicks use.
@@ -130,11 +133,10 @@ export function step(loop: SimLoop): void {
           d: command.d,
         });
       },
-      // The wood and the fields, so the neighbour can cut its own timber and work its
-      // own land. Read-only to it: both happen through commands, like everything else
-      // the AI does.
+      // The wood, so the neighbour can cut its own timber. Read-only to it: felling
+      // happens through a command, like everything else the AI does. Its fields are
+      // worked by the labour pass below, not by the AI (Phase B2).
       woodland,
-      farmland,
     );
   }
 
@@ -164,6 +166,10 @@ export function step(loop: SimLoop): void {
     loop.cursor++;
   }
 
+  // Work finds its own people, after the commands so that a direct order issued this
+  // tick is already a hold, and before movement so that anyone sent walks this tick.
+  // See src/sim/labour.ts.
+  labour.update(world, farmland, map, movement, economy.players, events);
   movement.update(world, tech);
   // Cattle read the grid movement just built, so they see this tick's unit positions.
   cattle.update(world, movement.grid, events, tech, movement.displace);

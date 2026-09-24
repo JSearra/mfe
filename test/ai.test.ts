@@ -10,8 +10,9 @@ import { updateFog } from '../src/sim/vision/fog.js';
 import { BuildingType, buildingSpec } from '../src/shared/buildings/index.js';
 import { trainingCost } from '../src/sim/production.js';
 import { MovementClass } from '../src/sim/pathing/costs.js';
-import { EntityKind, spawn } from '../src/sim/world.js';
-import { makeSim } from './simHarness.js';
+import { EntityKind, handleIndex, spawn } from '../src/sim/world.js';
+import { Work } from '../src/sim/labour.js';
+import { foundHomestead, makeSim } from './simHarness.js';
 
 const AI = tuning.ai;
 
@@ -19,6 +20,10 @@ function contest(seed = 0x0a1) {
   const sim = makeSim(256, seed, undefined, []);
   for (let i = 0; i < 10; i++) spawn(sim.world, 6 + (i % 4), 6 + (i >> 2), 0);
   for (let i = 0; i < 10; i++) spawn(sim.world, 24 + (i % 4), 24 + (i >> 2), 1);
+  // A village each, as a match opens: work finds people only near a homestead, and a
+  // homestead is where replacements are raised (see CLAUDE.md on seeding a force).
+  foundHomestead(sim, 0, 8, 8);
+  foundHomestead(sim, 1, 24, 24);
   sim.loop.ai.push({ player: 0, controller: createAi(0) });
   sim.loop.ai.push({ player: 1, controller: createAi(1) });
   return sim;
@@ -104,31 +109,32 @@ describe('ai as a command source', () => {
     expect(kinds).not.toContain(CommandKind.Build);
   });
 
-  it('sends someone to finish a site it has placed', () => {
-    // The AI placed buildings and then left them: nothing in its decision loop ever
-    // ordered a unit to go and stand at a site, and a site is raised by whoever is
-    // standing near it. They finished anyway only because the builder check counted
-    // units up to twice the real build radius away. With that corrected the AI stopped
-    // completing anything, so it never trained a replacement and its economy never
-    // started.
+  it('leaves the people work has found alone', () => {
+    // Sites and fields used to be manned from here, and every other branch re-ordered
+    // the same people away again. Work finds its own people now (src/sim/labour.ts), and
+    // the AI orders only those nobody has put to work — so a villager raising a site is
+    // never walked off it by the neighbour's own herding branch.
     const sim = makeSim(128, 3, undefined, []);
     for (let i = 0; i < 6; i++) spawn(sim.world, 20 + i * 0.4, 20, 0);
-    sim.construction.place(sim.world, sim.economy, 0, BuildingType.Umuzi, 28, 28, []);
+    spawn(sim.world, 21, 21, 2, 1, EntityKind.Cattle);
+    // The first three are at work; the rest are free.
+    for (let i = 0; i < 3; i++) {
+      sim.world.workKind[i] = Work.Site;
+      sim.world.workAt[i] = 99;
+    }
 
     updateFog(sim.world, sim.map, sim.fog);
     sim.world.tick = AI.decideEveryTicks;
-    sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
 
-    const moves: { x: number; y: number }[] = [];
+    const ordered = new Set<number>();
     createAi(0).decide(sim.world, sim.fog, sim.economy, sim.alliance, sim.tech, (c) => {
-      if (c.kind === CommandKind.MoveTo) moves.push({ x: c.b, y: c.c });
+      if (c.kind === CommandKind.MoveTo || c.kind === CommandKind.Leash) {
+        ordered.add(handleIndex(c.a));
+      }
     });
 
-    // The site centre is (29, 29) for a footprint-2 building at tile (28, 28).
-    const headingForSite = moves.filter(
-      (m) => Math.abs(m.x - 29) < 1.5 && Math.abs(m.y - 29) < 1.5,
-    );
-    expect(headingForSite.length).toBeGreaterThan(0);
+    expect(ordered.size).toBeGreaterThan(0);
+    for (let i = 0; i < 3; i++) expect(ordered.has(i), `worker ${i} was ordered`).toBe(false);
   });
 
   it('goes for cattle when there is nothing to fight', () => {
@@ -167,8 +173,11 @@ describe('ai soak', () => {
   // Before production existed, an AI-vs-AI match was a one-way ratchet to zero units.
   //
   // Asserted over the match rather than over player 0 alone, and deliberately. In this
-  // seed the two sides diverge hard — measured at 12,000 ticks, player 1 ordered 67
-  // buildings and 19 replacements while player 0 managed 2 and *one*. Pinning
+  // seed the two sides diverged hard — measured at 12,000 ticks, player 1 ordered 67
+  // buildings and 19 replacements while player 0 managed 2 and *one*. Most of that gap
+  // turned out not to be balance at all: the AI sent `d: player` on its builds, which
+  // `d` had come to mean "found it free and standing", so player 1 — and only player 1
+  // — built everything for nothing (fixed with Phase B2; see Build in commands.ts). Pinning
   // "replaces its losses" to that single order made the test a knife edge: correcting
   // construction to count only builders actually within the build radius, which had
   // been running at roughly twice its intended reach, slowed every economy enough to

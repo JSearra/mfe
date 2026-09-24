@@ -11,6 +11,7 @@ import { createCattleSystem, type CattleSystem } from '../sim/cattle.js';
 import { createAi } from '../sim/ai/opponent.js';
 import { createTechState, type TechState } from '../sim/tech.js';
 import { createCensus, type Census } from '../sim/census.js';
+import { createLabour, idleOf, type Labour } from '../sim/labour.js';
 import { createProductionSystem, type ProductionSystem } from '../sim/production.js';
 import { createConstructionSystem, type ConstructionSystem } from '../sim/construction.js';
 import { createEconomy, Resource, type Economy } from '../sim/economy/ledger.js';
@@ -152,6 +153,22 @@ export interface PlayerState {
   readonly households: number;
   /** Nobody has lived in this village for the whole grace period. Ends nothing. */
   readonly emptied: boolean;
+
+  /**
+   * Villagers free and standing about, with no work and no order.
+   *
+   * Work finds its own people now (src/sim/labour.ts), so the question a player asks is
+   * no longer "who do I send" but "is anybody spare" — which decides whether to break
+   * another field or raise another household.
+   */
+  readonly idle: number;
+  /** Hands the village's places are asking for and cannot get. Non-zero means stretched. */
+  readonly handsShort: number;
+  /**
+   * Hands a building site asks for, so the panel can say "2 of 4". Sent across rather
+   * than read from tuning for the reason `cullHead` is.
+   */
+  readonly siteHands: number;
 }
 
 export interface SimMessage {
@@ -261,6 +278,7 @@ export interface DirectSimHost extends SimHost {
   readonly alliance: Alliance;
   readonly tech: TechState;
   readonly census: Census;
+  readonly labour: Labour;
   readonly fog: FogState;
 }
 
@@ -290,6 +308,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
   const farmland = createStartingFarmland(map, starts, seed);
   const tech = createTechState(Math.max(factions.length, viewerId + 1));
   const census = createCensus(Math.max(factions.length, viewerId + 1));
+  const labour = createLabour(Math.max(factions.length, viewerId + 1));
   const fog = createFog(Math.max(factions.length, viewerId + 1), map);
   const alliance = createAlliance(Math.max(factions.length, viewerId + 1));
   const loop: SimLoop = createLoop({
@@ -304,6 +323,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     alliance,
     tech,
     census,
+    labour,
     fog,
     map,
   });
@@ -345,6 +365,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
     alliance,
     tech,
     census,
+    labour,
     fog,
 
     get tick(): number {
@@ -426,6 +447,9 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         droughtTrend: trendOf(droughtNow, economy.drought(world.tick + LOOKAHEAD_TICKS)),
         households: census.households[viewerId] ?? 0,
         emptied: census.emptied[viewerId] === 1,
+        idle: idleOf(world, viewerId),
+        handsShort: labour.short[viewerId] ?? 0,
+        siteHands: tuning.labour.siteHands,
       };
 
       let fogSlice: Uint8Array | null = null;

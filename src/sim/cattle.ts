@@ -97,7 +97,7 @@ function pointSegmentDistanceSq(
   return dx * dx + dy * dy;
 }
 
-/** Kraal centres and half-footprints, rebuilt each tick. Flat, so it never allocates. */
+/** Kraal centres, reaches and owners, rebuilt each tick. Flat, so it never allocates. */
 const pens: number[] = [];
 
 export function createCattleSystem(): CattleSystem {
@@ -147,7 +147,7 @@ export function createCattleSystem(): CattleSystem {
         // drifted a hair beyond the footprint stopped counting as penned and went back
         // to wandering — so the herd leaked out one animal at a time from the edge. The
         // margin is what pulls a stray at the wall back in rather than letting it go.
-        pens.push(world.posX[i]!, world.posY[i]!, spec.footprint / 2 + c.pennedReach);
+        pens.push(world.posX[i]!, world.posY[i]!, spec.footprint / 2 + c.pennedReach, world.faction[i]!);
       }
       const dt = tuning.movement.dt / c.substeps;
 
@@ -159,6 +159,36 @@ export function createCattleSystem(): CattleSystem {
 
         const posX = world.posX[index]!;
         const posY = world.posY[index]!;
+
+        /*
+         * Inside its own kraal a beast settles.
+         *
+         * This is what makes an enclosure an enclosure rather than open ground somebody
+         * drew a fence on: a penned animal stops wandering off and calms faster than one
+         * out on the veld. It is also simply true — a kraal is where cattle are put to be
+         * quiet overnight, and the whole homestead is built around that.
+         *
+         * NOT a wall. Nothing traps a beast here: a stampede still carries it straight
+         * out, and a herder can still drive it wherever they like. It just has no reason
+         * of its own to leave.
+         */
+        let penned = false;
+        let pennedX = 0;
+        let pennedY = 0;
+        /** Whose kraal this beast is standing in, or -1. */
+        let pennedOwner = -1;
+        for (let p = 0; p < pens.length; p += 4) {
+          const dx = posX - pens[p]!;
+          const dy = posY - pens[p + 1]!;
+          const reach = pens[p + 2]!;
+          if (dx * dx + dy * dy <= reach * reach) {
+            penned = true;
+            pennedX = pens[p]!;
+            pennedY = pens[p + 1]!;
+            pennedOwner = pens[p + 3]!;
+            break;
+          }
+        }
 
         // --- threat and stress ------------------------------------------------
         // Neighbours come back sorted by index, so accumulated pressure is identical
@@ -259,6 +289,19 @@ export function createCattleSystem(): CattleSystem {
            */
           if (world.kind[other] !== EntityKind.Unit) continue;
           if (driver !== -1 && world.faction[other] === driver) continue;
+          /*
+           * Nor does the village whose kraal it is standing in.
+           *
+           * A penned beast is used to the homestead built around it, the way a driven
+           * one is used to its drover. This matters since work found its own people
+           * (Phase B2): a kraal asks for keepers who stand at its wall all day, and the
+           * fields and sites around a homestead put people within a few tiles of the pen
+           * for whole seasons. Stress only decays when NOBODY is near, so any one of them
+           * wound the herd toward bolting without limit — measured, a single field hand
+           * three tiles off took a calm pen to 79 in 1,200 ticks. A stranger still
+           * frightens it, so raiding a kraal is untouched (ADR-0014).
+           */
+          if (pennedOwner !== -1 && world.faction[other] === pennedOwner) continue;
           if (distance < c.herderRadius) {
             const strength = (c.herderRadius - distance) / c.herderRadius;
             threatX += (dx / distance) * strength;
@@ -294,33 +337,6 @@ export function createCattleSystem(): CattleSystem {
         const wound = world.stress[index]! / c.stressMax;
         const nerve = 0.06 + 0.94 * wound * wound;
         const panic = panicWeight * c.panicGain * nerve;
-
-        /*
-         * Inside its own kraal a beast settles.
-         *
-         * This is what makes an enclosure an enclosure rather than open ground somebody
-         * drew a fence on: a penned animal stops wandering off and calms faster than one
-         * out on the veld. It is also simply true — a kraal is where cattle are put to be
-         * quiet overnight, and the whole homestead is built around that.
-         *
-         * NOT a wall. Nothing traps a beast here: a stampede still carries it straight
-         * out, and a herder can still drive it wherever they like. It just has no reason
-         * of its own to leave.
-         */
-        let penned = false;
-        let pennedX = 0;
-        let pennedY = 0;
-        for (let p = 0; p < pens.length; p += 3) {
-          const dx = posX - pens[p]!;
-          const dy = posY - pens[p + 1]!;
-          const reach = pens[p + 2]!;
-          if (dx * dx + dy * dy <= reach * reach) {
-            penned = true;
-            pennedX = pens[p]!;
-            pennedY = pens[p + 1]!;
-            break;
-          }
-        }
 
         const stressed = threatWeight > 0 || panic > 0;
         let stress = world.stress[index]!;

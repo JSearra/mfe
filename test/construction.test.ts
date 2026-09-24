@@ -7,7 +7,7 @@ import { createEconomy, Resource } from '../src/sim/economy/ledger.js';
 import { FactionId } from '../src/shared/factions/index.js';
 import { createMovementSystem } from '../src/sim/movement.js';
 import { CommandKind, makeCommand } from '../src/sim/commands.js';
-import { enqueueCommand, step } from '../src/sim/loop.js';
+import { enqueueCommand, runTicks, step } from '../src/sim/loop.js';
 import { TECH_IDS } from '../src/shared/tech/index.js';
 import { makeSim } from './simHarness.js';
 import { MovementClass, IMPASSABLE } from '../src/sim/pathing/costs.js';
@@ -270,6 +270,7 @@ describe('yields', () => {
     expect(construction.yieldFor(world, 0).grain).toBe(0);
 
     world.buildProgress[0] = BUILDINGS[BuildingType.GrainStore].work;
+    world.builders[0] = BUILDINGS[BuildingType.GrainStore].hands;
     expect(construction.yieldFor(world, 0).grain).toBe(
       BUILDINGS[BuildingType.GrainStore].grainYield,
     );
@@ -287,6 +288,7 @@ describe('yields', () => {
     const { world, construction, economy } = site();
     construction.place(world, economy, 0, BuildingType.GrainStore, 5, 5, []);
     world.buildProgress[0] = BUILDINGS[BuildingType.GrainStore].work;
+    world.builders[0] = BUILDINGS[BuildingType.GrainStore].hands;
 
     const withBuilding = createEconomy([FactionId.Zulu], 1);
     const without = createEconomy([FactionId.Zulu], 1);
@@ -301,6 +303,52 @@ describe('yields', () => {
   });
 });
 
+describe('staffing (Phase B2)', () => {
+  const store = BUILDINGS[BuildingType.GrainStore];
+
+  it('pays nothing with nobody at it, and in proportion to the hands that are', () => {
+    const { world, construction, economy } = site();
+    construction.place(world, economy, 0, BuildingType.GrainStore, 5, 5, [], true);
+    expect(store.hands).toBeGreaterThan(1);
+
+    world.builders[0] = 0;
+    expect(construction.yieldFor(world, 0).grain).toBe(0);
+    world.builders[0] = 1;
+    expect(construction.yieldFor(world, 0).grain).toBeCloseTo(store.grainYield / store.hands);
+    // More than it asks for is not more than it pays.
+    world.builders[0] = store.hands + 3;
+    expect(construction.yieldFor(world, 0).grain).toBe(store.grainYield);
+  });
+
+  it('does not need staff when the building runs itself', () => {
+    const { world, construction, economy } = site();
+    construction.place(world, economy, 0, BuildingType.Umuzi, 5, 5, [], true);
+    expect(BUILDINGS[BuildingType.Umuzi].hands).toBe(0);
+    expect(construction.yieldFor(world, 0).grain).toBe(BUILDINGS[BuildingType.Umuzi].grainYield);
+  });
+
+  it('counts the people standing at it, each of them once', () => {
+    const { world, construction, economy, tick } = site();
+    // Two granaries three tiles apart, and one villager between them. Without the
+    // nearest-building rule they would both claim her.
+    construction.place(world, economy, 0, BuildingType.GrainStore, 5, 5, [], true);
+    construction.place(world, economy, 0, BuildingType.GrainStore, 8, 5, [], true);
+    spawn(world, 7.3, 5.5, 0);
+    tick();
+    expect(world.builders[0]! + world.builders[1]!).toBe(1);
+    // Nearer the second (centre 8.5) than the first (centre 5.5).
+    expect(world.builders[1]).toBe(1);
+  });
+
+  it('does not count a neighbour standing at it', () => {
+    const { world, construction, economy, tick } = site();
+    construction.place(world, economy, 0, BuildingType.GrainStore, 5, 5, [], true);
+    spawn(world, 6.5, 5.5, 1);
+    tick();
+    expect(world.builders[0]).toBe(0);
+  });
+});
+
 describe('who a command acts for', () => {
   /**
    * Build and Research read the acting player out of the command's PAYLOAD rather than
@@ -312,18 +360,41 @@ describe('who a command acts for', () => {
    *
    * Cheap to close now and invisible to change, which is the best moment to do it.
    */
-  it('builds for the player who issued the command, not the one named in it', () => {
+  it('builds for the player who issued the command', () => {
     const { world, economy, loop } = makeSim(64, 2);
     const before = economy.balance(1, Resource.Grain);
 
-    // Issued by player 0, but the payload names player 1.
-    enqueueCommand(loop, makeCommand(0, 0, 0, CommandKind.Build, 6, 6, BuildingType.GrainStore, 1));
+    enqueueCommand(loop, makeCommand(0, 1, 0, CommandKind.Build, 6, 6, BuildingType.GrainStore, 0));
     step(loop);
 
     const site = world.kind.findIndex((k, i) => k === EntityKind.Building && world.alive[i] === 1);
     expect(site).toBeGreaterThanOrEqual(0);
-    expect(world.faction[site]).toBe(0);
-    expect(economy.balance(1, Resource.Grain)).toBe(before);
+    expect(world.faction[site]).toBe(1);
+    // Paid for, from the builder's own granary.
+    expect(economy.balance(1, Resource.Grain)).toBe(before - BUILDINGS[BuildingType.GrainStore].grainCost);
+  });
+
+  it('founds the opening village for the owner it names', () => {
+    // The match script lays out both villages. Founding from provenance gave player 0
+    // the neighbour's village as well.
+    const { world, loop } = makeSim(64, 2);
+    enqueueCommand(loop, makeCommand(0, 0, 0, CommandKind.Build, 20, 20, BuildingType.Umuzi, 2));
+    step(loop);
+    const site = world.kind.findIndex((k, i) => k === EntityKind.Building && world.alive[i] === 1);
+    expect(world.faction[site]).toBe(1);
+    expect(world.buildProgress[site]).toBe(BUILDINGS[BuildingType.Umuzi].work);
+  });
+
+  it('refuses to found anything once the opening is over', () => {
+    // Founding is free and instant. The neighbour sent `d: player` on every build and so
+    // founded everything it ever ordered, for the whole match.
+    const { world, loop } = makeSim(64, 2);
+    const at = tuning.economy.upkeepIntervalTicks;
+    runTicks(loop, at);
+    enqueueCommand(loop, makeCommand(at, 1, 0, CommandKind.Build, 20, 20, BuildingType.Umuzi, 2));
+    step(loop);
+    const built = world.kind.some((k, i) => k === EntityKind.Building && world.alive[i] === 1);
+    expect(built).toBe(false);
   });
 
   it('researches for the player who issued the command, not the one named in it', () => {

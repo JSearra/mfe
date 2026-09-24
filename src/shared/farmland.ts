@@ -7,10 +7,10 @@
  */
 
 /**
- * Floats per field: tileX, tileY, owner, established, condition, its own slot, and
- * whether it is resting.
+ * Floats per field: tileX, tileY, owner, established, condition, its own slot, whether
+ * it is resting, and the hands standing in it and asked for.
  */
-export const FARMLAND_STRIDE = 7;
+export const FARMLAND_STRIDE = 9;
 
 /**
  * The slot is carried rather than implied, for the reason the woodland's is: packing
@@ -44,4 +44,17 @@ export function fieldCondition(packed: Float32Array, at: number): number {
  */
 export function fieldFallow(packed: Float32Array, at: number): boolean {
   return packed[at + 6]! === 1;
+}
+
+/** People standing in this field at the last labour pass. */
+export function fieldHands(packed: Float32Array, at: number): number {
+  return packed[at + 7]!;
+}
+
+/**
+ * People this field is asking for. Zero when it asks for nobody: resting, or too far
+ * from a homestead for work to find it on its own (src/sim/labour.ts).
+ */
+export function fieldHandsWanted(packed: Float32Array, at: number): number {
+  return packed[at + 8]!;
 }

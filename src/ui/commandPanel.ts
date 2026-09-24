@@ -61,9 +61,30 @@ export interface CommandPanelHandlers {
   onRation(short: boolean): void;
 }
 
+/**
+ * The field under the pointer, as it last crossed the boundary.
+ *
+ * Fields are not selectable, so the panel reads the one being pointed at whenever
+ * nothing is selected. A field asks for hands now (src/sim/labour.ts), and whether it is
+ * getting them is the single thing about it a player most needs to know.
+ */
+export interface FieldReading {
+  readonly condition: number;
+  readonly established: boolean;
+  readonly resting: boolean;
+  readonly hands: number;
+  readonly wanted: number;
+}
+
 export interface CommandPanel {
   readonly element: HTMLElement;
-  update(view: InterpolatedView | null, selected: ReadonlySet<number>): void;
+  update(
+    view: InterpolatedView | null,
+    selected: ReadonlySet<number>,
+    field?: FieldReading | null,
+  ): void;
+  /** Hands a building site asks for, as the simulation reckons it. */
+  setSiteHands(hands: number): void;
   /**
    * What the neighbours will trade, and at what rate.
    *
@@ -196,6 +217,7 @@ export function createCommandPanel(
    * one the player is mid-click on, which reads as the game ignoring input.
    */
   let signature = '';
+  let siteHands = 0;
 
   /**
    * What the village holds, and what it knows.
@@ -453,11 +475,34 @@ export function createCommandPanel(
       }
     },
 
-    update(view, selected): void {
+    setSiteHands(hands): void {
+      siteHands = hands;
+    },
+
+    update(view, selected, field): void {
       if (view === null || selected.size === 0) {
+        if (field !== undefined && field !== null) {
+          if (signature !== 'field') {
+            heading.textContent = t('panel.field.heading');
+            actions.replaceChildren();
+            signature = 'field';
+          }
+          const condition = Math.round(field.condition * 100);
+          const { hands, wanted } = field;
+          detail.textContent = field.resting
+            ? t('panel.field.resting', { condition, hands })
+            : wanted === 0
+              ? t('panel.field.far', { condition, hands })
+              : !field.established
+                ? t('panel.field.breaking', { hands, wanted })
+                : t('panel.field.worked', { condition, hands, wanted });
+          detail.classList.toggle('panel__detail--idle', !field.resting && hands === 0);
+          return;
+        }
         if (signature !== 'empty') {
           heading.textContent = t('panel.nothing');
           detail.replaceChildren();
+          detail.classList.remove('panel__detail--idle');
           actions.replaceChildren();
           signature = 'empty';
         }
@@ -502,20 +547,27 @@ export function createCommandPanel(
         // the builder count, and it is the half that tells the player what to DO: a site
         // at 12% with nobody on it and a site at 12% with six people on it want opposite
         // things from them, and until this they looked identical.
+        //
+        // A finished building that needs staff says the same kind of thing: it pays in
+        // proportion to the hands at it (Phase B2), and one standing empty looks exactly
+        // like one that is working.
+        const name = t(spec.nameKey as MessageKey);
         detail.textContent =
           progress >= 255
-            ? ''
+            ? spec.hands === 0
+              ? ''
+              : builders === 0
+                ? t('panel.unstaffed', { name })
+                : t('panel.staffed', { name, hands: Math.min(builders, spec.hands), wanted: spec.hands })
             : builders === 0
-              ? t('panel.siteIdle', {
-                  name: t(spec.nameKey as MessageKey),
-                  pct: Math.round((progress / 255) * 100),
-                })
+              ? t('panel.siteIdle', { name, pct: Math.round((progress / 255) * 100) })
               : t('panel.siteBuilding', {
-                  name: t(spec.nameKey as MessageKey),
+                  name,
                   pct: Math.round((progress / 255) * 100),
                   builders,
+                  wanted: siteHands,
                 });
-        detail.classList.toggle('panel__detail--idle', progress < 255 && builders === 0);
+        detail.classList.toggle('panel__detail--idle', (progress < 255 || spec.hands > 0) && builders === 0);
         return;
       }
 

@@ -3,7 +3,16 @@ import { t } from './core/i18n/index.js';
 import { heightAt } from './shared/heightmap.js';
 import { worldToScreenX, worldToScreenY } from './shared/iso.js';
 import { NO_TILE, pickTileIndex, tileX, tileY } from './shared/picking.js';
-import { FARMLAND_STRIDE, fieldFallow, fieldOwner, fieldSlot } from './shared/farmland.js';
+import {
+  FARMLAND_STRIDE,
+  fieldCondition,
+  fieldEstablished,
+  fieldFallow,
+  fieldHands,
+  fieldHandsWanted,
+  fieldOwner,
+  fieldSlot,
+} from './shared/farmland.js';
 import { BuildingType } from './shared/buildings/index.js';
 import { CommandKind } from './sim/commands.js';
 import { TECH_IDS } from './shared/tech/index.js';
@@ -53,7 +62,7 @@ import {
 } from './render/selection.js';
 import { createRenderStats } from './render/stats.js';
 import { createDebugOverlay } from './ui/debugOverlay.js';
-import { createCommandPanel } from './ui/commandPanel.js';
+import { createCommandPanel, type FieldReading } from './ui/commandPanel.js';
 import { createMinimap } from './ui/minimap.js';
 import { createAlerts } from './ui/alerts.js';
 import { showSetup } from './ui/setup.js';
@@ -363,7 +372,7 @@ async function main(options: GameOptions): Promise<void> {
       Math.floor(at.x),
       Math.floor(at.y),
       BuildingType.Isibaya,
-      1,
+      owner + 1,
     );
     // The indlunkulu stands at the head of the homestead, opposite the entrance.
     const head = place(at.x, at.y - VILLAGE_RADIUS);
@@ -372,7 +381,7 @@ async function main(options: GameOptions): Promise<void> {
       Math.floor(head.x),
       Math.floor(head.y),
       BuildingType.Indlunkulu,
-      1,
+      owner + 1,
     );
     // Dwellings around the ring, with a gap left at the foot for the way in and out.
     for (let i = 0; i < VILLAGE_HUTS; i++) {
@@ -389,7 +398,7 @@ async function main(options: GameOptions): Promise<void> {
         Math.floor(hutAt.x),
         Math.floor(hutAt.y),
         BuildingType.Umuzi,
-        1,
+        owner + 1,
       );
     }
     /*
@@ -404,8 +413,10 @@ async function main(options: GameOptions): Promise<void> {
      *
      * So the homestead starts small and growing it is the game: a kraal, a great house
      * and a few dwellings. The granary is still the first thing worth building.
+     *
+     * `owner + 1` in the last slot founds each building for that village — see Build in
+     * src/sim/commands.ts. It was a bare 1, which founded both villages for player 0.
      */
-    void owner;
   }
 
   foundVillage(home, PLAYER);
@@ -416,9 +427,14 @@ async function main(options: GameOptions): Promise<void> {
   // kraal with the herd: twenty beasts were bolting by tick 142, before the player had
   // touched anything. That is the stress curve working exactly as designed — crowding
   // panics cattle — and the opening has no business demonstrating it.
+  //
+  // OUTSIDE the ring of dwellings, not on it. At 0.86-1.06 of the village radius the
+  // people stood where the huts stand, and a villager spawned inside a footprint is
+  // walled in for good. Nobody noticed while people stood about; once work found its
+  // own people (Phase B2) they were sent to fields they could never reach.
   for (let i = 0; i < STARTING_UNITS; i++) {
     const angle = (i / STARTING_UNITS) * Math.PI * 2;
-    const ring = VILLAGE_RADIUS * (0.86 + ((i % 3) * 0.1));
+    const ring = VILLAGE_RADIUS * (1.35 + ((i % 3) * 0.12));
     const at = place(home.x + Math.cos(angle) * ring, home.y + Math.sin(angle) * ring);
     sim.sendCommand(CommandKind.Spawn, at.x, at.y, PLAYER, KIND_UNIT);
   }
@@ -429,7 +445,7 @@ async function main(options: GameOptions): Promise<void> {
   foundVillage(enemyHome, ENEMY);
   for (let i = 0; i < ENEMY_UNITS; i++) {
     const angle = (i / ENEMY_UNITS) * Math.PI * 2;
-    const ring = VILLAGE_RADIUS * (0.86 + ((i % 3) * 0.1));
+    const ring = VILLAGE_RADIUS * (1.35 + ((i % 3) * 0.12));
     const at = place(enemyHome.x + Math.cos(angle) * ring, enemyHome.y + Math.sin(angle) * ring);
     sim.sendCommand(CommandKind.Spawn, at.x, at.y, ENEMY, KIND_UNIT);
   }
@@ -625,6 +641,19 @@ async function main(options: GameOptions): Promise<void> {
     }
     return -1;
   }
+  /** The player's field under the pointer, for the panel when nothing is selected. */
+  function fieldReading(): FieldReading | null {
+    const at = fieldUnderCursor();
+    if (at < 0) return null;
+    const packed = lastFarmland!;
+    return {
+      condition: fieldCondition(packed, at),
+      established: fieldEstablished(packed, at),
+      resting: fieldFallow(packed, at),
+      hands: fieldHands(packed, at),
+      wanted: fieldHandsWanted(packed, at),
+    };
+  }
   /** The last PlayerState that crossed the boundary, for the dev inspection hook. */
   let lastPlayer: PlayerState | null = null;
   const herdScratch: number[] = [];
@@ -777,7 +806,7 @@ async function main(options: GameOptions): Promise<void> {
         const index = pickTileIndex(map, isoX, isoY);
         if (index !== NO_TILE) {
           if (planting) sim.sendCommand(CommandKind.Plant, tileX(map, index), tileY(map, index));
-          else sim.sendCommand(CommandKind.Build, tileX(map, index), tileY(map, index), armed!, PLAYER);
+          else sim.sendCommand(CommandKind.Build, tileX(map, index), tileY(map, index), armed!, 0);
         }
         armed = null;
         planting = false;
@@ -1101,6 +1130,7 @@ async function main(options: GameOptions): Promise<void> {
       panel.setOffers(message.player.offers);
       panel.setRelations(message.player.relations);
       panel.setHerd(message.player.cullHead);
+      panel.setSiteHands(message.player.siteHands);
       // Hungry means grain was actually owed last season, not merely that the year is
       // dry: the button turns amber when cutting the ration would have helped.
       panel.setRation(message.player.shortRation, message.player.shortfall > 0);
@@ -1168,7 +1198,7 @@ async function main(options: GameOptions): Promise<void> {
     else placeTileCursor(cursor, map, hoverX, hoverY);
 
     minimap.update(view, latestFog, camera);
-    panel.update(view, selection.handles);
+    panel.update(view, selection.handles, fieldReading());
 
     overlay.update({
       cameraX: camera.x,

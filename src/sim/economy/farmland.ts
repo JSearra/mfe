@@ -48,6 +48,15 @@ export interface Farmland {
    * in, which turns having more land than hands from an error into a position.
    */
   readonly fallow: Uint8Array;
+  /**
+   * Hands this field is asking for, and hands standing in it, at the last labour pass.
+   *
+   * A reading rather than state: written by src/sim/labour.ts every pass, never saved,
+   * never hashed into a rule. It is here so the player can see "1 of 3 hands" — a field
+   * that asks for people and gets none is the thing three playthroughs died of.
+   */
+  readonly handsWanted: Uint8Array;
+  readonly handsPresent: Uint8Array;
   /** Bumped when the fields look different, so a host can skip re-sending them. */
   version: number;
 }
@@ -81,6 +90,8 @@ export function createFarmland(capacity = tuning.farmland.capacity): Farmland {
     condition: new Float64Array(capacity),
     alive: new Uint8Array(capacity),
     fallow: new Uint8Array(capacity),
+    handsWanted: new Uint8Array(capacity),
+    handsPresent: new Uint8Array(capacity),
     version: 0,
   };
 }
@@ -365,6 +376,8 @@ export function packFarmland(land: Farmland): Float32Array {
     out[at + 4] = land.condition[i]!;
     out[at + 5] = i;
     out[at + 6] = land.fallow[i]!;
+    out[at + 7] = land.handsPresent[i]!;
+    out[at + 8] = land.handsWanted[i]!;
     at += FARMLAND_STRIDE;
   }
   return out;

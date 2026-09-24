@@ -241,6 +241,21 @@
     "intervalTicks": 20,
     "buildingRadius": 2.6
   },
+  "labour": {
+    "intervalTicks": 20,
+    "holdTicks": 300,
+    "homeRadius": 14.0,
+    "reach": 30.0,
+    "fieldHands": 1,
+    "fieldRecoverBelow": 0.8,
+    "siteHands": 4,
+    "buildingReach": 2.6,
+    "standOff": 0.8,
+    "fishingRadius": 10.0,
+    "fishingSpots": 3,
+    "fishingSpacing": 3.0,
+    "warnEverySeasons": 5
+  },
   "fishing": {
     "catchPerUpkeep": 3.0,
     "maxAnglers": 2

@@ -49,10 +49,16 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
   const driving = document.createElement('span');
   driving.className = 'resource-bar__driving';
 
+  // Who is free, and whether the village is stretched. Work finds its own people now
+  // (Phase B2), so the question is no longer who to send but whether anybody is spare —
+  // which is what decides between breaking another field and raising another household.
+  const work = document.createElement('span');
+  work.className = 'resource-bar__work';
+
   const warning = document.createElement('span');
   warning.className = 'resource-bar__warning';
 
-  element.append(totals, season, margin, driving, herd, warning);
+  element.append(totals, season, margin, driving, herd, work, warning);
   parent.appendChild(element);
 
   let lastUpdate = -Infinity;
@@ -111,6 +117,14 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
       } else {
         margin.textContent = '';
       }
+
+      // Short outranks idle: a village with work waiting has no spare hands however many
+      // are standing about on their way somewhere.
+      work.textContent =
+        player.handsShort > 0
+          ? t('labour.short', { count: Math.round(player.handsShort) })
+          : t('labour.idle', { count: player.idle });
+      work.classList.toggle('is-negative', player.handsShort > 0);
 
       driving.textContent =
         player.driving > 0 ? t('resource.driving', { head: player.driving }) : '';

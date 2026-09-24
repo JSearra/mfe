@@ -101,6 +101,14 @@ export interface World {
    */
   readonly builders: Uint8Array;
 
+  // --- labour (src/sim/labour.ts) ---------------------------------------------
+  /** One of `Work`: free, under a direct order, or assigned to a place. */
+  readonly workKind: Uint8Array;
+  /** The place a worker is assigned to — field index, entity index or shore tile. -1 when none. */
+  readonly workAt: Int32Array;
+  /** Ticks, once a direct order is done, before a held villager goes back to work. */
+  readonly workHold: Uint16Array;
+
   // --- orders ---------------------------------------------------------------
   /** One of OrderMode. Plain move unless the order said otherwise. */
   readonly orderMode: Uint8Array;
@@ -221,6 +229,9 @@ export function createWorld(capacity: number, seed: number): World {
     rallyX: new Float64Array(capacity),
     rallyY: new Float64Array(capacity),
     builders: new Uint8Array(capacity),
+    workKind: new Uint8Array(capacity),
+    workAt: new Int32Array(capacity).fill(-1),
+    workHold: new Uint16Array(capacity),
     orderMode: new Uint8Array(capacity),
     patrolX: new Float64Array(capacity),
     patrolY: new Float64Array(capacity),
@@ -409,6 +420,10 @@ export function spawn(
   world.trainProgress[index] = 0;
   world.rallyX[index] = x;
   world.rallyY[index] = y;
+  world.builders[index] = 0;
+  world.workKind[index] = 0;
+  world.workAt[index] = -1;
+  world.workHold[index] = 0;
   world.orderMode[index] = OrderMode.Move;
   clearOrderQueue(world, index);
   world.stuckTicks[index] = 0;

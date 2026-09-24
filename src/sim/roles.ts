@@ -1,6 +1,7 @@
 import { buildingSpec, BuildingType } from '../shared/buildings/index.js';
 import { isEstablished, type Farmland } from './economy/farmland.js';
 import { tuning } from './tuning.js';
+import { Work } from './labour.js';
 import { EntityKind, handleIndex, isAlive, NULL_HANDLE, type World } from './world.js';
 
 /**
@@ -76,7 +77,8 @@ export function updateRoles(world: World, land: Farmland, tick: number): void {
     if (world.alive[index] !== 1 || world.kind[index] !== EntityKind.Unit) continue;
 
     let role: Role = Role.None;
-    if (herding.has(index)) {
+    // Keeping a kraal is herding too, and it should look like it (Phase B2).
+    if (herding.has(index) || world.workKind[index] === Work.Kraal) {
       role = Role.Herder;
     } else {
       const posX = world.posX[index]!;

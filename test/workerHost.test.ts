@@ -37,6 +37,9 @@ const IDLE: PlayerState = {
   droughtSevere: false,
   households: 0,
   emptied: false,
+  idle: 0,
+  handsShort: 0,
+  siteHands: 0,
 };
 
 class StubWorker {
