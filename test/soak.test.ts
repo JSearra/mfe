@@ -1,6 +1,6 @@
 import { describe, it } from 'vitest';
 import { createDirectSimHost } from '../src/host/directHost.js';
-import { NEIGHBOUR, PLAYER, seedOpening } from '../src/host/opening.js';
+import { matchSeed, NEIGHBOUR, PLAYER, seedOpening } from '../src/host/opening.js';
 import { createAi } from '../src/sim/ai/opponent.js';
 import { EventType } from '../src/shared/events.js';
 import { FactionId } from '../src/shared/factions/index.js';
@@ -30,7 +30,6 @@ import { CommandKind } from '../src/sim/commands.js';
  */
 
 const MAP_SIZE = 128;
-const WORLD_SEED = 0x5eedcafe;
 const YEARS = Number(process.env.SOAK_YEARS ?? 3);
 const SEEDS = (process.env.SOAK_SEEDS ?? '0x4d666563,0x3a7,0xbeef,0xf00d,0x51de,0xa11ce')
   .split(',')
@@ -59,7 +58,7 @@ export interface SoakResult {
 
 export function soak(seed: number, years = YEARS, script: MapScript | '' = SCRIPT): SoakResult {
   const map = script === '' ? createHeightmap(MAP_SIZE, MAP_SIZE, seed) : generateMap(script, MAP_SIZE, MAP_SIZE, seed);
-  const world = createWorld(512, WORLD_SEED);
+  const world = createWorld(512, matchSeed(seed));
   const centre = MAP_SIZE / 2;
   const host = createDirectSimHost({
     world,
@@ -67,6 +66,7 @@ export function soak(seed: number, years = YEARS, script: MapScript | '' = SCRIP
     viewerId: PLAYER,
     playerId: PLAYER,
     neighbours: [NEIGHBOUR],
+    seed: matchSeed(seed),
     factions: [FactionId.Zulu, FactionId.Sotho],
     starts: [{ x: centre, y: centre }],
   });

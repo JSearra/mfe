@@ -1,6 +1,7 @@
 import { BuildingType } from '../shared/buildings/index.js';
 import type { Heightmap } from '../shared/heightmap.js';
 import { CommandKind } from '../sim/commands.js';
+import { mixSeed } from '../sim/math/rng.js';
 import { largestRegion, snapToRegion } from '../sim/terrain/placement.js';
 
 /**
@@ -21,6 +22,23 @@ export const PLAYER = 0;
 /** The neighbour, in the ledger. Off the map: see ADR-0021. */
 export const NEIGHBOUR = 1;
 const KIND_UNIT = 0;
+
+/** The fixed half of every match's seed. The other half is the map's. */
+export const WORLD_SEED = 0x5eedcafe;
+
+/**
+ * The seed a match's simulation runs on: the weather, the woodland and the field layout.
+ *
+ * Mixed with the MAP seed, because that is the one a player chooses. It was the fixed
+ * WORLD_SEED alone, so every match had the same weather whatever land it was played on —
+ * and only in the worker host: the direct host (`?sim=direct`, and the soak harness)
+ * took its seed from an option nobody passed, and ran every match on seed 0. The same
+ * match, two different years of weather, depending on which thread it ran on. Both hosts
+ * and the soak take it from here now.
+ */
+export function matchSeed(mapSeed: number): number {
+  return mixSeed(WORLD_SEED, mapSeed);
+}
 
 export const STARTING_UNITS = 24;
 /**

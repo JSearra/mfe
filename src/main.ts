@@ -67,7 +67,7 @@ import { createAlerts } from './ui/alerts.js';
 import { showSetup } from './ui/setup.js';
 import { createEmptiedBanner } from './ui/emptiedBanner.js';
 import { createResourceBar } from './ui/resourceBar.js';
-import { NEIGHBOUR, PLAYER, seedOpening } from './host/opening.js';
+import { matchSeed, NEIGHBOUR, PLAYER, seedOpening } from './host/opening.js';
 
 /**
  * Phase 3 entry point: the simulation now runs behind a boundary.
@@ -81,7 +81,6 @@ import { NEIGHBOUR, PLAYER, seedOpening } from './host/opening.js';
 const BACKGROUND = 0x14110d;
 const MAP_SIZE = 128;
 const MAP_SEED = 0x4d666563;
-const WORLD_SEED = 0x5eedcafe;
 const KIND_CATTLE = 1;
 const KIND_BUILDING = 2;
 const MOVEMENT_INFANTRY = 0;
@@ -289,12 +288,13 @@ async function main(options: GameOptions): Promise<void> {
   // main-thread host one query parameter away, because stepping through a simulation in
   // a debugger is worth a great deal when something is wrong.
   const useWorker = new URLSearchParams(location.search).get('sim') !== 'direct';
+  const worldSeed = matchSeed(mapSeed);
   const sim: SimHost = useWorker
     ? createWorkerSimHost({
         mapSize: MAP_SIZE,
         mapSeed,
         mapScript,
-        worldSeed: WORLD_SEED,
+        worldSeed,
         capacity: 512,
         viewerId: PLAYER,
         playerId: PLAYER,
@@ -303,8 +303,9 @@ async function main(options: GameOptions): Promise<void> {
         starts,
       })
     : createDirectSimHost({
-        world: createWorld(512, WORLD_SEED),
+        world: createWorld(512, worldSeed),
         map,
+        seed: worldSeed,
         viewerId: PLAYER,
         playerId: PLAYER,
         neighbours: [NEIGHBOUR],
