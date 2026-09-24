@@ -52,10 +52,16 @@ SUBJECTS = {
     # is 64x32, so an eight-to-one downscale averages fine detail into flat colour.
     # Whatever should be visible in play has to be big enough in the source to survive
     # that, without being so big it becomes a subject.
+    # Rewritten against references for the KwaZulu-Natal midlands rather than for a
+    # generic savanna. This is summer-rainfall SOURVELD: short, dense, tussocky grass on
+    # acid soil, green through the wet months, with the red-brown earth only glimpsed
+    # between tufts rather than dominating. The previous prompt led with "deep orange-red
+    # earth" and got exactly that — bare ground with grass on it, which is the Karoo
+    # again and not the Midlands.
     "savanna-low": (
-        "deep orange-red earth with clearly separated clumps of green grass, each clump "
-        "distinct and well spaced, bare red ground showing between them, scattered "
-        "evenly over the whole frame"
+        "dense short green grassland, many small tussocks of grass growing close "
+        "together and touching, only narrow glimpses of red-brown soil between them, "
+        "summer growth, evenly covering the whole frame"
     ),
     "savanna-mid": (
         "lush green summer grassland, dense tufts of green grass over red-brown soil, "
@@ -68,15 +74,26 @@ SUBJECTS = {
         "pale green and straw sourveld grass growing in small separate tufts on stony "
         "red ground, bare earth visible between the tufts, no combing, no single direction"
     ),
-    "rock": "weathered ironstone and broken shale, grey-brown with rust staining, patches of green lichen",
+    # The Drakensberg is capped by Jurassic flood basalt sitting on Clarens sandstone,
+    # and the dark cliff above the pale rampart is the single most recognisable thing
+    # about the range. The old prompt asked for "grey-brown ironstone", which came back
+    # PALER than the sandstone below it and inverted the section.
+    "rock": (
+        "dark grey basalt rock seen from directly above, near-black volcanic stone "
+        "broken into angular blocks, deep shadow in the joints between them, patches "
+        "of pale grey-green lichen, no soil, no grass"
+    ),
     # "banded strata" came back as flat horizontal stripes — plywood, not rock. Broken
     # and mottled gets weathered stone; the word "bands" does not.
     # Pitting and fine cracks do not survive an eight-to-one downscale, which is why
     # three passes at this came out as flat orange. Broken slabs are big enough to.
+    # Clarens sandstone, which is cream to honey rather than red — it is the pale
+    # rampart the dark basalt sits on, and photographs of the escarpment describe it
+    # glowing gold. Asking for "orange-red sandstone" made it a second donga.
     "sandstone": (
-        "weathered orange-red sandstone broken into irregular slabs seen from directly "
-        "above, deep shadowed gaps between the slabs, mottled rust and ochre, "
-        "no stripes, no straight lines, no grain direction"
+        "pale cream and honey-gold sandstone seen from directly above, weathered into "
+        "irregular rounded slabs, soft shadowed gaps between them, warm buff and pale "
+        "yellow, no red, no stripes, no straight lines, no grain direction"
     ),
     "donga-floor": (
         "cracked dry orange-red clay with fine erosion channels, deep shadow in the "
