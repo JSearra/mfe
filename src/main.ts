@@ -1,5 +1,6 @@
 import { UPDATE_PRIORITY } from 'pixi.js';
 import { t, type MessageKey } from './core/i18n/index.js';
+import { EventType, refusalOwner, refusalReason } from './shared/events.js';
 import { heightAt, isWater } from './shared/heightmap.js';
 import { worldToScreenX, worldToScreenY } from './shared/iso.js';
 import { NO_TILE, pickTileIndex, tileX, tileY } from './shared/picking.js';
@@ -81,6 +82,23 @@ import { matchSeed, NEIGHBOUR, PLAYER, seedOpening } from './host/opening.js';
  */
 
 const BACKGROUND = 0x14110d;
+/**
+ * What to say when a site or a field is refused, by `refusalReason` — a PlacementResult
+ * below 8, 8 + a PlantResult from 8 up. See EventType.PlacementRefused.
+ */
+const REFUSALS: Readonly<Record<number, MessageKey>> = {
+  1: 'refused.offMap',
+  2: 'refused.occupied',
+  3: 'refused.tooSteep',
+  4: 'refused.unaffordable',
+  5: 'refused.noRoom',
+  6: 'refused.noWater',
+  9: 'refused.offMap',
+  10: 'refused.fieldUnsuitable',
+  11: 'refused.fieldOccupied',
+  12: 'refused.fieldUnaffordable',
+  13: 'refused.fieldFull',
+};
 /** How often the village is kept without being asked. */
 const AUTOSAVE_MS = 60_000;
 const MAP_SIZE = 128;
@@ -1112,6 +1130,12 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
       // exactly the thing a player needs told about, and it cannot be seen in a snapshot
       // diff any more than a death can.
       alerts.handle(message.events, performance.now(), PLAYER);
+      // Why a site or a field did not appear — this player's own requests only.
+      for (const event of message.events) {
+        if (event.type !== EventType.PlacementRefused || refusalOwner(event) !== PLAYER) continue;
+        const key = REFUSALS[refusalReason(event)];
+        if (key !== undefined) notice(t(key));
+      }
       // Same stream again. A blow that lands and leaves a unit standing is an event, not
       // a state change worth diffing for — and one that kills removes the entity from the
       // next snapshot entirely, so a diff would show nothing at all.

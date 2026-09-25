@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BuildingType, BUILDINGS, buildingSpec } from '../src/shared/buildings/index.js';
-import { EventType, type SimEvent } from '../src/shared/events.js';
+import { EventType, refusalOwner, refusalReason, type SimEvent } from '../src/shared/events.js';
 import { heightmapFrom } from '../src/shared/heightmap.js';
 import { createConstructionSystem, PlacementResult } from '../src/sim/construction.js';
 import { createEconomy, Resource } from '../src/sim/economy/ledger.js';
@@ -551,5 +551,28 @@ describe('giving up a field', () => {
     step(sim.loop);
     expect(sim.farmland.alive[theirs]).toBe(1);
     expect(sim.farmland.alive[mine]).toBe(0);
+  });
+});
+
+describe('a refused site says why', () => {
+  it('reports a building refused for the ground being taken, to its owner', () => {
+    const sim = makeSim(64, 2);
+    sim.construction.place(sim.world, sim.economy, 0, BuildingType.Umuzi, 10, 10, [], true);
+    enqueueCommand(sim.loop, makeCommand(0, 1, 0, CommandKind.Build, 10, 10, BuildingType.GrainStore, 0));
+    step(sim.loop);
+    const refused = sim.loop.events.find((e) => e.type === EventType.PlacementRefused);
+    expect(refused).toBeDefined();
+    expect(refusalOwner(refused!)).toBe(1);
+    expect(refusalReason(refused!)).toBe(PlacementResult.Occupied);
+    expect(refused!.x).toBe(10);
+  });
+
+  it('reports a field refused, marked as a field', () => {
+    const sim = makeSim(64, 2);
+    sim.economy.spend(0, Resource.Grain, sim.economy.balance(0, Resource.Grain));
+    enqueueCommand(sim.loop, makeCommand(0, 0, 0, CommandKind.Plant, 20, 20, 0, 0));
+    step(sim.loop);
+    const refused = sim.loop.events.find((e) => e.type === EventType.PlacementRefused);
+    expect(refusalReason(refused!)).toBe(8 + 4); // a field, unaffordable
   });
 });

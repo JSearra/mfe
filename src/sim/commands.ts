@@ -1,4 +1,4 @@
-import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
+import { EventType, makeEvent, refusalPayload, type SimEvent } from '../shared/events.js';
 import type { CattleSystem } from './cattle.js';
 import type { ConstructionSystem } from './construction.js';
 import type { ProductionSystem } from './production.js';
@@ -264,8 +264,16 @@ export function applyCommand(
       // level a wood by walking through it. See src/sim/woodland.ts.
       return fell(world, woodland, economy, command.playerId, command.a) > 0;
 
-    case CommandKind.Plant:
-      return plant(farmland, economy, map, command.playerId, command.a, command.b) === 0;
+    case CommandKind.Plant: {
+      const result = plant(farmland, economy, map, command.playerId, command.a, command.b);
+      if (result !== 0) {
+        events.push(
+          makeEvent(world.tick, EventType.PlacementRefused, 0, command.a, command.b,
+            refusalPayload(command.playerId, result, true)),
+        );
+      }
+      return result === 0;
+    }
 
     case CommandKind.Abandon:
       return abandon(farmland, command.a, command.playerId);
@@ -367,17 +375,24 @@ export function applyCommand(
       if (founded && world.tick >= tuning.economy.upkeepIntervalTicks) return false;
       const owner = founded ? command.d - 1 : command.playerId;
       if (owner < 0 || owner >= economy.players) return false;
-      const placed =
-        construction.place(
-          world,
-          economy,
-          owner,
-          command.c as BuildingType,
-          command.a,
-          command.b,
-          events,
-          founded,
-        ) === 0;
+      const result = construction.place(
+        world,
+        economy,
+        owner,
+        command.c as BuildingType,
+        command.a,
+        command.b,
+        events,
+        founded,
+      );
+      const placed = result === 0;
+      // Said out loud: a refused site used to simply not appear.
+      if (!placed) {
+        events.push(
+          makeEvent(world.tick, EventType.PlacementRefused, 0, command.a, command.b,
+            refusalPayload(owner, result, false)),
+        );
+      }
       if (placed) {
         const size = buildingSpec(command.c).footprint;
         const blocked = movement.pathing.layer(MovementClass.Infantry).tileCost;

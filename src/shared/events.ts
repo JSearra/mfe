@@ -89,6 +89,16 @@ export const EventType = {
    * has to hear about it, because the cull would have turned those head into grain.
    */
   HerdHungry: 25,
+  /**
+   * A building or a field was refused where the player asked for it.
+   *
+   * `x`/`y` are the tile. `payload` packs WHY and WHOSE: `reason + 16 * owner`, where the
+   * reason is a PlacementResult for a building and 8 + a PlantResult for a field — see
+   * `refusalReason` and `refusalOwner`. A refusal used to be silence: the site simply
+   * did not appear, and the player could only guess whether it was the slope, the
+   * grain, or the ground already taken.
+   */
+  PlacementRefused: 26,
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];
@@ -111,4 +121,19 @@ export function makeEvent(
   payload = 0,
 ): SimEvent {
   return { tick, type, handle, x, y, payload };
+}
+
+/** What a PlacementRefused event says was wrong. Below 8 a PlacementResult; 8 and up, 8 + a PlantResult. */
+export function refusalReason(event: SimEvent): number {
+  return event.payload % 16;
+}
+
+/** Whose request a PlacementRefused event answers. */
+export function refusalOwner(event: SimEvent): number {
+  return Math.floor(event.payload / 16);
+}
+
+/** Pack a refusal. `field` marks a PlantResult rather than a PlacementResult. */
+export function refusalPayload(owner: number, reason: number, field: boolean): number {
+  return owner * 16 + (field ? 8 + reason : reason);
 }

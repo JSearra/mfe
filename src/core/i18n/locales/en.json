@@ -70,6 +70,18 @@
     "loadFailed": "That saved village could not be read",
     "abandonConfirm": "Press X again to give up this field — the seed is not refunded"
   },
+  "refused": {
+    "offMap": "Not there — that is off the edge of the land",
+    "occupied": "Not there — the ground is taken",
+    "tooSteep": "Not there — the ground is not level enough",
+    "unaffordable": "Not enough grain, timber or cattle to put that up",
+    "noRoom": "The village can hold no more",
+    "noWater": "A weir has to stand on a bank",
+    "fieldUnsuitable": "That ground will not take a crop — bare stone or high sourveld",
+    "fieldOccupied": "Too close to another field",
+    "fieldUnaffordable": "Not enough grain to seed a field",
+    "fieldFull": "The village cannot work any more fields"
+  },
   "labour": {
     "idle": "{count} idle",
     "short": "{count} hands short"
