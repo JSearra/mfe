@@ -200,6 +200,6 @@
     "land": "F plants a field · G rests the one under the cursor · X twice gives it up",
     "groups": "Ctrl+4-9 groups · 4-9 recalls · P patrols",
     "time": "` pauses · +/- speed · Space jumps to an alert · Ctrl+S saves (it also saves itself every minute)",
-    "note": "More hands raise a site faster. A field decays unless worked; a resting one repairs but harvests nothing."
+    "note": "Work near a homestead finds its own people: you choose what to build and where. A field decays unless worked; a resting one repairs but harvests nothing. Raise households only as fast as the land feeds them."
   }
 }
