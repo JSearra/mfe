@@ -533,6 +533,9 @@ Left open, in the order they seem worth doing:
       behind it — each band's own ground darkened as wet soil, instead of one riverbed
       set, reversing the "one set, not eight" decision in postprocess.py; or (b) masks
       that look two tiles out, which widens the mask vocabulary. Not done.
+      *Then tried (a) cheaply:* one translucent damp-earth wash instead of the pebble
+      set, so the bank darkens whatever ground it lies on. The synthetic coast shows the
+      same scalloped band, only darker — tone does not hide a shape. That leaves (b).
 
 *Note for whoever picks this up:* `tools/art/generate_tiles.py` drives a local FLUX
 model and the weights ARE cached (~9GB in ~/.cache/huggingface), so terrain subjects can
