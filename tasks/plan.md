@@ -68,6 +68,13 @@ the outcome banner is the end of the road.
       `Mounted` being a movement class with its own cost profile.
 - [x] **C6 — The `herder` sprite is gone.** Done. Herding is done by any unit; either give
       herders a type or drop the sprite from the atlas.
+- [ ] **C7 — `Spawn` and `Destroy` trust their payload.** Any command source can spawn
+      villagers for any village, or destroy any entity, at any tick — a free-units and a
+      free-demolition cheat under lockstep. `Build`'s founding flag had the same hole
+      and is now limited to the opening; `Demolish` and `Abandon` check the sender. These
+      two are left because the golden replay's scenario uses both mid-match, so closing
+      them changes the fixture — worth doing, with the proofs CLAUDE.md asks for, if
+      lockstep (shelved by ADR-0021) ever comes back.
 
 ## D. Multiplayer
 
