@@ -1,4 +1,4 @@
-import { UPDATE_PRIORITY } from 'pixi.js';
+import { Graphics, UPDATE_PRIORITY } from 'pixi.js';
 import { t, type MessageKey } from './core/i18n/index.js';
 import { EventType, refusalOwner, refusalReason } from './shared/events.js';
 import { heightAt, isWater } from './shared/heightmap.js';
@@ -14,7 +14,7 @@ import {
   fieldOwner,
   fieldSlot,
 } from './shared/farmland.js';
-import { BuildingType } from './shared/buildings/index.js';
+import { BuildingType, buildingSpec } from './shared/buildings/index.js';
 import { CommandKind } from './sim/commands.js';
 import { TECH_IDS } from './shared/tech/index.js';
 import { createDirectSimHost, type PlayerState, type SimHost } from './host/directHost.js';
@@ -47,7 +47,7 @@ import { createDamageFlashes } from './render/scene/damage.js';
 import { createFieldLayer } from './render/scene/fields.js';
 import { loadSpriteAtlas, loadTerrainTiles } from './render/assets.js';
 import { presentation } from './render/presentation.js';
-import { createTileCursor, placeTileCursor } from './render/scene/cursor.js';
+import { createTileCursor, drawFootprint, footprintFits, placeTileCursor } from './render/scene/cursor.js';
 import { createEdgeFalloff } from './render/scene/edgeFalloff.js';
 import { createFogRenderer } from './render/scene/fog.js';
 import { createTerrain, seasonPosition } from './render/scene/terrain.js';
@@ -366,6 +366,10 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
   const groundField = createGroundField(map, mapSeed, map.levels);
   const terrain = createTerrain(map, terrainTiles, bandShift, groundField);
   const cursor = createTileCursor();
+  /** The armed building's footprint under the pointer, and the tiles buildings hold. */
+  const footprint = new Graphics();
+  footprint.visible = false;
+  const taken = new Set<number>();
   // Null if the atlas is missing or malformed, and the entity layer then falls back to
   // drawing shapes. Art is not worth failing to start over, and the build runs without
   // the pipeline ever having been run.
@@ -384,6 +388,10 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
   terrain.container.addChild(fields.container);
   terrain.container.addChild(cursor);
   terrain.container.addChild(entities.container);
+  // The armed building's footprint goes OVER what stands on the ground: it exists to
+  // show a site is taken, and under the kraal it was hidden by the kraal. Below the fog,
+  // which still hides what the village cannot see.
+  terrain.container.addChild(footprint);
   // Fog goes on top of everything in the world layer: it hides terrain as well as what
   // stands on it.
   terrain.container.addChild(fog.container);
@@ -1176,6 +1184,40 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
     const hoverY = index === NO_TILE ? 0 : tileY(map, index);
     if (index === NO_TILE) cursor.visible = false;
     else placeTileCursor(cursor, map, hoverX, hoverY);
+
+    // An armed building shows its whole footprint, green where it can stand and red
+    // where it cannot, in place of the one-tile cursor.
+    if (armed !== null && index !== NO_TILE) {
+      const spec = buildingSpec(armed);
+      taken.clear();
+      if (view !== null) {
+        for (let i = 0; i < view.count; i++) {
+          if (view.kind[i] !== KIND_BUILDING) continue;
+          const size = buildingSpec(view.subtype[i]!).footprint;
+          const originX = Math.round(view.x[i]! - size / 2);
+          const originY = Math.round(view.y[i]! - size / 2);
+          for (let dy = 0; dy < size; dy++) {
+            for (let dx = 0; dx < size; dx++) taken.add((originY + dy) * map.width + originX + dx);
+          }
+        }
+      }
+      const purse = lastPlayer;
+      const affordable =
+        purse !== null &&
+        purse.grain >= spec.grainCost &&
+        purse.wood >= spec.woodCost &&
+        purse.cattle >= spec.cattleCost;
+      const fits = footprintFits(map, hoverX, hoverY, {
+        size: spec.footprint,
+        maxHeightVariation: spec.maxHeightVariation,
+        needsWater: spec.needsWater,
+        affordable,
+      }, taken);
+      drawFootprint(footprint, map, hoverX, hoverY, spec.footprint, fits);
+      cursor.visible = false;
+    } else {
+      footprint.visible = false;
+    }
 
     minimap.update(view, latestFog, camera);
     panel.update(view, selection.handles, fieldReading());
