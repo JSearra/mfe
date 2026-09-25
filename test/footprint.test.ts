@@ -32,7 +32,7 @@ describe('footprintFits', () => {
 
   it('needs a bank for a weir, and never stands in water', () => {
     const rows = Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => 1));
-    const wet = Array.from({ length: 8 }, (_, y) => Array.from({ length: 8 }, (_, x) => (x === 5 ? 1 : 0)));
+    const wet = Array.from({ length: 8 }, () => Array.from({ length: 8 }, (_, x) => (x === 5 ? 1 : 0)));
     const river = heightmapWithWater(rows, 8, wet);
     const weir = { ...check, size: 1, needsWater: true };
     expect(footprintFits(river, 4, 2, weir, new Set())).toBe(true);

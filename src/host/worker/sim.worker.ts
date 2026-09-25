@@ -175,6 +175,12 @@ function tick(): void {
     idle: idleOf(world, viewerId),
     handsShort: loop.labour.short[viewerId] ?? 0,
     siteHands: tuning.labour.siteHands,
+    fieldRules: {
+      minBand: tuning.farmland.minBand,
+      maxBand: tuning.farmland.maxBand,
+      minSpacing: tuning.farmland.minSpacing,
+      seedGrain: tuning.farmland.seedGrain,
+    },
   };
 
   let fogSlice: Uint8Array | null = null;

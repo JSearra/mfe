@@ -44,6 +44,7 @@ const IDLE_PLAYER: PlayerState = {
   idle: 0,
   handsShort: 0,
   siteHands: 0,
+  fieldRules: { minBand: 0, maxBand: 0, minSpacing: 0, seedGrain: 0 },
 };
 
 export interface WorkerSimHostOptions {

@@ -1215,6 +1215,28 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
       }, taken);
       drawFootprint(footprint, map, hoverX, hoverY, spec.footprint, fits);
       cursor.visible = false;
+    } else if (planting && index !== NO_TILE && lastPlayer !== null) {
+      // The same for a field: ground that takes a crop, clear of every other field, and
+      // grain to seed it. The rules cross the boundary in PlayerState.fieldRules.
+      const rules = lastPlayer.fieldRules;
+      const level = heightAt(map, hoverX, hoverY);
+      let fits =
+        level >= rules.minBand &&
+        level <= rules.maxBand &&
+        !isWater(map, hoverX, hoverY) &&
+        lastPlayer.grain >= rules.seedGrain;
+      if (fits && lastFarmland !== null) {
+        for (let at = 0; at + FARMLAND_STRIDE <= lastFarmland.length; at += FARMLAND_STRIDE) {
+          const dx = lastFarmland[at]! - hoverX;
+          const dy = lastFarmland[at + 1]! - hoverY;
+          if (dx * dx + dy * dy < rules.minSpacing * rules.minSpacing) {
+            fits = false;
+            break;
+          }
+        }
+      }
+      drawFootprint(footprint, map, hoverX, hoverY, 1, fits);
+      cursor.visible = false;
     } else {
       footprint.visible = false;
     }

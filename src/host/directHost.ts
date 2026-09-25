@@ -68,6 +68,13 @@ import { createAlliance, relationsFor, type Alliance, type Relation } from '../s
  * Far enough that the answer is about the season rather than about the curve's own
  * slope at a point, and near enough that it is still about this year.
  */
+const FIELD_RULES = {
+  minBand: tuning.farmland.minBand,
+  maxBand: tuning.farmland.maxBand,
+  minSpacing: tuning.farmland.minSpacing,
+  seedGrain: tuning.farmland.seedGrain,
+} as const;
+
 const LOOKAHEAD_TICKS = Math.round(tuning.economy.seasonTicks / 12);
 
 export interface PlayerState {
@@ -170,6 +177,12 @@ export interface PlayerState {
    * than read from tuning for the reason `cullHead` is.
    */
   readonly siteHands: number;
+  /**
+   * What ground takes a field, how far apart fields must be and what one costs to seed,
+   * so the preview can say whether a field will go where the pointer is. Rules, sent
+   * across for the reason `cullHead` is: the UI may not read tuning.
+   */
+  readonly fieldRules: { readonly minBand: number; readonly maxBand: number; readonly minSpacing: number; readonly seedGrain: number };
 }
 
 export interface SimMessage {
@@ -475,6 +488,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         idle: idleOf(world, viewerId),
         handsShort: labour.short[viewerId] ?? 0,
         siteHands: tuning.labour.siteHands,
+        fieldRules: FIELD_RULES,
       };
 
       let fogSlice: Uint8Array | null = null;
