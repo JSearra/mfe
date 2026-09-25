@@ -63,6 +63,15 @@ export interface PathingService {
    * erase every building placed so far — the layers are now state, not a derived cache.
    */
   invalidateFields(): void;
+  /**
+   * Put every cost layer back to bare terrain, IN PLACE, and drop the fields.
+   *
+   * For taking a building down. Unblocking a tile correctly means redoing its
+   * neighbours' edges too, so the layers are rebuilt from the map and the caller blocks
+   * whatever still stands. In place because other systems hold these layer objects;
+   * replacing them would leave those holding the old ones.
+   */
+  resetLayers(): void;
 }
 
 export function createPathingService(map: Heightmap): PathingService {
@@ -231,6 +240,19 @@ export function createPathingService(map: Heightmap): PathingService {
     },
 
     invalidateFields(): void {
+      fields.clear();
+      fieldOrder.length = 0;
+      fieldQueue.length = 0;
+    },
+
+    resetLayers(): void {
+      for (const [movementClass, layer] of layers) {
+        const fresh = buildCostLayer(map, movementClass, layer.profile);
+        layer.tileCost.set(fresh.tileCost);
+        layer.edges.set(fresh.edges);
+        layer.dirs8.set(fresh.dirs8);
+        layer.edgeCost.set(fresh.edgeCost);
+      }
       fields.clear();
       fieldOrder.length = 0;
       fieldQueue.length = 0;

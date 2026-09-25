@@ -14,7 +14,7 @@ import { MovementClass, IMPASSABLE } from '../src/sim/pathing/costs.js';
 import { buildFlowField } from '../src/sim/pathing/flowField.js';
 import { createSpatialGrid } from '../src/sim/spatial/grid.js';
 import { tuning } from '../src/sim/tuning.js';
-import { EntityKind, createWorld, spawn } from '../src/sim/world.js';
+import { EntityKind, createWorld, handleIndex, packHandle, spawn } from '../src/sim/world.js';
 import { flatMap } from './simHarness.js';
 
 function site(mapSize = 24) {
@@ -490,5 +490,53 @@ describe('a kraal is an enclosure', () => {
     for (const movementClass of [MovementClass.Infantry, MovementClass.Cattle, MovementClass.Mounted]) {
       expect(sim.movement.pathing.layer(movementClass).tileCost[at]).toBe(IMPASSABLE);
     }
+  });
+});
+
+describe('demolishing (a builder has to be able to take a thing down)', () => {
+  const at = (sim: ReturnType<typeof makeSim>, x: number, y: number) =>
+    sim.movement.pathing.layer(MovementClass.Infantry).tileCost[y * sim.map.width + x];
+  const building = (sim: ReturnType<typeof makeSim>) =>
+    sim.world.kind.findIndex((k, i) => k === EntityKind.Building && sim.world.alive[i] === 1);
+
+  it('takes down the player\'s own building and frees the ground it stood on', () => {
+    const sim = makeSim(64, 2);
+    sim.construction.place(sim.world, sim.economy, 0, BuildingType.Umuzi, 10, 10, [], true);
+    expect(at(sim, 10, 10)).toBe(IMPASSABLE);
+    const index = building(sim);
+    enqueueCommand(sim.loop, makeCommand(0, 0, 0, CommandKind.Demolish, packHandle(index, sim.world.generation[index]!), 0, 0, 0));
+    step(sim.loop);
+    expect(sim.world.alive[index]).toBe(0);
+    expect(at(sim, 10, 10)).not.toBe(IMPASSABLE);
+    expect(at(sim, 11, 11)).not.toBe(IMPASSABLE);
+  });
+
+  it('refuses a building that belongs to somebody else', () => {
+    const sim = makeSim(64, 2);
+    sim.construction.place(sim.world, sim.economy, 1, BuildingType.Umuzi, 10, 10, [], true);
+    const index = building(sim);
+    enqueueCommand(sim.loop, makeCommand(0, 0, 0, CommandKind.Demolish, packHandle(index, sim.world.generation[index]!), 0, 0, 0));
+    step(sim.loop);
+    expect(sim.world.alive[index]).toBe(1);
+    expect(at(sim, 10, 10)).toBe(IMPASSABLE);
+  });
+
+  it('refuses anything that is not a building', () => {
+    const sim = makeSim(64, 2);
+    const unit = handleIndex(spawn(sim.world, 5, 5, 0));
+    enqueueCommand(sim.loop, makeCommand(0, 0, 0, CommandKind.Demolish, packHandle(unit, sim.world.generation[unit]!), 0, 0, 0));
+    step(sim.loop);
+    expect(sim.world.alive[unit]).toBe(1);
+  });
+
+  it('leaves every other building\'s ground blocked', () => {
+    const sim = makeSim(64, 2);
+    sim.construction.place(sim.world, sim.economy, 0, BuildingType.Umuzi, 10, 10, [], true);
+    const first = building(sim);
+    sim.construction.place(sim.world, sim.economy, 0, BuildingType.GrainStore, 20, 20, [], true);
+    enqueueCommand(sim.loop, makeCommand(0, 0, 0, CommandKind.Demolish, packHandle(first, sim.world.generation[first]!), 0, 0, 0));
+    step(sim.loop);
+    expect(at(sim, 10, 10)).not.toBe(IMPASSABLE);
+    expect(at(sim, 20, 20)).toBe(IMPASSABLE);
   });
 });

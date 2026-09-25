@@ -115,6 +115,11 @@ export const CommandKind = {
    * a position rather than a mistake.
    */
   Fallow: 21,
+  /**
+   * Take down one of your own buildings. `a` is its handle. The ground comes back;
+   * nothing is refunded. A builder has to be able to undo where it put a thing.
+   */
+  Demolish: 22,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -407,6 +412,10 @@ export function applyCommand(
 
     case CommandKind.Destroy:
       return destroy(world, command.a as Handle);
+
+    // For the sender only, by provenance — the payload is a handle a client controls.
+    case CommandKind.Demolish:
+      return construction.demolish(world, command.a as Handle, command.playerId);
 
     default:
       return false;

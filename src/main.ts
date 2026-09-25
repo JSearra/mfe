@@ -472,6 +472,9 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
     onRation(short) {
       sim.sendCommand(CommandKind.SetRation, short ? 1 : 0);
     },
+    onDemolish(buildingHandle) {
+      sim.sendCommand(CommandKind.Demolish, buildingHandle);
+    },
   });
   // The neighbour by the people it is, not "Village 2" (ADR-0021).
   panel.setVillageNames(

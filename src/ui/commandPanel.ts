@@ -58,6 +58,8 @@ export interface CommandPanelHandlers {
   onCull(): void;
   /** Put the village on short commons, or take it off them. */
   onRation(short: boolean): void;
+  /** Take down a building of the player's own. */
+  onDemolish(buildingHandle: number): void;
 }
 
 /**
@@ -252,6 +254,17 @@ export function createCommandPanel(
 
     if (kind === KIND_BUILDING) {
       const spec = buildingSpec(subtype);
+      // Two clicks, because nothing comes back: the first arms it and says so.
+      const demolish = button(t('panel.demolish'), t('panel.demolishHint'), () => {
+        if (demolish.dataset.armed === '1') {
+          handlers.onDemolish(handle);
+          return;
+        }
+        demolish.dataset.armed = '1';
+        demolish.textContent = t('panel.demolishConfirm');
+      });
+      demolish.classList.add('panel__button--danger');
+      actions.append(demolish);
       if (!spec.trains) return;
       // One button: a homestead raises a household. It offered a spearman and a
       // horseman, which is the war this game stopped being (ADR-0019, ADR-0020); the

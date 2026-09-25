@@ -9,7 +9,9 @@ import type { PathingService } from './pathing/service.js';
 import type { SpatialGrid } from './spatial/grid.js';
 import { tuning } from './tuning.js';
 import {
+  destroy,
   EntityKind,
+  isAlive,
   NULL_HANDLE,
   handleIndex,
   packHandle,
@@ -94,6 +96,11 @@ export interface ConstructionSystem {
    * there and people walk straight through them.
    */
   restoreFootprints(world: World): void;
+  /**
+   * Take down `owner`'s building and give the ground back. False if the handle is not
+   * a living building of theirs. The entity goes at the tick's destroy flush.
+   */
+  demolish(world: World, handle: Handle, owner: number): boolean;
   /**
    * Grain and cattle produced per upkeep by this player's finished buildings, each
    * scaled by the share of its hands that are there.
@@ -344,9 +351,23 @@ export function createConstructionSystem(
       }
     },
 
+    demolish(world, handle, owner): boolean {
+      if (!isAlive(world, handle)) return false;
+      const index = handleIndex(handle);
+      if (world.kind[index] !== EntityKind.Building || world.faction[index] !== owner) return false;
+      if (world.destroyPending[index] === 1) return false;
+      if (!destroy(world, handle)) return false;
+      // Bare terrain, then everything still standing blocked again. The one going is
+      // marked for destruction and skipped, though it is alive until the flush.
+      pathing.resetLayers();
+      this.restoreFootprints(world);
+      return true;
+    },
+
     restoreFootprints(world): void {
       for (let index = 0; index < world.capacity; index++) {
         if (world.alive[index] !== 1 || world.kind[index] !== EntityKind.Building) continue;
+        if (world.destroyPending[index] === 1) continue;
         const spec = buildingSpec(world.buildingType[index]!);
         const size = spec.footprint;
         // Placement puts the entity at the footprint's centre, tile + size / 2.

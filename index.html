@@ -321,6 +321,19 @@
         border-color: #d88a5e;
       }
 
+      /* Taking a building down: the same warning red as the slaughter, for the same
+         reason — it cannot be undone. */
+      .panel__button--danger {
+        background: rgba(72, 42, 34, 0.8);
+        border-color: #6a3f2c;
+      }
+
+      .panel__button--danger:hover,
+      .panel__button--danger[data-armed='1'] {
+        background: #6a3f2c;
+        border-color: #d88a5e;
+      }
+
       /* Standing ties, below the rates they price. Warmer than the trade row: a tie is
          not a transaction and should not read as one. */
       .panel__alliance {
