@@ -38,7 +38,12 @@ import { worldStateField, worldStateFields } from '../world.js';
  * 3 save is the wrong length in two places at once. `fromBase64` would catch that as a
  * RangeError, which is a worse way to find out than being told the save is too old.
  */
-export const SAVE_VERSION = 5;
+/*
+ * 6 adds the fields, the woodland, the census and which villages are off the map — the
+ * state a builder game is made of (ADR-0020), none of which lives in the world arrays,
+ * all of which a version 5 save silently dropped while only tests ever called this.
+ */
+export const SAVE_VERSION = 6;
 
 export interface SaveGame {
   readonly version: number;
@@ -71,6 +76,14 @@ export interface SaveGame {
   readonly fogVersion: number;
   readonly techStatus: string;
   readonly techProgress: string;
+  /** The fields: every array, and how many slots are in use. */
+  readonly farmland: { readonly count: number; readonly arrays: Readonly<Record<string, string>> };
+  /** The standing wood, the same way. */
+  readonly woodland: { readonly count: number; readonly arrays: Readonly<Record<string, string>> };
+  readonly censusEmptied: string;
+  readonly censusGrace: string;
+  /** Which villages live off the map (ADR-0021). */
+  readonly economyOffMap: string;
   /** Per-unit routes, keyed by packed handle. */
   readonly paths: readonly (readonly [number, readonly number[]])[];
   readonly commands: readonly Command[];
@@ -116,6 +129,28 @@ function fromBase64(text: string, target: ArrayBufferView): void {
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 }
 
+/**
+ * The fields' and the wood's state arrays, by name. Listed rather than derived, unlike
+ * the world's, because both structures also hold readings (hands wanted and present)
+ * and a capacity that are not state — and the save test pins every one of these.
+ */
+const FARMLAND_ARRAYS = ['tileX', 'tileY', 'owner', 'sheltered', 'work', 'condition', 'alive', 'fallow'] as const;
+const WOODLAND_ARRAYS = ['x', 'y', 'species', 'age', 'fruit', 'alive'] as const;
+
+function encodeArrays(source: object, names: readonly string[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const name of names) out[name] = toBase64((source as Record<string, ArrayBufferView>)[name]!);
+  return out;
+}
+
+function decodeArrays(encoded: Readonly<Record<string, string>>, target: object, names: readonly string[]): void {
+  for (const name of names) {
+    const text = encoded[name];
+    if (text === undefined) throw new RangeError(`save is missing field "${name}"`);
+    fromBase64(text, (target as Record<string, ArrayBufferView>)[name]!);
+  }
+}
+
 export function captureState(loop: SimLoop): SaveGame {
   const { world, economy, fog, movement, alliance } = loop;
 
@@ -149,6 +184,11 @@ export function captureState(loop: SimLoop): SaveGame {
     fogVersion: fog.version,
     techStatus: toBase64(loop.tech.status),
     techProgress: toBase64(loop.tech.progress),
+    farmland: { count: loop.farmland.count, arrays: encodeArrays(loop.farmland, FARMLAND_ARRAYS) },
+    woodland: { count: loop.woodland.count, arrays: encodeArrays(loop.woodland, WOODLAND_ARRAYS) },
+    censusEmptied: toBase64(loop.census.emptied),
+    censusGrace: toBase64(loop.census.graceTicks),
+    economyOffMap: toBase64(economy.offMap),
     paths: movement.exportPaths(),
     commands: loop.pending.slice(loop.cursor),
     commandCursor: 0,
@@ -201,6 +241,21 @@ export function restoreState(loop: SimLoop, save: SaveGame): void {
   // Multipliers are derived from status, so they are recomputed rather than stored —
   // one source of truth survives the round trip, two would be free to disagree.
   loop.tech.rebuild();
+
+  decodeArrays(save.farmland.arrays, loop.farmland, FARMLAND_ARRAYS);
+  loop.farmland.count = save.farmland.count;
+  loop.farmland.version++;
+  decodeArrays(save.woodland.arrays, loop.woodland, WOODLAND_ARRAYS);
+  loop.woodland.count = save.woodland.count;
+  loop.woodland.version++;
+  fromBase64(save.censusEmptied, loop.census.emptied);
+  fromBase64(save.censusGrace, loop.census.graceTicks);
+  fromBase64(save.economyOffMap, economy.offMap);
+
+  // The ground under every building, which lives in the pathing layers rather than in
+  // any array a save copies. Without it the buildings come back and their footprints do
+  // not, and people walk through huts.
+  loop.construction.restoreFootprints(world);
 
   movement.importPaths(save.paths);
 

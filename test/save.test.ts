@@ -14,7 +14,11 @@ import { Modifier, TechId, TECHS } from '../src/shared/tech/index.js';
 import { createHeightmap } from '../src/sim/terrain/generate.js';
 import { makeSim } from './simHarness.js';
 import { BuildingType, buildingSpec } from '../src/shared/buildings/index.js';
-import { EntityKind } from '../src/sim/world.js';
+import { createWorld, EntityKind } from '../src/sim/world.js';
+import { IMPASSABLE, MovementClass } from '../src/sim/pathing/costs.js';
+import { createDirectSimHost } from '../src/host/directHost.js';
+import { matchSeed, NEIGHBOUR, PLAYER, seedOpening } from '../src/host/opening.js';
+import { FactionId } from '../src/shared/factions/index.js';
 
 /** A scenario with movement, cattle, orders and an economy all in flight. */
 function busyScenario(seed: number) {
@@ -224,4 +228,114 @@ describe('what a save actually carries', () => {
     expect(restored.world.buildingType[site]).toBe(BuildingType.Umuzi);
     expect(restored.world.buildProgress[site]).toBe(spec.work);
   });
+});
+
+describe('a builder game survives a save (the fields, the wood, the ground under buildings)', () => {
+  /**
+   * The game has no end since ADR-0020, so a save is how a village is kept. These are the
+   * pieces the save left out while nothing but tests ever called it: the fields and the
+   * woodland (both simulation state, neither in the world arrays), the census, which
+   * villages live off the map, and the ground a building stands on — a building blocks
+   * its footprint on the pathing layers, and a restored world had the building and not
+   * the block, so people walked through huts after loading.
+   */
+  it('carries the fields', () => {
+    const origin = makeSim(64, 5);
+    origin.farmland.condition[0] = 0.31;
+    origin.farmland.fallow[1] = 1;
+    origin.farmland.work[2] = 3.5;
+    const save = captureState(origin.loop);
+    const restored = makeSim(64, 5);
+    restored.farmland.condition[0] = 0.99;
+    restoreState(restored.loop, JSON.parse(JSON.stringify(save)));
+    expect(restored.farmland.count).toBe(origin.farmland.count);
+    expect(restored.farmland.condition[0]).toBe(0.31);
+    expect(restored.farmland.fallow[1]).toBe(1);
+    expect(restored.farmland.work[2]).toBe(3.5);
+  });
+
+  it('carries the woodland', () => {
+    const origin = makeSim(64, 5, createHeightmap(64, 64, 0x51ee));
+    expect(origin.woodland.count).toBeGreaterThan(0);
+    origin.woodland.age[0] = 77;
+    origin.woodland.alive[1] = 0;
+    const save = captureState(origin.loop);
+    const restored = makeSim(64, 5, createHeightmap(64, 64, 0x51ee));
+    restoreState(restored.loop, JSON.parse(JSON.stringify(save)));
+    expect(restored.woodland.count).toBe(origin.woodland.count);
+    expect(restored.woodland.age[0]).toBe(77);
+    expect(restored.woodland.alive[1]).toBe(0);
+  });
+
+  it('carries the census and which villages are off the map', () => {
+    const origin = makeSim(64, 5);
+    origin.census.emptied[1] = 1;
+    origin.economy.offMap[1] = 1;
+    const save = captureState(origin.loop);
+    const restored = makeSim(64, 5);
+    restoreState(restored.loop, JSON.parse(JSON.stringify(save)));
+    expect(restored.census.emptied[1]).toBe(1);
+    expect(restored.economy.offMap[1]).toBe(1);
+  });
+
+  it('restores the ground a building stands on as ground nobody can walk through', () => {
+    const origin = makeSim(64, 5);
+    origin.construction.place(origin.world, origin.economy, 0, BuildingType.GrainStore, 10, 10, [], true);
+    const save = captureState(origin.loop);
+    const restored = makeSim(64, 5);
+    const layer = restored.movement.pathing.layer(MovementClass.Infantry);
+    const at = 10 * restored.map.width + 10;
+    expect(layer.tileCost[at]).not.toBe(IMPASSABLE);
+    restoreState(restored.loop, save);
+    expect(layer.tileCost[at]).toBe(IMPASSABLE);
+  });
+
+  it('restores a real opening into a fresh game that then runs identically', () => {
+    // The opening a player gets, through the same function main.ts calls, run for a
+    // while so work has found its people, fields have moved and the season has turned.
+    const make = () => {
+      const map = createHeightmap(128, 128, 0x4d666563);
+      const world = createWorld(512, matchSeed(0x4d666563));
+      const host = createDirectSimHost({
+        world,
+        map,
+        viewerId: PLAYER,
+        playerId: PLAYER,
+        neighbours: [NEIGHBOUR],
+        factions: [FactionId.Zulu, FactionId.Sotho],
+        starts: [{ x: 64, y: 64 }],
+        seed: matchSeed(0x4d666563),
+      });
+      return { host, world };
+    };
+    const original = make();
+    seedOpening((kind, a, b, c, d) => original.host.sendCommand(kind, a, b, c, d), createHeightmap(128, 128, 0x4d666563), 64);
+    runTicks(original.host.loop, 2400);
+
+    const save = JSON.parse(JSON.stringify(captureState(original.host.loop)));
+    const restored = make();
+    restoreState(restored.host.loop, save);
+    expect(hashWorld(restored.world)).toBe(hashWorld(original.world));
+
+    for (let tick = 0; tick < 1200; tick++) {
+      step(original.host.loop);
+      step(restored.host.loop);
+      if (tick % 100 !== 99) continue;
+      expect(hashWorld(restored.world), `world diverged by tick ${tick}`).toBe(hashWorld(original.world));
+      expect(Array.from(restored.host.economy.amounts), `ledger diverged by tick ${tick}`).toEqual(
+        Array.from(original.host.economy.amounts),
+      );
+      expect(Array.from(restored.host.farmland.condition), `fields diverged by tick ${tick}`).toEqual(
+        Array.from(original.host.farmland.condition),
+      );
+      // Where the fields ARE, too: founding a village moves the fields it lands on, and a
+      // fresh game that never ran the opening has them somewhere else.
+      expect(Array.from(restored.host.farmland.tileX), `field sites differ by tick ${tick}`).toEqual(
+        Array.from(original.host.farmland.tileX),
+      );
+      expect(Array.from(restored.host.woodland.age), `woodland diverged by tick ${tick}`).toEqual(
+        Array.from(original.host.woodland.age),
+      );
+    }
+  }, 120_000);
 });

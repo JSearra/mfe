@@ -87,6 +87,14 @@ export interface ConstructionSystem {
     labour?: (player: number) => number,
   ): void;
   /**
+   * Block the footprint of every building standing in `world`, as placing it did.
+   *
+   * For loading a save: the buildings come back in the world arrays, but the tiles they
+   * block live in the pathing layers, which no save copies. Without this the huts are
+   * there and people walk straight through them.
+   */
+  restoreFootprints(world: World): void;
+  /**
    * Grain and cattle produced per upkeep by this player's finished buildings, each
    * scaled by the share of its hands that are there.
    */
@@ -103,6 +111,17 @@ export function createConstructionSystem(
   const staffed: number[] = [];
   /** Footprint origin per building, so completion and demolition know their tiles. */
   const origins = new Map<number, { tileX: number; tileY: number; type: BuildingType }>();
+
+  /** Block a footprint for everyone — except, for an enclosure, the cattle it holds. */
+  function blockFootprint(tileX: number, tileY: number, size: number, holdsCattle: boolean): void {
+    for (const movementClass of [MovementClass.Infantry, MovementClass.Cattle, MovementClass.Mounted]) {
+      if (holdsCattle && movementClass === MovementClass.Cattle) continue;
+      const layer = pathing.layer(movementClass);
+      for (let dy = 0; dy < size; dy++) {
+        for (let dx = 0; dx < size; dx++) blockTile(layer, tileX + dx, tileY + dy);
+      }
+    }
+  }
 
   function footprintFree(tileX: number, tileY: number, size: number): boolean {
     const layer = pathing.layer(MovementClass.Infantry);
@@ -214,13 +233,7 @@ export function createConstructionSystem(
       // solid block that the herd stood awkwardly beside — a pen with no inside to it.
       // The wall stays a wall to anyone on two legs, so it still reads as an enclosure
       // and still shapes where people walk.
-      for (const movementClass of [MovementClass.Infantry, MovementClass.Cattle, MovementClass.Mounted]) {
-        if (spec.holdsCattle && movementClass === MovementClass.Cattle) continue;
-        const layer = pathing.layer(movementClass);
-        for (let dy = 0; dy < size; dy++) {
-          for (let dx = 0; dx < size; dx++) blockTile(layer, tileX + dx, tileY + dy);
-        }
-      }
+      blockFootprint(tileX, tileY, size, spec.holdsCattle);
       // Every cached field describes a world without this building in it.
       pathing.invalidateFields();
 
@@ -329,6 +342,19 @@ export function createConstructionSystem(
           ),
         );
       }
+    },
+
+    restoreFootprints(world): void {
+      for (let index = 0; index < world.capacity; index++) {
+        if (world.alive[index] !== 1 || world.kind[index] !== EntityKind.Building) continue;
+        const spec = buildingSpec(world.buildingType[index]!);
+        const size = spec.footprint;
+        // Placement puts the entity at the footprint's centre, tile + size / 2.
+        const tileX = Math.round(world.posX[index]! - size / 2);
+        const tileY = Math.round(world.posY[index]! - size / 2);
+        blockFootprint(tileX, tileY, size, spec.holdsCattle);
+      }
+      pathing.invalidateFields();
     },
 
     yieldFor(world, owner) {
