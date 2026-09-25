@@ -197,7 +197,7 @@
   "controls": {
     "select": "Left-drag selects · right-click orders · shift queues",
     "build": "1-3 build · T raises households · R researches",
-    "land": "F plants a field · G rests the one under the cursor · X twice gives it up",
+    "land": "F plants a field (Shift-click for more) · G rests the one under the cursor · X twice gives it up",
     "groups": "Ctrl+4-9 groups · 4-9 recalls · P patrols",
     "time": "` pauses · +/- speed · Space jumps to an alert · Ctrl+S saves (it also saves itself every minute)",
     "note": "Work near a homestead finds its own people: you choose what to build and where. A field decays unless worked; a resting one repairs but harvests nothing. Raise households only as fast as the land feeds them."

@@ -731,8 +731,12 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
           if (planting) sim.sendCommand(CommandKind.Plant, tileX(map, index), tileY(map, index));
           else sim.sendCommand(CommandKind.Build, tileX(map, index), tileY(map, index), armed!, 0);
         }
-        armed = null;
-        planting = false;
+        // Shift keeps the tool in hand, so a row of fields is a row of clicks rather than
+        // F, click, F, click. The builder convention, and the same key that queues orders.
+        if (!additive) {
+          armed = null;
+          planting = false;
+        }
         return;
       }
       if (view !== null) selection.selectAt(view, map, camera, entities, x, y, PLAYER, additive);
