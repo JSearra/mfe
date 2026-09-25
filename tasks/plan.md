@@ -521,6 +521,18 @@ Left open, in the order they seem worth doing:
       from the same dissolving transitions as a band seam, so the question is why they
       read as solid steps here — likely the bank's contrast against the grass, which is
       far higher than one grass against another.
+      *Investigated (2026-09-25):* a synthetic diagonal coast built from the pipeline's
+      own functions reproduces it — the pebble bank on coastal land tiles is a column of
+      diamonds with notches between. Tried: where two ADJACENT edges are wet, fade from
+      their shared vertex (mean of the two inward distances) instead of taking the max of
+      two edge falloffs. It straightens the contour inside each tile and narrows the band,
+      but the scallops stay, and they are structural: a bank under a tile wide along a
+      diagonal pinches to nothing at every tile point, because the inland tile beyond
+      has no water neighbour and draws no bank. Per-tile masks cannot make it straight.
+      Two real options, both global: (a) a bank that contrasts less with the ground
+      behind it — each band's own ground darkened as wet soil, instead of one riverbed
+      set, reversing the "one set, not eight" decision in postprocess.py; or (b) masks
+      that look two tiles out, which widens the mask vocabulary. Not done.
 
 *Note for whoever picks this up:* `tools/art/generate_tiles.py` drives a local FLUX
 model and the weights ARE cached (~9GB in ~/.cache/huggingface), so terrain subjects can
