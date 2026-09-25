@@ -25,8 +25,6 @@ const tiles: TerrainTiles = {
   variants: () => [],
   transition: () => null,
   corner: () => null,
-  shore: () => null,
-  shoreCorner: () => null,
   field: (_band, isCrop) => (isCrop ? crop : broken),
 };
 

@@ -912,65 +912,13 @@ def command_tile(args: argparse.Namespace) -> int:
                 )
     print(f"  {len(TRANSITION_CORNERS) * BLEND_VARIANTS * len(first_of_band)} corner tiles")
 
-    # --- shore -------------------------------------------------------------------
+    # --- no shore -----------------------------------------------------------------
     #
-    # Water is painted rather than textured -- at this scale a river reads as a colour
-    # and a shape, and a riverbed texture would read as more dry ground -- so the whole
-    # of a waterline's softness has to live on the LAND side of it. Without this a river
-    # is a staircase of blue diamonds with a right angle at every step, which is the
-    # most literal instance on the map of ground ending at ninety degrees.
-    #
-    # Cut from the riverbed tile rather than from each band's own ground, and one set
-    # rather than eight: a bank is wet sand and pebbles whatever the hinterland behind
-    # it is, and eight tinted variations of damp sand is eight ways of drawing the same
-    # thing. Masked exactly like a band seam, so a shore and a contour are built by the
-    # same arithmetic and cannot drift apart.
-    shore_source = next(
-        (tile for name, tile in packed if name.startswith("riverbed")),
-        first_of_band[min(first_of_band)][1],
-    )
-    shore_count = 0
-    for mask in range(1, 16):
-        for variant in range(BLEND_VARIANTS if mask in TILING_MASKS else 1):
-            name = f"shore-{mask}-{variant}.png"
-            bank = make_transition(shore_source, mask, seed=97 + variant * 7919)
-            bank.save(target / name)
-            packed.append((name, bank))
-            manifest.append(
-                {
-                    "file": name,
-                    "subject": "shore",
-                    "width": TILE_W,
-                    "height": TILE_H,
-                    "band": 0,
-                    "mask": mask,
-                    "variant": variant,
-                    "averageColour": average_colour(bank),
-                    "seam": 0.0,
-                }
-            )
-            shore_count += 1
-    for corner in range(len(TRANSITION_CORNERS)):
-        for variant in range(BLEND_VARIANTS):
-            name = f"shore-corner-{corner}-{variant}.png"
-            bank = make_corner(shore_source, corner, seed=97 + variant * 7919)
-            bank.save(target / name)
-            packed.append((name, bank))
-            manifest.append(
-                {
-                    "file": name,
-                    "subject": "shore",
-                    "width": TILE_W,
-                    "height": TILE_H,
-                    "band": 0,
-                    "corner": corner,
-                    "variant": variant,
-                    "averageColour": average_colour(bank),
-                    "seam": 0.0,
-                }
-            )
-            shore_count += 1
-    print(f"  {shore_count} shore tiles")
+    # There was a set here: a pebbled riverbed bank laid over every land tile touching
+    # water. It was written when water had no blend of its own, and once water gained
+    # the land's own ground bleeding over its edge the bank became the defect — a grey
+    # lozenge on every tile beside a river, stepping down each bank (plan V5). Gone
+    # from the renderer, so gone from the page: nothing ships that nothing reads.
 
     # --- fields ------------------------------------------------------------------
     #

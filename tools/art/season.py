@@ -18,8 +18,8 @@ the transform `postprocess.harmonise` already applies to tone generations to the
 tile's mean onto the season's band colour. Low green veld turns gold; the red donga
 floor, the sand and the rock barely move, because their season colours barely do.
 
-Shore tiles are left as they are: the water does not change colour with the season, and
-a shore tile is mostly water.
+The water-surface overlay has no band and is left as it is: the water does not change
+colour with the season.
 """
 
 import argparse
@@ -87,8 +87,6 @@ def main() -> None:
     for name, palette in seasons.items():
         out = page.copy()
         for entry in manifest["tiles"]:
-            if entry.get("subject") == "shore":
-                continue
             band = entry.get("band")
             if band is None or band >= len(palette):
                 continue

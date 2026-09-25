@@ -20,8 +20,6 @@ import {
   landSeams,
   SEAM_CORNERS,
   smoothWaterDepth,
-  waterCornerSeams,
-  waterEdgeMask,
 } from './seams.js';
 import { cornerPositions, faceTrapezoid, QUAD_FLOATS } from './terrainGeometry.js';
 
@@ -478,21 +476,18 @@ function drawTile(
 
   pushQuad(base, positions, tile.uv);
 
-  // The bank, before the contour blends: a shore is the edge of the map's one painted
-  // surface, and ground bleeding over it from uphill belongs on top of the sand rather
-  // than under it.
-  const wet = waterEdgeMask(map, tileX, tileY);
-  if (wet !== 0) {
-    const bank = tiles.shore(wet, cut);
-    if (bank !== null) pushQuad(overlay, positions, bank.uv);
-  }
-  if (waterCornerSeams(map, tileX, tileY, corner) > 0) {
-    for (let at = 0; at < SEAM_CORNERS; at++) {
-      if (corner[at]! < 0) continue;
-      const bank = tiles.shoreCorner(at, cut);
-      if (bank !== null) pushQuad(overlay, positions, bank.uv);
-    }
-  }
+  /*
+   * No bank on the land side of water (plan V5).
+   *
+   * There was one: a pebbled riverbed ground laid over every land tile touching water,
+   * written when water had no blend of its own and a waterline's whole softness had to
+   * live on the land. Water has since had the land's own ground bleeding in over its
+   * edge ("the bank creeping in", above), and the pebble bank became the defect: a
+   * grey-olive lozenge on every tile beside a river, stepping down each bank in whole
+   * diamonds. Measured on the changed pixels, it took the ground from saturation 0.63
+   * to 0.42 on the veld and 0.50 to 0.39 on uMfolozi. Without it the ground runs to the
+   * water in its own colour and the waterline is the dissolve's meander.
+   */
 
   // Higher ground bleeding over the seams. Same page as the tile under it, so these
   // cost vertices but not a draw call, and only boundary tiles have any.

@@ -149,65 +149,6 @@ const AROUND_DX = [0, 1, 0, -1, 1, 1, -1, -1] as const;
 const AROUND_DY = [-1, 0, 1, 0, -1, 1, 1, -1] as const;
 
 /**
- * Which of a dry tile's edges face water, as the same four bits the band blends use.
- *
- * Water is painted rather than textured, so until this existed a river or a coast was a
- * hard staircase of blue diamonds with a 90-degree notch at every step — the most
- * literal instance left on the map of ground ending at a right angle. A bank drawn on
- * the LAND side, fading inland, is what turns that edge into a shore.
- *
- * Zero for a water tile: water has no bank of its own, and giving it one would draw
- * sand over the river.
- */
-export function waterEdgeMask(map: Heightmap, tileX: number, tileY: number): number {
-  if (isWater(map, tileX, tileY)) return 0;
-
-  let mask = 0;
-  for (let bit = 0; bit < 4; bit++) {
-    if (isWater(map, tileX + EDGE_DX[bit]!, tileY + EDGE_DY[bit]!)) mask |= 1 << bit;
-  }
-  return mask;
-}
-
-/**
- * Corners where water touches a dry tile only diagonally.
- *
- * The same rule as `cornerSeams`, and for the same reason: where an edge beside the
- * corner is already wet, the bank drawn along that edge reaches the corner, and a
- * second wedge over it would double the sand exactly where two banks meet. Bends in a
- * river are made of this case, so without it every bend keeps its notch.
- *
- * Writes 1 or -1 into all four slots every call. Returns how many were found.
- */
-export function waterCornerSeams(
-  map: Heightmap,
-  tileX: number,
-  tileY: number,
-  out: Int8Array,
-): number {
-  let found = 0;
-
-  for (let corner = 0; corner < SEAM_CORNERS; corner++) {
-    out[corner] = -1;
-    if (isWater(map, tileX, tileY)) continue;
-    if (!isWater(map, tileX + CORNER_DX[corner]!, tileY + CORNER_DY[corner]!)) continue;
-
-    const before = corner;
-    const after = (corner + 1) % 4;
-    if (
-      isWater(map, tileX + EDGE_DX[before]!, tileY + EDGE_DY[before]!) ||
-      isWater(map, tileX + EDGE_DX[after]!, tileY + EDGE_DY[after]!)
-    ) {
-      continue;
-    }
-
-    out[corner] = 1;
-    found++;
-  }
-  return found;
-}
-
-/**
  * How enclosed by water a water tile is: 0 at a bank, 8 in the open.
  *
  * It was a boolean — "are all four square neighbours wet" — and on a river a tile or
@@ -227,12 +168,10 @@ export function waterDepth(map: Heightmap, tileX: number, tileY: number): number
 /**
  * For a WATER tile: which land grounds bleed over its edges, indexed by band.
  *
- * The waterline was hard on both sides and softened on only one. A dry tile beside
- * water gets a bank drawn on it — `waterEdgeMask` above — so the land dissolved into
- * the shore nicely, and nothing was ever drawn on the water itself. Its own edge stayed
- * a dead diamond, and a river read as a staircase of blue lozenges however good the
- * bank on the far side of it was. A shore is two grounds meeting and it needs both
- * halves.
+ * Nothing was ever drawn on the water itself, so its own edge stayed a dead diamond
+ * and a river read as a staircase of blue lozenges. This is the whole of the waterline
+ * now: a pebble bank on the LAND side came first and turned out to be a staircase of its
+ * own, a grey lozenge on every tile beside a river, and it is gone (plan V5).
  *
  * Indexed by the neighbour's own ground rather than by a single shore colour, so the
  * bank that creeps into the water matches the country standing behind it: a river

@@ -6715,565 +6715,6 @@
       "y": 2342
     },
     {
-      "file": "shore-1-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 1,
-      "variant": 0,
-      "averageColour": "#546a42",
-      "seam": 0.0,
-      "x": 2,
-      "y": 2378
-    },
-    {
-      "file": "shore-1-1.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 1,
-      "variant": 1,
-      "averageColour": "#546942",
-      "seam": 0.0,
-      "x": 70,
-      "y": 2378
-    },
-    {
-      "file": "shore-1-2.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 1,
-      "variant": 2,
-      "averageColour": "#556a43",
-      "seam": 0.0,
-      "x": 138,
-      "y": 2378
-    },
-    {
-      "file": "shore-1-3.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 1,
-      "variant": 3,
-      "averageColour": "#556a43",
-      "seam": 0.0,
-      "x": 206,
-      "y": 2378
-    },
-    {
-      "file": "shore-2-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 2,
-      "variant": 0,
-      "averageColour": "#546942",
-      "seam": 0.0,
-      "x": 274,
-      "y": 2378
-    },
-    {
-      "file": "shore-2-1.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 2,
-      "variant": 1,
-      "averageColour": "#556a42",
-      "seam": 0.0,
-      "x": 342,
-      "y": 2378
-    },
-    {
-      "file": "shore-2-2.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 2,
-      "variant": 2,
-      "averageColour": "#536841",
-      "seam": 0.0,
-      "x": 410,
-      "y": 2378
-    },
-    {
-      "file": "shore-2-3.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 2,
-      "variant": 3,
-      "averageColour": "#546941",
-      "seam": 0.0,
-      "x": 478,
-      "y": 2378
-    },
-    {
-      "file": "shore-3-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 3,
-      "variant": 0,
-      "averageColour": "#556a42",
-      "seam": 0.0,
-      "x": 2,
-      "y": 2414
-    },
-    {
-      "file": "shore-4-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 4,
-      "variant": 0,
-      "averageColour": "#586d45",
-      "seam": 0.0,
-      "x": 70,
-      "y": 2414
-    },
-    {
-      "file": "shore-4-1.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 4,
-      "variant": 1,
-      "averageColour": "#576c45",
-      "seam": 0.0,
-      "x": 138,
-      "y": 2414
-    },
-    {
-      "file": "shore-4-2.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 4,
-      "variant": 2,
-      "averageColour": "#576c45",
-      "seam": 0.0,
-      "x": 206,
-      "y": 2414
-    },
-    {
-      "file": "shore-4-3.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 4,
-      "variant": 3,
-      "averageColour": "#566c44",
-      "seam": 0.0,
-      "x": 274,
-      "y": 2414
-    },
-    {
-      "file": "shore-5-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 5,
-      "variant": 0,
-      "averageColour": "#556b43",
-      "seam": 0.0,
-      "x": 342,
-      "y": 2414
-    },
-    {
-      "file": "shore-6-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 6,
-      "variant": 0,
-      "averageColour": "#556a42",
-      "seam": 0.0,
-      "x": 410,
-      "y": 2414
-    },
-    {
-      "file": "shore-7-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 7,
-      "variant": 0,
-      "averageColour": "#566b43",
-      "seam": 0.0,
-      "x": 478,
-      "y": 2414
-    },
-    {
-      "file": "shore-8-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 8,
-      "variant": 0,
-      "averageColour": "#586e46",
-      "seam": 0.0,
-      "x": 2,
-      "y": 2450
-    },
-    {
-      "file": "shore-8-1.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 8,
-      "variant": 1,
-      "averageColour": "#586d45",
-      "seam": 0.0,
-      "x": 70,
-      "y": 2450
-    },
-    {
-      "file": "shore-8-2.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 8,
-      "variant": 2,
-      "averageColour": "#586d46",
-      "seam": 0.0,
-      "x": 138,
-      "y": 2450
-    },
-    {
-      "file": "shore-8-3.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 8,
-      "variant": 3,
-      "averageColour": "#586d46",
-      "seam": 0.0,
-      "x": 206,
-      "y": 2450
-    },
-    {
-      "file": "shore-9-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 9,
-      "variant": 0,
-      "averageColour": "#556a43",
-      "seam": 0.0,
-      "x": 274,
-      "y": 2450
-    },
-    {
-      "file": "shore-10-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 10,
-      "variant": 0,
-      "averageColour": "#556b43",
-      "seam": 0.0,
-      "x": 342,
-      "y": 2450
-    },
-    {
-      "file": "shore-11-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 11,
-      "variant": 0,
-      "averageColour": "#566b43",
-      "seam": 0.0,
-      "x": 410,
-      "y": 2450
-    },
-    {
-      "file": "shore-12-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 12,
-      "variant": 0,
-      "averageColour": "#586d45",
-      "seam": 0.0,
-      "x": 478,
-      "y": 2450
-    },
-    {
-      "file": "shore-13-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 13,
-      "variant": 0,
-      "averageColour": "#566b43",
-      "seam": 0.0,
-      "x": 2,
-      "y": 2486
-    },
-    {
-      "file": "shore-14-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 14,
-      "variant": 0,
-      "averageColour": "#556a43",
-      "seam": 0.0,
-      "x": 70,
-      "y": 2486
-    },
-    {
-      "file": "shore-15-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "mask": 15,
-      "variant": 0,
-      "averageColour": "#566b44",
-      "seam": 0.0,
-      "x": 138,
-      "y": 2486
-    },
-    {
-      "file": "shore-corner-0-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 0,
-      "variant": 0,
-      "averageColour": "#50653e",
-      "seam": 0.0,
-      "x": 206,
-      "y": 2486
-    },
-    {
-      "file": "shore-corner-0-1.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 0,
-      "variant": 1,
-      "averageColour": "#4a5f37",
-      "seam": 0.0,
-      "x": 274,
-      "y": 2486
-    },
-    {
-      "file": "shore-corner-0-2.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 0,
-      "variant": 2,
-      "averageColour": "#475d35",
-      "seam": 0.0,
-      "x": 342,
-      "y": 2486
-    },
-    {
-      "file": "shore-corner-0-3.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 0,
-      "variant": 3,
-      "averageColour": "#4c613a",
-      "seam": 0.0,
-      "x": 410,
-      "y": 2486
-    },
-    {
-      "file": "shore-corner-1-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 1,
-      "variant": 0,
-      "averageColour": "#556a42",
-      "seam": 0.0,
-      "x": 478,
-      "y": 2486
-    },
-    {
-      "file": "shore-corner-1-1.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 1,
-      "variant": 1,
-      "averageColour": "#566b43",
-      "seam": 0.0,
-      "x": 2,
-      "y": 2522
-    },
-    {
-      "file": "shore-corner-1-2.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 1,
-      "variant": 2,
-      "averageColour": "#566b43",
-      "seam": 0.0,
-      "x": 70,
-      "y": 2522
-    },
-    {
-      "file": "shore-corner-1-3.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 1,
-      "variant": 3,
-      "averageColour": "#566b43",
-      "seam": 0.0,
-      "x": 138,
-      "y": 2522
-    },
-    {
-      "file": "shore-corner-2-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 2,
-      "variant": 0,
-      "averageColour": "#566c44",
-      "seam": 0.0,
-      "x": 206,
-      "y": 2522
-    },
-    {
-      "file": "shore-corner-2-1.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 2,
-      "variant": 1,
-      "averageColour": "#586d46",
-      "seam": 0.0,
-      "x": 274,
-      "y": 2522
-    },
-    {
-      "file": "shore-corner-2-2.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 2,
-      "variant": 2,
-      "averageColour": "#586d46",
-      "seam": 0.0,
-      "x": 342,
-      "y": 2522
-    },
-    {
-      "file": "shore-corner-2-3.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 2,
-      "variant": 3,
-      "averageColour": "#586d46",
-      "seam": 0.0,
-      "x": 410,
-      "y": 2522
-    },
-    {
-      "file": "shore-corner-3-0.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 3,
-      "variant": 0,
-      "averageColour": "#586d46",
-      "seam": 0.0,
-      "x": 478,
-      "y": 2522
-    },
-    {
-      "file": "shore-corner-3-1.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 3,
-      "variant": 1,
-      "averageColour": "#586d46",
-      "seam": 0.0,
-      "x": 2,
-      "y": 2558
-    },
-    {
-      "file": "shore-corner-3-2.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 3,
-      "variant": 2,
-      "averageColour": "#586d46",
-      "seam": 0.0,
-      "x": 70,
-      "y": 2558
-    },
-    {
-      "file": "shore-corner-3-3.png",
-      "subject": "shore",
-      "width": 64,
-      "height": 32,
-      "band": 0,
-      "corner": 3,
-      "variant": 3,
-      "averageColour": "#586d46",
-      "seam": 0.0,
-      "x": 138,
-      "y": 2558
-    },
-    {
       "file": "field-0-broken.png",
       "subject": "field",
       "width": 64,
@@ -7283,8 +6724,8 @@
       "spill": 0.595,
       "averageColour": "#464a27",
       "seam": 0.0,
-      "x": 206,
-      "y": 2558
+      "x": 2,
+      "y": 2378
     },
     {
       "file": "field-0-crop.png",
@@ -7296,8 +6737,8 @@
       "spill": 0.364,
       "averageColour": "#4e7b30",
       "seam": 0.0,
-      "x": 274,
-      "y": 2558
+      "x": 70,
+      "y": 2378
     },
     {
       "file": "field-1-broken.png",
@@ -7309,8 +6750,8 @@
       "spill": 0.595,
       "averageColour": "#404d19",
       "seam": 0.0,
-      "x": 342,
-      "y": 2558
+      "x": 138,
+      "y": 2378
     },
     {
       "file": "field-1-crop.png",
@@ -7322,8 +6763,8 @@
       "spill": 0.364,
       "averageColour": "#48801f",
       "seam": 0.0,
-      "x": 410,
-      "y": 2558
+      "x": 206,
+      "y": 2378
     },
     {
       "file": "field-2-broken.png",
@@ -7335,8 +6776,8 @@
       "spill": 0.595,
       "averageColour": "#515a1c",
       "seam": 0.0,
-      "x": 478,
-      "y": 2558
+      "x": 274,
+      "y": 2378
     },
     {
       "file": "field-2-crop.png",
@@ -7348,8 +6789,8 @@
       "spill": 0.364,
       "averageColour": "#5a9622",
       "seam": 0.0,
-      "x": 2,
-      "y": 2594
+      "x": 342,
+      "y": 2378
     },
     {
       "file": "field-3-broken.png",
@@ -7361,8 +6802,8 @@
       "spill": 0.595,
       "averageColour": "#796127",
       "seam": 0.0,
-      "x": 70,
-      "y": 2594
+      "x": 410,
+      "y": 2378
     },
     {
       "file": "field-3-crop.png",
@@ -7374,8 +6815,8 @@
       "spill": 0.364,
       "averageColour": "#87a030",
       "seam": 0.0,
-      "x": 138,
-      "y": 2594
+      "x": 478,
+      "y": 2378
     },
     {
       "file": "field-4-broken.png",
@@ -7387,8 +6828,8 @@
       "spill": 0.595,
       "averageColour": "#885a2b",
       "seam": 0.0,
-      "x": 206,
-      "y": 2594
+      "x": 2,
+      "y": 2414
     },
     {
       "file": "field-4-crop.png",
@@ -7400,8 +6841,8 @@
       "spill": 0.364,
       "averageColour": "#989636",
       "seam": 0.0,
-      "x": 274,
-      "y": 2594
+      "x": 70,
+      "y": 2414
     },
     {
       "file": "field-5-broken.png",
@@ -7413,8 +6854,8 @@
       "spill": 0.595,
       "averageColour": "#944720",
       "seam": 0.0,
-      "x": 342,
-      "y": 2594
+      "x": 138,
+      "y": 2414
     },
     {
       "file": "field-5-crop.png",
@@ -7426,8 +6867,8 @@
       "spill": 0.364,
       "averageColour": "#a67528",
       "seam": 0.0,
-      "x": 410,
-      "y": 2594
+      "x": 206,
+      "y": 2414
     },
     {
       "file": "field-6-broken.png",
@@ -7439,8 +6880,8 @@
       "spill": 0.595,
       "averageColour": "#ab7c48",
       "seam": 0.0,
-      "x": 478,
-      "y": 2594
+      "x": 274,
+      "y": 2414
     },
     {
       "file": "field-6-crop.png",
@@ -7452,8 +6893,8 @@
       "spill": 0.364,
       "averageColour": "#c0cf59",
       "seam": 0.0,
-      "x": 2,
-      "y": 2630
+      "x": 342,
+      "y": 2414
     },
     {
       "file": "field-7-broken.png",
@@ -7465,8 +6906,8 @@
       "spill": 0.595,
       "averageColour": "#4a3a2b",
       "seam": 0.0,
-      "x": 70,
-      "y": 2630
+      "x": 410,
+      "y": 2414
     },
     {
       "file": "field-7-crop.png",
@@ -7478,8 +6919,8 @@
       "spill": 0.364,
       "averageColour": "#525f35",
       "seam": 0.0,
-      "x": 138,
-      "y": 2630
+      "x": 478,
+      "y": 2414
     },
     {
       "file": "water-surface-0-0.png",
@@ -7492,8 +6933,8 @@
       ],
       "averageColour": "#49575f",
       "seam": 0.0,
-      "x": 206,
-      "y": 2630
+      "x": 2,
+      "y": 2450
     },
     {
       "file": "water-surface-1-0.png",
@@ -7506,8 +6947,8 @@
       ],
       "averageColour": "#5b6870",
       "seam": 0.0,
-      "x": 274,
-      "y": 2630
+      "x": 70,
+      "y": 2450
     },
     {
       "file": "water-surface-2-0.png",
@@ -7520,8 +6961,8 @@
       ],
       "averageColour": "#4f5c64",
       "seam": 0.0,
-      "x": 342,
-      "y": 2630
+      "x": 138,
+      "y": 2450
     },
     {
       "file": "water-surface-3-0.png",
@@ -7534,8 +6975,8 @@
       ],
       "averageColour": "#47545d",
       "seam": 0.0,
-      "x": 410,
-      "y": 2630
+      "x": 206,
+      "y": 2450
     },
     {
       "file": "water-surface-0-1.png",
@@ -7548,8 +6989,8 @@
       ],
       "averageColour": "#324049",
       "seam": 0.0,
-      "x": 478,
-      "y": 2630
+      "x": 274,
+      "y": 2450
     },
     {
       "file": "water-surface-1-1.png",
@@ -7562,8 +7003,8 @@
       ],
       "averageColour": "#526068",
       "seam": 0.0,
-      "x": 2,
-      "y": 2666
+      "x": 342,
+      "y": 2450
     },
     {
       "file": "water-surface-2-1.png",
@@ -7576,8 +7017,8 @@
       ],
       "averageColour": "#4d5a62",
       "seam": 0.0,
-      "x": 70,
-      "y": 2666
+      "x": 410,
+      "y": 2450
     },
     {
       "file": "water-surface-3-1.png",
@@ -7590,8 +7031,8 @@
       ],
       "averageColour": "#5d6a72",
       "seam": 0.0,
-      "x": 138,
-      "y": 2666
+      "x": 478,
+      "y": 2450
     },
     {
       "file": "water-surface-0-2.png",
@@ -7604,8 +7045,8 @@
       ],
       "averageColour": "#515e66",
       "seam": 0.0,
-      "x": 206,
-      "y": 2666
+      "x": 2,
+      "y": 2486
     },
     {
       "file": "water-surface-1-2.png",
@@ -7618,8 +7059,8 @@
       ],
       "averageColour": "#46545c",
       "seam": 0.0,
-      "x": 274,
-      "y": 2666
+      "x": 70,
+      "y": 2486
     },
     {
       "file": "water-surface-2-2.png",
@@ -7632,8 +7073,8 @@
       ],
       "averageColour": "#3e4b54",
       "seam": 0.0,
-      "x": 342,
-      "y": 2666
+      "x": 138,
+      "y": 2486
     },
     {
       "file": "water-surface-3-2.png",
@@ -7646,8 +7087,8 @@
       ],
       "averageColour": "#46545c",
       "seam": 0.0,
-      "x": 410,
-      "y": 2666
+      "x": 206,
+      "y": 2486
     },
     {
       "file": "water-surface-0-3.png",
@@ -7660,8 +7101,8 @@
       ],
       "averageColour": "#536169",
       "seam": 0.0,
-      "x": 478,
-      "y": 2666
+      "x": 274,
+      "y": 2486
     },
     {
       "file": "water-surface-1-3.png",
@@ -7674,8 +7115,8 @@
       ],
       "averageColour": "#49575f",
       "seam": 0.0,
-      "x": 2,
-      "y": 2702
+      "x": 342,
+      "y": 2486
     },
     {
       "file": "water-surface-2-3.png",
@@ -7688,8 +7129,8 @@
       ],
       "averageColour": "#424f57",
       "seam": 0.0,
-      "x": 70,
-      "y": 2702
+      "x": 410,
+      "y": 2486
     },
     {
       "file": "water-surface-3-3.png",
@@ -7702,8 +7143,8 @@
       ],
       "averageColour": "#44515a",
       "seam": 0.0,
-      "x": 138,
-      "y": 2702
+      "x": 478,
+      "y": 2486
     }
   ],
   "seasons": {

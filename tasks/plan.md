@@ -514,7 +514,14 @@ Left open, in the order they seem worth doing:
       four — the opposite failure to the one just fixed, and the two trade against each
       other at a fixed source size of 512px.
 
-- [ ] **V5 — The river bank is a staircase.** Seen at close zoom beside the default
+- [x] **V5 — The river bank is a staircase.** *Done:* measured through the real
+      renderer rather than a synthetic, by switching layers off — the lozenges were the
+      land-side PEBBLE BANK, not the water's edge. It dated from before water had the
+      land's own ground bleeding over it, and was redundant and harmful since. Removed
+      from renderer, loader and pipeline (43 tiles); on the changed pixels it had taken
+      the ground from saturation 0.63 to 0.42 (veld) and 0.50 to 0.39 (uMfolozi). The
+      notes below record the wrong turns on the way, which were: synthetic renders
+      missing a layer the renderer draws, and blaming the water side. Was: Seen at close zoom beside the default
       veld's river: the darker bank ground on the LAND side of a shore steps along in
       whole diamonds, a sawtooth of lozenges following the tile grid, where the water
       side (V1) and open ground (V4) no longer show the grid at all. The shore masks come
