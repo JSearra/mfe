@@ -432,7 +432,15 @@ disagreed with it in specific, correctable ways.
       isidwaba, the umutsha/ibheshu and the elder's isicoco; an ordinary `villager` kind
       now wears the umutsha and the umqhele (commit 7a0803f), and the pelvis defect that
       put a ball between every villager's ankles is fixed. Open: the isicholo for married
-      women (it competes with the carrier's head-load for the same silhouette). Was: `tools/art/make_unit.py`. The figures wear a
+      women (it competes with the carrier's head-load for the same silhouette).
+      *Tried on the field-hand (2026-09-25) and reverted:* a flared ochre hat parented to
+      the spine tilts with her stoop and reads as a dish at the head end, and — the
+      deciding cost — widening 128 frames' bounding boxes spilled the sprite atlas onto a
+      second 3072px page (92% -> two pages at 47%), a second texture and a batch break for
+      one hat. Worth another try only as a hat that stays inside the current frame bounds
+      (a narrow brim, or a smaller atlas footprint elsewhere). Note too: re-rendering a
+      kind in Blender is not byte-reproducible — 15 of 9.4M atlas pixels differed on a
+      re-render of unchanged geometry — so compare atlases by frame, not by file. Was: `tools/art/make_unit.py`. The figures wear a
       generic wrap. The vocabulary is specific and well documented: **ibheshu** (the
       calf-skin back apron, knee-length on a young man), **isinene** (the front, rolled
       rope-like hide strings), **umqhele** (the fur headband), **isicoco** (the head-ring
