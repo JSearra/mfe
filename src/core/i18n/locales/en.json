@@ -138,6 +138,7 @@
     "seed": "Seed",
     "start": "Begin",
     "continue": "Continue your village (saved {when})",
+    "replaces": "Beginning a new village replaces the one you kept.",
     "mapOpen": "Open veld",
     "mapThabaBosiu": "Thaba Bosiu",
     "mapUmfolozi": "uMfolozi",
@@ -182,7 +183,7 @@
     "build": "1-3 build · T raises households · R researches",
     "land": "F plants a field · G rests the one under the cursor",
     "groups": "Ctrl+4-9 groups · 4-9 recalls · P patrols",
-    "time": "` pauses · +/- speed · Space jumps to an alert · Ctrl+S saves",
+    "time": "` pauses · +/- speed · Space jumps to an alert · Ctrl+S saves (it also saves itself every minute)",
     "note": "More hands raise a site faster. A field decays unless worked; a resting one repairs but harvests nothing."
   }
 }

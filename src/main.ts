@@ -81,6 +81,8 @@ import { matchSeed, NEIGHBOUR, PLAYER, seedOpening } from './host/opening.js';
  */
 
 const BACKGROUND = 0x14110d;
+/** How often the village is kept without being asked. */
+const AUTOSAVE_MS = 60_000;
 const MAP_SIZE = 128;
 const MAP_SEED = 0x4d666563;
 const KIND_CATTLE = 1;
@@ -386,6 +388,27 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
   const { signal } = lifetime;
   app.canvas.addEventListener('pointerdown', startAudio, { once: true, signal });
   window.addEventListener('keydown', startAudio, { once: true, signal });
+
+  /*
+   * Keep the village without being asked: every minute, and when the tab is hidden.
+   *
+   * One slot and a game with no end means the first closed tab without Ctrl+S loses
+   * everything, and nobody remembers to save a game that never stops. Quiet — the
+   * notice is for a save the player asked for. Hiding is best effort: a worker save is
+   * a round trip and a closing tab may not wait for it, which is what the minute is for.
+   */
+  const autosave = (): void => {
+    void sim.save().then((save) => storeGame(options, save));
+  };
+  const autosaveTimer = setInterval(autosave, AUTOSAVE_MS);
+  signal.addEventListener('abort', () => clearInterval(autosaveTimer));
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (document.visibilityState === 'hidden') autosave();
+    },
+    { signal },
+  );
 
   const stats = createRenderStats();
   const overlay = createDebugOverlay(root);

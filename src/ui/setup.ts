@@ -104,6 +104,11 @@ export function showSetup(
         resolve('continue');
       });
       panel.appendChild(resume);
+      // One slot, kept automatically: a new village takes its place within a minute.
+      const replaces = document.createElement('p');
+      replaces.className = 'setup-note';
+      replaces.textContent = t('setup.replaces');
+      panel.appendChild(replaces);
     }
 
     const mapSelect = document.createElement('select');
