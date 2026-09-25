@@ -179,7 +179,6 @@ const AMBIENT: Readonly<Record<string, { spec: VoiceSpec; everyMs: number }>> = 
 /** Immediate feedback on a click, before the order has reached the simulation. */
 const ACKNOWLEDGE: Readonly<Record<string, VoiceSpec>> = {
   move: { frequency: 520, endFrequency: 700, durationMs: 70, gain: 0.13, noise: false, type: 'triangle' },
-  attack: { frequency: 300, endFrequency: 190, durationMs: 110, gain: 0.18, noise: true, type: 'square' },
   herd: { frequency: 400, endFrequency: 470, durationMs: 130, gain: 0.14, noise: false, type: 'sine' },
 };
 
