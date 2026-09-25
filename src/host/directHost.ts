@@ -1,6 +1,7 @@
 import type { Command, CommandKind } from '../sim/commands.js';
 import { makeCommand } from '../sim/commands.js';
 import { compactLoop, createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../sim/loop.js';
+import { captureState, restoreState, type SaveGame } from '../sim/persistence/save.js';
 import { buildSnapshot } from '../sim/snapshot.js';
 import { trendOf, yearOf } from '../shared/calendar.js';
 import { Ration } from '../sim/economy/ledger.js';
@@ -221,6 +222,17 @@ export interface SimHost {
   speed: number;
   /** Take the newest snapshot and the events since the last take, or null if unchanged. */
   receive(): SimMessage | null;
+  /**
+   * The whole simulation as a save (src/sim/persistence/save.ts). A promise, because a
+   * worker host has to ask its thread for it.
+   */
+  save(): Promise<SaveGame>;
+  /**
+   * Replace the simulation's state with a save. Call it on a freshly created host, in
+   * place of seeding an opening — the host must have been built with the same map,
+   * factions and seed the save was taken from.
+   */
+  restore(save: SaveGame): void;
   dispose(): void;
 }
 
@@ -493,6 +505,18 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         woodland: trees,
         farmland: fields,
       };
+    },
+
+    save(): Promise<SaveGame> {
+      return Promise.resolve(captureState(loop));
+    },
+
+    restore(save: SaveGame): void {
+      restoreState(loop, save);
+      // Everything restored is news to the renderer, whatever its version says.
+      sentFogVersion = -1;
+      sentWoodVersion = -1;
+      sentFieldVersion = -1;
     },
 
     dispose(): void {

@@ -3,6 +3,7 @@ import type { SimEvent } from '../../shared/events.js';
 import type { FactionId } from '../../shared/factions/index.js';
 import type { MapScript } from '../../sim/terrain/maps.js';
 import type { PlayerState } from '../directHost.js';
+import type { SaveGame } from '../../sim/persistence/save.js';
 import type { SimHost, SimMessage } from '../directHost.js';
 import type { FromWorker, ToWorker } from './protocol.js';
 
@@ -75,8 +76,17 @@ export function createWorkerSimHost(options: WorkerSimHostOptions): SimHost {
   let pendingEvents: SimEvent[] = [];
   let droppedEvents = 0;
 
+  /** Saves asked for and not yet answered, by request id. */
+  const saving = new Map<number, (save: SaveGame) => void>();
+  let nextSave = 0;
+
   worker.onmessage = (event: MessageEvent<FromWorker>): void => {
     const message = event.data;
+    if (message.type === 'saved') {
+      saving.get(message.id)?.(message.save);
+      saving.delete(message.id);
+      return;
+    }
     if (message.type !== 'snapshot') return;
 
     tick = message.tick;
@@ -132,6 +142,20 @@ export function createWorkerSimHost(options: WorkerSimHostOptions): SimHost {
 
     pump(): void {
       // The worker keeps its own time.
+    },
+
+    save(): Promise<SaveGame> {
+      const id = nextSave++;
+      return new Promise((resolve) => {
+        saving.set(id, resolve);
+        send({ type: 'save', id });
+      });
+    },
+
+    restore(save: SaveGame): void {
+      // Messages are handled in order, so this lands after init and before any tick
+      // the worker's timer could run on the unseeded state that init built.
+      send({ type: 'restore', save });
     },
 
     receive(): SimMessage | null {

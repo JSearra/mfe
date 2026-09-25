@@ -267,6 +267,21 @@ describe('a builder game survives a save (the fields, the wood, the ground under
     expect(restored.woodland.alive[1]).toBe(0);
   });
 
+  it('carries last season\'s harvest, upkeep and what the land feeds', () => {
+    // The autoplayer raises households on `feeds`, and the HUD shows harvest against
+    // upkeep: both went blank after a load until the next season.
+    const origin = makeSim(64, 5);
+    origin.economy.harvested[0] = 123;
+    origin.economy.upkeep[0] = 45;
+    origin.economy.feeds[0] = 67;
+    const save = captureState(origin.loop);
+    const restored = makeSim(64, 5);
+    restoreState(restored.loop, JSON.parse(JSON.stringify(save)));
+    expect(restored.economy.harvested[0]).toBe(123);
+    expect(restored.economy.upkeep[0]).toBe(45);
+    expect(restored.economy.feeds[0]).toBe(67);
+  });
+
   it('carries the census and which villages are off the map', () => {
     const origin = makeSim(64, 5);
     origin.census.emptied[1] = 1;

@@ -65,6 +65,8 @@ import { createCommandPanel, type FieldReading } from './ui/commandPanel.js';
 import { createMinimap } from './ui/minimap.js';
 import { createAlerts } from './ui/alerts.js';
 import { showSetup } from './ui/setup.js';
+import { loadStoredGame, storeGame } from './ui/savedGame.js';
+import { SAVE_VERSION, type SaveGame } from './sim/persistence/save.js';
 import { createEmptiedBanner } from './ui/emptiedBanner.js';
 import { createResourceBar } from './ui/resourceBar.js';
 import { matchSeed, NEIGHBOUR, PLAYER, seedOpening } from './host/opening.js';
@@ -259,7 +261,7 @@ export function pickTree(wood: Float32Array | null, worldX: number, worldY: numb
   return best;
 }
 
-async function main(options: GameOptions): Promise<void> {
+async function main(options: GameOptions, restoreFrom: SaveGame | null = null): Promise<void> {
   currentOptions = options;
   document.title = t('app.title');
 
@@ -315,7 +317,10 @@ async function main(options: GameOptions): Promise<void> {
 
   // The village and the herds each side opens with. Shared with the soak harness so
   // that what is measured is what is played — see src/host/opening.ts.
-  seedOpening((kind, a, b, c, d) => sim.sendCommand(kind, a, b, c, d), map, centre);
+  // Or the village the player kept, restored into a host built on the same map, peoples
+  // and seed — in place of an opening, never on top of one.
+  if (restoreFrom !== null) sim.restore(restoreFrom);
+  else seedOpening((kind, a, b, c, d) => sim.sendCommand(kind, a, b, c, d), map, centre);
 
   const { app } = await createRenderer(root, BACKGROUND);
   const camera = createCamera(app.renderer.width, app.renderer.height);
@@ -394,6 +399,15 @@ async function main(options: GameOptions): Promise<void> {
   let controlsOpen = true;
   const resourceBar = createResourceBar(root);
   const emptiedBanner = createEmptiedBanner(root, { onRestart: () => void restart() });
+
+  /** A line of news that is not the simulation's — "saved", and the like. */
+  function notice(text: string): void {
+    const element = document.createElement('div');
+    element.className = 'notice';
+    element.textContent = text;
+    root.appendChild(element);
+    setTimeout(() => element.remove(), 2600);
+  }
   const alerts = createAlerts();
   root.appendChild(alerts.element);
   const minimap = createMinimap(root, map, {
@@ -516,6 +530,13 @@ async function main(options: GameOptions): Promise<void> {
   };
 
   window.addEventListener('keydown', (event) => {
+    // Keep the village (ADR-0020: a game has no end, so it has to outlast the tab).
+    // Ctrl or Cmd with S, which the browser would otherwise take as "save this page".
+    if ((event.key === 's' || event.key === 'S') && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      void sim.save().then((save) => notice(t(storeGame(options, save) ? 'game.saved' : 'game.saveFailed')));
+      return;
+    }
     // Control groups. Ctrl (or Cmd) assigns, the bare digit recalls. Entirely client
     // state — no command is sent and the simulation never learns any of it happened.
     const digit = Number(event.key);
@@ -1152,8 +1173,16 @@ async function boot(): Promise<void> {
     return;
   }
 
-  const chosen = await showSetup(root, defaults);
-  await main({ ...defaults, ...chosen });
+  // A kept village is offered first — but only one this build can read. An older save
+  // format is not offered at all, rather than offered and then refused.
+  const stored = loadStoredGame();
+  const readable = stored !== null && stored.save.version === SAVE_VERSION ? stored : null;
+  const chosen = await showSetup(root, defaults, readable);
+  if (chosen === 'continue' && readable !== null) {
+    await main({ ...defaults, ...readable.options }, readable.save);
+    return;
+  }
+  await main({ ...defaults, ...(chosen === 'continue' ? {} : chosen) });
 }
 
 void boot();

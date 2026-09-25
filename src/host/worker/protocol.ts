@@ -3,6 +3,7 @@ import type { SimEvent } from '../../shared/events.js';
 import type { FactionId } from '../../shared/factions/index.js';
 import type { MapScript } from '../../sim/terrain/maps.js';
 import type { PlayerState } from '../directHost.js';
+import type { SaveGame } from '../../sim/persistence/save.js';
 
 /**
  * Messages between the main thread and the simulation worker.
@@ -60,7 +61,26 @@ export interface SpeedMessage {
   readonly speed: number;
 }
 
-export type ToWorker = InitMessage | CommandMessage | AckMessage | StopMessage | SpeedMessage;
+/** Ask for the simulation as a save. Answered by a SavedMessage with the same id. */
+export interface SaveRequestMessage {
+  readonly type: 'save';
+  readonly id: number;
+}
+
+/** Replace the simulation's state with a save, straight after init. */
+export interface RestoreMessage {
+  readonly type: 'restore';
+  readonly save: SaveGame;
+}
+
+export type ToWorker =
+  | InitMessage
+  | CommandMessage
+  | AckMessage
+  | StopMessage
+  | SpeedMessage
+  | SaveRequestMessage
+  | RestoreMessage;
 
 export interface SnapshotMessage {
   readonly type: 'snapshot';
@@ -76,4 +96,10 @@ export interface SnapshotMessage {
   readonly farmland: Float32Array | null;
 }
 
-export type FromWorker = SnapshotMessage;
+export interface SavedMessage {
+  readonly type: 'saved';
+  readonly id: number;
+  readonly save: SaveGame;
+}
+
+export type FromWorker = SnapshotMessage | SavedMessage;

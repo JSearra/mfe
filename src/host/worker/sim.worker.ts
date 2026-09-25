@@ -17,6 +17,7 @@ import { createStartingFarmland } from '../../sim/economy/plots.js';
 import { createLoop, enqueueCommand, step, TICK_MS, type SimLoop } from '../../sim/loop.js';
 import { createMovementSystem } from '../../sim/movement.js';
 import { buildSnapshot } from '../../sim/snapshot.js';
+import { captureState, restoreState } from '../../sim/persistence/save.js';
 import { trendOf, yearOf } from '../../shared/calendar.js';
 import { TRAIN_COSTS, techStatusFor } from '../playerRules.js';
 import { createHeightmap } from '../../sim/terrain/generate.js';
@@ -256,6 +257,24 @@ self.onmessage = (event: MessageEvent<ToWorker>): void => {
 
     case 'speed':
       speed = message.speed;
+      return;
+
+    case 'save':
+      if (loop === null) return;
+      (self as unknown as DedicatedWorkerGlobalScope).postMessage({
+        type: 'saved',
+        id: message.id,
+        save: captureState(loop),
+      });
+      return;
+
+    case 'restore':
+      if (loop === null) return;
+      restoreState(loop, message.save);
+      // Everything restored is news to the renderer, whatever its version says.
+      sentFogVersion = -1;
+      sentWoodVersion = -1;
+      sentFieldVersion = -1;
       return;
 
     case 'stop':

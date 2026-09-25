@@ -84,6 +84,14 @@ export interface SaveGame {
   readonly censusGrace: string;
   /** Which villages live off the map (ADR-0021). */
   readonly economyOffMap: string;
+  /**
+   * Last season's harvest, upkeep and what the land feeds. Readings, but read back by
+   * the simulation too — the autoplayer decides whether to raise a household on `feeds`
+   * — and by the HUD, which otherwise shows nothing until the next season comes round.
+   */
+  readonly economyHarvested: string;
+  readonly economyUpkeep: string;
+  readonly economyFeeds: string;
   /** Per-unit routes, keyed by packed handle. */
   readonly paths: readonly (readonly [number, readonly number[]])[];
   readonly commands: readonly Command[];
@@ -189,6 +197,9 @@ export function captureState(loop: SimLoop): SaveGame {
     censusEmptied: toBase64(loop.census.emptied),
     censusGrace: toBase64(loop.census.graceTicks),
     economyOffMap: toBase64(economy.offMap),
+    economyHarvested: toBase64(economy.harvested),
+    economyUpkeep: toBase64(economy.upkeep),
+    economyFeeds: toBase64(economy.feeds),
     paths: movement.exportPaths(),
     commands: loop.pending.slice(loop.cursor),
     commandCursor: 0,
@@ -251,6 +262,9 @@ export function restoreState(loop: SimLoop, save: SaveGame): void {
   fromBase64(save.censusEmptied, loop.census.emptied);
   fromBase64(save.censusGrace, loop.census.graceTicks);
   fromBase64(save.economyOffMap, economy.offMap);
+  fromBase64(save.economyHarvested, economy.harvested);
+  fromBase64(save.economyUpkeep, economy.upkeep);
+  fromBase64(save.economyFeeds, economy.feeds);
 
   // The ground under every building, which lives in the pathing layers rather than in
   // any array a save copies. Without it the buildings come back and their footprints do

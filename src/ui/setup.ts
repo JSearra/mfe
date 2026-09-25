@@ -70,7 +70,16 @@ function field(parent: HTMLElement, labelKey: MessageKey): HTMLElement {
   return row;
 }
 
-export function showSetup(parent: HTMLElement, initial: SetupChoice): Promise<SetupChoice> {
+/**
+ * `continueFrom` is shown as a button above the rest when there is a village to go back
+ * to: the game has no end (ADR-0020), so picking up where you left off is the ordinary
+ * case, not a buried menu item. Choosing it resolves to 'continue'.
+ */
+export function showSetup(
+  parent: HTMLElement,
+  initial: SetupChoice,
+  continueFrom: { readonly savedAt: number } | null = null,
+): Promise<SetupChoice | 'continue'> {
   return new Promise((resolve) => {
     const screen = document.createElement('div');
     screen.className = 'setup';
@@ -82,6 +91,20 @@ export function showSetup(parent: HTMLElement, initial: SetupChoice): Promise<Se
     const heading = document.createElement('h1');
     heading.textContent = t('app.title');
     panel.appendChild(heading);
+
+    let resume: HTMLButtonElement | null = null;
+    if (continueFrom !== null) {
+      resume = document.createElement('button');
+      resume.className = 'setup-start setup-continue';
+      resume.textContent = t('setup.continue', {
+        when: new Date(continueFrom.savedAt).toLocaleString(),
+      });
+      resume.addEventListener('click', () => {
+        screen.remove();
+        resolve('continue');
+      });
+      panel.appendChild(resume);
+    }
 
     const mapSelect = document.createElement('select');
     for (const script of MAPS) {
@@ -146,10 +169,11 @@ export function showSetup(parent: HTMLElement, initial: SetupChoice): Promise<Se
 
     start.addEventListener('click', begin);
     screen.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') begin();
+      // Enter takes whatever has focus — Continue when there is a village to go back to.
+      if (event.key === 'Enter' && document.activeElement !== resume) begin();
     });
 
     parent.appendChild(screen);
-    start.focus();
+    (resume ?? start).focus();
   });
 }
