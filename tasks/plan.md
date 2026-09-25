@@ -536,6 +536,12 @@ Left open, in the order they seem worth doing:
       *Then tried (a) cheaply:* one translucent damp-earth wash instead of the pebble
       set, so the bank darkens whatever ground it lies on. The synthetic coast shows the
       same scalloped band, only darker — tone does not hide a shape. That leaves (b).
+      *Correction:* the synthetic coast drew only the EDGE masks. The renderer also draws
+      corner blends (a land tile touching water only at a point gets `shoreCorner`, and
+      the inland tiles beside a diagonal coast are exactly those), so the synthetic
+      overstates the notches and both conclusions above are provisional. The staircase
+      in the game is real; the next attempt should render through the real renderer (or
+      replicate `landSeams`/`waterCornerSeams` in seams.ts exactly) before judging a fix.
 
 *Note for whoever picks this up:* `tools/art/generate_tiles.py` drives a local FLUX
 model and the weights ARE cached (~9GB in ~/.cache/huggingface), so terrain subjects can
