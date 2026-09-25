@@ -199,9 +199,16 @@ export function setFallow(
   return true;
 }
 
-/** Abandon a field. The seed is not refunded. */
-export function abandon(land: Farmland, index: number): boolean {
+/**
+ * Abandon a field. The seed is not refunded.
+ *
+ * `owner`, when given, must be whose field it is: an index arriving from a client is
+ * untrusted, and giving up a neighbour's field for them would be a free way to starve
+ * them — the check `setFallow` already makes.
+ */
+export function abandon(land: Farmland, index: number, owner?: number): boolean {
   if (index < 0 || index >= land.count || land.alive[index] === 0) return false;
+  if (owner !== undefined && land.owner[index] !== owner) return false;
   land.alive[index] = 0;
   land.version++;
   return true;

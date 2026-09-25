@@ -540,3 +540,16 @@ describe('demolishing (a builder has to be able to take a thing down)', () => {
     expect(at(sim, 20, 20)).toBe(IMPASSABLE);
   });
 });
+
+describe('giving up a field', () => {
+  it('gives up the sender\'s own field and refuses a neighbour\'s', () => {
+    const sim = makeSim(64, 2);
+    const mine = [...Array(sim.farmland.count).keys()].find((i) => sim.farmland.owner[i] === 0)!;
+    const theirs = [...Array(sim.farmland.count).keys()].find((i) => sim.farmland.owner[i] === 1)!;
+    enqueueCommand(sim.loop, makeCommand(0, 0, 0, CommandKind.Abandon, theirs, 0, 0, 0));
+    enqueueCommand(sim.loop, makeCommand(0, 0, 1, CommandKind.Abandon, mine, 0, 0, 0));
+    step(sim.loop);
+    expect(sim.farmland.alive[theirs]).toBe(1);
+    expect(sim.farmland.alive[mine]).toBe(0);
+  });
+});

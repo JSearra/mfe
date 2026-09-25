@@ -509,6 +509,8 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
     }
     return -1;
   }
+  /** A field X was pressed on once, awaiting the second press that gives it up. */
+  let abandonArmed: { slot: number; at: number } | null = null;
   /** The player's field under the pointer, for the panel when nothing is selected. */
   function fieldReading(): FieldReading | null {
     const at = fieldUnderCursor();
@@ -662,6 +664,25 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
      * caller since it was written for want of one. Felling a tree already works this
      * way, so a player who has learned one gesture has learned this one.
      */
+    /*
+     * Give up the field under the cursor. X, twice: the seed is not refunded, and a
+     * field that took a season to break is not a thing to lose to a stray key. The
+     * first press says what the second will do.
+     */
+    if (event.key === 'x' || event.key === 'X') {
+      const at = fieldUnderCursor();
+      if (at < 0) return;
+      const slot = fieldSlot(lastFarmland!, at);
+      const now = performance.now();
+      if (abandonArmed !== null && abandonArmed.slot === slot && now - abandonArmed.at < 2000) {
+        sim.sendCommand(CommandKind.Abandon, slot);
+        abandonArmed = null;
+      } else {
+        abandonArmed = { slot, at: now };
+        notice(t('game.abandonConfirm'));
+      }
+      return;
+    }
     if (event.key === 'g' || event.key === 'G') {
       const at = fieldUnderCursor();
       if (at >= 0) {

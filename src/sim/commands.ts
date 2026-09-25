@@ -268,7 +268,7 @@ export function applyCommand(
       return plant(farmland, economy, map, command.playerId, command.a, command.b) === 0;
 
     case CommandKind.Abandon:
-      return abandon(farmland, command.a);
+      return abandon(farmland, command.a, command.playerId);
 
     case CommandKind.Trade: {
       const result = trade(
