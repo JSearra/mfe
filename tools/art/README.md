@@ -143,6 +143,63 @@ needs 30 degrees of elevation at 45 degrees of azimuth. The derivation is in the
 of `render_sprites.py`; it is worth reading before changing the number, because half the
 tutorials on the subject are wrong about it.
 
+## Sprites from a real mesh (animals, people, buildings)
+
+The primitive builders (`make_unit.py`, `make_building.py`) assemble models from
+stretched spheres and tapered cylinders. That gets proportions and a silhouette roughly
+right and can never get an animal right: no musculature, no real head, no hide. The mesh
+route keeps what makes the unit pipeline work — one 3D model rendered from eight fixed
+angles, so 160 frames agree — and replaces where the model comes from. Everything runs
+locally and costs nothing.
+
+```bash
+python3 tools/art/mesh_pipeline.py refs impala            # three candidate references
+python3 tools/art/mesh_pipeline.py mesh impala --seed 23  # the chosen one, to a 3D mesh
+python3 tools/art/mesh_pipeline.py render impala          # rig, animate, render, trim, merge
+tools/art/.venv/bin/python tools/art/pack_atlas.py        # pack as usual
+```
+
+1. **Reference image** — mflux, as for terrain. Prompts live in `mesh_pipeline.py`
+   (`SUBJECTS`, `PEOPLE`, `BUILDINGS`): a single subject, whole in frame, three-quarter
+   view from the front left, on plain white. **Look at every candidate.** Of the first
+   three zebras, one had two heads.
+2. **Mesh** — [TripoSR](https://github.com/VAST-AI-Research/TripoSR) (MIT, weights MIT)
+   turns the image into a textured mesh in under a minute on the CPU. The choice is
+   recorded: prompt and seed in `mesh_sources.json`, a 512 px JPEG of the image in `reference/`.
+3. **Sprites** — `make_wild_mesh.py` (animals and people) or `make_building_mesh.py`
+   (buildings), in Blender. They stand the mesh up facing +X by the body's principal
+   axis, scale it to a real size, decimate it, rig it by script (legs found as the vertex
+   clusters below the belly; weights by nearest bone), animate it, and render through
+   `render_sprites.py` with the same frame names and origins the primitive builders use.
+   Buildings get their three stages by slicing the finished mesh at 12% and 45% height.
+
+**Setup, once.** TripoSR lives outside the repository (both paths are gitignored):
+
+```bash
+git clone --depth 1 https://github.com/VAST-AI-Research/TripoSR.git tools/art/triposr
+python3 -m venv tools/art/.venv-3d
+tools/art/.venv-3d/bin/pip install torch torchvision omegaconf einops "transformers<5" \
+    trimesh rembg onnxruntime huggingface-hub xatlas moderngl imageio pymcubes
+```
+
+`torchmcubes` will not build here (it wants CMake and has no wheel for this Python), so a
+twelve-line shim over PyMCubes stands in for it as `torchmcubes.py` in the environment's
+site-packages; it returns coordinates in torchmcubes' reversed axis order. The first run
+downloads the TripoSR weights (1.7 GB) and a background-removal model (1 GB).
+
+**Things that went wrong once, so they are written down:**
+
+- TripoSR's texture-baking path writes **OBJ**, whatever format was asked for.
+- Its meshes are **Z-up**; Blender's OBJ importer assumes Y-up and lays the animal on its side.
+- A three-quarter-view reference leaves the body on a **diagonal**. Measured by bounding
+  box, the zebra stood 2.7 m tall and every direction was 45 degrees off; the principal
+  axis fixes both.
+- The bake can **shift colour**: the zebra came back red-brown. `saturation` per species.
+- Generated poses vary, so framing comes from the mesh's own size, not a table: the
+  zebra's raised head ran out of a hand-set frame in 54 of 160 frames.
+- The far side of an animal was never in the reference and is guessed: markings there are
+  softer. At forty to eighty pixels the silhouette carries it.
+
 ## Things that cost a pass each, so they are written down
 
 **Base colours are LINEAR; the render is sRGB on the way out.** That transfer is steep at

@@ -3,5 +3,65 @@
   "zebra": {
     "prompt": "wildlife photograph of a single plains zebra standing, whole animal in frame from nose to tail and hooves, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic",
     "seed": 47
+  },
+  "elephant": {
+    "prompt": "wildlife photograph of a single adult African bush elephant standing, with ivory tusks and large ears, whole animal in frame from trunk to tail and feet, side view in profile facing left, slightly from the front, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph",
+    "seed": 102
+  },
+  "kudu": {
+    "prompt": "wildlife photograph of a single greater kudu bull standing, with long spiral horns and thin white stripes on its grey-brown body, whole animal in frame from nose to tail and feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph",
+    "seed": 47
+  },
+  "impala": {
+    "prompt": "wildlife photograph of a single impala ram standing, reddish-brown with lyre-shaped horns, whole animal in frame from nose to tail and feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph",
+    "seed": 47
+  },
+  "eland": {
+    "prompt": "wildlife photograph of a single common eland bull standing, tawny with a dewlap and straight spiralled horns, whole animal in frame from nose to tail and feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph",
+    "seed": 11
+  },
+  "wildebeest": {
+    "prompt": "wildlife photograph of a single blue wildebeest standing, dark grey with a black mane, beard and curved horns, whole animal in frame from nose to tail and feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph",
+    "seed": 47
+  },
+  "warthog": {
+    "prompt": "wildlife photograph of a single common warthog standing on all four legs, with curved tusks and a mane, whole animal in frame from nose to tail and feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph",
+    "seed": 23
+  },
+  "buffalo": {
+    "prompt": "wildlife photograph of a single African Cape buffalo bull standing, black, with heavy curved horns meeting in a boss, whole animal in frame from nose to tail and feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph",
+    "seed": 47
+  },
+  "hippo": {
+    "prompt": "wildlife photograph of a single hippopotamus standing on dry land, on all four legs, whole animal in frame from nose to tail and feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph",
+    "seed": 47
+  },
+  "lion": {
+    "prompt": "wildlife photograph of a single adult male African lion standing, with a dark mane, whole animal in frame from nose to tail and feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph",
+    "seed": 11
+  },
+  "leopard": {
+    "prompt": "wildlife photograph of a single African leopard standing on all four legs, golden with black rosettes, whole animal in frame from nose to tail and feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph",
+    "seed": 11
+  },
+  "hyena": {
+    "prompt": "wildlife photograph of a single spotted hyena standing, sloping back, spotted coat, whole animal in frame from nose to tail and feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph",
+    "seed": 47
+  },
+  "baboon": {
+    "prompt": "wildlife photograph of a single chacma baboon walking on all four legs, whole animal in frame from nose to tail and feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph",
+    "seed": 11
+  },
+  "ostrich": {
+    "prompt": "wildlife photograph of a single male ostrich standing, black body plumage with white wing and tail feathers, long bare neck, whole animal in frame from nose to tail and feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph",
+    "seed": 47
+  },
+  "villager": {
+    "prompt": "photograph of a Zulu man of the early nineteenth century standing relaxed, wearing a traditional umutsha loin covering of hide and animal tails and a fur headband, barefoot, hands empty at his sides, whole figure in frame from head to feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic, historically accurate, dignified",
+    "seed": 23
+  },
+  "indlunkulu": {
+    "prompt": "photograph of a single large traditional Zulu great hut, a big beehive dome of woven grass thatch with an arched doorway, standing on bare earth, whole structure in frame, three-quarter view from slightly above, isolated on a plain pure white background, even soft lighting, sharp focus, realistic photograph",
+    "seed": 11
   }
 }
