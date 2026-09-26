@@ -47,7 +47,11 @@ import { worldStateField, worldStateFields } from '../world.js';
  * 7 widens the ledger from three columns to six: meat, skins and ivory (ADR-0022). A
  * version 6 save's ledger is the wrong length, and the setup screen does not offer it.
  */
-export const SAVE_VERSION = 7;
+/*
+ * 8 adds water (ADR-0023): a seventh ledger column, the weirs' reserve and each
+ * village's thirst.
+ */
+export const SAVE_VERSION = 8;
 
 export interface SaveGame {
   readonly version: number;
@@ -71,6 +75,9 @@ export interface SaveGame {
    * which is what it was.
    */
   readonly economyRation?: string;
+  /** The weirs' water reserve and each village's thirst (ADR-0023). */
+  readonly economyWaterReserve: string;
+  readonly economyThirst: string;
   /** Who is tied to whom, and what each village thinks of the others. */
   readonly allianceBond: string;
   readonly allianceStanding: string;
@@ -188,6 +195,8 @@ export function captureState(loop: SimLoop): SaveGame {
     economyShortfall: toBase64(economy.shortfall),
     economyReserve: toBase64(economy.reserve),
     economyRation: toBase64(economy.ration),
+    economyWaterReserve: toBase64(economy.waterReserve),
+    economyThirst: toBase64(economy.thirst),
     allianceBond: toBase64(alliance.bond),
     allianceStanding: toBase64(alliance.standing),
     allianceOffered: toBase64(alliance.offered),
@@ -241,6 +250,8 @@ export function restoreState(loop: SimLoop, save: SaveGame): void {
   else fromBase64(save.economyReserve, economy.reserve);
   if (save.economyRation === undefined) economy.ration.fill(0);
   else fromBase64(save.economyRation, economy.ration);
+  fromBase64(save.economyWaterReserve, economy.waterReserve);
+  fromBase64(save.economyThirst, economy.thirst);
   economy.upkeepCount = save.economyScalars.upkeepCount;
 
   fromBase64(save.allianceBond, alliance.bond);

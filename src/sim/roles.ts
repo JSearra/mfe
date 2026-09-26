@@ -41,6 +41,8 @@ export const Role = {
   Hunter: 5,
   /** Laid up after a mauling. Outranks everything: they are doing nothing else. */
   Injured: 6,
+  /** Carrying water from the river (ADR-0023). Drawn with the head-load figure. */
+  WaterCarrier: 7,
 } as const;
 
 export type Role = (typeof Role)[keyof typeof Role];
@@ -85,6 +87,8 @@ export function updateRoles(world: World, land: Farmland, tick: number): void {
       role = Role.Injured;
     } else if (world.workKind[index] === Work.Hunt || world.quarry[index] !== NULL_HANDLE) {
       role = Role.Hunter;
+    } else if (world.workKind[index] === Work.Water) {
+      role = Role.WaterCarrier;
     } else if (herding.has(index) || world.workKind[index] === Work.Kraal) {
       // Keeping a kraal is herding too, and it should look like it (Phase B2).
       role = Role.Herder;

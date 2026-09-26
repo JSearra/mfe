@@ -1,5 +1,6 @@
 import { isShore, type Heightmap } from '../shared/heightmap.js';
 import { tuning } from './tuning.js';
+import { Work } from './labour.js';
 import { Resource, type Economy } from './economy/ledger.js';
 import { EntityKind, type World } from './world.js';
 
@@ -46,6 +47,8 @@ export function updateFishing(
     if (world.alive[i] !== 1 || world.kind[i] !== EntityKind.Unit) continue;
     const owner = world.faction[i]!;
     if (owner >= economy.players) continue;
+    // A water carrier at the bank is carrying water, not fishing (ADR-0023).
+    if (world.workKind[i] === Work.Water) continue;
 
     const tileX = Math.floor(world.posX[i]!);
     const tileY = Math.floor(world.posY[i]!);

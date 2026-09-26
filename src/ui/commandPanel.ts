@@ -22,6 +22,7 @@ const RESOURCE_KEYS: Readonly<Record<Resource, MessageKey>> = {
   [Resource.Meat]: 'resource.meat',
   [Resource.Skins]: 'resource.skins',
   [Resource.Ivory]: 'resource.ivory',
+  [Resource.Water]: 'resource.water',
 };
 
 /**
@@ -48,6 +49,7 @@ const ROLE_KEYS: Readonly<Record<SummaryRole, MessageKey>> = {
   [SummaryRole.Elder]: 'role.elder',
   [SummaryRole.Hunter]: 'role.hunter',
   [SummaryRole.Injured]: 'role.injured',
+  [SummaryRole.WaterCarrier]: 'role.water',
 };
 
 /**
@@ -64,6 +66,7 @@ const BUILDING_INFO: Readonly<Record<BuildingType, MessageKey>> = {
   [BuildingType.Isiziba]: 'buildingInfo.isiziba',
   [BuildingType.IsibayaSezimbuzi]: 'buildingInfo.isibayaSezimbuzi',
   [BuildingType.HuntersCamp]: 'buildingInfo.huntersCamp',
+  [BuildingType.Well]: 'buildingInfo.well',
 };
 
 /** The same for each advance. */

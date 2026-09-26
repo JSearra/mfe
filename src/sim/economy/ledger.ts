@@ -93,6 +93,19 @@ export interface Economy {
   /** What each village is eating. Simulation state, and saved. */
   readonly ration: Uint8Array;
   /**
+   * How short of water each village went at the last upkeep, 0 to 1 (ADR-0023). Slows
+   * its work in proportion; harms nobody. Simulation state, and saved.
+   */
+  readonly thirst: Float64Array;
+  /** Water the village needed at the last upkeep, for the HUD beside what it has. */
+  readonly waterNeed: Float64Array;
+  /**
+   * Water the weirs hold back, per village — the one store of it that does not
+   * evaporate. Kept beside `amounts` for the grain reserve's reason: nothing buys with
+   * it and only a shortfall draws on it. Simulation state, and saved.
+   */
+  readonly waterReserve: Float64Array;
+  /**
    * 1 for a village that is not on the map (ADR-0021).
    *
    * Its books are kept here like anybody's — trade prices from them and ties move cattle
@@ -150,6 +163,12 @@ export type BuildingYield = (owner: number) => {
    * cattle kept them anyway.
    */
   hardyGrain: number;
+  /** Water drawn from wells at their staffing (ADR-0023). Absent means none. */
+  water?: number;
+  /** Finished dwellings, whose roofs gather the rain. */
+  roofs?: number;
+  /** Water the weirs hold back. */
+  waterStore?: number;
 };
 
 /**
@@ -194,6 +213,9 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
   const reserve = new Float64Array(players);
   const ration = new Uint8Array(players);
   const offMap = new Uint8Array(players);
+  const thirst = new Float64Array(players);
+  const waterNeed = new Float64Array(players);
+  const waterReserve = new Float64Array(players);
 
   for (let player = 0; player < players; player++) {
     const config = factions[player]!;
@@ -216,6 +238,9 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
     reserve,
     ration,
     offMap,
+    thirst,
+    waterNeed,
+    waterReserve,
 
     balance(player, resource) {
       return amounts[player * RESOURCE_COUNT + resource] ?? 0;
@@ -256,7 +281,9 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
     },
 
     labourFactor(player) {
-      return ration[player] === Ration.Short ? e.rationShortLabour : 1;
+      const eating = ration[player] === Ration.Short ? e.rationShortLabour : 1;
+      // A thirsty village works slower, in proportion to how short it went (ADR-0023).
+      return eating * (1 - tuning.water.thirstLabourPenalty * (thirst[player] ?? 0));
     },
 
     drought(tick) {
@@ -307,8 +334,13 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
         // and the two being different is most of the reason to track them apart.
         const meat = economy.balance(player, Resource.Meat);
         if (meat > 0) economy.spend(player, Resource.Meat, meat * tuning.stores.meatSpoilPerCycle);
+        // Water does not keep at all: pots and gourds hold a day or two, not a season.
+        const water = economy.balance(player, Resource.Water);
+        if (water > 0) economy.spend(player, Resource.Water, water * tuning.water.evaporatePerCycle);
       }
       const droughtNow = economy.drought(tick);
+      /** What each village's weirs can hold, as the buildings report it this upkeep. */
+      const waterStore = new Float64Array(players);
 
       /*
        * Yield falls away with the drought instead of off a cliff at a threshold.
@@ -362,6 +394,13 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
           economy.add(player, Resource.Grain, stored + hardy);
           harvested[player] = harvested[player]! + stored + hardy;
           economy.add(player, Resource.Cattle, produced.cattle);
+          // Water from wells, weaker but never dry in a drought, and off the roofs in
+          // proportion to how wet the season is (ADR-0023).
+          const wetness = 1 - droughtNow;
+          const wells = (produced.water ?? 0) * (wetness > tuning.water.wellDroughtFloor ? wetness : tuning.water.wellDroughtFloor);
+          const rain = (produced.roofs ?? 0) * tuning.water.rainPerDwelling * wetness;
+          if (wells + rain > 0) economy.add(player, Resource.Water, wells + rain);
+          waterStore[player] = produced.waterStore ?? 0;
         }
       }
 
@@ -396,6 +435,45 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
         // Nobody on the map eats for a village that is not on it. See `offMap`.
         if (offMap[player] === 1) continue;
         const config = factions[player]!;
+
+        /*
+         * Water, before food (ADR-0023). Only people drink; the herd drinks where it
+         * grazes. What the village holds pays first, then the weirs' reserve; what is
+         * left over fills the reserve, and what cannot be met is thirst, which slows
+         * work and harms nobody.
+         */
+        {
+          const w = tuning.water;
+          const need = units[player]! * w.perUnit;
+          waterNeed[player] = need;
+          const held = economy.balance(player, Resource.Water);
+          const capacity = waterStore[player]!;
+          if (waterReserve[player]! > capacity) waterReserve[player] = capacity;
+          if (held >= need) {
+            economy.spend(player, Resource.Water, need);
+            const spare = held - need;
+            const room = capacity - waterReserve[player]!;
+            if (room > 0 && spare > 0) {
+              const kept = Math.min(spare * w.reserveFillRate, room);
+              economy.spend(player, Resource.Water, kept);
+              waterReserve[player] = waterReserve[player]! + kept;
+            }
+            thirst[player] = 0;
+          } else {
+            economy.spend(player, Resource.Water, held);
+            let missing = need - held;
+            const drawn = Math.min(waterReserve[player]!, missing);
+            waterReserve[player] = waterReserve[player]! - drawn;
+            missing -= drawn;
+            thirst[player] = need > 0 ? missing / need : 0;
+            if (missing > 0) {
+              const every = w.warnEverySeasons;
+              if (every <= 1 || Math.round(tick / e.upkeepIntervalTicks) % every === 0) {
+                events.push(makeEvent(world.tick, EventType.Thirsty, 0, thirst[player]!, 0, player));
+              }
+            }
+          }
+        }
 
         // Cattle on the ledger are the standing herd; cattle on the map are the ones
         // being driven. Both eat.

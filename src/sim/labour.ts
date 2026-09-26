@@ -1,6 +1,6 @@
 import { buildingSpec, BuildingType } from '../shared/buildings/index.js';
 import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
-import { isShore, type Heightmap } from '../shared/heightmap.js';
+import { isFreshShore, isShore, type Heightmap } from '../shared/heightmap.js';
 import { isEstablished, type Farmland } from './economy/farmland.js';
 import type { MovementSystem } from './movement.js';
 import { tuning } from './tuning.js';
@@ -83,6 +83,11 @@ export const Work = {
    * are out the allocator leaves them be rather than calling them back to the camp.
    */
   Hunt: 7,
+  /**
+   * Carrying water from a river bank (ADR-0023). `workAt` is the bank tile index.
+   * Paid in src/sim/water.ts by how far the bank is from home.
+   */
+  Water: 8,
 } as const;
 
 export type Work = (typeof Work)[keyof typeof Work];
@@ -249,6 +254,54 @@ export function createLabour(players: number): Labour {
       }
     }
     for (const site of sites) places.push(site);
+
+    // --- water to drink (ADR-0023) --------------------------------------------------
+    // Before the fishing: a village goes thirsty before it goes without fish. Fresh
+    // banks only — the sea is salt — within a wider reach than the anglers', because a
+    // long walk is not a refusal, only fewer trips (water.ts prices the distance).
+    if (map.water.length > 0 && tuning.water.spots > 0) {
+      const w = tuning.water;
+      const banks: { tile: number; distanceSq: number }[] = [];
+      const seen = new Set<number>();
+      for (const home of homes) {
+        const hx = world.posX[home]!;
+        const hy = world.posY[home]!;
+        for (let ty = Math.floor(hy - w.spotRadius); ty <= Math.floor(hy + w.spotRadius); ty++) {
+          for (let tx = Math.floor(hx - w.spotRadius); tx <= Math.floor(hx + w.spotRadius); tx++) {
+            const dx = tx + 0.5 - hx;
+            const dy = ty + 0.5 - hy;
+            const distanceSq = dx * dx + dy * dy;
+            if (distanceSq > w.spotRadius * w.spotRadius) continue;
+            if (!isFreshShore(map, tx, ty)) continue;
+            const tile = ty * map.width + tx;
+            if (seen.has(tile)) {
+              for (const bank of banks) {
+                if (bank.tile === tile && distanceSq < bank.distanceSq) bank.distanceSq = distanceSq;
+              }
+              continue;
+            }
+            seen.add(tile);
+            banks.push({ tile, distanceSq });
+          }
+        }
+      }
+      banks.sort((a, b) => (a.distanceSq !== b.distanceSq ? a.distanceSq - b.distanceSq : a.tile - b.tile));
+      const taken: number[] = [];
+      for (const bank of banks) {
+        if (taken.length >= w.spots) break;
+        const bx = bank.tile % map.width;
+        const by = Math.floor(bank.tile / map.width);
+        let crowded = false;
+        for (const other of taken) {
+          const dx = (other % map.width) - bx;
+          const dy = Math.floor(other / map.width) - by;
+          if (dx * dx + dy * dy < w.spotSpacing * w.spotSpacing) crowded = true;
+        }
+        if (crowded) continue;
+        taken.push(bank.tile);
+        places.push({ kind: Work.Water, at: bank.tile, x: bx + 0.5, y: by + 0.5, reach: 0.75, wanted: w.maxCarriers, assigned: 0 });
+      }
+    }
 
     // --- the water ---------------------------------------------------------------
     if (map.water.length === 0 || l.fishingSpots === 0) return;

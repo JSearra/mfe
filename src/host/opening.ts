@@ -147,6 +147,13 @@ export function seedOpening(send: Send, map: Heightmap, centre: number, seed = 0
 
   foundVillage(home, PLAYER);
 
+  // A village begins with a well (ADR-0023). On rain alone it would open some two
+  // fifths short of water and working slower before the player had learned that water
+  // was a thing to find. One well keeps the first wet season whole; the dry season, a
+  // growing village and the river are the player's to answer.
+  const well = place(home.x + VILLAGE_RADIUS * 0.55, home.y + VILLAGE_RADIUS * 0.75);
+  send(CommandKind.Build, Math.floor(well.x), Math.floor(well.y), BuildingType.Well, PLAYER + 1);
+
   // The people stand out by their own dwellings, NOT in among the cattle.
   //
   // Ringed at 0.45 of the village radius first, which put two dozen of them inside the

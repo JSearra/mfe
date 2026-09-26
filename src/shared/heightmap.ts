@@ -61,6 +61,66 @@ export function isShore(map: Heightmap, tileX: number, tileY: number): boolean {
   );
 }
 
+/**
+ * Standing water this large is the sea (ADR-0023): salt, undrinkable, and with a beach.
+ *
+ * A body of water counts by its SIZE, the rule the beaches were first drawn by. A river
+ * reach is cut into short lengths by its drifts and comes nowhere near it, and the sea,
+ * flooded from a map edge, always does. An estuary joined to the sea is part of it, and
+ * brackish — which is what an estuary is.
+ */
+export const SEA_MIN = 300;
+
+const seaCache = new WeakMap<Heightmap, Uint8Array>();
+
+/**
+ * 1 per tile of sea, 0 elsewhere. Computed once per map and kept: the heightmap never
+ * changes after generation, and both the renderer and the simulation ask.
+ *
+ * Deterministic — a flood in tile order, integers only — so the simulation may use it.
+ */
+export function seaMask(map: Heightmap): Uint8Array {
+  const cached = seaCache.get(map);
+  if (cached !== undefined) return cached;
+  const { width, height, water } = map;
+  const sea = new Uint8Array(width * height);
+  if (water.length > 0) {
+    const seen = new Uint8Array(width * height);
+    const queue = new Int32Array(width * height);
+    for (let start = 0; start < water.length; start++) {
+      if (water[start] !== 1 || seen[start] === 1) continue;
+      let head = 0;
+      let tail = 0;
+      queue[tail++] = start;
+      seen[start] = 1;
+      while (head < tail) {
+        const at = queue[head++]!;
+        const x = at % width;
+        const y = (at - x) / width;
+        if (x + 1 < width && water[at + 1] === 1 && seen[at + 1] === 0) { seen[at + 1] = 1; queue[tail++] = at + 1; }
+        if (x > 0 && water[at - 1] === 1 && seen[at - 1] === 0) { seen[at - 1] = 1; queue[tail++] = at - 1; }
+        if (y + 1 < height && water[at + width] === 1 && seen[at + width] === 0) { seen[at + width] = 1; queue[tail++] = at + width; }
+        if (y > 0 && water[at - width] === 1 && seen[at - width] === 0) { seen[at - width] = 1; queue[tail++] = at - width; }
+      }
+      if (tail >= SEA_MIN) for (let i = 0; i < tail; i++) sea[queue[i]!] = 1;
+    }
+  }
+  seaCache.set(map, sea);
+  return sea;
+}
+
+/**
+ * Dry land with FRESH water beside it: a river bank or a lake shore, not the strand.
+ * Where water can be drawn (ADR-0023). The same four square neighbours as `isShore`.
+ */
+export function isFreshShore(map: Heightmap, tileX: number, tileY: number): boolean {
+  if (!isShore(map, tileX, tileY)) return false;
+  const sea = seaMask(map);
+  const fresh = (x: number, y: number): boolean =>
+    isWater(map, x, y) && sea[y * map.width + x] === 0;
+  return fresh(tileX + 1, tileY) || fresh(tileX - 1, tileY) || fresh(tileX, tileY + 1) || fresh(tileX, tileY - 1);
+}
+
 export function inBounds(map: Heightmap, tileX: number, tileY: number): boolean {
   return tileX >= 0 && tileY >= 0 && tileX < map.width && tileY < map.height;
 }

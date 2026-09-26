@@ -168,6 +168,8 @@ function tick(): void {
     cullHead: cullHead(economy, viewerId),
     driving: drivenBy(world, viewerId),
     shortRation: economy.ration[viewerId] === Ration.Short,
+    thirst: (economy.thirst[viewerId] ?? 0) * tuning.water.thirstLabourPenalty,
+    waterNeed: economy.waterNeed[viewerId] ?? 0,
     techStatus: techStatusFor(loop.tech, viewerId),
     trainCosts: TRAIN_COSTS,
     drought: droughtNow,

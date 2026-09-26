@@ -68,6 +68,8 @@ const WATCHED: Readonly<Record<number, MessageKey>> = {
   [EventType.DrivenOff]: 'alert.drivenOff',
   // A kill is rare by design, so it is news — and it is where the meat came from.
   [EventType.Hunted]: 'alert.hunted',
+  // Water ran short (ADR-0023). Placeless: the whole village is thirsty, not a spot.
+  [EventType.Thirsty]: 'alert.thirsty',
 };
 
 /**
@@ -95,6 +97,7 @@ const OWNER_FIELD: Readonly<Record<number, 'x' | 'y' | 'payload'>> = {
   [EventType.HandsShort]: 'payload',
   [EventType.HerdHungry]: 'payload',
   [EventType.Mauled]: 'payload',
+  [EventType.Thirsty]: 'payload',
 };
 
 /**
@@ -111,6 +114,7 @@ const PLACELESS: ReadonlySet<number> = new Set([
   EventType.AllianceOffered,
   // The herd on the ledger has no place of its own; the kraal is not where it starved.
   EventType.HerdHungry,
+  EventType.Thirsty,
 ]);
 
 export function createAlerts(): Alerts {

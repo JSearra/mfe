@@ -1,4 +1,4 @@
-import { heightAt, type Heightmap } from '../../shared/heightmap.js';
+import { heightAt, seaMask, type Heightmap } from '../../shared/heightmap.js';
 import { buildPermutationWith, fbm } from '../../shared/noise.js';
 
 /**
@@ -135,12 +135,6 @@ const SAND = 6;
 const BEACH_DEPTH = 2;
 /** Beaches are the tallest ground they cover — a strand is low. */
 const BEACH_MAX_HEIGHT = 2;
-/**
- * Standing water at least this large is the sea, and gets a beach. A river reach is
- * cut into short lengths by its drifts, so this also keeps sand off the riverbanks,
- * where the grass comes down to the water.
- */
-const SEA_MIN = 300;
 
 /**
  * Draw a strand along the sea.
@@ -154,32 +148,10 @@ function paintBeaches(map: Heightmap, ground: Uint8Array, sand: number): void {
   const { width, height, water, data } = map;
   if (water.length === 0) return;
 
-  // Which water is the sea: flood each wet region and keep the large ones.
-  const region = new Int32Array(width * height).fill(-1);
+  // Which water is the sea: the shared rule (src/shared/heightmap.ts), so the strand
+  // is drawn on exactly the water the simulation calls salt.
+  const sea = seaMask(map);
   const queue = new Int32Array(width * height);
-  const sea = new Uint8Array(width * height);
-  let label = 0;
-  for (let start = 0; start < water.length; start++) {
-    if (water[start] !== 1 || region[start] !== -1) continue;
-    let head = 0;
-    let tail = 0;
-    queue[tail++] = start;
-    region[start] = label;
-    while (head < tail) {
-      const at = queue[head++]!;
-      const x = at % width;
-      const y = (at - x) / width;
-      for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
-        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
-        const to = ny * width + nx;
-        if (water[to] !== 1 || region[to] !== -1) continue;
-        region[to] = label;
-        queue[tail++] = to;
-      }
-    }
-    if (tail >= SEA_MIN) for (let i = 0; i < tail; i++) sea[queue[i]!] = 1;
-    label++;
-  }
 
   // Distance inland from the sea, a breadth-first step at a time, as far as a beach runs.
   const distance = new Uint8Array(width * height).fill(0xff);

@@ -137,6 +137,13 @@ export interface PlayerState {
   /** True while the village is on short commons. The panel's switch reads it. */
   readonly shortRation: boolean;
   /**
+   * How much thirst is slowing the village's work, 0 to 1 (ADR-0023), and the water it
+   * needed at the last upkeep. The slowdown rather than the raw shortfall, so the HUD
+   * says what the player feels without knowing the tuning behind it.
+   */
+  readonly thirst: number;
+  readonly waterNeed: number;
+  /**
    * Per tech: 0 unknown, 1 being learned, 2 known.
    *
    * Carried so the panel can say WHY an action is unavailable rather than accepting a
@@ -485,6 +492,8 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         cullHead: cullHead(economy, viewerId),
         driving: drivenBy(world, viewerId),
         shortRation: economy.ration[viewerId] === Ration.Short,
+        thirst: (economy.thirst[viewerId] ?? 0) * tuning.water.thirstLabourPenalty,
+        waterNeed: economy.waterNeed[viewerId] ?? 0,
         techStatus: techStatusFor(loop.tech, viewerId),
         trainCosts: TRAIN_COSTS,
         drought: droughtNow,

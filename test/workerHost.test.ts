@@ -30,6 +30,8 @@ const IDLE: PlayerState = {
   cullHead: 0,
   driving: 0,
   shortRation: false,
+  thirst: 0,
+  waterNeed: 0,
   techStatus: [],
   trainCosts: [],
   drought: 0,

@@ -27,11 +27,16 @@ export const Resource = {
   Skins: 4,
   /** From elephant. Rare, and worth more to a neighbour than anything else a village has. */
   Ivory: 5,
+  /**
+   * Drawn from rivers, wells and the rain, and drunk every upkeep (ADR-0023). Not food,
+   * not traded, and it does not keep: what is held evaporates fast.
+   */
+  Water: 6,
 } as const;
 
 export type Resource = (typeof Resource)[keyof typeof Resource];
 
-export const RESOURCE_COUNT = 6;
+export const RESOURCE_COUNT = 7;
 
 /** Every resource, in index order. Ties anywhere that iterates this break on that order. */
 export const RESOURCES: readonly Resource[] = [
@@ -41,6 +46,7 @@ export const RESOURCES: readonly Resource[] = [
   Resource.Meat,
   Resource.Skins,
   Resource.Ivory,
+  Resource.Water,
 ];
 
 /**
@@ -56,6 +62,7 @@ export const RESOURCE_NAMES: Readonly<Record<Resource, string>> = {
   [Resource.Meat]: 'meat',
   [Resource.Skins]: 'skins',
   [Resource.Ivory]: 'ivory',
+  [Resource.Water]: 'water',
 };
 
 /**

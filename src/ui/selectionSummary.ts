@@ -23,6 +23,7 @@ export const SummaryRole = {
   Elder: 4,
   Hunter: 5,
   Injured: 6,
+  WaterCarrier: 7,
 } as const;
 
 export type SummaryRole = (typeof SummaryRole)[keyof typeof SummaryRole];
@@ -35,6 +36,7 @@ const KNOWN: readonly SummaryRole[] = [
   SummaryRole.Elder,
   SummaryRole.Hunter,
   SummaryRole.Injured,
+  SummaryRole.WaterCarrier,
 ];
 
 export interface RoleTally {

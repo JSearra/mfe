@@ -512,6 +512,22 @@
     "fishingSpacing": 3.0,
     "warnEverySeasons": 5
   },
+  "water": {
+    "perUnit": 0.6,
+    "evaporatePerCycle": 0.5,
+    "carryPerUpkeep": 5.0,
+    "carryHalfDistance": 8.0,
+    "maxCarriers": 3,
+    "spots": 3,
+    "spotRadius": 18.0,
+    "spotSpacing": 3.0,
+    "riverDroughtFloor": 0.4,
+    "wellDroughtFloor": 0.6,
+    "rainPerDwelling": 1.5,
+    "reserveFillRate": 0.5,
+    "thirstLabourPenalty": 0.5,
+    "warnEverySeasons": 5
+  },
   "fishing": {
     "catchPerUpkeep": 3.0,
     "maxAnglers": 2

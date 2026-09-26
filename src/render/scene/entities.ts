@@ -82,6 +82,7 @@ const BUILDING_SPRITES: Readonly<Record<BuildingType, string>> = {
   [BuildingType.Isiziba]: 'isiziba',
   [BuildingType.IsibayaSezimbuzi]: 'goat-fold',
   [BuildingType.HuntersCamp]: 'hunters-camp',
+  [BuildingType.Well]: 'well',
 };
 
 /** Every sprite name the buildings use, for the atlas and for the tests. */
@@ -134,7 +135,9 @@ function spriteKind(kind: number, subtype: number, handle: number, role = 0): st
 // — walking to work, building, fishing, standing about — was drawn with a war shield and
 // a stabbing spear, and after work began finding its own people (Phase B2) that was most
 // of a village on any given frame.
-const VILLAGER_KINDS: readonly string[] = ['villager', 'herd-boy', 'field-hand', 'carrier', 'elder', 'hunter', 'villager'];
+// Index 7, the water carrier, wears the head-load figure: fetching water is carrying a
+// load on the head, and the figure was drawn for exactly that silhouette.
+const VILLAGER_KINDS: readonly string[] = ['villager', 'herd-boy', 'field-hand', 'carrier', 'elder', 'hunter', 'villager', 'carrier'];
 
 /**
  * Ground decoration: the shadow that stops a sprite floating, the selection ring, and

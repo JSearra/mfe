@@ -116,6 +116,11 @@ export const EventType = {
    * `payload` packs `village + 16 * species` — whose larder, and what it was.
    */
   Hunted: 30,
+  /**
+   * The village went short of water at the last upkeep (ADR-0023). `payload` is the
+   * village, `x` the share it went short by (0..1). Thirst slows work; it harms nobody.
+   */
+  Thirsty: 31,
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];

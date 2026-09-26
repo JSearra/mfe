@@ -106,7 +106,7 @@ export interface ConstructionSystem {
    * Grain and cattle produced per upkeep by this player's finished buildings, each
    * scaled by the share of its hands that are there.
    */
-  yieldFor(world: World, owner: number): { grain: number; hardyGrain: number; cattle: number };
+  yieldFor(world: World, owner: number): BuildingYieldTotals;
 }
 
 export function createConstructionSystem(
@@ -396,6 +396,9 @@ export function createConstructionSystem(
       let grain = 0;
       let hardyGrain = 0;
       let cattle = 0;
+      let water = 0;
+      let roofs = 0;
+      let waterStore = 0;
 
       for (let index = 0; index < world.capacity; index++) {
         if (world.alive[index] !== 1 || world.kind[index] !== EntityKind.Building) continue;
@@ -411,10 +414,29 @@ export function createConstructionSystem(
         grain += spec.grainYield * share;
         hardyGrain += spec.hardyGrainYield * share;
         cattle += spec.cattleYield * share;
+        // Water (ADR-0023): a well's draw, staffed like anything else; every dwelling's
+        // roof for the rain; and what a weir holds back, which needs nobody.
+        water += spec.waterYield * share;
+        waterStore += spec.waterStore;
+        const type = world.buildingType[index]!;
+        if (type === BuildingType.Umuzi || type === BuildingType.Indlunkulu) roofs++;
       }
-      return { grain, hardyGrain, cattle };
+      return { grain, hardyGrain, cattle, water, roofs, waterStore };
     },
   };
+}
+
+/** What a village's finished buildings give in a season, before the weather. */
+export interface BuildingYieldTotals {
+  grain: number;
+  hardyGrain: number;
+  cattle: number;
+  /** Drawn from wells, at their staffing. */
+  water: number;
+  /** Finished dwellings, whose roofs gather the rain. */
+  roofs: number;
+  /** Water the village's weirs hold back against the dry. */
+  waterStore: number;
 }
 
 export function isComplete(world: World, handle: Handle): boolean {

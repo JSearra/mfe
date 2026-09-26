@@ -57,8 +57,11 @@
       "meat": "{n} meat",
       "wood": "{n} timber",
       "skins": "{n} skins",
-      "ivory": "{n} ivory"
-    }
+      "ivory": "{n} ivory",
+      "water": "{n} water"
+    },
+    "water": "Water",
+    "thirsty": "Thirsty: work slowed {pct}%"
   },
   "building": {
     "isibaya": "isibaya",
@@ -71,7 +74,8 @@
     "umgodi": "umgodi",
     "isiziba": "isiziba",
     "isibayaSezimbuzi": "isibaya sezimbuzi",
-    "huntersCamp": "Hunters' camp"
+    "huntersCamp": "Hunters' camp",
+    "well": "Well"
   },
   "tech": {
     "amabutho": "amabutho",
@@ -169,7 +173,8 @@
     "predatorKill": "A predator has taken one of the cattle",
     "mauled": "Someone has been mauled — they are laid up until they mend",
     "drivenOff": "A predator was driven off",
-    "hunted": "The hunters have made a kill — meat and skins for the village"
+    "hunted": "The hunters have made a kill — meat and skins for the village",
+    "thirsty": "The village is short of water — work is slowed. Carry it from a river, or dig a well"
   },
   "setup": {
     "map": "Land",
@@ -218,7 +223,8 @@
     "elder": "{count} at the great house",
     "none": "{count} idle",
     "hunter": "{count} hunting",
-    "injured": "{count} laid up, mending"
+    "injured": "{count} laid up, mending",
+    "water": "{count} carrying water"
   },
   "controls": {
     "select": "Left-drag selects · right-click orders: a cow herds it, a tree fells it, game hunts it · shift queues",
@@ -275,7 +281,11 @@
       "heading": "Hunting and the wild",
       "body": "The veld has game on it: impala, kudu, zebra, wildebeest, eland, warthog, and the big ones, elephant, buffalo and hippo. Build a hunters' camp and it draws hunters from the village, who go out on their own after anything within reach. Or select people and right-click an animal to send them after it.\nMost hunts fail. A hunter has to creep close before the animal notices, and one throw decides it. But a kill is worth a great deal: an eland or a buffalo is a season's meat, and an elephant brings ivory, which a neighbour will pay handsomely for. Buffalo, hippo and elephant can turn on the hunter.\nLions, leopards and hyenas hunt too — your cattle as well as the game — and a kill near the herd can set it stampeding. Now and then they maul someone caught alone. The mauled are laid up until they mend, not killed. Three or more people together will drive a predator off."
     },
-    "umzingeliTerm": "umzingeli"
+    "umzingeliTerm": "umzingeli",
+    "water": {
+      "heading": "Water",
+      "body": "Everyone drinks every season. Water comes from four places: the rain on the roofs, which dries up at the height of the dry season; wells, which you can dig anywhere; the river, where people carry it from the bank (the farther the bank from home, the less each trip brings); and the weir (isiziba), which holds some back for the dry months.\nThe sea is salt: a village on the coast still needs a river or a well. Water does not keep, so it has to keep coming.\nA village short of water works slower, in proportion to how short it is. Nobody is harmed by it, but everything takes longer."
+    }
   },
   "buildingInfo": {
     "isibaya": "Cattle kraal. Holds a herd and slowly breeds it. Needs 2 people to run.",
@@ -284,9 +294,10 @@
     "ikhanda": "A large homestead. Households can be raised here as at an umuzi, but it grows no food and costs more.",
     "indlunkulu": "The great house. Yields a little grain and cattle, and people live here as they do in a homestead. Needs 1 person.",
     "umgodi": "Grain pit. Holds back 220 grain against a hungry season. Runs itself.",
-    "isiziba": "Weir. Must stand on a riverbank or shore. Fields within 6 tiles lose less to drought. Runs itself.",
+    "isiziba": "Weir. Must stand on a riverbank. Fields within 6 tiles lose less to drought, and it holds water back for the dry season. Runs itself.",
     "isibayaSezimbuzi": "Goat fold. Goats give a little grain every season that drought does not touch. Needs 1 person.",
-    "huntersCamp": "Hunters (abazingeli) set out from here after game. Most hunts fail, but a kill brings back meat, skins and — from an elephant — ivory. Needs 3 people. Buffalo, hippo and elephant can fight back."
+    "huntersCamp": "Hunters (abazingeli) set out from here after game. Most hunts fail, but a kill brings back meat, skins and — from an elephant — ivory. Needs 3 people. Buffalo, hippo and elephant can fight back.",
+    "well": "Dug anywhere. Draws water for the village each season, steady but weaker in a drought. Needs 1 person."
   },
   "techInfo": {
     "amabutho": "Age-sets. Everyone works a quarter faster.",
@@ -297,13 +308,13 @@
   },
   "tip": {
     "costs": "Costs {costs}",
-    "totals": "What the village holds. People eat meat first, then grain; meat goes off within a season, grain keeps. Timber builds. Cattle are wealth, and can be slaughtered for meat and skins. Skins and ivory feed nobody but trade well.",
+    "totals": "What the village holds. People eat meat first, then grain; meat goes off within a season, grain keeps. Timber builds. Water is drunk every season and does not keep. Cattle are wealth, and can be slaughtered for meat and skins. Skins and ivory feed nobody but trade well.",
     "season": "The year and its season. Drought cuts what fields and grazing yield. \"Drier\" means it is still getting worse; \"easing\" means the worst has passed.",
     "margin": "Harvest: grain the village brought in last season. Upkeep: grain it ate. \"Land feeds\" is how many households the worked land can support. When it turns amber, find more food before raising more households.",
     "households": "How many households live in the village. Each eats grain every season.",
     "work": "People with nothing to do, or work waiting with nobody free to do it. Short-handed? Raise a household or build less at once.",
     "driving": "Cattle your people are herding right now.",
-    "starving": "The granary cannot cover what the village eats. Cut the ration, slaughter cattle, trade, or plant more fields.",
+    "starving": "The granary cannot cover what the village eats — cut the ration, slaughter cattle, trade, or plant more fields. Or the village is short of water, which slows its work: carry water from a river, or dig a well.",
     "start": "Begin a new village on the land and people chosen above.",
     "continue": "Pick up the village you kept, where you left it.",
     "again": "Start over with a new village.",

@@ -32,6 +32,7 @@ const SHOWN: readonly { readonly resource: Resource; readonly key: MessageKey; r
   { resource: Resource.Grain, key: 'resource.amount.grain', always: true },
   { resource: Resource.Meat, key: 'resource.amount.meat', always: true },
   { resource: Resource.Wood, key: 'resource.amount.wood', always: true },
+  { resource: Resource.Water, key: 'resource.amount.water', always: true },
   { resource: Resource.Skins, key: 'resource.amount.skins', always: false },
   { resource: Resource.Ivory, key: 'resource.amount.ivory', always: false },
 ];
@@ -160,8 +161,13 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
       driving.textContent =
         player.driving > 0 ? t('resource.driving', { head: player.driving }) : '';
 
+      // Hunger outranks thirst: one hurts people and the other only slows them.
       warning.textContent =
-        player.shortfall > 0 ? t('resource.starving', { amount: Math.ceil(player.shortfall) }) : '';
+        player.shortfall > 0
+          ? t('resource.starving', { amount: Math.ceil(player.shortfall) })
+          : player.thirst > 0.01
+            ? t('resource.thirsty', { pct: Math.round(player.thirst * 100) })
+            : '';
     },
   };
 }

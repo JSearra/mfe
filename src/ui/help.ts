@@ -33,6 +33,7 @@ const SECTIONS: readonly { readonly heading: MessageKey; readonly body: MessageK
   { heading: 'help.people.heading', body: 'help.people.body' },
   { heading: 'help.food.heading', body: 'help.food.body' },
   { heading: 'help.seasons.heading', body: 'help.seasons.body' },
+  { heading: 'help.water.heading', body: 'help.water.body' },
   { heading: 'help.cattle.heading', body: 'help.cattle.body' },
   { heading: 'help.wild.heading', body: 'help.wild.body' },
   { heading: 'help.timber.heading', body: 'help.timber.body' },

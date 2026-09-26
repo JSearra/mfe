@@ -3,6 +3,7 @@ import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
 import type { CattleSystem } from './cattle.js';
 import { createWildlifeSystem, type WildlifeSystem } from './wildlife.js';
 import { createHuntingSystem, type HuntingSystem } from './hunting.js';
+import { updateWaterCarrying } from './water.js';
 import type { ConstructionSystem } from './construction.js';
 import type { ProductionSystem } from './production.js';
 import type { Census } from './census.js';
@@ -220,6 +221,8 @@ export function step(loop: SimLoop): void {
   // Before the ledger charges upkeep, so a catch landed this season is eaten this
   // season — the same reason an ally's relief is sent before the ledger runs.
   updateFishing(world, map, economy, world.tick);
+  // Water carried from the river lands before the upkeep that drinks it (ADR-0023).
+  updateWaterCarrying(world, map, economy, world.tick);
   economy.update(
     world,
     events,

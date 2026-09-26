@@ -49,6 +49,7 @@ KINDS = (
     "isiziba",
     "goat-fold",
     "hunters-camp",
+    "well",
 )
 STAGES = 3
 
@@ -526,6 +527,62 @@ def build_hunters_camp(root, stage, thatch, timber, earth):
         spear.parent = root
 
 
+def build_well(root, stage, thatch, timber, earth):
+    """
+    The well (ADR-0023): a stone ring round a dark shaft, a forked frame over it with a
+    pot on the rope, and a pot waiting beside it.
+
+    Small and low, like the grain pit, and told from the pit by what stands over it: the
+    pit is a sealed mound and nothing else, the well has the frame and the pots. The dark
+    of the shaft is the one thing that must survive being twenty pixels across.
+    """
+    floor = cylinder("floor", 1.0, 0.04, (0, 0, 0.02), verts=10)
+    floor.data.materials.append(earth)
+    floor.parent = root
+
+    shaft = cylinder("shaft", 0.42, 0.06, (0, 0, 0.05), verts=14)
+    shaft.data.materials.append(SHADOW)
+    shaft.parent = root
+
+    if stage == 0:
+        return
+
+    # The stone ring: squat blocks round the mouth.
+    stone = material("well_stone", (0.085, 0.075, 0.065))
+    height = 0.34 if stage == 2 else 0.16
+    for i in range(10):
+        angle = i / 10 * math.tau
+        block = cylinder(f"ring_{i}", 0.13, height, (math.cos(angle) * 0.52, math.sin(angle) * 0.52, height / 2), verts=5)
+        block.data.materials.append(stone)
+        block.parent = root
+
+    if stage == 1:
+        return
+
+    # The frame: two forked posts and a crossbar, with a pot hanging from it.
+    for side in (1, -1):
+        post = cylinder(f"post_{side}", 0.045, 1.2, (0, side * 0.62, 0.6), verts=6)
+        post.data.materials.append(timber)
+        post.parent = root
+    bar = cylinder("bar", 0.035, 1.35, (0, 0, 1.18), (math.pi / 2, 0, 0), verts=6)
+    bar.data.materials.append(timber)
+    bar.parent = root
+    rope = cylinder("rope", 0.012, 0.5, (0, 0, 0.92), verts=4)
+    rope.data.materials.append(timber)
+    rope.parent = root
+    clay = material("clay", (0.34, 0.14, 0.06))
+    hanging = dome("pot_hanging", 0.16, 0.2, (0, 0, 0.6))
+    hanging.data.materials.append(clay)
+    hanging.parent = root
+    standing = dome("pot", 0.2, 0.3, (0.7, -0.35, 0.0))
+    # A pot stands on its base: the lower half pressed flat, as the camp's shelter is.
+    for vertex in standing.data.vertices:
+        if vertex.co.z < 0:
+            vertex.co.z = 0
+    standing.data.materials.append(clay)
+    standing.parent = root
+
+
 def build_ikhanda(root, stage, thatch, timber, earth):
     """
     A military homestead: a ring of houses around its own enclosure, and bigger.
@@ -631,6 +688,7 @@ BUILDERS = {
     "isiziba": build_isiziba,
     "goat-fold": build_goat_fold,
     "hunters-camp": build_hunters_camp,
+    "well": build_well,
 }
 
 FRAMING = {
@@ -645,6 +703,7 @@ FRAMING = {
     "isiziba": (4.2, 0.4),
     "goat-fold": (4.6, 0.6),
     "hunters-camp": (4.2, 0.9),
+    "well": (2.9, 0.5),
 }
 
 

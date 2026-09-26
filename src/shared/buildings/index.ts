@@ -68,6 +68,11 @@ export const BuildingType = {
    * in English like the grain store — the hunter is `umzingeli`, glossed in the guide.
    */
   HuntersCamp: 8,
+  /**
+   * The well (ADR-0023): water for a village that does not sit on a river. Dug anywhere,
+   * drawn by one pair of hands, steady — and weaker, never dry, in a drought.
+   */
+  Well: 9,
 } as const;
 
 export type BuildingType = (typeof BuildingType)[keyof typeof BuildingType];
@@ -187,6 +192,10 @@ export interface BuildingSpec {
    * than knowing which one it is.
    */
   readonly hunts: boolean;
+  /** Water drawn each upkeep at full staffing, before the drought (ADR-0023). */
+  readonly waterYield: number;
+  /** Water this building holds back against the dry season — the weir's reserve. */
+  readonly waterStore: number;
 }
 
 export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
@@ -215,6 +224,8 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     effect: null,
     needsWater: false,
     hunts: false,
+    waterYield: 0,
+    waterStore: 0,
   },
   [BuildingType.Umuzi]: {
     type: BuildingType.Umuzi,
@@ -250,6 +261,8 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     effect: null,
     needsWater: false,
     hunts: false,
+    waterYield: 0,
+    waterStore: 0,
   },
   [BuildingType.Ikhanda]: {
     type: BuildingType.Ikhanda,
@@ -277,6 +290,8 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     effect: null,
     needsWater: false,
     hunts: false,
+    waterYield: 0,
+    waterStore: 0,
   },
   [BuildingType.Indlunkulu]: {
     type: BuildingType.Indlunkulu,
@@ -299,6 +314,8 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     effect: null,
     needsWater: false,
     hunts: false,
+    waterYield: 0,
+    waterStore: 0,
   },
   [BuildingType.Umgodi]: {
     type: BuildingType.Umgodi,
@@ -329,6 +346,8 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     effect: { kind: EffectKind.GrainReserve, radius: 0, strength: 220 },
     needsWater: false,
     hunts: false,
+    waterYield: 0,
+    waterStore: 0,
   },
   [BuildingType.Isiziba]: {
     type: BuildingType.Isiziba,
@@ -356,6 +375,8 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     effect: { kind: EffectKind.DroughtShelter, radius: 6, strength: 1 },
     needsWater: true,
     hunts: false,
+    waterYield: 0,
+    waterStore: 160,
   },
   [BuildingType.IsibayaSezimbuzi]: {
     type: BuildingType.IsibayaSezimbuzi,
@@ -384,6 +405,8 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     effect: null,
     needsWater: false,
     hunts: false,
+    waterYield: 0,
+    waterStore: 0,
   },
   [BuildingType.GrainStore]: {
     type: BuildingType.GrainStore,
@@ -403,6 +426,8 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     effect: null,
     needsWater: false,
     hunts: false,
+    waterYield: 0,
+    waterStore: 0,
   },
   [BuildingType.HuntersCamp]: {
     type: BuildingType.HuntersCamp,
@@ -423,6 +448,30 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     effect: null,
     needsWater: false,
     hunts: true,
+    waterYield: 0,
+    waterStore: 0,
+  },
+  [BuildingType.Well]: {
+    type: BuildingType.Well,
+    nameKey: 'building.well',
+    footprint: 1,
+    grainCost: 30,
+    woodCost: 35,
+    cattleCost: 0,
+    // Digging: labour, not goods, like the grain pit.
+    work: 420,
+    grainYield: 0,
+    hardyGrainYield: 0,
+    cattleYield: 0,
+    hands: 1,
+    maxHeightVariation: 0,
+    holdsCattle: false,
+    trains: false,
+    effect: null,
+    needsWater: false,
+    hunts: false,
+    waterYield: 8,
+    waterStore: 0,
   },
 };
 
