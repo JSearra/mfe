@@ -266,7 +266,7 @@ WILD = {
     "elephant": {"length": 2.9, "depth": 1.45, "width": 1.1, "leg": 1.45, "leg_r": 0.2,
                  "hide": (0.075, 0.07, 0.066), "accent": (0.06, 0.056, 0.052),
                  "head": (0.8, 0.7, 0.8), "neck": 0.25, "size": 192, "ortho": 5.6, "target": 1.45,
-                 "feature": {"trunk", "ears", "tusks"}},
+                 "feature": {"trunk", "tusks"}},
     "kudu": {"length": 1.5, "depth": 0.58, "width": 0.38, "leg": 0.95, "leg_r": 0.045,
              "hide": (0.13, 0.085, 0.05), "accent": (0.7, 0.67, 0.6),
              "head": (0.34, 0.15, 0.17), "neck": 0.55, "size": 128, "ortho": 3.2, "target": 1.0,
@@ -740,7 +740,9 @@ def build_wild(kind: str):
             big = 1.6 if "ears_big" in features else 1.0
             part(f"ear_{side}", (hx * 0.18, hy * 0.5 * big, hz * 0.5 * big), (-hx * 0.3, y * hy * 0.6, hz * 0.45), hide)
         if kind == "elephant":
-            # The ears are most of what says elephant at any size, so they are big.
+            # The ears are most of what says elephant at any size, so they are big —
+            # and its only ears: "ears" is kept out of its features, or the generic pair
+            # is built as well, inside these.
             part(f"ear_{side}", (hx * 0.18, hy * 1.4, hz * 1.35), (-hx * 0.35, y * hy * 0.75, 0.02), hide)
         if "lyre" in features:
             spike(f"horn_{side}", 0.02, 0.008, 0.36, (-hx * 0.25, y * hy * 0.25, hz * 0.6), (math.radians(-18 * y), math.radians(-28), 0), horn)
