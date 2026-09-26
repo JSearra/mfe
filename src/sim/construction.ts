@@ -8,6 +8,7 @@ import { blockTile, MovementClass } from './pathing/costs.js';
 import type { PathingService } from './pathing/service.js';
 import type { SpatialGrid } from './spatial/grid.js';
 import { tuning } from './tuning.js';
+import { Work } from './labour.js';
 import {
   destroy,
   EntityKind,
@@ -274,6 +275,19 @@ export function createConstructionSystem(
         const reachSq = tuning.labour.buildingReach * tuning.labour.buildingReach;
         for (let unit = 0; unit < world.capacity; unit++) {
           if (world.alive[unit] !== 1 || world.kind[unit] !== EntityKind.Unit) continue;
+          /*
+           * A hunter counts for the camp they belong to, wherever they are. Its people
+           * work out on the veld, not at its walls, and counting only those standing by
+           * it made a camp whose hunters were all out read "nobody working it" — which
+           * was exactly backwards (ADR-0022).
+           */
+          if (world.workKind[unit] === Work.Hunt) {
+            const camp = world.workAt[unit]!;
+            if (camp >= 0 && world.alive[camp] === 1 && world.builders[camp]! < 255) {
+              world.builders[camp] = world.builders[camp]! + 1;
+            }
+            continue;
+          }
           let nearest = -1;
           let nearestSq = Infinity;
           for (const building of staffed) {

@@ -43,7 +43,11 @@ import { worldStateField, worldStateFields } from '../world.js';
  * state a builder game is made of (ADR-0020), none of which lives in the world arrays,
  * all of which a version 5 save silently dropped while only tests ever called this.
  */
-export const SAVE_VERSION = 6;
+/*
+ * 7 widens the ledger from three columns to six: meat, skins and ivory (ADR-0022). A
+ * version 6 save's ledger is the wrong length, and the setup screen does not offer it.
+ */
+export const SAVE_VERSION = 7;
 
 export interface SaveGame {
   readonly version: number;

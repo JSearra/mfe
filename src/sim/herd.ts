@@ -30,7 +30,10 @@ export function cull(economy: Economy, player: number): number {
   const taken = cullHead(economy, player);
   if (taken <= 0) return 0;
   if (!economy.spend(player, Resource.Cattle, taken)) return 0;
-  economy.add(player, Resource.Grain, taken * tuning.herd.grainPerBeast);
+  // Meat and hides, as a slaughter actually yields — not grain, which it used to be
+  // paid in because grain was the only food the ledger knew (ADR-0022).
+  economy.add(player, Resource.Meat, taken * tuning.herd.meatPerBeast);
+  economy.add(player, Resource.Skins, taken * tuning.herd.skinsPerBeast);
   return taken;
 }
 

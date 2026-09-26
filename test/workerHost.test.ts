@@ -20,6 +20,7 @@ const IDLE: PlayerState = {
   cattle: 0,
   grain: 0,
   wood: 0,
+  stores: [],
   offers: [],
   relations: [],
   shortfall: 0,

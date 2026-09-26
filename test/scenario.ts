@@ -57,5 +57,45 @@ export function buildScenario(seed: number, ticks: number): Command[] {
     }
   }
 
+  /*
+   * Game on the veld (ADR-0022), so the determinism gate covers the wild as well as the
+   * people and the herds: grazing, flight from the spawned people as they wander past,
+   * and — over 10,000 ticks — at least three breeding seasons. From a stream of its own,
+   * so the commands above are drawn exactly as they always were.
+   */
+  const wild = createRng(seed ^ 0x3a11d);
+  const bands: readonly (readonly [species: number, size: number])[] = [
+    [2, 10], // impala
+    [1, 4], // kudu
+    [5, 7], // zebra
+    [7, 8], // buffalo
+    [9, 4], // lion
+    [12, 8], // guinea fowl
+  ];
+  bands.forEach(([species, size], band) => {
+    const x = 10 + nextInt(wild, 44);
+    const y = 10 + nextInt(wild, 44);
+    for (let n = 0; n < size; n++) {
+      commands.push(
+        makeCommand(0, 0, seq++, CommandKind.SpawnWild, x + nextSigned(wild) * 2, y + nextSigned(wild) * 2, species, band + 1),
+      );
+    }
+  });
+
+  /*
+   * And people sent after them, so the hash covers the hunt: the stalk, the strike, the
+   * yield and the bolt. The game holds the lowest slots (it spawns at tick zero, before
+   * anybody); the people above it are whoever the stream above made. An order naming
+   * somebody who is not a person, or not player 0's, is refused — that path is under
+   * test too.
+   */
+  let game = 0;
+  for (const [, size] of bands) game += size;
+  for (let n = 0; n < 12; n++) {
+    commands.push(
+      makeCommand(400 + n * 150, 0, seq++, CommandKind.Hunt, packHandle(game + nextInt(wild, 24), 1), packHandle(nextInt(wild, game), 1)),
+    );
+  }
+
   return commands;
 }

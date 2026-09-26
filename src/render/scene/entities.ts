@@ -9,6 +9,7 @@ import type { SpriteAtlas } from '../assets.js';
 import type { Decoration } from './decoration.js';
 import { TREE_KINDS, treeSpecies, treeStage, WOODLAND_STRIDE } from '../../shared/woodland.js';
 import type { DamageFlashes } from './damage.js';
+import { speciesInfo } from '../../shared/wildlife.js';
 
 /**
  * Draws entities from the interpolated view.
@@ -41,6 +42,8 @@ const PANIC = hex(cattleStyle.panicColour);
 
 const KIND_CATTLE = 1;
 const KIND_BUILDING = 2;
+/** An animal nobody owns. Its subtype is its species: see src/shared/wildlife.ts. */
+const KIND_WILD = 3;
 
 const spriteStyle = presentation.sprites;
 
@@ -78,6 +81,7 @@ const BUILDING_SPRITES: Readonly<Record<BuildingType, string>> = {
   [BuildingType.Umgodi]: 'umgodi',
   [BuildingType.Isiziba]: 'isiziba',
   [BuildingType.IsibayaSezimbuzi]: 'goat-fold',
+  [BuildingType.HuntersCamp]: 'hunters-camp',
 };
 
 /** Every sprite name the buildings use, for the atlas and for the tests. */
@@ -111,6 +115,8 @@ const TAU = Math.PI * 2;
  */
 function spriteKind(kind: number, subtype: number, handle: number, role = 0): string {
   if (kind === KIND_CATTLE) return (handle & 1) === 0 ? 'nguni' : 'nguni-dark';
+  // The species' own name is its sprite, so art for it drops in with no code here.
+  if (kind === KIND_WILD) return speciesInfo(subtype).name;
   if (kind === KIND_BUILDING) return buildingSpriteKind(subtype);
   if (subtype === CLASS_MOUNTED) return 'commando';
   // A villager is drawn as whatever she is doing. The role rides in the high nibble of
@@ -128,7 +134,7 @@ function spriteKind(kind: number, subtype: number, handle: number, role = 0): st
 // — walking to work, building, fishing, standing about — was drawn with a war shield and
 // a stabbing spear, and after work began finding its own people (Phase B2) that was most
 // of a village on any given frame.
-const VILLAGER_KINDS: readonly string[] = ['villager', 'herd-boy', 'field-hand', 'carrier', 'elder'];
+const VILLAGER_KINDS: readonly string[] = ['villager', 'herd-boy', 'field-hand', 'carrier', 'elder', 'hunter', 'villager'];
 
 /**
  * Ground decoration: the shadow that stops a sprite floating, the selection ring, and
@@ -289,6 +295,14 @@ interface Marker {
   readonly shield: Sprite;
   /** Everything the drawn shape depends on, so it is only redrawn when it changes. */
   signature: number;
+  /**
+   * The signature a wild animal's placeholder was last drawn for, or -1.
+   *
+   * Separate from `signature` because the placeholder is drawn on the textured path,
+   * after the shared redraw has already cleared the graphics. Reset whenever those are
+   * cleared, so a slot handed to another entity can never believe it is already drawn.
+   */
+  wildDrawn: number;
 }
 
 function drawUnit(graphics: Graphics, faction: number, selected: boolean): void {
@@ -354,6 +368,33 @@ function drawBuilding(graphics: Graphics, progressPct: number, selected: boolean
     graphics.lineTo(0, -rise + half / 2);
     graphics.closePath();
     graphics.fill({ color: ROOF });
+  }
+}
+
+/**
+ * A wild animal with no art yet: a body the colour and size of the species.
+ *
+ * Until the Blender pipeline has drawn them (ADR-0022, phase 6) the renderer would
+ * otherwise draw NOTHING — an animation with no frames is skipped — and a veld full of
+ * invisible game is the one way this could be worse than ugly. Read from
+ * presentation.json by the species' name, so each one is at least tellable apart.
+ */
+const WILD_BODIES = presentation.wildlife.placeholder as Readonly<Record<string, { colour: string; size: number }>>;
+function drawWild(graphics: Graphics, species: number, running: boolean): void {
+  const body = WILD_BODIES[speciesInfo(species).name] ?? { colour: '#a08860', size: 8 };
+  const size = body.size;
+  const colour = Number.parseInt(body.colour.slice(1), 16);
+  graphics.ellipse(0, 0, size * 0.9, size * 0.42);
+  graphics.fill({ color: 0x000000, alpha: 0.3 });
+  graphics.ellipse(0, -size * 0.8, size, size * 0.6);
+  graphics.fill({ color: colour });
+  graphics.stroke({ width: 1, color: 0x000000, alpha: 0.5 });
+  // A head, forward of the body, so a band reads as animals rather than as stones.
+  graphics.circle(size * 0.95, -size * 1.15, size * 0.32);
+  graphics.fill({ color: colour });
+  if (running) {
+    graphics.ellipse(-size * 1.2, -size * 0.6, size * 0.8, size * 0.25);
+    graphics.fill({ color: colour, alpha: 0.25 });
   }
 }
 
@@ -793,7 +834,7 @@ export function createEntityLayer(
         // and both off the same page as the body so the three still batch together.
         bodies.addChild(shield);
         bodies.addChild(team);
-        markers.push({ decal, graphics, sprite, shield, team, signature: -1 });
+        markers.push({ decal, graphics, sprite, shield, team, signature: -1, wildDrawn: -1 });
       }
       for (let i = count; i < markers.length; i++) {
         const marker = markers[i]!;
@@ -885,13 +926,16 @@ export function createEntityLayer(
         // Stress is quantised into bands: redrawing on every one-part-in-255 change
         // would rebuild geometry for the whole herd every frame for no visible gain.
         const stressBand = isCattle ? view.stressPct[index]! >> 4 : 0;
+        const isWild = kind === KIND_WILD;
         const signature =
           kind |
           (isSelected ? 4 : 0) |
           (stampeding ? 8 : 0) |
           (faction << 4) |
           (stressBand << 9) |
-          (progressBand << 14);
+          (progressBand << 14) |
+          (isWild ? (view.subtype[index]! + 1) << 20 : 0) |
+          (isWild && view.animState[index] === 2 ? 1 << 27 : 0);
 
         const position = this.screenPosition(view, index, map);
 
@@ -906,6 +950,8 @@ export function createEntityLayer(
         if (marker.signature !== signature) {
           marker.decal.clear();
           marker.graphics.clear();
+          marker.graphics.scale.x = 1;
+          marker.wildDrawn = -1;
           if (isBuilding && !textured) drawBuilding(marker.graphics, progressBand << 4, isSelected);
           else if (textured)
             drawDecal(
@@ -931,7 +977,7 @@ export function createEntityLayer(
 
         if (!textured) continue;
 
-        const name = spriteKind(kind, view.subtype[index]!, handle, view.flags[index]! >> 4);
+        let name = spriteKind(kind, view.subtype[index]!, handle, view.flags[index]! >> 4);
         const wanted = isBuilding ? 'build' : (ANIM_NAME[view.animState[index]!] ?? 'idle');
         // A villager has no `run` — only the fighting figures were ever given one — and
         // an entity whose animation has no frames drew NOTHING at all. Falling back to
@@ -939,12 +985,39 @@ export function createEntityLayer(
         // still a villager, and an invisible unit is the worst possible way to say she
         // has no animation for it.
         let anim = wanted;
+        // A figure with no art yet — the hunter, before the pipeline has drawn one —
+        // is drawn as the plain villager rather than not at all.
+        if (kind === 0 && atlas!.frameCount(name, 'walk') === 0 && atlas!.frameCount(name, 'idle') === 0) {
+          name = 'villager';
+        }
         let frames = atlas!.frameCount(name, anim);
         if (frames === 0 && !isBuilding) {
           anim = 'walk';
           frames = atlas!.frameCount(name, anim);
         }
-        if (frames === 0) continue;
+        if (frames === 0) {
+          // No art for this building yet: the drawn shape instead of nothing. A site
+          // the player paid for and cannot see is worse than an ugly one.
+          if (isBuilding) {
+            if (marker.wildDrawn !== signature) {
+              marker.graphics.clear();
+              drawBuilding(marker.graphics, progressBand << 4, isSelected);
+              marker.wildDrawn = signature;
+            }
+            marker.graphics.visible = true;
+          }
+          // No art for this animal yet: its placeholder body instead of nothing.
+          if (isWild) {
+            if (marker.wildDrawn !== signature) {
+              marker.graphics.clear();
+              drawWild(marker.graphics, view.subtype[index]!, view.animState[index] === 2);
+              marker.wildDrawn = signature;
+            }
+            marker.graphics.visible = true;
+            marker.graphics.scale.x = Math.cos(view.facing[index]!) < 0 ? -1 : 1;
+          }
+          continue;
+        }
 
         // Facing is a world angle about +Z from +X, and so is the sprite's direction
         // index: the model is built facing +X and rotated by an eighth turn per

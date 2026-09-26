@@ -287,6 +287,21 @@ export function createCattleSystem(): CattleSystem {
            * Herders push cattle away and raise their stress — unless they are the people
            * already driving it, who do neither.
            */
+          /*
+           * A predator on the hunt (ADR-0022). Worse than any stranger, and nobody's
+           * drover or kraal makes it familiar, and it weighs more than a person at the
+           * same distance (`cattleTerror`). One at rest is ignored, as game ignores it — cattle graze
+           * within sight of a lion that is not hunting, and the terror is in the stalk.
+           */
+          if (world.kind[other] === EntityKind.Wild) {
+            if (world.quarry[other] !== NULL_HANDLE && distance < c.herderRadius) {
+              const strength = (c.herderRadius - distance) / c.herderRadius;
+              threatX += (dx / distance) * strength;
+              threatY += (dy / distance) * strength;
+              threatWeight += strength * strength * tuning.wildlife.predators.cattleTerror;
+            }
+            continue;
+          }
           if (world.kind[other] !== EntityKind.Unit) continue;
           if (driver !== -1 && world.faction[other] === driver) continue;
           /*

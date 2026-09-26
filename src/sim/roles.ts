@@ -37,6 +37,10 @@ export const Role = {
   Carrier: 3,
   /** At the great house, where standing and decision sit. */
   Elder: 4,
+  /** A hunter, at the camp or out after game (ADR-0022). */
+  Hunter: 5,
+  /** Laid up after a mauling. Outranks everything: they are doing nothing else. */
+  Injured: 6,
 } as const;
 
 export type Role = (typeof Role)[keyof typeof Role];
@@ -77,8 +81,12 @@ export function updateRoles(world: World, land: Farmland, tick: number): void {
     if (world.alive[index] !== 1 || world.kind[index] !== EntityKind.Unit) continue;
 
     let role: Role = Role.None;
-    // Keeping a kraal is herding too, and it should look like it (Phase B2).
-    if (herding.has(index) || world.workKind[index] === Work.Kraal) {
+    if (world.injured[index]! > 0) {
+      role = Role.Injured;
+    } else if (world.workKind[index] === Work.Hunt || world.quarry[index] !== NULL_HANDLE) {
+      role = Role.Hunter;
+    } else if (herding.has(index) || world.workKind[index] === Work.Kraal) {
+      // Keeping a kraal is herding too, and it should look like it (Phase B2).
       role = Role.Herder;
     } else {
       const posX = world.posX[index]!;

@@ -60,6 +60,14 @@ export const BuildingType = {
    * translated.
    */
   IsibayaSezimbuzi: 7,
+  /**
+   * The hunters' camp (ADR-0022).
+   *
+   * Where the village's hunters are drawn to and set out from. It produces nothing
+   * itself; its people go out after game and what they bring back is the yield. Named
+   * in English like the grain store — the hunter is `umzingeli`, glossed in the guide.
+   */
+  HuntersCamp: 8,
 } as const;
 
 export type BuildingType = (typeof BuildingType)[keyof typeof BuildingType];
@@ -172,6 +180,13 @@ export interface BuildingSpec {
    * `construction.place`.
    */
   readonly needsWater: boolean;
+  /**
+   * Its people go out after game rather than standing at the walls (ADR-0022).
+   *
+   * A property, like `needsWater`, so the labour allocator asks the building rather
+   * than knowing which one it is.
+   */
+  readonly hunts: boolean;
 }
 
 export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
@@ -199,6 +214,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     trains: false,
     effect: null,
     needsWater: false,
+    hunts: false,
   },
   [BuildingType.Umuzi]: {
     type: BuildingType.Umuzi,
@@ -233,6 +249,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     trains: true,
     effect: null,
     needsWater: false,
+    hunts: false,
   },
   [BuildingType.Ikhanda]: {
     type: BuildingType.Ikhanda,
@@ -259,6 +276,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     trains: true,
     effect: null,
     needsWater: false,
+    hunts: false,
   },
   [BuildingType.Indlunkulu]: {
     type: BuildingType.Indlunkulu,
@@ -280,6 +298,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     trains: false,
     effect: null,
     needsWater: false,
+    hunts: false,
   },
   [BuildingType.Umgodi]: {
     type: BuildingType.Umgodi,
@@ -309,6 +328,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
      */
     effect: { kind: EffectKind.GrainReserve, radius: 0, strength: 220 },
     needsWater: false,
+    hunts: false,
   },
   [BuildingType.Isiziba]: {
     type: BuildingType.Isiziba,
@@ -335,6 +355,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
      */
     effect: { kind: EffectKind.DroughtShelter, radius: 6, strength: 1 },
     needsWater: true,
+    hunts: false,
   },
   [BuildingType.IsibayaSezimbuzi]: {
     type: BuildingType.IsibayaSezimbuzi,
@@ -362,6 +383,7 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     trains: false,
     effect: null,
     needsWater: false,
+    hunts: false,
   },
   [BuildingType.GrainStore]: {
     type: BuildingType.GrainStore,
@@ -380,6 +402,27 @@ export const BUILDINGS: Readonly<Record<BuildingType, BuildingSpec>> = {
     trains: false,
     effect: null,
     needsWater: false,
+    hunts: false,
+  },
+  [BuildingType.HuntersCamp]: {
+    type: BuildingType.HuntersCamp,
+    nameKey: 'building.huntersCamp',
+    footprint: 1,
+    // Cheap: a shelter, a drying rack and a place to keep the spears.
+    grainCost: 50,
+    woodCost: 45,
+    cattleCost: 0,
+    work: 350,
+    grainYield: 0,
+    hardyGrainYield: 0,
+    cattleYield: 0,
+    hands: 3,
+    maxHeightVariation: 0,
+    holdsCattle: false,
+    trains: false,
+    effect: null,
+    needsWater: false,
+    hunts: true,
   },
 };
 

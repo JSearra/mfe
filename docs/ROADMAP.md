@@ -421,9 +421,8 @@ landed since, and what is left:
 - **Shared silhouettes across factions** — the last atlas-budget mitigation from
   ARCHITECTURE section 9, and currently moot: every faction already draws the same unit
   models. It becomes real the moment faction-specific art exists.
-- **Wild animals.** Considered and deliberately not built. Decorative fauna is cheap and
-  lifeless; huntable game would touch entities, pathing and possibly the food economy,
-  which already has cattle in it. It wants a design decision before any code.
+- ~~**Wild animals.**~~ **Decided** in ADR-0022 (2026-09-26): huntable game, predators
+  and scenery, with meat, skins and ivory tracked separately. See Phase B6.
 - **Multiplayer.** Every determinism invariant is in place and CI-enforced; none is proven
   across two machines. Surveyed in `docs/MULTIPLAYER.md` rather than started — what is
   left is a transport, advancing on consensus instead of on elapsed time, and a
@@ -980,6 +979,23 @@ and the rock hardly moving. `__debug.season(position)` shows any point on the ra
 yellowwood barely moves, and aloes, being succulents, are left alone. *Not done:* a tint
 can only take green toward olive, not bare. A baobab in the dry is leafless, and that
 needs dry-season sprites from the Blender pipeline.
+
+## Phase B6 — the veld has game in it
+
+ADR-0022. The phases below run in order, and each one ships through every gate on its own.
+
+1. **Stores.** Meat, skins and ivory become ledger columns. People eat meat before grain,
+   and meat spoils fast. The cull yields meat and skins. The resource bar shows all of
+   them, and trade prices skins and ivory. Water gets a slot but no rules yet.
+2. **Game on the map.** A new entity kind and a species table in `tuning.json`. Herds
+   graze, flee from people and regrow. All steering goes through `displace`.
+3. **Predators.** They stalk, take cattle and panic the herd. They maul hunters, who are
+   laid up rather than killed. A crowd drives them off.
+4. **Hunting.** A Hunter role, a hunters' camp that draws its own people, and a direct
+   hunt order. Low odds and a high yield. Buffalo and hippo fight back.
+5. **Telling.** Alerts, panel readouts, help text and tooltips.
+6. **Art.** Fifteen species, a hunter figure and the camp, all from the Blender pipeline.
+7. **Water.** Its own design first: who draws it, who drinks it, and what a drought does.
 
 ## Already built
 

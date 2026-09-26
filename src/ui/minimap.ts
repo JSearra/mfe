@@ -2,6 +2,7 @@ import type { Heightmap } from '../shared/heightmap.js';
 import type { Camera } from '../render/camera.js';
 import { screenToWorldX, screenToWorldY } from '../shared/iso.js';
 import type { InterpolatedView } from '../render/interpolation.js';
+import { Role } from '../shared/wildlife.js';
 import { presentation } from '../render/presentation.js';
 
 /**
@@ -23,6 +24,9 @@ const FOG_UNEXPLORED = 0;
 const FOG_EXPLORED = 1;
 const KIND_CATTLE = 1;
 const KIND_BUILDING = 2;
+const KIND_WILD = 3;
+/** Role.Predator in src/shared/wildlife.ts, as wildlife.ts writes it into the flags' high nibble. */
+const ROLE_PREDATOR = Role.Predator;
 
 export interface Minimap {
   readonly element: HTMLCanvasElement;
@@ -144,7 +148,11 @@ export function createMinimap(
         for (let i = 0; i < view.count; i++) {
           const kind = view.kind[i]!;
           context.fillStyle =
-            kind === KIND_CATTLE
+            kind === KIND_WILD
+              ? (view.flags[i]! >> 4) === ROLE_PREDATOR
+                ? presentation.wildlife.minimapPredator
+                : presentation.wildlife.minimapGame
+              : kind === KIND_CATTLE
               ? presentation.cattle.bodyColour
               : (factionColours[view.faction[i]! % factionColours.length] ?? '#ffffff');
 

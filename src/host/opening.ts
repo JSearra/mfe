@@ -3,6 +3,7 @@ import type { Heightmap } from '../shared/heightmap.js';
 import { CommandKind } from '../sim/commands.js';
 import { mixSeed } from '../sim/math/rng.js';
 import { largestRegion, snapToRegion } from '../sim/terrain/placement.js';
+import { planWildlife } from '../sim/wildlife.js';
 
 /**
  * The village and the herds a match opens with.
@@ -58,7 +59,7 @@ export const VILLAGE_HUTS = 5;
 
 export type Send = (kind: CommandKind, a?: number, b?: number, c?: number, d?: number) => void;
 
-export function seedOpening(send: Send, map: Heightmap, centre: number): void {
+export function seedOpening(send: Send, map: Heightmap, centre: number, seed = 0): void {
   /**
    * Everything a match places goes through here first.
    *
@@ -204,5 +205,13 @@ export function seedOpening(send: Send, map: Heightmap, centre: number): void {
       const at = place(anchor.x + Math.cos(angle) * spread, anchor.y + Math.sin(angle) * spread);
       send(CommandKind.SpawnCattle, at.x, at.y);
     }
+  }
+
+  /*
+   * The game (ADR-0022): bands placed by habitat, well clear of the village, so the
+   * first thing a hunter has to do is go and find them.
+   */
+  for (const animal of planWildlife(map, seed, home, walkable)) {
+    send(CommandKind.SpawnWild, animal.x, animal.y, animal.species, animal.band);
   }
 }

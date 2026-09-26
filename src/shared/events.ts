@@ -99,6 +99,23 @@ export const EventType = {
    * grain, or the ground already taken.
    */
   PlacementRefused: 26,
+  /**
+   * A predator made a kill (ADR-0022). `x`/`y` are where; `payload` is 1 when what it
+   * took was cattle — the one kill the village loses by — and 0 for game.
+   */
+  PredatorKill: 27,
+  /**
+   * A predator mauled somebody. `handle` is the person, `x`/`y` where, `payload` their
+   * village. They are laid up, not killed.
+   */
+  Mauled: 28,
+  /** People drove a predator off. `x`/`y` where it turned. */
+  DrivenOff: 29,
+  /**
+   * A hunt ended in a kill. `handle` is the hunter, `x`/`y` where the animal fell,
+   * `payload` packs `village + 16 * species` — whose larder, and what it was.
+   */
+  Hunted: 30,
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];

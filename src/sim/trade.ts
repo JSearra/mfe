@@ -1,6 +1,7 @@
 import { tuning } from './tuning.js';
 import { alliedWith, standingOf, type Alliance } from './alliance.js';
-import { Resource, type Economy } from './economy/ledger.js';
+import { type Resource, type Economy } from './economy/ledger.js';
+import { RESOURCE_NAMES, TRADED } from '../shared/resources.js';
 
 /**
  * Trade with a neighbouring village.
@@ -43,18 +44,24 @@ export const TradeResult = {
 
 export type TradeResult = (typeof TradeResult)[keyof typeof TradeResult];
 
+/**
+ * A traded good's terms, from `tuning.trade.goods` by the resource's name.
+ *
+ * A table rather than a chain of branches, so a new good is a line of tuning. Anything
+ * not in the table is not traded, and `TRADED` (src/shared/resources.ts) is the list of
+ * what is; the fallback only keeps a stray index from reading undefined.
+ */
+function termsOf(resource: Resource): { weight: number; reference: number; parcel: number } {
+  const goods = tuning.trade.goods as Readonly<Record<string, { weight: number; reference: number; parcel: number }>>;
+  return goods[RESOURCE_NAMES[resource]] ?? goods.cattle!;
+}
+
 function weightOf(resource: Resource): number {
-  const t = tuning.trade;
-  if (resource === Resource.Grain) return t.weightGrain;
-  if (resource === Resource.Wood) return t.weightWood;
-  return t.weightCattle;
+  return termsOf(resource).weight;
 }
 
 function referenceOf(resource: Resource): number {
-  const t = tuning.trade;
-  if (resource === Resource.Grain) return t.referenceGrain;
-  if (resource === Resource.Wood) return t.referenceWood;
-  return t.referenceCattle;
+  return termsOf(resource).reference;
 }
 
 /**
@@ -193,7 +200,7 @@ export function wantedTrade(
   alliance?: Alliance,
 ): { offered: Resource; wanted: Resource; amount: number } | null {
   const t = tuning.trade;
-  const kinds: Resource[] = [Resource.Cattle, Resource.Grain, Resource.Wood];
+  const kinds = TRADED;
 
   let scarcest = kinds[0]!;
   let plentiful = kinds[0]!;
@@ -204,7 +211,10 @@ export function wantedTrade(
     const value = marginalValue(economy, player, kind);
     // Ties break on the resource order, so two villages in identical positions make
     // identical decisions and a replay reproduces.
-    if (value > highest) {
+    //
+    // Only what the partner could actually hand over is worth wanting. A village with no
+    // ivory values ivory above everything, and without this it would ask for nothing else.
+    if (value > highest && economy.balance(partner, kind) >= parcelOf(kind)) {
       highest = value;
       scarcest = kind;
     }
@@ -226,10 +236,7 @@ export function wantedTrade(
 
 /** How much of a resource a single offer moves. A trade is a parcel, not a haggle. */
 export function parcelOf(resource: Resource): number {
-  const t = tuning.trade;
-  if (resource === Resource.Grain) return t.parcelGrain;
-  if (resource === Resource.Wood) return t.parcelWood;
-  return t.parcelCattle;
+  return termsOf(resource).parcel;
 }
 
 export interface TradeOffer {
@@ -254,7 +261,7 @@ export interface TradeOffer {
  */
 export function offersFor(economy: Economy, player: number, alliance?: Alliance): TradeOffer[] {
   const regard = alliance === undefined ? undefined : { alliance, asker: player };
-  const kinds: Resource[] = [Resource.Cattle, Resource.Grain, Resource.Wood];
+  const kinds = TRADED;
   const out: TradeOffer[] = [];
 
   for (let partner = 0; partner < economy.players; partner++) {

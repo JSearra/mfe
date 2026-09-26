@@ -66,6 +66,34 @@ export interface World {
   readonly tetheredTo: Uint32Array;
   /** Ticks remaining in the current stampede. */
   readonly stampedeTicks: Uint16Array;
+  // --- wildlife (ADR-0022) ------------------------------------------------------
+  /** Which animal, for a Wild entity. See src/shared/wildlife.ts. Zero otherwise. */
+  readonly species: Uint8Array;
+  /** Which band it runs with. Animals of one species and band keep together. */
+  readonly band: Uint16Array;
+  /**
+   * Where its band's range was centred when it was born.
+   *
+   * The range itself drifts about this over the seasons (wildlife.ts `rangeAt`), as a
+   * function of the band and the tick rather than as state, so it costs two numbers an
+   * animal and nothing a band.
+   */
+  readonly homeX: Float64Array;
+  readonly homeY: Float64Array;
+  /** What a predator is stalking, as a handle, or NULL_HANDLE when it is not hunting. */
+  readonly quarry: Uint32Array;
+  /** Ticks a predator will rest after a kill before it hunts again. */
+  readonly sated: Uint16Array;
+  /**
+   * Ticks a person is laid up after a mauling, or 0 (ADR-0022: predators injure, they do
+   * not kill). An injured person does not move, work or take orders until it runs out.
+   */
+  readonly injured: Uint16Array;
+  /**
+   * A hunter's clock (ADR-0022): ticks spent after the current quarry, or — with no
+   * quarry — ticks of rest left at the camp before setting out again.
+   */
+  readonly huntTicks: Uint16Array;
   /** Position at the start of the tick, for swept collision. */
   readonly prevX: Float64Array;
   readonly prevY: Float64Array;
@@ -215,6 +243,14 @@ export function createWorld(capacity: number, seed: number): World {
     stress: new Float64Array(capacity),
     tetheredTo: new Uint32Array(capacity),
     stampedeTicks: new Uint16Array(capacity),
+    species: new Uint8Array(capacity),
+    band: new Uint16Array(capacity),
+    homeX: new Float64Array(capacity),
+    homeY: new Float64Array(capacity),
+    quarry: new Uint32Array(capacity),
+    sated: new Uint16Array(capacity),
+    injured: new Uint16Array(capacity),
+    huntTicks: new Uint16Array(capacity),
     prevX: new Float64Array(capacity),
     prevY: new Float64Array(capacity),
     goalIndex: new Int32Array(capacity).fill(-1),
@@ -357,6 +393,8 @@ export const EntityKind = {
   Unit: 0,
   Cattle: 1,
   Building: 2,
+  /** An animal nobody owns: game, predators, the life of the veld. See src/sim/wildlife.ts. */
+  Wild: 3,
 } as const;
 
 export type EntityKind = (typeof EntityKind)[keyof typeof EntityKind];
@@ -407,6 +445,14 @@ export function spawn(
   world.stress[index] = 0;
   world.tetheredTo[index] = NULL_HANDLE;
   world.stampedeTicks[index] = 0;
+  world.species[index] = 0;
+  world.band[index] = 0;
+  world.homeX[index] = x;
+  world.homeY[index] = y;
+  world.quarry[index] = NULL_HANDLE;
+  world.sated[index] = 0;
+  world.injured[index] = 0;
+  world.huntTicks[index] = 0;
   world.prevX[index] = x;
   world.prevY[index] = y;
   world.goalIndex[index] = -1;

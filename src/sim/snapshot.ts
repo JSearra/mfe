@@ -57,8 +57,15 @@ export function buildSnapshot(
     writer.hpPct[slot] = encodeHpPct(world.hp[i]!, maxHp);
     writer.kind[slot] = world.kind[i]!;
     writer.stressPct[slot] = encodeHpPct(world.stress[i]!, tuning.cattle.stressMax);
+    // Building type for a building, species for a wild animal (ADR-0022), movement class
+    // for everything else. The species was missing at first, and every animal on the
+    // veld crossed as species 0 and drew as an elephant.
     writer.subtype[slot] =
-      world.kind[i] === EntityKind.Building ? world.buildingType[i]! : world.movementClass[i]!;
+      world.kind[i] === EntityKind.Building
+        ? world.buildingType[i]!
+        : world.kind[i] === EntityKind.Wild
+          ? world.species[i]!
+          : world.movementClass[i]!;
     writer.progressPct[slot] =
       world.kind[i] === EntityKind.Building
         ? encodeHpPct(world.buildProgress[i]!, buildingSpec(world.buildingType[i]!).work)

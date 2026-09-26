@@ -14,6 +14,9 @@ import { AllyResult, alliedWith, breakBond, propose, withdraw, type Alliance } f
 import { Ration, Resource } from './economy/ledger.js';
 import type { Heightmap } from '../shared/heightmap.js';
 import { cull } from './herd.js';
+import { spawnWild } from './wildlife.js';
+import { setOnQuarry } from './hunting.js';
+import { SPECIES } from '../shared/wildlife.js';
 import { holdForOrder } from './labour.js';
 import { MovementClass } from './pathing/costs.js';
 import { tuning } from './tuning.js';
@@ -120,6 +123,17 @@ export const CommandKind = {
    * nothing is refunded. A builder has to be able to undo where it put a thing.
    */
   Demolish: 22,
+  /**
+   * Put a wild animal on the map (ADR-0022). `a`/`b` are the position, `c` the species
+   * (src/shared/wildlife.ts) and `d` the band it runs with. Issued by the opening, as
+   * SpawnCattle is, so the game a match begins with is in the command log.
+   */
+  SpawnWild: 23,
+  /**
+   * Go after one animal (ADR-0022). `a` is the hunter's handle, `b` the quarry's. Only
+   * the sender's own people can be sent; see src/sim/hunting.ts for what happens next.
+   */
+  Hunt: 24,
 } as const;
 
 export type CommandKind = (typeof CommandKind)[keyof typeof CommandKind];
@@ -431,6 +445,27 @@ export function applyCommand(
     // For the sender only, by provenance — the payload is a handle a client controls.
     case CommandKind.Demolish:
       return construction.demolish(world, command.a as Handle, command.playerId);
+
+    case CommandKind.Hunt: {
+      const hunter = command.a as Handle;
+      if (!isAlive(world, hunter)) return false;
+      const index = handleIndex(hunter);
+      // Provenance, as everywhere: nobody sends anybody else's people.
+      if (world.kind[index] !== EntityKind.Unit || world.faction[index] !== command.playerId) return false;
+      if (!setOnQuarry(world, movement, index, command.b as Handle)) return false;
+      // Held, so the allocator does not call them off it to go and tend a field.
+      holdForOrder(world, index);
+      return true;
+    }
+
+    case CommandKind.SpawnWild: {
+      if (!Number.isInteger(command.c) || command.c < 0 || command.c >= SPECIES.length) return false;
+      if (command.a < 0 || command.b < 0 || command.a >= map.width || command.b >= map.height) return false;
+      const handle = spawnWild(world, command.a, command.b, command.c, command.d);
+      if (handle === 0) return false;
+      events.push(makeEvent(world.tick, EventType.Spawned, handle, command.a, command.b));
+      return true;
+    }
 
     default:
       return false;

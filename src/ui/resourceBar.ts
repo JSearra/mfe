@@ -1,6 +1,7 @@
 import { t, type MessageKey } from '../core/i18n/index.js';
 import { Season, seasonOf } from '../shared/calendar.js';
 import type { PlayerState } from '../host/directHost.js';
+import { Resource } from '../shared/resources.js';
 
 /**
  * The player's standing: herd, granary, powder, and what the season is doing.
@@ -16,6 +17,24 @@ export interface ResourceBar {
 }
 
 const UPDATE_INTERVAL_MS = 250;
+
+/**
+ * The stores on the bar, in the order a village thinks about them: its wealth, its two
+ * foods, what it builds with, what it trades.
+ *
+ * `always` for the ones a player needs to see at nought — food and timber are things to
+ * go and get. Skins and ivory appear once there are any: a bar that listed every good
+ * the village could ever hold would be a sentence nobody reads, and ADR-0022 says more
+ * are coming.
+ */
+const SHOWN: readonly { readonly resource: Resource; readonly key: MessageKey; readonly always: boolean }[] = [
+  { resource: Resource.Cattle, key: 'resource.amount.cattle', always: true },
+  { resource: Resource.Grain, key: 'resource.amount.grain', always: true },
+  { resource: Resource.Meat, key: 'resource.amount.meat', always: true },
+  { resource: Resource.Wood, key: 'resource.amount.wood', always: true },
+  { resource: Resource.Skins, key: 'resource.amount.skins', always: false },
+  { resource: Resource.Ivory, key: 'resource.amount.ivory', always: false },
+];
 
 /** Season -> its name. Indexed by the enum, so a new season is a compile error here. */
 const SEASON_KEYS: Readonly<Record<Season, MessageKey>> = {
@@ -81,11 +100,12 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
       if (now - lastUpdate < UPDATE_INTERVAL_MS) return;
       lastUpdate = now;
 
-      totals.textContent = t('resource.bar', {
-        cattle: Math.floor(player.cattle),
-        grain: Math.floor(player.grain),
-        wood: Math.floor(player.wood),
-      });
+      const parts: string[] = [];
+      for (const shown of SHOWN) {
+        const held = Math.floor(player.stores[shown.resource] ?? 0);
+        if (held > 0 || shown.always) parts.push(t(shown.key, { n: held }));
+      }
+      totals.textContent = parts.join(' · ');
 
       /*
        * The year, the season and which way it is going.

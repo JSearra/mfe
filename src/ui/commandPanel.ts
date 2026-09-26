@@ -1,5 +1,6 @@
 import { BUILDINGS, BuildingType, buildingSpec } from '../shared/buildings/index.js';
 import { TECHS, TECH_IDS, TechId } from '../shared/tech/index.js';
+import { Resource } from '../shared/resources.js';
 import { t, type MessageKey } from '../core/i18n/index.js';
 import { summariseSelection, SummaryRole } from './selectionSummary.js';
 import {
@@ -13,12 +14,15 @@ import type { InterpolatedView } from '../render/interpolation.js';
 import type { TradeOffer } from '../sim/trade.js';
 import type { Relation } from '../sim/alliance.js';
 
-/** Resource index -> its name key. Order matches Resource in the ledger. */
-const RESOURCE_KEYS: readonly MessageKey[] = [
-  'resource.cattle',
-  'resource.grain',
-  'resource.wood',
-];
+/** Resource -> its name. Keyed by the enum, so a new resource without a name is a compile error. */
+const RESOURCE_KEYS: Readonly<Record<Resource, MessageKey>> = {
+  [Resource.Cattle]: 'resource.cattle',
+  [Resource.Grain]: 'resource.grain',
+  [Resource.Wood]: 'resource.wood',
+  [Resource.Meat]: 'resource.meat',
+  [Resource.Skins]: 'resource.skins',
+  [Resource.Ivory]: 'resource.ivory',
+};
 
 /**
  * What is selected, and what can be done with it.
@@ -42,6 +46,8 @@ const ROLE_KEYS: Readonly<Record<SummaryRole, MessageKey>> = {
   [SummaryRole.FieldHand]: 'role.fieldHand',
   [SummaryRole.Carrier]: 'role.carrier',
   [SummaryRole.Elder]: 'role.elder',
+  [SummaryRole.Hunter]: 'role.hunter',
+  [SummaryRole.Injured]: 'role.injured',
 };
 
 /**
@@ -57,6 +63,7 @@ const BUILDING_INFO: Readonly<Record<BuildingType, MessageKey>> = {
   [BuildingType.Umgodi]: 'buildingInfo.umgodi',
   [BuildingType.Isiziba]: 'buildingInfo.isiziba',
   [BuildingType.IsibayaSezimbuzi]: 'buildingInfo.isibayaSezimbuzi',
+  [BuildingType.HuntersCamp]: 'buildingInfo.huntersCamp',
 };
 
 /** The same for each advance. */
@@ -409,8 +416,8 @@ export function createCommandPanel(
       if (offers.length === 0) return;
 
       for (const offer of offers) {
-        const give = `${Math.round(offer.give)} ${t(RESOURCE_KEYS[offer.offered] ?? 'resource.grain')}`;
-        const get = `${Math.round(offer.get)} ${t(RESOURCE_KEYS[offer.wanted] ?? 'resource.grain')}`;
+        const give = `${Math.round(offer.give)} ${t(RESOURCE_KEYS[offer.offered])}`;
+        const get = `${Math.round(offer.get)} ${t(RESOURCE_KEYS[offer.wanted])}`;
         trade.append(
           button(t('panel.trade', { give, get }), t('panel.tradeHint'), () =>
             handlers.onTrade(offer.partner, offer.offered, offer.wanted, offer.give),

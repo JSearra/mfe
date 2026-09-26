@@ -16,6 +16,7 @@ import { createLabour, idleOf, type Labour } from '../sim/labour.js';
 import { createProductionSystem, type ProductionSystem } from '../sim/production.js';
 import { createConstructionSystem, type ConstructionSystem } from '../sim/construction.js';
 import { createEconomy, Resource, type Economy } from '../sim/economy/ledger.js';
+import { RESOURCES } from '../shared/resources.js';
 import { createWoodland, packWoodland, type Woodland } from '../sim/woodland.js';
 import { packFarmland, type Farmland } from '../sim/economy/farmland.js';
 import { createStartingFarmland } from '../sim/economy/plots.js';
@@ -82,6 +83,14 @@ export interface PlayerState {
   readonly grain: number;
   /** Timber in hand. Buildings need it, and only the woodland supplies it. */
   readonly wood: number;
+  /**
+   * Every store, indexed by `Resource` (src/shared/resources.ts).
+   *
+   * The three above predate it and stay because half the HUD reads them by name. This is
+   * what anything new reads — meat, skins, ivory, and whatever the catalogue grows next —
+   * so a resource added later needs no new field here.
+   */
+  readonly stores: readonly number[];
   /**
    * Trades a neighbour would accept right now, and what each returns.
    *
@@ -466,6 +475,7 @@ export function createDirectSimHost(options: DirectSimHostOptions): DirectSimHos
         cattle: economy.balance(viewerId, Resource.Cattle),
         grain: economy.balance(viewerId, Resource.Grain),
         wood: economy.balance(viewerId, Resource.Wood),
+        stores: RESOURCES.map((resource) => economy.balance(viewerId, resource)),
         offers: offersFor(economy, viewerId, alliance),
         relations: relationsFor(alliance, viewerId),
         shortfall: economy.shortfall[viewerId] ?? 0,

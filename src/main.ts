@@ -71,6 +71,7 @@ import { SAVE_VERSION, type SaveGame } from './sim/persistence/save.js';
 import { createEmptiedBanner } from './ui/emptiedBanner.js';
 import { createResourceBar } from './ui/resourceBar.js';
 import { createHelp } from './ui/help.js';
+import { isQuarry } from './shared/wildlife.js';
 import { installTooltips } from './ui/tooltip.js';
 import { matchSeed, NEIGHBOUR, PLAYER, seedOpening } from './host/opening.js';
 
@@ -104,8 +105,22 @@ const REFUSALS: Readonly<Record<number, MessageKey>> = {
 /** How often the village is kept without being asked. */
 const AUTOSAVE_MS = 60_000;
 const MAP_SIZE = 128;
+/**
+ * Entity slots in the world. 1024 since the veld has game on it (ADR-0022): a map opens
+ * with about 155 wild animals beside the village and its herds, bands breed back to full
+ * strength, and a village has no cap on the households it raises.
+ */
+const WORLD_CAPACITY = 1024;
 const MAP_SEED = 0x4d666563;
 const KIND_CATTLE = 1;
+/** An animal nobody owns. See src/shared/wildlife.ts. */
+const KIND_WILD = 3;
+
+/** The species of a wild animal in the view, by handle, or -1 if it is not there. */
+function speciesOfHandle(view: InterpolatedView, handle: number): number {
+  for (let i = 0; i < view.count; i++) if (view.handle[i] === handle) return view.subtype[i]!;
+  return -1;
+}
 const KIND_BUILDING = 2;
 const MOVEMENT_INFANTRY = 0;
 const HERD_LEASHED = 1;
@@ -319,7 +334,7 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
         mapSeed,
         mapScript,
         worldSeed,
-        capacity: 512,
+        capacity: WORLD_CAPACITY,
         viewerId: PLAYER,
         playerId: PLAYER,
         factions: [options.playerFaction, options.enemyFaction],
@@ -327,7 +342,7 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
         starts,
       })
     : createDirectSimHost({
-        world: createWorld(512, worldSeed),
+        world: createWorld(WORLD_CAPACITY, worldSeed),
         map,
         seed: worldSeed,
         viewerId: PLAYER,
@@ -342,7 +357,7 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
   // Or the village the player kept, restored into a host built on the same map, peoples
   // and seed — in place of an opening, never on top of one.
   if (restoreFrom !== null) sim.restore(restoreFrom);
-  else seedOpening((kind, a, b, c, d) => sim.sendCommand(kind, a, b, c, d), map, centre);
+  else seedOpening((kind, a, b, c, d) => sim.sendCommand(kind, a, b, c, d), map, centre, mapSeed);
 
   const { app } = await createRenderer(root, BACKGROUND);
   const camera = createCamera(app.renderer.width, app.renderer.height);
@@ -789,6 +804,19 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
       // to be unherdable — the tree on that tile answered first and the click felled it
       // — and "I am pointing at that cow" is not ambiguous to the person doing it.
       const cow = pickEntity(view, map, camera, entities, x, y, KIND_CATTLE);
+
+      /*
+       * Game: the selected people go after it (ADR-0022). Only what can be hunted —
+       * pointing at a lion does not send anybody to fight one; it falls through to a
+       * move order, which is what walking toward it would have been anyway.
+       */
+      const game = cow === -1 ? pickEntity(view, map, camera, entities, x, y, KIND_WILD) : -1;
+      const gameSpecies = game === -1 ? -1 : speciesOfHandle(view, game);
+      if (gameSpecies >= 0 && isQuarry(gameSpecies)) {
+        audio.acknowledge('move');
+        for (const handle of selection.handles) sim.sendCommand(CommandKind.Hunt, handle, game);
+        return;
+      }
 
       // Then a tree. Felling is the one right-click meaning that destroys something, so
       // it is the most specific of what is left: a tree on the tile actually clicked,

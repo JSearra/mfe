@@ -60,7 +60,8 @@ export const SNAPSHOT_FIELDS = [
    */
   { name: 'progressPct', type: 'u8' },
   /**
-   * Kind-dependent subtype: building type for a building, movement class for a unit.
+   * Kind-dependent subtype: building type for a building, species for a wild animal
+   * (src/shared/wildlife.ts), movement class for a unit.
    *
    * Named for what it is rather than for one of its meanings, because both consumers
    * are real — the UI needs to know whether a selected building trains troops, and the

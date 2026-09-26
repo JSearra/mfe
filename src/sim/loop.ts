@@ -1,6 +1,8 @@
 import { applyCommand, compareCommands, type Command } from './commands.js';
 import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
 import type { CattleSystem } from './cattle.js';
+import { createWildlifeSystem, type WildlifeSystem } from './wildlife.js';
+import { createHuntingSystem, type HuntingSystem } from './hunting.js';
 import type { ConstructionSystem } from './construction.js';
 import type { ProductionSystem } from './production.js';
 import type { Census } from './census.js';
@@ -30,6 +32,14 @@ export interface SimLoop {
   readonly world: World;
   readonly movement: MovementSystem;
   readonly cattle: CattleSystem;
+  /**
+   * The game, the predators and the life of the veld (ADR-0022). Built by the loop from
+   * the map rather than handed in by the host: it keeps no state of its own that is not
+   * in the world, so there is nothing a host could configure or a save restore.
+   */
+  readonly wildlife: WildlifeSystem;
+  /** Hunters at their work (ADR-0022). Built by the loop for the same reason as the wild. */
+  readonly hunting: HuntingSystem;
   readonly construction: ConstructionSystem;
   readonly production: ProductionSystem;
   /** Computer players, each simply another source of commands. */
@@ -85,6 +95,8 @@ export function createLoop(systems: SimSystems, commands: readonly Command[] = [
   const pending = [...commands].sort(compareCommands);
   return {
     ...systems,
+    wildlife: createWildlifeSystem(systems.map),
+    hunting: createHuntingSystem(),
     ai: [],
     pending,
     cursor: 0,
@@ -109,7 +121,7 @@ export function enqueueCommand(loop: SimLoop, command: Command): void {
  * survives until the boundary.
  */
 export function step(loop: SimLoop): void {
-  const { world, movement, cattle, construction, production, economy, woodland, farmland, alliance, tech, census, labour, fog, map, pending, events } =
+  const { world, movement, cattle, wildlife, hunting, construction, production, economy, woodland, farmland, alliance, tech, census, labour, fog, map, pending, events } =
     loop;
 
   // Computer players act first, through exactly the same queue a human's clicks use.
@@ -174,6 +186,10 @@ export function step(loop: SimLoop): void {
   movement.update(world, tech);
   // Cattle read the grid movement just built, so they see this tick's unit positions.
   cattle.update(world, movement.grid, events, tech, movement.displace);
+  // The wild after the herd, on the same grid, so both see the same people.
+  wildlife.update(world, movement.grid, events, movement.displace);
+  // Hunters after the game has moved, so a strike is measured against where it stands.
+  hunting.update(world, movement, economy, events);
   // Upkeep lands on exact tick multiples. It reads world.tick before the increment
   // below, so the first cycle is tick 200, not 199.
   // Combat after movement and cattle, so a strike lands on where things ended up

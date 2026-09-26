@@ -75,6 +75,14 @@ export const Work = {
    * drover holding a tether already had (see cattle.ts). A granary hand is a stranger.
    */
   Kraal: 6,
+  /**
+   * Hunting from a camp (ADR-0022). `workAt` is the camp's entity index.
+   *
+   * Its own kind because the place is where a hunter sets out from and comes back to,
+   * not where the work is: src/sim/hunting.ts takes them out after game, and while they
+   * are out the allocator leaves them be rather than calling them back to the camp.
+   */
+  Hunt: 7,
 } as const;
 
 export type Work = (typeof Work)[keyof typeof Work];
@@ -94,6 +102,9 @@ export function idleOf(world: World, player: number): number {
     if (world.faction[i] !== player) continue;
     if (world.workKind[i] !== Work.None) continue;
     if (world.hasTarget[i] === 1) continue;
+    // Laid up is not idle: they cannot be sent anywhere, and counting them as spare
+    // hands would tell the player they have help they do not.
+    if (world.injured[i]! > 0) continue;
     idle++;
   }
   return idle;
@@ -217,7 +228,7 @@ export function createLabour(players: number): Labour {
       if (finished) {
         if (spec.hands === 0) continue;
         places.push({
-          kind: spec.holdsCattle ? Work.Kraal : Work.Building,
+          kind: spec.holdsCattle ? Work.Kraal : spec.hunts ? Work.Hunt : Work.Building,
           at: i,
           x: x + standOff,
           y,
@@ -400,6 +411,12 @@ export function createLabour(players: number): Labour {
           if (world.faction[i] !== player) continue;
           const kind = world.workKind[i]!;
           if (kind === Work.None || kind === Work.Held) continue;
+          // A mauled hand leaves their work until they mend (ADR-0022).
+          if (world.injured[i]! > 0) {
+            world.workKind[i] = Work.None;
+            world.workAt[i] = -1;
+            continue;
+          }
           // Somebody given a tether by a neighbour's cattle wandering into them is holding
           // a herd, which outranks anything the allocator had them doing.
           if (herding.has(i)) {
@@ -427,6 +444,8 @@ export function createLabour(players: number): Labour {
           // standing near the work rather than doing it: a field hand at 2.4 tiles from a
           // field that tends at 1.6 was counted as working and tended nothing. A
           // building's stand point is off the footprint, so it is measured from there.
+          // Out after game: the hunt has them, and the camp is where they come back to.
+          if (kind === Work.Hunt && world.quarry[i] !== NULL_HANDLE) continue;
           if (world.hasTarget[i] === 0 && !within(world, i, place)) send(world, movement, i, place);
         }
 
@@ -446,6 +465,7 @@ export function createLabour(players: number): Labour {
                 if (world.alive[i] !== 1 || world.kind[i] !== EntityKind.Unit) continue;
                 if (world.faction[i] !== player) continue;
                 if (world.workKind[i] !== Work.None || herding.has(i)) continue;
+                if (world.injured[i]! > 0) continue;
                 const dx = world.posX[i]! - place.x;
                 const dy = world.posY[i]! - place.y;
                 const distance = dx * dx + dy * dy;

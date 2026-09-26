@@ -61,7 +61,7 @@
        */
       .hud-controls {
         position: absolute;
-        top: calc(var(--gutter) + 48px);
+        top: calc(var(--gutter) + 64px);
         left: var(--gutter);
         /* Wide enough that a line of keys is a LINE. At 260px every one of them
            wrapped, which doubled the card's height and put half of it behind the
@@ -74,7 +74,7 @@
       /* Numbers with numbers: the stats hang under the resource bar. */
       .debug-overlay {
         position: absolute;
-        top: calc(var(--gutter) + 48px);
+        top: calc(var(--gutter) + 64px);
         right: var(--gutter);
         pointer-events: none;
         user-select: none;
@@ -129,6 +129,13 @@
         top: var(--gutter);
         right: var(--gutter);
         display: flex;
+        /* Wraps rather than growing leftward: with meat, skins and ivory on it the bar
+           ran over the How to play button at 1100px. Never wider than the room right of
+           that button, and the groups drop to a second line when they run out of it. */
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        row-gap: 2px;
+        max-width: calc(100% - 2 * var(--gutter) - 150px);
         gap: 0;
         align-items: center;
         padding: 9px 4px;

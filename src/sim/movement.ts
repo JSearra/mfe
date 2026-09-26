@@ -349,6 +349,8 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
       if (!isAlive(world, handle)) return false;
       const index = handleIndex(handle);
       if (world.kind[index] !== EntityKind.Unit) return false;
+      // Laid up after a mauling: nobody walks anywhere on that leg (ADR-0022).
+      if (world.injured[index]! > 0) return false;
 
       world.targetX[index] = goalX;
       world.targetY[index] = goalY;
@@ -442,6 +444,9 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
 
         const posX = world.posX[index]!;
         const posY = world.posY[index]!;
+
+        // Injured: stays where the mauling left them until they mend.
+        if (world.injured[index]! > 0) world.hasTarget[index] = 0;
 
         if (world.hasTarget[index] !== 1) {
           world.velX[index] = 0;

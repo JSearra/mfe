@@ -98,6 +98,27 @@
     "viewportColour": "#e8d9a8",
     "dotSize": 2
   },
+  "wildlife": {
+    "minimapGame": "#d8c89a",
+    "minimapPredator": "#e0703a",
+    "placeholder": {
+      "elephant": { "colour": "#8a8480", "size": 20 },
+      "kudu": { "colour": "#9a7a58", "size": 11 },
+      "impala": { "colour": "#b98a52", "size": 8 },
+      "eland": { "colour": "#b8a07a", "size": 13 },
+      "wildebeest": { "colour": "#5a5650", "size": 11 },
+      "zebra": { "colour": "#e8e4dc", "size": 11 },
+      "warthog": { "colour": "#6e5a4a", "size": 7 },
+      "buffalo": { "colour": "#2e2a28", "size": 13 },
+      "hippo": { "colour": "#7a6a70", "size": 15 },
+      "lion": { "colour": "#c8a060", "size": 10 },
+      "leopard": { "colour": "#d8b060", "size": 8 },
+      "hyena": { "colour": "#8a7a5a", "size": 8 },
+      "guineafowl": { "colour": "#3a3a48", "size": 4 },
+      "ostrich": { "colour": "#2a2624", "size": 8 },
+      "baboon": { "colour": "#6a6250", "size": 6 }
+    }
+  },
   "hud": {
     "tooltipDelayMs": 2000
   },

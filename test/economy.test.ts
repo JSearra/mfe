@@ -690,7 +690,7 @@ describe('the starting fields', () => {
 describe('slaughtering from the herd', () => {
   const two = () => createEconomy([FactionId.Zulu, FactionId.Sotho], 1);
 
-  it('turns cattle into grain, which is the lever the village lacked', () => {
+  it('turns cattle into meat and hides, which is the lever the village lacked', () => {
     // A herd grows on its own and eats every season whether the village wants it to or
     // not. Measured in play, one went 120 head to 160 while its people starved to the
     // last one, and trade moved eight head a parcel at a rate set by a neighbour who
@@ -703,9 +703,10 @@ describe('slaughtering from the herd', () => {
 
     expect(taken).toBe(tuning.herd.cullSize);
     expect(economy.balance(0, Resource.Cattle)).toBeCloseTo(cattleBefore - taken);
-    expect(economy.balance(0, Resource.Grain)).toBeCloseTo(
-      grainBefore + taken * tuning.herd.grainPerBeast,
-    );
+    // Meat and skins, not grain: they are tracked apart now (ADR-0022).
+    expect(economy.balance(0, Resource.Grain)).toBe(grainBefore);
+    expect(economy.balance(0, Resource.Meat)).toBeCloseTo(taken * tuning.herd.meatPerBeast);
+    expect(economy.balance(0, Resource.Skins)).toBeCloseTo(taken * tuning.herd.skinsPerBeast);
   });
 
   it('takes what is left when the herd is smaller than a slaughter', () => {
@@ -715,7 +716,7 @@ describe('slaughtering from the herd', () => {
     expect(economy.balance(0, Resource.Cattle)).toBeCloseTo(0);
   });
 
-  it('does nothing at all with no herd, rather than conjuring grain', () => {
+  it('does nothing at all with no herd, rather than conjuring food', () => {
     const economy = two();
     economy.spend(0, Resource.Cattle, economy.balance(0, Resource.Cattle));
     const grain = economy.balance(0, Resource.Grain);

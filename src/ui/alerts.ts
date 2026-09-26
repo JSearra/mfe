@@ -61,6 +61,23 @@ const WATCHED: Readonly<Record<number, MessageKey>> = {
   [EventType.HandsShort]: 'alert.handsShort',
   // Head dying for want of fodder: the cull would have made grain of them.
   [EventType.HerdHungry]: 'alert.herdHungry',
+  // The wild (ADR-0022). A beast lost and a person laid up are the two things a
+  // predator does to a village; turning one away is worth a word because it worked.
+  [EventType.PredatorKill]: 'alert.predatorKill',
+  [EventType.Mauled]: 'alert.mauled',
+  [EventType.DrivenOff]: 'alert.drivenOff',
+  // A kill is rare by design, so it is news — and it is where the meat came from.
+  [EventType.Hunted]: 'alert.hunted',
+};
+
+/**
+ * Events watched only when they say a particular thing. A predator's kill of game is
+ * the veld going about its business; only a kill of CATTLE is the village's news.
+ */
+const ONLY_WHEN: Readonly<Record<number, (event: SimEvent, viewer: number) => boolean>> = {
+  [EventType.PredatorKill]: (event) => event.payload === 1,
+  // The payload packs the village with the species; only this village's hunters.
+  [EventType.Hunted]: (event, viewer) => event.payload % 16 === viewer,
 };
 
 /**
@@ -77,6 +94,7 @@ const OWNER_FIELD: Readonly<Record<number, 'x' | 'y' | 'payload'>> = {
   [EventType.AllianceOffered]: 'y',
   [EventType.HandsShort]: 'payload',
   [EventType.HerdHungry]: 'payload',
+  [EventType.Mauled]: 'payload',
 };
 
 /**
@@ -110,6 +128,7 @@ export function createAlerts(): Alerts {
         if (key === undefined) continue;
         const owner = OWNER_FIELD[event.type];
         if (owner !== undefined && event[owner] !== viewer) continue;
+        if (ONLY_WHEN[event.type]?.(event, viewer) === false) continue;
         // One alert per burst. A herd going over produces a StampedeBegan for every
         // beast in it, and twenty identical lines is not a notification, it is noise.
         const last = live[live.length - 1];

@@ -8,6 +8,7 @@ import { createCensus, type Census } from '../../sim/census.js';
 import { createLabour, idleOf } from '../../sim/labour.js';
 import { createProductionSystem } from '../../sim/production.js';
 import { createEconomy, Ration, Resource, type Economy } from '../../sim/economy/ledger.js';
+import { RESOURCES } from '../../shared/resources.js';
 import { createWoodland, packWoodland, type Woodland } from '../../sim/woodland.js';
 import { offersFor } from '../../sim/trade.js';
 import { cullHead, drivenBy } from '../../sim/herd.js';
@@ -151,10 +152,13 @@ function tick(): void {
   if (flight.blocked()) return;
 
   const droughtNow = economy.drought(world.tick);
+  const stores: number[] = [];
+  for (const resource of RESOURCES) stores.push(economy.balance(viewerId, resource));
   const player: PlayerState = {
     cattle: economy.balance(viewerId, Resource.Cattle),
     grain: economy.balance(viewerId, Resource.Grain),
     wood: economy.balance(viewerId, Resource.Wood),
+    stores,
     offers: alliance === null ? [] : offersFor(economy, viewerId, alliance),
     relations: alliance === null ? [] : relationsFor(alliance, viewerId),
     shortfall: economy.shortfall[viewerId] ?? 0,

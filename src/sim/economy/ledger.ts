@@ -4,6 +4,7 @@ import { FACTIONS, type FactionConfig, type FactionId } from '../../shared/facti
 import { cos, TWO_PI } from '../math/trig.js';
 import { mixSeed } from '../math/rng.js';
 import { tuning } from '../tuning.js';
+import { Resource, RESOURCE_COUNT } from '../../shared/resources.js';
 import { EntityKind, handleIndex, isAlive, NULL_HANDLE, packHandle, type World } from '../world.js';
 
 /**
@@ -17,24 +18,14 @@ import { EntityKind, handleIndex, isAlive, NULL_HANDLE, packHandle, type World }
  */
 
 /**
- * What a village holds.
+ * What a village holds. The catalogue lives in src/shared/resources.ts (ADR-0022) and is
+ * re-exported here, where the simulation has always imported it from.
  *
- * `Ammunition` was 2 until Phase V6. It existed to be spent per shot and nothing else,
- * so retiring combat left it a column that could only ever go up. Unlike the event and
- * command enums, resource indices are not durable wire values — no recorded command log
- * names one — so this renumbers rather than leaving a gap, and the save format moves
- * with it.
+ * `Ammunition` was 2 until Phase V6, and this renumbered rather than leaving a gap:
+ * resource indices are not durable wire values. From here on they are APPENDED, because
+ * the save and the replay hash lay the ledger out by index.
  */
-export const Resource = {
-  Cattle: 0,
-  Grain: 1,
-  /** Timber, cut from the woodland. See src/sim/woodland.ts. */
-  Wood: 2,
-} as const;
-
-export type Resource = (typeof Resource)[keyof typeof Resource];
-
-export const RESOURCE_COUNT = 3;
+export { Resource, RESOURCE_COUNT } from '../../shared/resources.js';
 
 /**
  * How much a village is eating.
@@ -312,6 +303,10 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
       for (let player = 0; player < players; player++) {
         const held = economy.balance(player, Resource.Grain);
         if (held > 0) economy.spend(player, Resource.Grain, held * e.grainSpoilPerCycle);
+        // Meat goes off far faster: a kill is a feast, not a store. Grain is what keeps,
+        // and the two being different is most of the reason to track them apart.
+        const meat = economy.balance(player, Resource.Meat);
+        if (meat > 0) economy.spend(player, Resource.Meat, meat * tuning.stores.meatSpoilPerCycle);
       }
       const droughtNow = economy.drought(tick);
 
@@ -433,9 +428,23 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
         // held it.
         if (reserve[player]! > capacity) reserve[player] = capacity;
 
+        /*
+         * The people eat meat first, and only then grain (ADR-0022).
+         *
+         * Taken off the people's share before the bill below is settled, so everything
+         * after this — the pit, the herd's fodder, hunger — goes on exactly as it did,
+         * against what the meat did not cover. Only the people eat it: fodder is grass
+         * and salt, and a cow does not eat a carcass.
+         */
+        const forPeople = needed - totalCattle * e.grainPerCattle * config.upkeepMultiplier;
+        const meatHeld = economy.balance(player, Resource.Meat);
+        const eaten = meatHeld < forPeople ? meatHeld : forPeople > 0 ? forPeople : 0;
+        if (eaten > 0) economy.spend(player, Resource.Meat, eaten);
+        const grainNeeded = needed - eaten;
+
         const held = economy.balance(player, Resource.Grain);
-        if (held >= needed) {
-          economy.spend(player, Resource.Grain, needed);
+        if (held >= grainNeeded) {
+          economy.spend(player, Resource.Grain, grainNeeded);
           shortfall[player] = 0;
 
           /*
@@ -470,7 +479,7 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
            * meet.
            */
           economy.spend(player, Resource.Grain, held);
-          let missing = needed - held;
+          let missing = grainNeeded - held;
           const drawn = Math.min(reserve[player]!, missing);
           reserve[player] = reserve[player]! - drawn;
           missing -= drawn;
