@@ -124,6 +124,9 @@ export function runReplay(
       // would otherwise reproduce silently.
       let h = hashWorld(world);
       h = hashTypedArray(economy.amounts, h);
+      // Where the meat came from: state that decides nothing yet, but will the day a
+      // source is split out, and a breakdown that drifted would only show then.
+      h = hashTypedArray(economy.meatSources, h);
       h = hashTypedArray(fog.tiles, h);
       // Standing ties are simulation state and price every trade, so a drift in them
       // would otherwise reproduce silently.

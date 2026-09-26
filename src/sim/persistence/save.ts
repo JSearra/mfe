@@ -51,7 +51,11 @@ import { worldStateField, worldStateFields } from '../world.js';
  * 8 adds water (ADR-0023): a seventh ledger column, the weirs' reserve and each
  * village's thirst.
  */
-export const SAVE_VERSION = 8;
+/*
+ * 9 adds where each village's meat came from (fish, game, cattle), kept beside the
+ * store so a source can be split out later.
+ */
+export const SAVE_VERSION = 9;
 
 export interface SaveGame {
   readonly version: number;
@@ -78,6 +82,8 @@ export interface SaveGame {
   /** The weirs' water reserve and each village's thirst (ADR-0023). */
   readonly economyWaterReserve: string;
   readonly economyThirst: string;
+  /** Each village's meat by source. */
+  readonly economyMeatSources: string;
   /** Who is tied to whom, and what each village thinks of the others. */
   readonly allianceBond: string;
   readonly allianceStanding: string;
@@ -197,6 +203,7 @@ export function captureState(loop: SimLoop): SaveGame {
     economyRation: toBase64(economy.ration),
     economyWaterReserve: toBase64(economy.waterReserve),
     economyThirst: toBase64(economy.thirst),
+    economyMeatSources: toBase64(economy.meatSources),
     allianceBond: toBase64(alliance.bond),
     allianceStanding: toBase64(alliance.standing),
     allianceOffered: toBase64(alliance.offered),
@@ -252,6 +259,7 @@ export function restoreState(loop: SimLoop, save: SaveGame): void {
   else fromBase64(save.economyRation, economy.ration);
   fromBase64(save.economyWaterReserve, economy.waterReserve);
   fromBase64(save.economyThirst, economy.thirst);
+  fromBase64(save.economyMeatSources, economy.meatSources);
   economy.upkeepCount = save.economyScalars.upkeepCount;
 
   fromBase64(save.allianceBond, alliance.bond);

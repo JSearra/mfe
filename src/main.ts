@@ -1367,6 +1367,12 @@ async function boot(): Promise<void> {
   installTooltips({ delayMs: presentation.hud.tooltipDelayMs });
 
   const params = new URLSearchParams(location.search);
+  // The asset gallery, local development only; its own chunk, never in a production build.
+  if (import.meta.env.DEV && params.has('gallery')) {
+    const { showGallery } = await import('./ui/gallery.js');
+    await showGallery(root);
+    return;
+  }
   if (params.has('map') || params.has('perf')) {
     await main(defaults);
     return;

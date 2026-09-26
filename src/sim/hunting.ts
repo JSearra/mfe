@@ -2,6 +2,7 @@ import type { SimEvent } from '../shared/events.js';
 import { EventType, makeEvent } from '../shared/events.js';
 import { isQuarry, Role, speciesInfo } from '../shared/wildlife.js';
 import { Resource, type Economy } from './economy/ledger.js';
+import { MeatSource } from '../shared/resources.js';
 import { Work } from './labour.js';
 import { mixSeed } from './math/rng.js';
 import type { MovementSystem } from './movement.js';
@@ -115,7 +116,7 @@ export function createHuntingSystem(): HuntingSystem {
 
     if (roll(hunter, quarry, world.tick) < s.huntChance) {
       if (owner < economy.players) {
-        economy.add(owner, Resource.Meat, s.meat);
+        economy.addMeat(owner, s.meat, MeatSource.Game);
         economy.add(owner, Resource.Skins, s.skins);
         economy.add(owner, Resource.Ivory, s.ivory);
       }

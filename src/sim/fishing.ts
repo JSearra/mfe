@@ -1,7 +1,8 @@
 import { isShore, type Heightmap } from '../shared/heightmap.js';
 import { tuning } from './tuning.js';
 import { Work } from './labour.js';
-import { Resource, type Economy } from './economy/ledger.js';
+import { type Economy } from './economy/ledger.js';
+import { MeatSource } from '../shared/resources.js';
 import { EntityKind, type World } from './world.js';
 
 /**
@@ -66,6 +67,8 @@ export function updateFishing(
     const hands = caught.get(key)!;
     const owner = key % 8;
     const working = hands > f.maxAnglers ? f.maxAnglers : hands;
-    economy.add(owner, Resource.Grain, working * f.catchPerUpkeep);
+    // Fish is meat (it spoils and is eaten before grain), recorded as fish so it can be
+    // split out into a store of its own if the game ever wants one.
+    economy.addMeat(owner, working * f.catchPerUpkeep, MeatSource.Fish);
   }
 }

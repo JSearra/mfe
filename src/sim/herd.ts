@@ -1,5 +1,6 @@
 import { tuning } from './tuning.js';
 import { Resource, type Economy } from './economy/ledger.js';
+import { MeatSource } from '../shared/resources.js';
 import { EntityKind, handleIndex, isAlive, NULL_HANDLE, type World } from './world.js';
 
 /**
@@ -32,7 +33,7 @@ export function cull(economy: Economy, player: number): number {
   if (!economy.spend(player, Resource.Cattle, taken)) return 0;
   // Meat and hides, as a slaughter actually yields — not grain, which it used to be
   // paid in because grain was the only food the ledger knew (ADR-0022).
-  economy.add(player, Resource.Meat, taken * tuning.herd.meatPerBeast);
+  economy.addMeat(player, taken * tuning.herd.meatPerBeast, MeatSource.Cattle);
   economy.add(player, Resource.Skins, taken * tuning.herd.skinsPerBeast);
   return taken;
 }

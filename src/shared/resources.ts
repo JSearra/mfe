@@ -66,6 +66,30 @@ export const RESOURCE_NAMES: Readonly<Record<Resource, string>> = {
 };
 
 /**
+ * Where a village's meat came from.
+ *
+ * Meat is one store — people eat it the same whatever it was — but the ledger keeps a
+ * breakdown of it by source beside the total, so a source can be split out into a
+ * resource of its own later (fish, most likely) without having lost the history of what
+ * is in the store now. `Other` is anything added without saying where it came from.
+ *
+ * Appended, never reordered: the breakdown is saved by index.
+ */
+export const MeatSource = {
+  /** Slaughtered from the herd. */
+  Cattle: 0,
+  /** Brought down by the hunters. */
+  Game: 1,
+  /** Caught from the river or the sea. */
+  Fish: 2,
+  Other: 3,
+} as const;
+
+export type MeatSource = (typeof MeatSource)[keyof typeof MeatSource];
+
+export const MEAT_SOURCE_COUNT = 4;
+
+/**
  * What the people eat, in the order they eat it.
  *
  * Meat first because it will not keep. A village eating its grain while its meat went

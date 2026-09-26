@@ -42,9 +42,9 @@ describe('fishing', () => {
     const world = createWorld(32, 5);
     const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], 5);
     for (let i = 0; i < anglers; i++) spawn(world, atX + 0.5, 3.5, player);
-    const before = economy.balance(player, Resource.Grain);
+    const before = economy.balance(player, Resource.Meat);
     updateFishing(world, map, economy, UPKEEP);
-    return economy.balance(player, Resource.Grain) - before;
+    return economy.balance(player, Resource.Meat) - before;
   }
 
   it('feeds a village that stands at the water', () => {
@@ -65,9 +65,9 @@ describe('fishing', () => {
     const world = createWorld(32, 5);
     const economy = createEconomy([FactionId.Zulu, FactionId.Sotho], 5);
     spawn(world, 2.5, 3.5, 0);
-    const before = economy.balance(0, Resource.Grain);
+    const before = economy.balance(0, Resource.Meat);
     updateFishing(world, map, economy, UPKEEP + 1);
-    expect(economy.balance(0, Resource.Grain)).toBe(before);
+    expect(economy.balance(0, Resource.Meat)).toBe(before);
   });
 
   it('does not let one village crowd another off the same stretch', () => {
@@ -79,10 +79,8 @@ describe('fishing', () => {
     for (let i = 0; i < 4; i++) spawn(world, 2.5, 3.5, 1);
     updateFishing(world, map, economy, UPKEEP);
 
-    expect(economy.balance(0, Resource.Grain)).toBeGreaterThan(0);
-    expect(economy.balance(1, Resource.Grain) - 560).toBeCloseTo(
-      economy.balance(0, Resource.Grain) - 400,
-    );
+    expect(economy.balance(0, Resource.Meat)).toBeGreaterThan(0);
+    expect(economy.balance(1, Resource.Meat)).toBeCloseTo(economy.balance(0, Resource.Meat));
   });
 
   it('pays the same in a drought as in a good year, which is the whole point', () => {

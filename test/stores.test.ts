@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { EventType, type SimEvent } from '../src/shared/events.js';
 import { FactionId } from '../src/shared/factions/index.js';
-import { FOODS, RESOURCES, RESOURCE_COUNT, RESOURCE_NAMES, TRADED } from '../src/shared/resources.js';
+import { FOODS, MEAT_SOURCE_COUNT, MeatSource, RESOURCES, RESOURCE_COUNT, RESOURCE_NAMES, TRADED } from '../src/shared/resources.js';
+import { updateFishing } from '../src/sim/fishing.js';
+import { cull } from '../src/sim/herd.js';
+import { heightmapWithWater } from '../src/shared/heightmap.js';
 import { createEconomy, Resource } from '../src/sim/economy/ledger.js';
 import { offersFor, parcelOf, wantedTrade } from '../src/sim/trade.js';
 import { tuning } from '../src/sim/tuning.js';
@@ -145,5 +148,54 @@ describe('skins and ivory', () => {
       expect(wanted.wanted).not.toBe(Resource.Ivory);
       expect(wanted.wanted).not.toBe(Resource.Skins);
     }
+  });
+});
+
+describe('where the meat came from', () => {
+  const sum = (economy: ReturnType<typeof bare>, player = 0): number => {
+    let total = 0;
+    for (let s = 0; s < MEAT_SOURCE_COUNT; s++) total += economy.meatFrom(player, s as MeatSource);
+    return total;
+  };
+
+  it('records a catch as meat, and as fish — not as grain', () => {
+    const map = heightmapWithWater([[0, 0, 0], [0, 0, 0]], 8, [[1, 1, 1], [0, 0, 0]]);
+    const world = createWorld(16, 5);
+    spawn(world, 1.5, 1.5, 0);
+    const economy = bare();
+    updateFishing(world, map, economy, E.upkeepIntervalTicks);
+    expect(economy.balance(0, Resource.Grain)).toBe(0);
+    expect(economy.balance(0, Resource.Meat)).toBeGreaterThan(0);
+    expect(economy.meatFrom(0, MeatSource.Fish)).toBe(economy.balance(0, Resource.Meat));
+  });
+
+  it('records the cull as cattle and the hunt\'s meat as game', () => {
+    const economy = bare();
+    economy.add(0, Resource.Cattle, 20);
+    cull(economy, 0);
+    economy.addMeat(0, 50, MeatSource.Game);
+    expect(economy.meatFrom(0, MeatSource.Cattle)).toBeGreaterThan(0);
+    expect(economy.meatFrom(0, MeatSource.Game)).toBe(50);
+  });
+
+  it('always sums to the store, through spoiling and eating, in proportion', () => {
+    const world = villageOf(10);
+    const economy = bare();
+    economy.addMeat(0, 60, MeatSource.Fish);
+    economy.addMeat(0, 40, MeatSource.Game);
+    economy.add(0, Resource.Meat, 10); // unattributed: counted as other
+    for (let cycle = 1; cycle <= 6; cycle++) {
+      upkeep(world, economy, cycle);
+      expect(sum(economy)).toBeCloseTo(economy.balance(0, Resource.Meat), 9);
+    }
+    // Both eaten and spoiled alike: fish is still three halves of the game.
+    expect(economy.meatFrom(0, MeatSource.Fish) / economy.meatFrom(0, MeatSource.Game)).toBeCloseTo(1.5, 9);
+  });
+
+  it('empties with the store', () => {
+    const economy = bare();
+    economy.addMeat(0, 30, MeatSource.Fish);
+    economy.spend(0, Resource.Meat, 30);
+    expect(sum(economy)).toBe(0);
   });
 });

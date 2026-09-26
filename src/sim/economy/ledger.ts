@@ -4,7 +4,7 @@ import { FACTIONS, type FactionConfig, type FactionId } from '../../shared/facti
 import { cos, TWO_PI } from '../math/trig.js';
 import { mixSeed } from '../math/rng.js';
 import { tuning } from '../tuning.js';
-import { Resource, RESOURCE_COUNT } from '../../shared/resources.js';
+import { MEAT_SOURCE_COUNT, MeatSource, Resource, RESOURCE_COUNT } from '../../shared/resources.js';
 import { EntityKind, handleIndex, isAlive, NULL_HANDLE, packHandle, type World } from '../world.js';
 
 /**
@@ -92,6 +92,18 @@ export interface Economy {
   readonly reserve: Float64Array;
   /** What each village is eating. Simulation state, and saved. */
   readonly ration: Uint8Array;
+  /**
+   * Each village's meat by where it came from: players x MEAT_SOURCE_COUNT, row-major.
+   *
+   * Always sums to the meat column of `amounts`: additions are attributed (to `Other`
+   * when nobody says where from) and every reduction — spoilage, eating, anything —
+   * scales all sources alike. Simulation state, saved and hashed.
+   */
+  readonly meatSources: Float64Array;
+  /** How much of a village's meat came from `source`. */
+  meatFrom(player: number, source: MeatSource): number;
+  /** Add meat and say where it came from. */
+  addMeat(player: number, amount: number, source: MeatSource): void;
   /**
    * How short of water each village went at the last upkeep, 0 to 1 (ADR-0023). Slows
    * its work in proportion; harms nobody. Simulation state, and saved.
@@ -213,6 +225,7 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
   const reserve = new Float64Array(players);
   const ration = new Uint8Array(players);
   const offMap = new Uint8Array(players);
+  const meatSources = new Float64Array(players * MEAT_SOURCE_COUNT);
   const thirst = new Float64Array(players);
   const waterNeed = new Float64Array(players);
   const waterReserve = new Float64Array(players);
@@ -226,6 +239,21 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
 
   const e = tuning.economy;
 
+  /**
+   * Keep the breakdown summing to the store: a rise goes to `source`, a fall scales
+   * every source by the same share, so what is eaten or spoils is eaten or spoils of
+   * everything in proportion.
+   */
+  function attribute(player: number, before: number, after: number, source: MeatSource): void {
+    const row = player * MEAT_SOURCE_COUNT;
+    if (after >= before) {
+      meatSources[row + source] = meatSources[row + source]! + (after - before);
+      return;
+    }
+    const keep = before > 0 ? after / before : 0;
+    for (let s = 0; s < MEAT_SOURCE_COUNT; s++) meatSources[row + s] = meatSources[row + s]! * keep;
+  }
+
   const economy: Economy = {
     players,
     amounts,
@@ -238,6 +266,7 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
     reserve,
     ration,
     offMap,
+    meatSources,
     thirst,
     waterNeed,
     waterReserve,
@@ -248,15 +277,31 @@ export function createEconomy(factionIds: readonly FactionId[], seed: number): E
 
     add(player, resource, amount) {
       const at = player * RESOURCE_COUNT + resource;
-      amounts[at] = (amounts[at] ?? 0) + amount;
+      const before = amounts[at] ?? 0;
+      amounts[at] = before + amount;
       if (amounts[at]! < 0) amounts[at] = 0;
+      if (resource === Resource.Meat) attribute(player, before, amounts[at]!, MeatSource.Other);
     },
 
     spend(player, resource, amount) {
       const at = player * RESOURCE_COUNT + resource;
-      if ((amounts[at] ?? 0) < amount) return false;
-      amounts[at] = amounts[at]! - amount;
+      const before = amounts[at] ?? 0;
+      if (before < amount) return false;
+      amounts[at] = before - amount;
+      if (resource === Resource.Meat) attribute(player, before, amounts[at]!, MeatSource.Other);
       return true;
+    },
+
+    meatFrom(player, source) {
+      return meatSources[player * MEAT_SOURCE_COUNT + source] ?? 0;
+    },
+
+    addMeat(player, amount, source) {
+      if (amount <= 0) return;
+      const at = player * RESOURCE_COUNT + Resource.Meat;
+      const before = amounts[at] ?? 0;
+      amounts[at] = before + amount;
+      attribute(player, before, amounts[at]!, source);
     },
 
     /**

@@ -156,6 +156,17 @@ export function showSetup(
     start.dataset.tip = t('tip.start');
     panel.appendChild(start);
 
+    // Local development only: Vite compiles this branch out of a production build, so
+    // the button and the gallery chunk it loads never ship.
+    if (import.meta.env.DEV) {
+      const gallery = document.createElement('a');
+      gallery.className = 'setup-dev';
+      gallery.textContent = t('gallery.devButton');
+      gallery.dataset.tip = t('tip.gallery');
+      gallery.href = `${location.pathname}?gallery`;
+      panel.appendChild(gallery);
+    }
+
     function begin(): void {
       const chosen = mapSelect.value === '' ? null : (mapSelect.value as MapScript);
       const player = factionSelect.value as FactionId;

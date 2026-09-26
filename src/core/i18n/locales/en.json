@@ -251,7 +251,7 @@
     },
     "food": {
       "heading": "Grain and fields",
-      "body": "Fields are the heart of the village. Press F, then click near a homestead to plant one. Hold Shift to plant several.\nA field loses condition every season nobody works it, and a field left alone long enough is lost. Point at a field to see its condition and how many people are tending it.\nG rests the field under the cursor: it recovers, but it harvests nothing while it rests. X twice gives a field up for good.\nMeat is eaten before grain and goes off within a season, so eat it while it is fresh. Grain stores, the great house and goat folds add grain too, as long as they have people working them. Fish do not care about drought: people fish from any riverbank or shore near the village."
+      "body": "Fields are the heart of the village. Press F, then click near a homestead to plant one. Hold Shift to plant several.\nA field loses condition every season nobody works it, and a field left alone long enough is lost. Point at a field to see its condition and how many people are tending it.\nG rests the field under the cursor: it recovers, but it harvests nothing while it rests. X twice gives a field up for good.\nMeat is eaten before grain and goes off within a season, so eat it while it is fresh. Grain stores, the great house and goat folds add grain too, as long as they have people working them. Fish do not care about drought: people fish from any riverbank or shore near the village, and the catch goes into the meat store, so eat it fresh."
     },
     "seasons": {
       "heading": "Seasons and drought",
@@ -318,6 +318,42 @@
     "start": "Begin a new village on the land and people chosen above.",
     "continue": "Pick up the village you kept, where you left it.",
     "again": "Start over with a new village.",
-    "map": "The shape of the land. Each one plays differently: rivers, mountains, a coast, or dry open plain."
+    "map": "The shape of the land. Each one plays differently: rivers, mountains, a coast, or dry open plain.",
+    "gallery": "Every sprite and terrain tile the game ships, by category. Only in local development builds."
+  },
+  "gallery": {
+    "title": "Asset gallery",
+    "back": "← Back to the game",
+    "terrain": "Terrain",
+    "people": "People",
+    "animals": "Wild animals",
+    "livestock": "Livestock",
+    "buildings": "Buildings",
+    "scenery": "Vegetation & scenery",
+    "overlays": "Livery overlays",
+    "background": "Background",
+    "bgVeld": "Veld",
+    "bgDark": "Dark",
+    "bgLight": "Light",
+    "bgChecker": "Checker",
+    "scale": "Scale",
+    "scaleGame": "In-game",
+    "scale1": "1×",
+    "scale2": "2×",
+    "season": "Season",
+    "wet": "Wet",
+    "dry": "Dry",
+    "drought": "Drought",
+    "pause": "Pause",
+    "play": "Play",
+    "frames": "{anim} · {frames} frames",
+    "ground": "Ground",
+    "water": "Water",
+    "fields": "Fields",
+    "transitions": "Transitions",
+    "corners": "Corners",
+    "tileCount": "{group} ({count} tiles)",
+    "more": "…and {count} more not shown",
+    "devButton": "Asset gallery (dev only)"
   }
 }
