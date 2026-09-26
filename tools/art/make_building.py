@@ -48,6 +48,7 @@ KINDS = (
     "umgodi",
     "isiziba",
     "goat-fold",
+    "hunters-camp",
 )
 STAGES = 3
 
@@ -452,6 +453,79 @@ def build_goat_fold(root, stage, thatch, timber, earth):
     roof.parent = root
 
 
+def build_hunters_camp(root, stage, thatch, timber, earth):
+    """
+    The hunters' camp (ADR-0022): a drying rack with hides on it, and a brush shelter.
+
+    The RACK is the read. Every other building on the map is a round or square thing of
+    thatch; this is the one that stands up as a frame with pale rectangles stretched in
+    it, which is what drying skins look like from anywhere, and it says what the place
+    is for — what comes back from the hunt is hung here.
+    """
+    floor = cylinder("floor", 1.55, 0.05, (0, 0, 0.025), verts=10)
+    floor.data.materials.append(earth)
+    floor.parent = root
+
+    if stage == 0:
+        return
+
+    # The rack: two A-frames and a ridge pole, on the far side so the shelter is in
+    # front of it from the camera.
+    # Each pole runs from its foot to the apex, so the pair meets under the ridge. The
+    # first pass leaned them by eye and they missed it by a hand's breadth either side.
+    rack_x = -0.35
+    apex = 1.85
+    for end, y in (("a", 0.85), ("b", -0.85)):
+        for lean, foot in (("in", 0.45), ("out", -0.45)):
+            span = math.sqrt(foot * foot + apex * apex)
+            pole = cylinder(f"pole_{end}_{lean}", 0.045, span, (rack_x + foot / 2, y, apex / 2), verts=6)
+            pole.rotation_euler = (0, math.atan2(-foot, apex), 0)
+            pole.data.materials.append(timber)
+            pole.parent = root
+    ridge = cylinder("ridge", 0.04, 1.9, (rack_x, 0, apex), (math.pi / 2, 0, 0), verts=6)
+    ridge.data.materials.append(timber)
+    ridge.parent = root
+
+    if stage == 1:
+        return
+
+    hide = material("hide", (0.52, 0.38, 0.22))
+    hide_dark = material("hide_dark", (0.3, 0.19, 0.09))
+    # Two hides hung over the ridge, pale and dark, so they read as two things.
+    for index, (y, mat) in enumerate(((0.38, hide), (-0.4, hide_dark))):
+        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(rack_x + 0.02, y, 1.28))
+        skin = bpy.context.active_object
+        skin.name = f"skin_{index}"
+        skin.scale = (0.05, 0.68, 0.95)
+        skin.rotation_euler = (0, math.radians(8), 0)
+        skin.data.materials.append(mat)
+        skin.parent = root
+
+    # The shelter: a low half-dome of brush in front of the rack.
+    # A true dome: the sphere's lower half pressed flat. Sunk into the ground instead, it
+    # bulged out under the floor's front edge, which the camera looks straight at.
+    shelter = dome("shelter", 0.7, 0.62, (0.5, 0.35, 0.0))
+    for vertex in shelter.data.vertices:
+        if vertex.co.z < 0:
+            vertex.co.z = 0
+    shelter.data.materials.append(thatch)
+    shelter.parent = root
+
+    # A fire ring, and spears leaning on the rack.
+    for i in range(6):
+        angle = i / 6 * math.tau
+        stone = cylinder(f"stone_{i}", 0.06, 0.08, (0.65 + math.cos(angle) * 0.22, -0.55 + math.sin(angle) * 0.22, 0.04), verts=5)
+        stone.data.materials.append(material("stone", (0.12, 0.11, 0.1)))
+        stone.parent = root
+    ash = cylinder("ash", 0.16, 0.03, (0.65, -0.55, 0.02), verts=8)
+    ash.data.materials.append(SHADOW)
+    ash.parent = root
+    for i in range(3):
+        spear = cylinder(f"spear_{i}", 0.018, 1.7, (rack_x + 0.45, -0.1 + i * 0.12, 0.85), (0, math.radians(-18), 0), verts=5)
+        spear.data.materials.append(timber)
+        spear.parent = root
+
+
 def build_ikhanda(root, stage, thatch, timber, earth):
     """
     A military homestead: a ring of houses around its own enclosure, and bigger.
@@ -556,6 +630,7 @@ BUILDERS = {
     "umgodi": build_umgodi,
     "isiziba": build_isiziba,
     "goat-fold": build_goat_fold,
+    "hunters-camp": build_hunters_camp,
 }
 
 FRAMING = {
@@ -569,6 +644,7 @@ FRAMING = {
     "umgodi": (2.6, 0.2),
     "isiziba": (4.2, 0.4),
     "goat-fold": (4.6, 0.6),
+    "hunters-camp": (4.2, 0.9),
 }
 
 

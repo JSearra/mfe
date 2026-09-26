@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { SPECIES } from '../src/shared/wildlife.js';
 import { BUILDING_KINDS, buildingSpriteKind } from '../src/render/scene/entities.js';
 import { BUILDINGS, BuildingType } from '../src/shared/buildings/index.js';
 
@@ -50,5 +52,27 @@ describe('building sprites', () => {
     expect(buildingSpriteKind(BuildingType.GrainStore)).toBe('grain-store');
     expect(buildingSpriteKind(BuildingType.Ikhanda)).toBe('ikhanda');
     expect(buildingSpriteKind(BuildingType.Indlunkulu)).toBe('indlunkulu');
+  });
+});
+
+describe('the shipped atlas', () => {
+  /*
+   * Art that exists only in the pipeline's output is not art the game has. A species
+   * without frames still draws — as a placeholder body — so a missing one would fail
+   * nothing and look merely unfinished. This is where it fails.
+   */
+  const atlas = JSON.parse(
+    readFileSync(new URL('../public/assets/sprites/atlas.json', import.meta.url), 'utf8'),
+  ) as { kinds: Record<string, Record<string, number>> };
+
+  it.each(SPECIES.map((info) => info.name))('has %s, grazing, walking and running', (name) => {
+    expect(atlas.kinds[name]?.idle ?? 0).toBeGreaterThan(0);
+    expect(atlas.kinds[name]?.walk ?? 0).toBeGreaterThan(0);
+    expect(atlas.kinds[name]?.run ?? 0).toBeGreaterThan(0);
+  });
+
+  it('has the hunter, and every building in the catalogue', () => {
+    expect(atlas.kinds.hunter?.walk ?? 0).toBeGreaterThan(0);
+    for (const kind of BUILDING_KINDS) expect(atlas.kinds[kind]?.build ?? 0).toBeGreaterThan(0);
   });
 });

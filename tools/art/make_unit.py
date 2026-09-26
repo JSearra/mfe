@@ -221,9 +221,112 @@ VILLAGERS = {
         "ortho": 2.2,
         "target": 0.76,
     },
+    # The hunter (ADR-0022): a man leaning into the stalk, with a pair of long throwing
+    # spears slanting ahead of him. The slant is the silhouette — the herd-boy's switch
+    # is vertical, the elder's staff planted, and nothing else on the map carries a long
+    # line pointing forward and up.
+    "hunter": {
+        "stature": 1.0,
+        "head_scale": 1.0,
+        "build": 0.98,
+        "stoop": 12.0,
+        "skin": (0.19, 0.105, 0.066),
+        "cloth": (0.16, 0.11, 0.06),
+        "skirt": None,
+        "prop": "spears",
+        "stride": 22.0,
+        "free_arm": "l",
+        # Framed wider than the others: the spears reach higher and further than any
+        # other figure's prop, and ran out of the top of a 2.2 frame and then out of the
+        # sides of a 2.9 one on the two diagonals where they point across the screen.
+        # A bigger frame rather than a wider camera alone, so the figure keeps its
+        # resolution; `pixelsPerUnit` carries the difference to the renderer.
+        "ortho": 4.0,
+        "target": 1.0,
+        "size": 176,
+    },
 }
 
-KINDS = {**BIPEDS, **CATTLE, **MOUNTED, **VILLAGERS}
+
+# The veld's own animals (ADR-0022), built by one parametric quadruped plus a small bird
+# rig, because fifteen hand-built models would never agree with each other about what a
+# metre is. Proportions are real ones in metres — length of the barrel, depth of it, leg
+# to the withers — so an elephant stands twice a cow and an impala half one, and the
+# renderer needs no per-species scale: `pixelsPerUnit` carries it.
+#
+# Each is picked, like the vegetation, for the part of it that survives forty pixels:
+# the elephant's ears and trunk, the kudu's spiral horns, the zebra's stripes, the
+# wildebeest's front-heavy slope, the hippo's barrel on stumps, the lion's mane. Colour
+# is chosen against the ochre veld first — the Nguni's first hide vanished into the dust,
+# and these would too if they were painted true to a field guide.
+#
+# Keys in `feature` switch on the parts a species has; the builder ignores the rest.
+WILD = {
+    # name:      proportions (m)                          hide, belly/accent          features
+    "elephant": {"length": 2.9, "depth": 1.45, "width": 1.1, "leg": 1.45, "leg_r": 0.2,
+                 "hide": (0.075, 0.07, 0.066), "accent": (0.06, 0.056, 0.052),
+                 "head": (0.8, 0.7, 0.8), "neck": 0.25, "size": 192, "ortho": 5.6, "target": 1.45,
+                 "feature": {"trunk", "ears", "tusks"}},
+    "kudu": {"length": 1.5, "depth": 0.58, "width": 0.38, "leg": 0.95, "leg_r": 0.045,
+             "hide": (0.13, 0.085, 0.05), "accent": (0.7, 0.67, 0.6),
+             "head": (0.34, 0.15, 0.17), "neck": 0.55, "size": 128, "ortho": 3.2, "target": 1.0,
+             "feature": {"spiral", "stripes_thin", "ears_big"}},
+    "impala": {"length": 1.0, "depth": 0.4, "width": 0.26, "leg": 0.62, "leg_r": 0.03,
+               "hide": (0.26, 0.1, 0.035), "accent": (0.72, 0.66, 0.56),
+               "head": (0.24, 0.1, 0.12), "neck": 0.34, "size": 96, "ortho": 2.2, "target": 0.7,
+               "feature": {"lyre", "ears"}},
+    "eland": {"length": 1.95, "depth": 0.78, "width": 0.52, "leg": 0.9, "leg_r": 0.06,
+              "hide": (0.2, 0.12, 0.06), "accent": (0.5, 0.42, 0.3),
+              "head": (0.38, 0.17, 0.2), "neck": 0.42, "size": 128, "ortho": 3.4, "target": 1.0,
+              "feature": {"straight", "dewlap", "stripes_thin"}},
+    "wildebeest": {"length": 1.55, "depth": 0.7, "width": 0.46, "leg": 0.78, "leg_r": 0.05,
+                   "hide": (0.06, 0.06, 0.065), "accent": (0.025, 0.025, 0.025),
+                   "head": (0.42, 0.18, 0.24), "neck": 0.3, "size": 128, "ortho": 3.0, "target": 0.85,
+                   "feature": {"cow_horns", "mane", "beard", "slope"}},
+    "zebra": {"length": 1.5, "depth": 0.62, "width": 0.42, "leg": 0.8, "leg_r": 0.05,
+              "hide": (0.72, 0.7, 0.66), "accent": (0.02, 0.02, 0.02),
+              "head": (0.44, 0.16, 0.2), "neck": 0.45, "size": 128, "ortho": 3.0, "target": 0.85,
+              "feature": {"stripes", "mane", "ears"}},
+    "warthog": {"length": 0.95, "depth": 0.46, "width": 0.36, "leg": 0.34, "leg_r": 0.04,
+                "hide": (0.1, 0.075, 0.06), "accent": (0.05, 0.035, 0.025),
+                "head": (0.36, 0.22, 0.22), "neck": 0.05, "size": 96, "ortho": 2.2, "target": 0.45,
+                "feature": {"tusks_up", "mane", "tail_up"}},
+    "buffalo": {"length": 2.0, "depth": 0.86, "width": 0.66, "leg": 0.72, "leg_r": 0.075,
+                "hide": (0.03, 0.028, 0.028), "accent": (0.02, 0.02, 0.02),
+                "head": (0.46, 0.26, 0.28), "neck": 0.2, "size": 128, "ortho": 3.4, "target": 0.85,
+                "feature": {"boss", "hump"}},
+    "hippo": {"length": 2.4, "depth": 1.0, "width": 0.95, "leg": 0.42, "leg_r": 0.14,
+              "hide": (0.12, 0.085, 0.09), "accent": (0.34, 0.16, 0.15),
+              "head": (0.7, 0.5, 0.42), "neck": 0.05, "size": 128, "ortho": 3.8, "target": 0.7,
+              "feature": {"snout"}},
+    "lion": {"length": 1.7, "depth": 0.56, "width": 0.4, "leg": 0.58, "leg_r": 0.07,
+             "hide": (0.34, 0.2, 0.07), "accent": (0.46, 0.33, 0.17),
+             "head": (0.34, 0.26, 0.26), "neck": 0.2, "size": 128, "ortho": 3.0, "target": 0.7,
+             "feature": {"mane_lion", "tail_long", "cat"}},
+    "leopard": {"length": 1.35, "depth": 0.42, "width": 0.3, "leg": 0.46, "leg_r": 0.05,
+                "hide": (0.4, 0.24, 0.07), "accent": (0.02, 0.015, 0.012),
+                "head": (0.24, 0.18, 0.18), "neck": 0.16, "size": 96, "ortho": 2.6, "target": 0.55,
+                "feature": {"rosettes", "tail_long", "cat"}},
+    "hyena": {"length": 1.2, "depth": 0.52, "width": 0.36, "leg": 0.6, "leg_r": 0.055,
+              "hide": (0.22, 0.17, 0.1), "accent": (0.04, 0.03, 0.025),
+              "head": (0.32, 0.2, 0.2), "neck": 0.2, "size": 96, "ortho": 2.6, "target": 0.7,
+              "feature": {"spots", "slope", "ears_round", "mane"}},
+    "baboon": {"length": 0.7, "depth": 0.36, "width": 0.3, "leg": 0.42, "leg_r": 0.05,
+               "hide": (0.15, 0.13, 0.08), "accent": (0.1, 0.06, 0.04),
+               "head": (0.24, 0.18, 0.18), "neck": 0.05, "size": 96, "ortho": 2.0, "target": 0.5,
+               "feature": {"tail_hook", "muzzle_long"}},
+    # The two birds: a body carried on two legs, and the rig is a bird's, not a quadruped's.
+    "guineafowl": {"length": 0.46, "depth": 0.34, "width": 0.3, "leg": 0.2, "leg_r": 0.014,
+                   "hide": (0.08, 0.09, 0.12), "accent": (0.85, 0.85, 0.9),
+                   "head": (0.08, 0.07, 0.09), "neck": 0.14, "size": 64, "ortho": 1.3, "target": 0.3,
+                   "feature": {"bird", "dots", "casque"}},
+    "ostrich": {"length": 1.0, "depth": 0.7, "width": 0.62, "leg": 1.05, "leg_r": 0.04,
+                "hide": (0.05, 0.045, 0.045), "accent": (0.86, 0.84, 0.8),
+                "head": (0.14, 0.09, 0.1), "neck": 0.9, "size": 128, "ortho": 3.3, "target": 1.3,
+                "feature": {"bird", "plumes"}},
+}
+
+KINDS = {**BIPEDS, **CATTLE, **MOUNTED, **VILLAGERS, **WILD}
 
 # Horse proportions, metres. Longer in the leg and shallower in the barrel than a cow,
 # which is most of what separates the two silhouettes at tile size.
@@ -265,6 +368,11 @@ ANIMATIONS = {"idle": 8, "walk": 12, "attack": 10, "run": 10}
 #   the cost that is actually being paid on a laptop.
 VILLAGER_ANIMATIONS = {"idle": 8, "walk": 8}
 
+# The wild runs shorter still. Fifteen species at eight directions is a lot of atlas,
+# and a grazing animal's idle is a head going down and coming up again: four frames say
+# it. Walk and run keep eight, because a gait with fewer reads as a skip.
+WILD_ANIMATIONS = {"idle": 4, "walk": 8, "run": 8}
+
 # Which animations make sense for which kind. A cow does not thrust a spear, and a woman
 # carrying a season's grain on her head does not break into a stampede.
 KIND_ANIMATIONS = (
@@ -272,6 +380,7 @@ KIND_ANIMATIONS = (
     | {name: ("idle", "walk", "run") for name in CATTLE}
     | {name: ("idle", "walk", "attack", "run") for name in MOUNTED}
     | {name: ("idle", "walk") for name in VILLAGERS}
+    | {name: ("idle", "walk", "run") for name in WILD}
 )
 
 
@@ -279,6 +388,8 @@ def frame_count(kind: str, anim: str) -> int:
     """How many frames this kind's cycle runs for. Villagers run shorter cycles."""
     if kind in VILLAGERS:
         return VILLAGER_ANIMATIONS[anim]
+    if kind in WILD:
+        return WILD_ANIMATIONS[anim]
     return ANIMATIONS[anim]
 
 
@@ -509,6 +620,291 @@ def build_cattle(kind: str):
             limbs[f"{pair}_{side}"] = pivot
 
     return root, limbs
+
+
+def build_wild(kind: str):
+    """A wild animal standing on the origin, facing +X. Quadruped, or a bird on two legs."""
+    spec = WILD[kind]
+    features = spec["feature"]
+    length, depth, width, leg_len = spec["length"], spec["depth"], spec["width"], spec["leg"]
+    hide = material("hide", spec["hide"])
+    accent = material("accent", spec["accent"])
+    horn = material("horn", (0.12, 0.10, 0.08))
+    ivory = material("ivory", (0.86, 0.80, 0.66))
+
+    root = bpy.data.objects.new("wild", None)
+    bpy.context.scene.collection.objects.link(root)
+    back = leg_len + depth / 2
+
+    if "bird" in features:
+        return build_bird(kind, spec, root, hide, accent)
+
+    body = blob("body", (length, width, depth), (0, 0, back))
+    body.data.materials.append(hide)
+    body.parent = root
+
+    # Front-heavy animals: a deep chest and a back that falls to the tail. It is the
+    # whole silhouette of a wildebeest or a hyena at tile size.
+    if "slope" in features:
+        chest = blob("chest", (length * 0.5, width * 1.08, depth * 1.2), (length * 0.2, 0, back + depth * 0.1))
+        chest.data.materials.append(hide)
+        chest.parent = root
+    # Shoulder and haunch: the masses a leg hangs from. Without them every animal was an
+    # ellipsoid on four sticks — a coffee table — and that is what the first pass read as.
+    if "slope" not in features:
+        shoulder = blob("shoulder", (length * 0.42, width * 1.06, depth * 1.02), (length * 0.24, 0, back - depth * 0.04))
+        shoulder.data.materials.append(hide)
+        shoulder.parent = root
+    haunch = blob("haunch", (length * 0.42, width * 1.04, depth * 1.0), (-length * 0.26, 0, back - depth * 0.05))
+    haunch.data.materials.append(hide)
+    haunch.parent = root
+    if "hump" in features:
+        hump = blob("hump", (length * 0.36, width * 0.8, depth * 0.5), (length * 0.2, 0, back + depth * 0.34))
+        hump.data.materials.append(hide)
+        hump.parent = root
+
+    # Pale belly on the antelope, the cheapest way to stop a body reading as one lump.
+    if kind in ("kudu", "impala", "eland", "zebra", "lion", "leopard"):
+        belly = blob("belly", (length * 0.7, width * 0.78, depth * 0.34), (0, 0, back - depth * 0.36))
+        belly.data.materials.append(accent if kind != "zebra" else hide)
+        belly.parent = root
+
+    # --- markings, pressed onto the flank as flattened blobs (the cattle patches' trick)
+    if "stripes" in features:
+        # Bold, near vertical bands. Wide ones, because thin stripes average to grey
+        # at forty pixels and a grey horse is not a zebra.
+        for i in range(7):
+            x = -length * 0.42 + i * length * 0.14
+            band = blob(f"stripe_{i}", (length * 0.055, width * 1.04, depth * 1.02), (x, 0, back))
+            band.rotation_euler = (0, math.radians(-12 if i < 4 else 14), 0)
+            band.data.materials.append(accent)
+            band.parent = root
+    if "stripes_thin" in features:
+        for i in range(4):
+            x = -length * 0.2 + i * length * 0.12
+            band = blob(f"stripe_{i}", (length * 0.025, width * 1.02, depth * 0.7), (x, 0, back + depth * 0.1))
+            band.data.materials.append(accent)
+            band.parent = root
+    if "rosettes" in features or "spots" in features or "dots" in features:
+        count = 14 if "rosettes" in features else 9
+        for i in range(count):
+            u = (i * 0.618) % 1.0
+            v = (i * 0.382) % 1.0
+            x = -length * 0.4 + u * length * 0.8
+            z = back - depth * 0.25 + v * depth * 0.5
+            spot = blob(f"spot_{i}", (length * 0.07, width * 1.03, depth * 0.12), (x, 0, z))
+            spot.data.materials.append(accent)
+            spot.parent = root
+
+    # --- neck and head, on a pivot so the gait can drop it to graze -----------------
+    neck_pivot = bpy.data.objects.new("neck", None)
+    bpy.context.scene.collection.objects.link(neck_pivot)
+    neck_pivot.location = (length * 0.42, 0, back + depth * 0.2)
+    neck_pivot.parent = root
+    neck_len = spec["neck"]
+    hx, hy, hz = spec["head"]
+    if neck_len > 0.1:
+        neck = taper("neck_mesh", width * 0.28, width * 0.18, neck_len, (neck_len * 0.3, 0, neck_len * 0.4),
+                     (0, math.radians(42), 0))
+        neck.data.materials.append(hide)
+        neck.parent = neck_pivot
+    head_at = (neck_len * 0.6 + hx * 0.4, 0, neck_len * 0.8)
+    head = blob("head", (hx, hy, hz), head_at)
+    head.data.materials.append(hide)
+    head.parent = neck_pivot
+
+    def part(name, size, at, mat, rot=(0.0, 0.0, 0.0)):
+        obj = blob(name, size, (head_at[0] + at[0], at[1], head_at[2] + at[2]))
+        obj.rotation_euler = rot
+        obj.data.materials.append(mat)
+        obj.parent = neck_pivot
+        return obj
+
+    def spike(name, lower, upper, depth_, at, rot, mat):
+        obj = taper(name, lower, upper, depth_, (head_at[0] + at[0], at[1], head_at[2] + at[2]), rot)
+        obj.data.materials.append(mat)
+        obj.parent = neck_pivot
+        return obj
+
+    if "muzzle_long" in features:
+        part("muzzle", (hx * 0.7, hy * 0.6, hz * 0.6), (hx * 0.5, 0, -hz * 0.1), accent)
+    if "snout" in features:
+        part("snout", (hx * 0.7, hy * 1.05, hz * 0.8), (hx * 0.45, 0, -hz * 0.15), hide)
+    if "beard" in features:
+        part("beard", (hx * 0.3, hy * 0.4, hz * 0.8), (hx * 0.05, 0, -hz * 0.6), accent)
+    if "dewlap" in features:
+        part("dewlap", (hx * 0.6, hy * 0.5, hz * 1.4), (-hx * 0.3, 0, -hz * 0.9), hide)
+
+    for side, y in (("l", 1.0), ("r", -1.0)):
+        if "ears" in features or "ears_big" in features or "ears_round" in features:
+            big = 1.6 if "ears_big" in features else 1.0
+            part(f"ear_{side}", (hx * 0.18, hy * 0.5 * big, hz * 0.5 * big), (-hx * 0.3, y * hy * 0.6, hz * 0.45), hide)
+        if kind == "elephant":
+            # The ears are most of what says elephant at any size, so they are big.
+            part(f"ear_{side}", (hx * 0.18, hy * 1.4, hz * 1.35), (-hx * 0.35, y * hy * 0.75, 0.02), hide)
+        if "lyre" in features:
+            spike(f"horn_{side}", 0.02, 0.008, 0.36, (-hx * 0.25, y * hy * 0.25, hz * 0.6), (math.radians(-18 * y), math.radians(-28), 0), horn)
+        if "spiral" in features:
+            # Two twists, as two angled segments: the kudu's corkscrew, read as a zig-zag.
+            spike(f"horn_a_{side}", 0.03, 0.02, 0.45, (-hx * 0.3, y * hy * 0.35, hz * 0.8), (math.radians(-35 * y), math.radians(-20), 0), horn)
+            spike(f"horn_b_{side}", 0.02, 0.006, 0.45, (-hx * 0.45, y * hy * 0.25, hz * 1.55), (math.radians(30 * y), math.radians(-35), 0), horn)
+        if "straight" in features:
+            spike(f"horn_{side}", 0.03, 0.008, 0.42, (-hx * 0.3, y * hy * 0.2, hz * 0.8), (0, math.radians(-38), 0), horn)
+        if "cow_horns" in features:
+            spike(f"horn_{side}", 0.03, 0.01, 0.3, (-hx * 0.15, y * hy * 0.8, hz * 0.5), (math.radians(-70 * y), 0, 0), horn)
+        if "boss" in features:
+            # The buffalo's boss: a heavy curve out, down and up again.
+            spike(f"horn_a_{side}", 0.06, 0.04, 0.38, (-hx * 0.15, y * hy * 0.6, hz * 0.4), (math.radians(-100 * y), 0, 0), horn)
+            spike(f"horn_b_{side}", 0.04, 0.01, 0.26, (-hx * 0.1, y * hy * 1.3, hz * 0.35), (math.radians(-35 * y), math.radians(-25), 0), horn)
+        if "tusks" in features:
+            # Rotating Z about Y by +θ points it toward +X: forward and down, as a tusk does.
+            spike(f"tusk_{side}", 0.05, 0.018, 0.75, (hx * 0.55, y * hy * 0.25, -hz * 0.55), (0, math.radians(125), 0), ivory)
+        if "tusks_up" in features:
+            spike(f"tusk_{side}", 0.02, 0.006, 0.16, (hx * 0.4, y * hy * 0.4, -hz * 0.1), (math.radians(-30 * y), math.radians(20), 0), ivory)
+    if "casque" in features:
+        part("casque", (hx * 0.4, hy * 0.3, hz * 0.8), (0, 0, hz * 0.6), accent)
+    if "trunk" in features:
+        # Three segments hanging and curling a little forward.
+        # Near vertical, stepping forward as it falls, so it hangs from the face rather
+        # than sticking out of it. (The first pass had the rotation's sign backwards and
+        # the trunk ran back under the chin.)
+        for i, at in enumerate(((hx * 0.5, 0, -hz * 0.35), (hx * 0.56, 0, -hz * 0.9), (hx * 0.66, 0, -hz * 1.4))):
+            spike(f"trunk_{i}", 0.14 - i * 0.03, 0.11 - i * 0.03, 0.5, at, (0, math.radians(8 + i * 6), 0), hide)
+
+    # Manes. The lion's is a ruff round the head, the thing that says lion before
+    # anything else does; the others are a crest along the neck.
+    if "mane_lion" in features:
+        ruff = blob("ruff", (hx * 1.3, hy * 2.0, hz * 2.1), (head_at[0] - hx * 0.35, 0, head_at[2] - hz * 0.2))
+        ruff.data.materials.append(material("mane", (0.11, 0.055, 0.02)))
+        ruff.parent = neck_pivot
+    elif "mane" in features:
+        crest = blob("crest", (neck_len * 0.9 + 0.15, width * 0.14, depth * 0.3), (neck_len * 0.25, 0, neck_len * 0.55))
+        crest.rotation_euler = (0, math.radians(42), 0)
+        crest.data.materials.append(accent)
+        crest.parent = neck_pivot
+
+    # --- tail ------------------------------------------------------------------------
+    tail_pivot = bpy.data.objects.new("tail", None)
+    bpy.context.scene.collection.objects.link(tail_pivot)
+    tail_pivot.location = (-length / 2, 0, back + depth * 0.25)
+    tail_pivot.parent = root
+    tail_len = length * (0.55 if "tail_long" in features else 0.3)
+    tail = taper("tail_mesh", 0.025 + width * 0.03, 0.01, tail_len, (0, 0, -tail_len / 2))
+    if "tail_up" in features or "tail_hook" in features:
+        tail.location = (0, 0, tail_len / 2)
+    if "tail_long" in features:
+        # Hanging close behind the haunch and curving out at the end, rather than the
+        # stiff diagonal stick the first pass gave.
+        tail.rotation_euler = (0, math.radians(-12), 0)
+        tail.location = (-tail_len * 0.1, 0, -tail_len * 0.5)
+        tuft = blob("tuft", (0.07, 0.07, 0.12), (-tail_len * 0.2, 0, -tail_len * 0.98))
+        tuft.data.materials.append(accent)
+        tuft.parent = tail_pivot
+    tail.data.materials.append(hide)
+    tail.parent = tail_pivot
+
+    # --- legs ------------------------------------------------------------------------
+    limbs = {"neck": neck_pivot, "tail": tail_pivot}
+    radius = spec["leg_r"]
+    for pair, x in (("fore", length * 0.32), ("hind", -length * 0.32)):
+        for side, y in (("l", width * 0.3), ("r", -width * 0.3)):
+            pivot = bpy.data.objects.new(f"{pair}_{side}", None)
+            bpy.context.scene.collection.objects.link(pivot)
+            pivot.location = (x, y, leg_len + depth * 0.1)
+            pivot.parent = root
+            length_here = leg_len + depth * 0.1
+            leg = taper(f"leg_{pair}_{side}", radius * 1.7, radius * 0.8, length_here, (0, 0, -length_here / 2))
+            leg.data.materials.append(hide)
+            leg.parent = pivot
+            foot = blob(f"foot_{pair}_{side}", (radius * 2.2, radius * 2.2, radius * 1.4), (0, 0, -length_here + radius * 0.6))
+            foot.data.materials.append(accent if kind in ("zebra", "impala", "kudu", "eland") else hide)
+            foot.parent = pivot
+            limbs[f"{pair}_{side}"] = pivot
+
+    return root, limbs
+
+
+def build_bird(kind, spec, root, plumage, accent):
+    """A bird: a body on two legs and a neck. Rigged with hips, and a neck that pecks."""
+    length, depth, width, leg_len = spec["length"], spec["depth"], spec["width"], spec["leg"]
+    back = leg_len + depth / 2
+    skin = material("bird_skin", (0.55, 0.42, 0.36) if kind == "ostrich" else (0.2, 0.3, 0.55))
+    body = blob("body", (length, width, depth), (0, 0, back))
+    body.data.materials.append(plumage)
+    body.parent = root
+    features = spec["feature"]
+    if "dots" in features:
+        for i in range(10):
+            u = (i * 0.618) % 1.0
+            v = (i * 0.382) % 1.0
+            dot = blob(f"dot_{i}", (length * 0.08, width * 1.03, depth * 0.08),
+                       (-length * 0.35 + u * length * 0.7, 0, back - depth * 0.2 + v * depth * 0.45))
+            dot.data.materials.append(accent)
+            dot.parent = root
+    if "plumes" in features:
+        # White wing and tail plumes: the ostrich cock's black and white is its read.
+        for side, y in (("l", 1.0), ("r", -1.0)):
+            wing = blob(f"wing_{side}", (length * 0.5, width * 0.12, depth * 0.35), (-length * 0.15, y * width * 0.45, back + depth * 0.05))
+            wing.data.materials.append(accent)
+            wing.parent = root
+        tail = blob("plume", (length * 0.3, width * 0.5, depth * 0.3), (-length * 0.5, 0, back + depth * 0.2))
+        tail.data.materials.append(accent)
+        tail.parent = root
+
+    neck_pivot = bpy.data.objects.new("neck", None)
+    bpy.context.scene.collection.objects.link(neck_pivot)
+    neck_pivot.location = (length * 0.35, 0, back + depth * 0.2)
+    neck_pivot.parent = root
+    neck_len = spec["neck"]
+    neck = taper("neck_mesh", width * 0.12, width * 0.07, neck_len, (0, 0, neck_len / 2))
+    neck.data.materials.append(skin)
+    neck.parent = neck_pivot
+    hx, hy, hz = spec["head"]
+    head = blob("head", (hx, hy, hz), (hx * 0.3, 0, neck_len))
+    head.data.materials.append(skin if kind == "ostrich" else accent)
+    head.parent = neck_pivot
+    if "casque" in features:
+        casque = blob("casque", (hx * 0.4, hy * 0.35, hz * 0.8), (0, 0, neck_len + hz * 0.55))
+        casque.data.materials.append(material("casque", (0.7, 0.55, 0.3)))
+        casque.parent = neck_pivot
+    beak = taper("beak", hy * 0.25, 0.004, hx * 0.8, (hx * 0.8, 0, neck_len), (0, math.radians(90), 0))
+    beak.data.materials.append(material("beak", (0.6, 0.5, 0.35)))
+    beak.parent = neck_pivot
+
+    limbs = {"neck": neck_pivot}
+    for side, y in (("l", width * 0.2), ("r", -width * 0.2)):
+        pivot = bpy.data.objects.new(f"hip_{side}", None)
+        bpy.context.scene.collection.objects.link(pivot)
+        pivot.location = (0, y, leg_len)
+        pivot.parent = root
+        leg = taper(f"leg_{side}", spec["leg_r"] * 1.4, spec["leg_r"], leg_len, (0, 0, -leg_len / 2))
+        leg.data.materials.append(skin)
+        leg.parent = pivot
+        foot = blob(f"foot_{side}", (spec["leg_r"] * 5, spec["leg_r"] * 3, spec["leg_r"] * 1.2), (spec["leg_r"] * 1.5, 0, -leg_len))
+        foot.data.materials.append(skin)
+        foot.parent = pivot
+        limbs[f"hip_{side}"] = pivot
+    return root, limbs
+
+
+def animate_bird(limbs: dict, anim: str, frames: int) -> None:
+    """Two legs and a pecking neck. A strut, not a man's walk: the neck bobs with the step."""
+    scene = bpy.context.scene
+    for frame in range(1, frames + 1):
+        phase = (frame - 1) / frames * math.tau
+        scene.frame_set(frame)
+        if anim == "idle":
+            limbs["neck"].rotation_euler = (0, math.radians(35 + 30 * max(0.0, math.sin(phase))), 0)
+            limbs["hip_l"].rotation_euler = (0, 0, 0)
+            limbs["hip_r"].rotation_euler = (0, 0, 0)
+        else:
+            fast = anim == "run"
+            swing = math.radians(38 if fast else 24) * math.sin(phase)
+            limbs["hip_l"].rotation_euler = (0, swing, 0)
+            limbs["hip_r"].rotation_euler = (0, -swing, 0)
+            limbs["neck"].rotation_euler = (0, math.radians(20 if fast else 8) + math.radians(8) * math.sin(phase * 2), 0)
+        for pivot in limbs.values():
+            pivot.keyframe_insert("rotation_euler", frame=frame)
 
 
 def build_mounted(kind: str):
@@ -906,6 +1302,25 @@ def build_villager_prop(kind: str, spec: dict, limbs: dict, root, size: dict) ->
     right = limbs["shoulder_r"]
     grass, iron, cloth = size["grass"], size["iron"], size["cloth"]
 
+    if spec["prop"] == "spears":
+        # Two, parallel and a hand apart, leaning well forward: at forty pixels one spear
+        # is a scratch and two are a sheaf.
+        # Held near the butt and carried up and forward from the hand, not balanced at
+        # the middle: centred on the hand, the lower half ran down through his legs.
+        tilt = math.radians(52)
+        along_x, along_z = math.sin(tilt), math.cos(tilt)
+        for index, offset in enumerate((0.0, 0.05)):
+            mid = 0.62
+            spear = cylinder(f"spear_{index}", 0.016, 1.7, (0.04 + offset + along_x * mid, -0.03 - offset, hand_z + along_z * mid))
+            spear.data.materials.append(grass)
+            spear.rotation_euler = (0, tilt, 0)
+            spear.parent = right
+            tip = mid + 0.9
+            head = taper(f"spearhead_{index}", 0.03, 0.002, 0.16, (0.04 + offset + along_x * tip, -0.03 - offset, hand_z + along_z * tip), (0, tilt, 0))
+            head.data.materials.append(iron)
+            head.parent = right
+        return
+
     if spec["prop"] == "stick":
         # A herding switch, not a weapon. Long, thin, near vertical, and it rises well
         # above the boy's head — which is the point. He is the shortest figure on the map
@@ -981,6 +1396,8 @@ def build(kind: str):
     """A figure standing on the origin, facing +X."""
     if kind in CATTLE:
         return build_cattle(kind)
+    if kind in WILD:
+        return build_wild(kind)
     if kind in MOUNTED:
         return build_mounted(kind)
     if kind in VILLAGERS:
@@ -1328,6 +1745,9 @@ def animate(kind: str, limbs: dict, anim: str) -> int:
     if "fore_l" in limbs:
         animate_quadruped(limbs, anim, frames)
         return frames
+    if kind in WILD:
+        animate_bird(limbs, anim, frames)
+        return frames
 
     if kind in VILLAGERS:
         animate_villager(kind, limbs, anim, frames)
@@ -1413,6 +1833,11 @@ def render_kind(renderer, kind: str, anim: str, args: argparse.Namespace) -> int
     # shoulder, so the figure camera clips a nose or a rump depending on rotation.
     if kind in CATTLE:
         ortho, target = 2.9, 0.62
+    elif kind in WILD:
+        # Each framed to its own size, and rendered at its own resolution: a guinea fowl
+        # needs a quarter of an elephant's pixels to say the same amount.
+        ortho, target = WILD[kind]["ortho"], WILD[kind]["target"]
+        args.size = WILD[kind]["size"]
     elif kind in MOUNTED:
         ortho, target = 3.1, 0.95
     elif kind in VILLAGERS:
@@ -1421,6 +1846,7 @@ def render_kind(renderer, kind: str, anim: str, args: argparse.Namespace) -> int
         # a stooped figure wastes the top of a frame framed for a standing one, and a
         # head-load walks straight out of the top of it.
         ortho, target = VILLAGERS[kind]["ortho"], VILLAGERS[kind]["target"]
+        args.size = VILLAGERS[kind].get("size", args.size)
     else:
         ortho, target = renderer.ORTHO_SCALE, renderer.TARGET_HEIGHT
     renderer.setup_camera(args.size, scale=ortho, target=target)

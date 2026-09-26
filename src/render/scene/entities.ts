@@ -159,6 +159,8 @@ const VILLAGER_KINDS: readonly string[] = ['villager', 'herd-boy', 'field-hand',
  */
 export function shadowRadius(kind: number, subtype: number): number {
   if (kind === KIND_CATTLE) return cattleStyle.radius;
+  // By the species' size, so an elephant does not stand on a person's shadow.
+  if (kind === KIND_WILD) return (WILD_BODIES[speciesInfo(subtype).name]?.size ?? radius) * 0.9;
   if (kind !== KIND_BUILDING) return radius;
   return buildingSpec(subtype).footprint * HALF_TILE_W * 0.5;
 }
