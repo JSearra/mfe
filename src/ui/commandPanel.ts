@@ -1,5 +1,5 @@
 import { BUILDINGS, BuildingType, buildingSpec } from '../shared/buildings/index.js';
-import { TECHS, TECH_IDS, type TechId } from '../shared/tech/index.js';
+import { TECHS, TECH_IDS, TechId } from '../shared/tech/index.js';
 import { t, type MessageKey } from '../core/i18n/index.js';
 import { summariseSelection, SummaryRole } from './selectionSummary.js';
 import {
@@ -42,6 +42,30 @@ const ROLE_KEYS: Readonly<Record<SummaryRole, MessageKey>> = {
   [SummaryRole.FieldHand]: 'role.fieldHand',
   [SummaryRole.Carrier]: 'role.carrier',
   [SummaryRole.Elder]: 'role.elder',
+};
+
+/**
+ * What each building is FOR, in a sentence. Keyed by the enum, so a new building without
+ * one is a compile error rather than a button whose tooltip only knows the price.
+ */
+const BUILDING_INFO: Readonly<Record<BuildingType, MessageKey>> = {
+  [BuildingType.Isibaya]: 'buildingInfo.isibaya',
+  [BuildingType.Umuzi]: 'buildingInfo.umuzi',
+  [BuildingType.GrainStore]: 'buildingInfo.grainStore',
+  [BuildingType.Ikhanda]: 'buildingInfo.ikhanda',
+  [BuildingType.Indlunkulu]: 'buildingInfo.indlunkulu',
+  [BuildingType.Umgodi]: 'buildingInfo.umgodi',
+  [BuildingType.Isiziba]: 'buildingInfo.isiziba',
+  [BuildingType.IsibayaSezimbuzi]: 'buildingInfo.isibayaSezimbuzi',
+};
+
+/** The same for each advance. */
+const TECH_INFO: Readonly<Record<TechId, MessageKey>> = {
+  [TechId.Amabutho]: 'techInfo.amabutho',
+  [TechId.Umkhosi]: 'techInfo.umkhosi',
+  [TechId.ScoutingParties]: 'techInfo.scoutingParties',
+  [TechId.CattleLore]: 'techInfo.cattleLore',
+  [TechId.MountedCommando]: 'techInfo.mountedCommando',
 };
 
 const KIND_UNIT = 0;
@@ -133,11 +157,17 @@ export interface CommandPanel {
   setPurse(purse: Purse, techStatus: readonly number[], trainCosts: TrainCosts): void;
 }
 
+/**
+ * A panel button, with what it does on a slow tooltip.
+ *
+ * `data-tip` rather than `title`: see ui/tooltip.ts. The hint is the explanation a
+ * player asked for by stopping on the button, so it is written as one.
+ */
 function button(label: string, hint: string, onClick: () => void): HTMLButtonElement {
   const element = document.createElement('button');
   element.className = 'panel__button';
   element.textContent = label;
-  element.title = hint;
+  element.dataset.tip = hint;
   element.addEventListener('click', onClick);
   return element;
 }
@@ -167,12 +197,17 @@ const REFUSAL_KEYS: Readonly<Record<Refusal, MessageKey | null>> = {
  */
 function actionButton(
   label: string,
+  about: string,
   cost: string,
   refusal: Refusal,
   reason: string,
   onClick: () => void,
 ): HTMLButtonElement {
-  const element = button(label, refusal === Refusal.None ? cost : `${cost} — ${reason}`, onClick);
+  // Name, what it is for, what it costs, and — last, because it is the part that
+  // changes — why it cannot be had yet.
+  const lines = [label, about, t('tip.costs', { costs: cost })];
+  if (refusal !== Refusal.None) lines.push(reason);
+  const element = button(label, lines.join('\n'), onClick);
   if (refusal !== Refusal.None) {
     element.classList.add('is-refused');
     const why = document.createElement('span');
@@ -280,6 +315,7 @@ export function createCommandPanel(
         actions.append(
           actionButton(
             t(label),
+            t('panel.trainHouseholdHint'),
             t('panel.costs', { grain: cost.grain, cattle: cost.cattle }),
             refusal,
             reasonFor(refusal, cost.grain, cost.cattle, 0),
@@ -296,6 +332,7 @@ export function createCommandPanel(
       actions.append(
         actionButton(
           t(spec.nameKey as MessageKey),
+          `${t(BUILDING_INFO[spec.type])}\n${t('panel.buildHint')}`,
           t('panel.costsFull', {
             grain: spec.grainCost,
             wood: spec.woodCost,
@@ -314,6 +351,7 @@ export function createCommandPanel(
       actions.append(
         actionButton(
           t(spec.nameKey as MessageKey),
+          `${t(TECH_INFO[TECH_IDS[i] as TechId])}\n${t('panel.researchHint')}`,
           t('panel.costs', { grain: spec.grainCost, cattle: spec.cattleCost }),
           refusal,
           reasonFor(refusal, spec.grainCost, spec.cattleCost, 0),

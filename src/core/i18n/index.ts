@@ -21,6 +21,9 @@ type LeafPaths<T> = {
 
 export type MessageKey = LeafPaths<Dictionary>;
 
+/** A term the glossary can explain. */
+export type GlossaryTerm = keyof Dictionary['glossary'];
+
 export type MessageParams = Readonly<Record<string, string | number>>;
 
 const TOKEN = /\{(\w+)\}/g;
@@ -70,6 +73,6 @@ export function t(key: MessageKey, params?: MessageParams): string {
  * Proper nouns and material-culture terms are not translated, only glossed.
  * See docs/CONTENT.md section 2 — `impi` stays `impi` in every locale.
  */
-export function gloss(term: keyof Dictionary['glossary']): string {
+export function gloss(term: GlossaryTerm): string {
   return dictionary.glossary[term];
 }

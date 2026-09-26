@@ -550,6 +550,154 @@
         cursor: pointer;
       }
 
+      /*
+       * The slow tooltip (src/ui/tooltip.ts). Fixed to the viewport and above
+       * everything, including an open dialog, because it is placed from the control's
+       * on-screen box rather than from any container.
+       */
+      .tooltip {
+        position: fixed;
+        z-index: 1000;
+        max-width: 300px;
+        padding: 7px 10px;
+        border: 1px solid var(--edge-strong);
+        border-radius: var(--radius);
+        background: var(--card-solid);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+        color: var(--text);
+        font-size: 12px;
+        line-height: 1.45;
+        white-space: pre-line;
+        pointer-events: none;
+      }
+      .tooltip::first-line {
+        color: var(--gold);
+      }
+
+      /* The bar's readouts carry tips, so they have to be reachable by the pointer. */
+      .resource-bar > span {
+        pointer-events: auto;
+        cursor: help;
+      }
+
+      /* How to play: top left, where a player's eye goes first. */
+      .help-button {
+        position: absolute;
+        top: var(--gutter);
+        left: var(--gutter);
+        font: inherit;
+        color: var(--gold);
+        background: var(--card);
+        border: 1px solid var(--edge-strong);
+        border-radius: var(--radius);
+        padding: 6px 12px;
+        cursor: pointer;
+        transition: background 90ms linear, border-color 90ms linear;
+      }
+      .help-button:hover {
+        background: #4a4029;
+        border-color: var(--gold);
+      }
+      .help-button:focus-visible,
+      .help__close:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 1px;
+      }
+
+      .help {
+        width: min(680px, calc(100vw - 32px));
+        max-height: calc(100vh - 64px);
+        padding: 0;
+        border: 1px solid var(--edge-strong);
+        border-radius: 6px;
+        background: var(--card-solid);
+        color: var(--text);
+        font: inherit;
+      }
+      .help[open] {
+        display: flex;
+        flex-direction: column;
+      }
+      .help::backdrop {
+        background: rgba(10, 8, 6, 0.62);
+      }
+      .help__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 18px 12px;
+        border-bottom: 1px solid var(--edge);
+      }
+      .help h2 {
+        margin: 0;
+        color: var(--gold);
+        font-size: 15px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .help__close {
+        font: inherit;
+        color: var(--text);
+        background: rgba(58, 50, 38, 0.72);
+        border: 1px solid var(--edge-strong);
+        border-radius: 4px;
+        padding: 4px 12px;
+        cursor: pointer;
+      }
+      .help__close:hover {
+        background: #4a4029;
+        border-color: var(--gold);
+      }
+      .help__body {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 4px 18px 18px;
+      }
+      .help__intro {
+        color: var(--text);
+      }
+      .help h3 {
+        margin: 18px 0 4px;
+        color: var(--gold);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .help p {
+        margin: 6px 0;
+        color: #cfc6b4;
+      }
+      .help ul {
+        margin: 6px 0;
+        padding-left: 18px;
+        color: #cfc6b4;
+      }
+      .help li {
+        margin: 3px 0;
+      }
+      .help__terms {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 4px 16px;
+        margin: 8px 0 0;
+      }
+      .help__terms dt {
+        color: var(--gold);
+      }
+      .help__terms dd {
+        margin: 0;
+        color: #cfc6b4;
+      }
+      @media (max-width: 520px) {
+        .help__terms {
+          grid-template-columns: 1fr;
+        }
+        .help__terms dd {
+          margin-bottom: 6px;
+        }
+      }
+
     </style>
   </head>
   <body>

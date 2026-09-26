@@ -1,5 +1,5 @@
 import { Container, Graphics } from 'pixi.js';
-import { HALF_TILE_H, HALF_TILE_W, worldToScreenX, worldToScreenY } from '../../shared/iso.js';
+import { ELEV_STEP, HALF_TILE_H, HALF_TILE_W, worldToScreenX, worldToScreenY } from '../../shared/iso.js';
 import type { Heightmap } from '../../shared/heightmap.js';
 import { heightAt } from '../../shared/heightmap.js';
 import type { Camera } from '../camera.js';
@@ -51,7 +51,7 @@ export function createFogRenderer(map: Heightmap): FogRenderer {
 
   const chunksX = Math.ceil(map.width / chunkSize);
   const chunksY = Math.ceil(map.height / chunkSize);
-  const maxLift = (map.levels - 1) * 8;
+  const maxLift = (map.levels - 1) * ELEV_STEP;
 
   for (let chunkY = 0; chunkY < chunksY; chunkY++) {
     for (let chunkX = 0; chunkX < chunksX; chunkX++) {

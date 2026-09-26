@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { heightmapFrom } from '../src/shared/heightmap.js';
+import { heightmapFrom, heightmapWithWater } from '../src/shared/heightmap.js';
 import { tileCorners, CORNER_COUNT } from '../src/render/scene/surface.js';
 
 /**
@@ -155,5 +155,56 @@ describe('a diagonal is not a cliff', () => {
     );
     tileCorners(scarp, 1, 1, out);
     expect([...out]).toEqual([4, 4, 4, 4]);
+  });
+});
+
+describe('water is never tilted up a cliff', () => {
+  /*
+   * The sea-cliff crack. A water tile that touches a cliff only at a corner used to
+   * average the cliff into that corner, while the water beside it — touching the same
+   * cliff across an edge — snapped flat. Two water surfaces met at different heights,
+   * water draws no faces, and the background showed through as black wedges.
+   */
+  const rows = [
+    [0, 0, 0],
+    [0, 3, 0],
+    [0, 0, 0],
+  ];
+  const wet = rows.map((row) => row.map((level) => (level === 0 ? 1 : 0)));
+  const map = heightmapWithWater(rows, 8, wet);
+
+  it('keeps a water tile level where a cliff touches it only diagonally', () => {
+    const out = new Float64Array(CORNER_COUNT);
+    // (2,2) touches the headland at (1,1) by its north corner alone.
+    tileCorners(map, 2, 2, out);
+    expect(Array.from(out)).toEqual([0, 0, 0, 0]);
+  });
+
+  it('agrees with the water beside it at every shared corner', () => {
+    const a = new Float64Array(CORNER_COUNT);
+    const b = new Float64Array(CORNER_COUNT);
+    // (2,1) and (2,2) share the lattice points (2,2) and (3,2): a's west/south, b's north/east.
+    tileCorners(map, 2, 1, a);
+    tileCorners(map, 2, 2, b);
+    expect(a[3]).toBe(b[0]);
+    expect(a[2]).toBe(b[1]);
+  });
+
+  it('still lets a gentle bank soften the margin', () => {
+    const gentle = heightmapWithWater(
+      [
+        [0, 0],
+        [0, 1],
+      ],
+      8,
+      [
+        [1, 1],
+        [1, 0],
+      ],
+    );
+    const out = new Float64Array(CORNER_COUNT);
+    tileCorners(gentle, 0, 0, out);
+    // The south corner is shared with the bank at (1,1), diagonally, a step of one.
+    expect(out[2]).toBeGreaterThan(0);
   });
 });

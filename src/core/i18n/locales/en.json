@@ -16,7 +16,7 @@
     "entities": "{count} units ({selected} selected)",
     "tickLag": "tick {sim} / render {render}",
     "herd": "{cattle} cattle, {leashed} leashed, {stampeding} stampeding",
-    "controlsHeading": "Controls — H to fold, F1 for stats"
+    "controlsHeading": "Controls — H to fold, ? for how to play"
   },
   "glossary": {
     "isibaya": "cattle enclosure",
@@ -26,7 +26,11 @@
     "amabutho": "age-set regiments",
     "umkhosi": "first-fruits ceremony",
     "ikhanda": "military homestead, where a regiment is quartered",
-    "indlunkulu": "the great house at the head of a homestead"
+    "indlunkulu": "the great house at the head of a homestead",
+    "isibayaSezimbuzi": "goat fold",
+    "umgodi": "grain pit, dug into the ground and sealed",
+    "isiziba": "a weir: a deep pool held back in a river",
+    "drift": "a shallow place where a river can be waded"
   },
   "faction": {
     "zulu": "amaZulu",
@@ -134,7 +138,10 @@
     "rationFull": "Restore the ration",
     "rationShortHint": "The village eats less and works slower. Grain lasts, building does not.",
     "rationFullHint": "Back to full commons: the village eats its fill and works at full speed.",
-    "costsFull": "{grain} grain · {wood} timber · {cattle} cattle"
+    "costsFull": "{grain} grain · {wood} timber · {cattle} cattle",
+    "trainHouseholdHint": "A new household: more hands for the work, and more mouths to feed every season.",
+    "buildHint": "Click to pick this up, then click the ground to place it. Esc puts it down.",
+    "researchHint": "Learned by the whole village. The cost is paid when it starts, and it takes a while to finish."
   },
   "alert": {
     "stampede": "The herd has broken",
@@ -165,7 +172,8 @@
     "liveryBlack": "Black, white marking",
     "liveryRed": "Red, white marking",
     "liveryDun": "Dun, dark marking",
-    "mapCoast": "Coast"
+    "mapCoast": "Coast",
+    "mapUkhahlamba": "uKhahlamba (Drakensberg)"
   },
   "season": {
     "rains": "the rains",
@@ -201,5 +209,80 @@
     "groups": "Ctrl+4-9 groups · 4-9 recalls · P patrols",
     "time": "` pauses · +/- speed · Space jumps to an alert · Ctrl+S saves (it also saves itself every minute)",
     "note": "Work near a homestead finds its own people: you choose what to build and where. A field decays unless worked; a resting one repairs but harvests nothing. Raise households only as fast as the land feeds them."
+  },
+  "help": {
+    "button": "? How to play",
+    "buttonHint": "What the village is for, how work gets done, and what the words mean. Pauses the game while open. Shortcut: ?",
+    "title": "How to play",
+    "close": "Close",
+    "closeHint": "Back to the village. Esc does the same.",
+    "intro": "You lead a village on the highveld in the early 1800s. There is no enemy and no finish line. The game is to grow the village and keep it fed through the rains and the dry.\nIf the grain runs out, people go hungry, and a village that stays hungry loses people.",
+    "goal": {
+      "heading": "The aim",
+      "body": "Grow the village one household at a time. Every household eats grain every season, so raise new ones only as fast as the land can feed them.\nThe bar at the top right shows Harvest against Upkeep. While harvest is above upkeep, the store is growing. When it falls below, the store is shrinking, and you should find more food before you add more mouths."
+    },
+    "people": {
+      "heading": "Your people",
+      "body": "Most work finds its own people. Fields, kraals and grain stores near a homestead call people from it without being told. Your job is to decide what to build and where.\nYou can still take people directly when something is urgent. Drag a box around them, then right-click the ground to send them there, or right-click a building site to put them to work on it. More people on a site build it faster.\nThe panel at the bottom left says who is selected, what they are doing, and what they can build. Hover over any button for a couple of seconds to see what it does."
+    },
+    "food": {
+      "heading": "Grain and fields",
+      "body": "Fields are the heart of the village. Press F, then click near a homestead to plant one. Hold Shift to plant several.\nA field loses condition every season nobody works it, and a field left alone long enough is lost. Point at a field to see its condition and how many people are tending it.\nG rests the field under the cursor: it recovers, but it harvests nothing while it rests. X twice gives a field up for good.\nGrain stores, the great house and goat folds add grain too, as long as they have people working them. Fish do not care about drought: people fish from any riverbank or shore near the village."
+    },
+    "seasons": {
+      "heading": "Seasons and drought",
+      "body": "The year runs through the rains, the drying, the dry and the great dry. Drought cuts what the fields and the grazing yield. The top bar says how bad it is and which way it is going.\nA weir (isiziba) built on a bank shelters the fields near it from drought. A grain pit (umgodi) holds grain back for a hungry season. Goats (isibaya sezimbuzi) give a little food that drought does not touch.\nIn a hard season, Cut the ration: grain lasts longer, but everyone works more slowly."
+    },
+    "cattle": {
+      "heading": "Cattle",
+      "body": "Cattle are the village's wealth, and they eat. To herd them, select people and right-click a cow: they take the beasts around it. Right-click the ground to drive the herd there. A kraal (isibaya) holds a herd and slowly breeds it.\nCattle frighten easily. Push a herd too hard, or crowd it, and it stampedes: it runs blind and tramples whatever is in its way. Move slowly and give the herd room.\nIn a bad year, slaughtering some of the herd turns them into food and leaves fewer mouths on the grazing."
+    },
+    "timber": {
+      "heading": "Timber",
+      "body": "Every building needs timber. Select people and right-click a tree to fell it. Trees grow back, but slowly, so do not clear every tree near the village."
+    },
+    "land": {
+      "heading": "Reading the land",
+      "body": "Higher ground sees further. Steep edges are cliffs that nobody can climb, so people and cattle have to go round by a slope or a pass.\nRivers can only be crossed at drifts, the shallow places where the bank comes down to the water. Ground near water is worth settling: fish, a weir, and fields that hold up in a drought."
+    },
+    "neighbours": {
+      "heading": "Neighbours",
+      "body": "Neighbouring peoples trade at rates set by what they are short of. The offer buttons show the current rate, and it changes as their stores do.\nA standing tie costs cattle every season. In return, whichever of you goes hungry receives grain from the other. Breaking a tie is remembered, and your trade rates suffer for a long time."
+    },
+    "controlsHeading": "Controls",
+    "camera": "Arrow keys, WASD or the screen edge pan the view · the mouse wheel zooms · click the minimap to jump there",
+    "wordsHeading": "Words",
+    "driftTerm": "drift"
+  },
+  "buildingInfo": {
+    "isibaya": "Cattle kraal. Holds a herd and slowly breeds it. Needs 2 people to run.",
+    "umuzi": "Homestead. Where your people live. Raise households here to grow the village; work nearby draws its people from here.",
+    "grainStore": "Yields grain every season, less in a drought. Needs 2 people to run.",
+    "ikhanda": "A large homestead. Households can be raised here as at an umuzi, but it grows no food and costs more.",
+    "indlunkulu": "The great house. Yields a little grain and cattle, and people live here as they do in a homestead. Needs 1 person.",
+    "umgodi": "Grain pit. Holds back 220 grain against a hungry season. Runs itself.",
+    "isiziba": "Weir. Must stand on a riverbank or shore. Fields within 6 tiles lose less to drought. Runs itself.",
+    "isibayaSezimbuzi": "Goat fold. Goats give a little grain every season that drought does not touch. Needs 1 person."
+  },
+  "techInfo": {
+    "amabutho": "Age-sets. Everyone works a quarter faster.",
+    "umkhosi": "First-fruits ceremony. Grain yields rise by 30%.",
+    "scoutingParties": "Everyone sees 30% further.",
+    "cattleLore": "Herds frighten 30% less easily, so they stampede less.",
+    "mountedCommando": "Ranging parties. Everyone moves 20% faster and sees further. Needs amabutho first."
+  },
+  "tip": {
+    "costs": "Costs {costs}",
+    "totals": "What the village holds. Grain feeds people; timber builds; cattle are wealth, can be traded, and can be slaughtered for food.",
+    "season": "The year and its season. Drought cuts what fields and grazing yield. \"Drier\" means it is still getting worse; \"easing\" means the worst has passed.",
+    "margin": "Harvest: grain the village brought in last season. Upkeep: grain it ate. \"Land feeds\" is how many households the worked land can support. When it turns amber, find more food before raising more households.",
+    "households": "How many households live in the village. Each eats grain every season.",
+    "work": "People with nothing to do, or work waiting with nobody free to do it. Short-handed? Raise a household or build less at once.",
+    "driving": "Cattle your people are herding right now.",
+    "starving": "The granary cannot cover what the village eats. Cut the ration, slaughter cattle, trade, or plant more fields.",
+    "start": "Begin a new village on the land and people chosen above.",
+    "continue": "Pick up the village you kept, where you left it.",
+    "again": "Start over with a new village.",
+    "map": "The shape of the land. Each one plays differently: rivers, mountains, a coast, or dry open plain."
   }
 }

@@ -262,8 +262,11 @@ describe('elevation-aware picking', () => {
       ],
       8,
     );
-    const isoX = worldToScreenX(3.5, 3.5);
-    const isoY = worldToScreenY(3.5, 3.5, 0);
+    // A point just inside the tall tile's lifted top. Aimed at the tile rather than at
+    // (3.5, 3.5) on the ground, which only happened to fall inside it while a level was
+    // 8px: this has to hold at whatever ELEV_STEP the renderer draws with.
+    const isoX = worldToScreenX(4.5, 4.5);
+    const isoY = worldToScreenY(4.5, 4.5, 4) + 4;
 
     // Without the tall tile at (4,4) this point resolves to (3,3).
     const flat = heightmapFrom(

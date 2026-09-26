@@ -70,6 +70,8 @@ import { loadStoredGame, storeGame } from './ui/savedGame.js';
 import { SAVE_VERSION, type SaveGame } from './sim/persistence/save.js';
 import { createEmptiedBanner } from './ui/emptiedBanner.js';
 import { createResourceBar } from './ui/resourceBar.js';
+import { createHelp } from './ui/help.js';
+import { installTooltips } from './ui/tooltip.js';
 import { matchSeed, NEIGHBOUR, PLAYER, seedOpening } from './host/opening.js';
 
 /**
@@ -376,11 +378,16 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
   const atlas = await loadSpriteAtlas(presentation.sprites.pixelsPerWorldUnit);
   // Scenery is derived from the map seed rather than stored: identical on every machine
   // that builds the same map, and nothing to transmit or save.
-  const entities = createEntityLayer(atlas, planDecorations(map, mapSeed), {
-    shield: Number.parseInt(options.shieldColour.slice(1), 16),
-    marking: Number.parseInt(options.markingColour.slice(1), 16),
-    faction: PLAYER,
-  });
+  const entities = createEntityLayer(
+    atlas,
+    planDecorations(map, mapSeed),
+    {
+      shield: Number.parseInt(options.shieldColour.slice(1), 16),
+      marking: Number.parseInt(options.markingColour.slice(1), 16),
+      faction: PLAYER,
+    },
+    map,
+  );
   const damage = createDamageFlashes();
   const fields = createFieldLayer(map, terrainTiles, groundField, bandShift);
   const fog = createFogRenderer(map);
@@ -395,6 +402,9 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
   // Fog goes on top of everything in the world layer: it hides terrain as well as what
   // stands on it.
   terrain.container.addChild(fog.container);
+  // ?reveal draws the whole map, for looking at terrain without walking it. Dev builds
+  // only: it hides the overlay and nothing else, so the simulation still has its fog.
+  if (import.meta.env.DEV && new URLSearchParams(location.search).has('reveal')) fog.container.visible = false;
   // And the world going dark where the map runs out goes on top of the fog, for the same
   // reason: a tree at the boundary has to fade with the ground under it. Static, so it is
   // built once and never touched again.
@@ -447,6 +457,20 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
   let statsVisible = false;
   let controlsOpen = true;
   const resourceBar = createResourceBar(root);
+  /**
+   * How to play. The game stands still while it is read: a village that starved behind
+   * the rules explaining how not to starve would be a poor first lesson.
+   */
+  let speedBeforeHelp = 1;
+  const help = createHelp(root, {
+    onOpen() {
+      speedBeforeHelp = sim.speed;
+      sim.speed = 0;
+    },
+    onClose() {
+      sim.speed = speedBeforeHelp;
+    },
+  });
   const emptiedBanner = createEmptiedBanner(root, { onRestart: () => void restart() });
 
   /** A line of news that is not the simulation's — "saved", and the like. */
@@ -584,6 +608,11 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
   };
 
   window.addEventListener('keydown', (event) => {
+    if (event.key === '?') {
+      help.open();
+      event.preventDefault();
+      return;
+    }
     // Keep the village (ADR-0020: a game has no end, so it has to outlast the tab).
     // Ctrl or Cmd with S, which the browser would otherwise take as "save this page".
     if ((event.key === 's' || event.key === 'S') && (event.ctrlKey || event.metaKey)) {
@@ -1305,6 +1334,9 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
 async function boot(): Promise<void> {
   const defaults = defaultOptions();
   const root = document.getElementById('app') ?? document.body;
+  // Once, for the page rather than for a match: the tip lives on the body and outlasts
+  // a restart, and the setup screen's controls want explaining too.
+  installTooltips({ delayMs: presentation.hud.tooltipDelayMs });
 
   const params = new URLSearchParams(location.search);
   if (params.has('map') || params.has('perf')) {

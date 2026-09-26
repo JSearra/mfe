@@ -33,7 +33,7 @@ import mathutils
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-KINDS = ("acacia", "aloe", "scrub", "marula", "yellowwood", "baobab")
+KINDS = ("acacia", "aloe", "scrub", "marula", "yellowwood", "baobab", "boulder")
 VARIANTS = 3
 
 
@@ -307,6 +307,80 @@ def build_baobab(variant):
     return root
 
 
+def rock(name, size, location, seed, rotation=0.0):
+    """
+    One weathered stone: an icosphere squashed and jittered, flat-shaded.
+
+    Flat rather than smooth. A smoothed sphere at forty pixels is an egg; the facets are
+    what catch the light as planes, and planes are what make it read as stone. The
+    jitter is from a seeded generator so every render of a variant is the same rock.
+    """
+    import random
+
+    rng = random.Random(seed)
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2, radius=0.5, location=location)
+    obj = bpy.context.active_object
+    obj.name = name
+    for vertex in obj.data.vertices:
+        push = 1.0 + (rng.random() - 0.5) * 0.28
+        vertex.co *= push
+        # Weathered granite is flattened underneath and rounded on top.
+        if vertex.co.z < -0.12:
+            vertex.co.z = -0.12 - (vertex.co.z + 0.12) * 0.35
+    obj.scale = size
+    obj.rotation_euler = (0.0, 0.0, rotation)
+    bpy.ops.object.shade_flat()
+    return obj
+
+
+def build_boulder(variant):
+    """
+    Granite: the boulders of a koppie, and the loose stone of the high ground.
+
+    Three shapes, because they are three different things on the veld. A lone rounded
+    boulder; a koppie pile, stones stacked where the weather left them; and a low
+    scatter of small stones that marks stony ground without standing up from it.
+    """
+    # Darker and warmer than granite looks in a photograph. The key light here is
+    # strong, and at the first attempt's values the stones came out as pale grey
+    # plastic against an ochre veld where everything else is earth-toned.
+    grey = material("granite", (0.155, 0.135, 0.115), roughness=0.95)
+    warm = material("weathered", (0.2, 0.14, 0.09), roughness=0.95)
+    lichen = material("lichen", (0.17, 0.165, 0.1), roughness=0.95)
+
+    root = bpy.data.objects.new("prop", None)
+    bpy.context.scene.collection.objects.link(root)
+
+    if variant == 0:
+        stones = [((1.35, 1.15, 0.95), (0.0, 0.0, 0.40), grey, 0.4)]
+    elif variant == 1:
+        stones = [
+            ((1.25, 1.05, 0.85), (-0.25, 0.15, 0.36), grey, 0.2),
+            ((1.05, 0.95, 0.8), (0.42, -0.2, 0.33), warm, 1.3),
+            ((0.8, 0.7, 0.62), (0.05, 0.0, 0.95), lichen, 2.1),
+            ((0.45, 0.4, 0.34), (0.75, 0.45, 0.14), grey, 0.7),
+        ]
+    else:
+        stones = [
+            ((0.55, 0.48, 0.36), (-0.4, -0.2, 0.15), warm, 0.3),
+            ((0.42, 0.38, 0.3), (0.3, 0.25, 0.12), grey, 1.1),
+            ((0.34, 0.3, 0.24), (0.1, -0.45, 0.1), lichen, 2.4),
+            ((0.26, 0.24, 0.2), (-0.1, 0.5, 0.08), grey, 0.9),
+            ((0.22, 0.2, 0.16), (0.6, -0.3, 0.07), warm, 1.7),
+        ]
+
+    # Boulders are bigger than the people walking past them; at 1.0 a lone one came out
+    # knee-high beside a villager.
+    grow = 1.6
+    for index, (size, location, mat, turn) in enumerate(stones):
+        size = tuple(v * grow for v in size)
+        location = tuple(v * grow for v in location)
+        stone = rock("stone", size, location, seed=variant * 31 + index, rotation=turn)
+        stone.data.materials.append(mat)
+        stone.parent = root
+    return root
+
+
 BUILDERS = {
     "acacia": build_acacia,
     "aloe": build_aloe,
@@ -314,6 +388,7 @@ BUILDERS = {
     "marula": build_marula,
     "yellowwood": build_yellowwood,
     "baobab": build_baobab,
+    "boulder": build_boulder,
 }
 
 # Framed per kind, and recorded, exactly as units are: the scale a prop is drawn at in
@@ -326,6 +401,8 @@ FRAMING = {
     # Taller than it is wide, so it needs more vertical room than anything else here.
     "yellowwood": (6.6, 2.4),
     "baobab": (5.4, 1.7),
+    # Low and wide: the pile is the tallest variant and stands barely a man high.
+    "boulder": (4.4, 0.8),
 }
 
 

@@ -463,8 +463,23 @@ export function createEntityLayer(
   atlas: SpriteAtlas | null = null,
   decorations: readonly Decoration[] = [],
   livery: Livery | null = null,
+  /**
+   * The ground the scenery stands on. Optional only so tests can build a layer without
+   * one; the game always passes it.
+   */
+  ground: Heightmap | null = null,
 ): EntityLayer {
   const container = new Container();
+  /**
+   * The height a prop stands at: its tile's, as a unit's is.
+   *
+   * Scenery, trees and livestock were all placed at height zero, which is sea level on
+   * a map whose ground is lifted a level at a time. On rolling country that drew every
+   * tree a few pixels south of its trunk's own tile, and on a mesa six levels up it drew
+   * the plateau's trees 48px down the cliff face below it.
+   */
+  const standAt = (worldX: number, worldY: number): number =>
+    ground === null ? 0 : groundHeight(ground, worldX, worldY);
   // Two layers, because batching depends on it. Ground decoration is all Graphics and
   // all of it draws below every body; bodies are Sprites off one atlas page and batch
   // into a single call. Buildings stay Graphics in the body layer so they keep sorting
@@ -532,7 +547,7 @@ export function createEntityLayer(
     const sprite = new Sprite(frame.texture);
     sprite.scale.set(frame.scale * scale);
     const screenX = worldToScreenX(worldX, worldY);
-    const screenY = worldToScreenY(worldX, worldY, 0);
+    const screenY = worldToScreenY(worldX, worldY, standAt(worldX, worldY));
     sprite.position.set(
       screenX - frame.anchorX * frame.scale * scale,
       screenY - frame.anchorY * frame.scale * scale,
@@ -544,10 +559,22 @@ export function createEntityLayer(
 
   /** The scrub among the scenery, which browns in the dry season. Aloes do not. */
   const scrub: Sprite[] = [];
+  // Stone takes the ground's warmth. Rendered under a white key light the boulders came
+  // out cold blue-grey, the one cool thing on an ochre map; a multiply tint settles them
+  // into it without re-rendering the art, and costs nothing in the batch.
+  const boulderTint = Number.parseInt(presentation.terrain.boulderTint.slice(1), 16);
   if (atlas !== null) {
     for (const decoration of decorations) {
-      const sprite = placeProp(decoration.kind, decoration.variant, decoration.worldX, decoration.worldY);
-      if (sprite !== null && decoration.kind === 'scrub') scrub.push(sprite);
+      const sprite = placeProp(
+        decoration.kind,
+        decoration.variant,
+        decoration.worldX,
+        decoration.worldY,
+        decoration.scale ?? 1,
+      );
+      if (sprite === null) continue;
+      if (decoration.kind === 'scrub') scrub.push(sprite);
+      else if (decoration.kind === 'boulder') sprite.tint = boulderTint;
     }
   }
   sceneryCount = props.length;
@@ -649,7 +676,7 @@ export function createEntityLayer(
           sprite.scale.set(frame.scale * scale);
           sprite.position.set(
             worldToScreenX(worldX, worldY) - frame.anchorX * frame.scale * scale,
-            worldToScreenY(worldX, worldY, 0) - frame.anchorY * frame.scale * scale,
+            worldToScreenY(worldX, worldY, standAt(worldX, worldY)) - frame.anchorY * frame.scale * scale,
           );
           props.push({ sprite, depth: worldX + worldY, x: worldX, y: worldY });
         }
@@ -720,7 +747,7 @@ export function createEntityLayer(
           sprite.scale.set(frame.scale);
           sprite.position.set(
             worldToScreenX(worldX, worldY) - frame.anchorX * frame.scale,
-            worldToScreenY(worldX, worldY, 0) - frame.anchorY * frame.scale,
+            worldToScreenY(worldX, worldY, standAt(worldX, worldY)) - frame.anchorY * frame.scale,
           );
           props.push({ sprite, depth: worldX + worldY, x: worldX, y: worldY });
           placed++;

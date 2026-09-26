@@ -18,6 +18,8 @@ export const MapScript = {
   Magaliesberg: 'magaliesberg',
   /** A coastal plain running down to the sea, with a river reaching it. */
   Coast: 'coast',
+  /** The Drakensberg: a basalt wall above a sandstone terrace above the foothills. */
+  UKhahlamba: 'ukhahlamba',
 } as const;
 
 export type MapScript = (typeof MapScript)[keyof typeof MapScript];

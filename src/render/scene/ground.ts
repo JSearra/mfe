@@ -125,5 +125,85 @@ export function createGroundField(map: Heightmap, seed: number, bands: number): 
       out[y * width + x] = band < 0 ? 0 : band > top ? top : band;
     }
   }
+  paintBeaches(map, out, Math.min(SAND, top));
   return out;
+}
+
+/** The band a strand is drawn with: the pale sandstone, the only ground that reads as sand. */
+const SAND = 6;
+/** How far a beach runs up from the waterline, in tiles. */
+const BEACH_DEPTH = 2;
+/** Beaches are the tallest ground they cover — a strand is low. */
+const BEACH_MAX_HEIGHT = 2;
+/**
+ * Standing water at least this large is the sea, and gets a beach. A river reach is
+ * cut into short lengths by its drifts, so this also keeps sand off the riverbanks,
+ * where the grass comes down to the water.
+ */
+const SEA_MIN = 300;
+
+/**
+ * Draw a strand along the sea.
+ *
+ * The Coast map's grass ran straight into the water, and a coastline with no beach
+ * reads as a flooded field. This is the smoothed ground field's one hard edge on
+ * purpose: a beach IS a boundary, the one place on the map the ground should change
+ * abruptly, and it is thin enough that the transition art carries it.
+ */
+function paintBeaches(map: Heightmap, ground: Uint8Array, sand: number): void {
+  const { width, height, water, data } = map;
+  if (water.length === 0) return;
+
+  // Which water is the sea: flood each wet region and keep the large ones.
+  const region = new Int32Array(width * height).fill(-1);
+  const queue = new Int32Array(width * height);
+  const sea = new Uint8Array(width * height);
+  let label = 0;
+  for (let start = 0; start < water.length; start++) {
+    if (water[start] !== 1 || region[start] !== -1) continue;
+    let head = 0;
+    let tail = 0;
+    queue[tail++] = start;
+    region[start] = label;
+    while (head < tail) {
+      const at = queue[head++]!;
+      const x = at % width;
+      const y = (at - x) / width;
+      for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+        const to = ny * width + nx;
+        if (water[to] !== 1 || region[to] !== -1) continue;
+        region[to] = label;
+        queue[tail++] = to;
+      }
+    }
+    if (tail >= SEA_MIN) for (let i = 0; i < tail; i++) sea[queue[i]!] = 1;
+    label++;
+  }
+
+  // Distance inland from the sea, a breadth-first step at a time, as far as a beach runs.
+  const distance = new Uint8Array(width * height).fill(0xff);
+  let head = 0;
+  let tail = 0;
+  for (let at = 0; at < sea.length; at++) {
+    if (sea[at] !== 1) continue;
+    distance[at] = 0;
+    queue[tail++] = at;
+  }
+  while (head < tail) {
+    const at = queue[head++]!;
+    const next = distance[at]! + 1;
+    if (next > BEACH_DEPTH) continue;
+    const x = at % width;
+    const y = (at - x) / width;
+    for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+      const to = ny * width + nx;
+      if (water[to] === 1 || distance[to]! <= next) continue;
+      distance[to] = next;
+      // Not up a sea cliff: a headland left standing over the water keeps its ground.
+      if (data[to]! <= BEACH_MAX_HEIGHT) ground[to] = sand;
+      queue[tail++] = to;
+    }
+  }
 }

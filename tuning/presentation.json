@@ -9,6 +9,7 @@
   },
   "terrain": {
     "chunkSize": 32,
+    "boulderTint": "#e2cbab",
     "palette": [
       "#3f5a2c",
       "#51702f",
@@ -96,6 +97,9 @@
     "exploredDim": 0.45,
     "viewportColour": "#e8d9a8",
     "dotSize": 2
+  },
+  "hud": {
+    "tooltipDelayMs": 2000
   },
   "sprites": {
     "pixelsPerWorldUnit": 29,

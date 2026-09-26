@@ -12,7 +12,7 @@ export const HALF_TILE_W = TILE_W / 2;
 export const HALF_TILE_H = TILE_H / 2;
 
 /** Screen pixels of vertical lift per unit of tile height. */
-export const ELEV_STEP = 8;
+export const ELEV_STEP = 12;
 
 /**
  * Largest height difference a unit can walk between adjacent tiles. A larger delta

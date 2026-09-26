@@ -38,6 +38,7 @@ export function createEmptiedBanner(
     const again = document.createElement('button');
     again.className = 'emptied-again';
     again.textContent = t('village.again');
+    again.dataset.tip = t('tip.again');
     again.addEventListener('click', () => options.onRestart?.());
     // The banner is pointer-events:none so it never eats clicks on the map behind it;
     // the button has to opt back in or it cannot be pressed.

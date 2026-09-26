@@ -1,4 +1,4 @@
-import { heightAt, inBounds, type Heightmap } from '../../shared/heightmap.js';
+import { heightAt, inBounds, isWater, type Heightmap } from '../../shared/heightmap.js';
 import { MAX_CLIMB } from '../../shared/iso.js';
 
 /**
@@ -56,6 +56,7 @@ function heightAtCorner(
 ): number {
   let sum = 0;
   let count = 0;
+  const ownIsWater = isWater(map, ownX, ownY);
 
   for (let i = 0; i < 4; i++) {
     const tileX = cornerX + TOUCHING_DX[i]!;
@@ -80,7 +81,19 @@ function heightAtCorner(
      * of the mesh that exists to hide it.
      */
     const sharesAnEdge = tileX === ownX || tileY === ownY;
-    if (sharesAnEdge && (height - own > MAX_CLIMB || own - height > MAX_CLIMB)) return own;
+    /*
+     * Except for water, which snaps to a cliff across the diagonal too.
+     *
+     * A water tile has no faces of its own, so nothing covers a difference between it
+     * and the water beside it. One that touched a sea cliff only at a corner averaged
+     * the cliff into that corner and tilted up toward it, while its neighbour across the
+     * edge snapped and stayed down — two water surfaces meeting at different heights,
+     * and the page background showing through the crack as a black wedge at the foot of
+     * every step of the cliff. A gentle bank still averages in, so a river keeps its
+     * soft margin; only a cliff, which the water cannot be sloping up to, is refused.
+     */
+    const snaps = sharesAnEdge || ownIsWater;
+    if (snaps && (height - own > MAX_CLIMB || own - height > MAX_CLIMB)) return own;
     sum += height;
     count++;
   }

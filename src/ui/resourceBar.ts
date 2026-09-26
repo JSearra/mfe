@@ -58,6 +58,17 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
   const warning = document.createElement('span');
   warning.className = 'resource-bar__warning';
 
+  // What each readout means, on the same slow tooltip as the buttons. The bar is where
+  // the game's vocabulary is densest — harvest, upkeep, "land feeds" — and it explained
+  // none of it.
+  totals.dataset.tip = t('tip.totals');
+  season.dataset.tip = t('tip.season');
+  margin.dataset.tip = t('tip.margin');
+  herd.dataset.tip = t('tip.households');
+  work.dataset.tip = t('tip.work');
+  driving.dataset.tip = t('tip.driving');
+  warning.dataset.tip = t('tip.starving');
+
   element.append(totals, season, margin, driving, herd, work, warning);
   parent.appendChild(element);
 

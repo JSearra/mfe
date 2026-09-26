@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createGroundField } from '../src/render/scene/ground.js';
 import { createHeightmap } from '../src/sim/terrain/generate.js';
-import { heightmapFrom, isWater } from '../src/shared/heightmap.js';
+import { heightmapFrom, heightmapWithWater, isWater } from '../src/shared/heightmap.js';
 
 /**
  * Which ground a tile is drawn with, which is no longer a synonym for its height.
@@ -97,5 +97,45 @@ describe('createGroundField', () => {
       if (ground[y * 64 + x] !== ground[y * 64 + x + 1]) changes++;
     }
     expect(changes / (63 * 63) * 100).toBeLessThan(8);
+  });
+});
+
+describe('beaches', () => {
+  /** A sea along the east side, far larger than any river reach, with low land west of it. */
+  function seaMap(seaColumns: number, size = 24): ReturnType<typeof heightmapFrom> {
+    const rows = Array.from({ length: size }, () =>
+      Array.from({ length: size }, (_, x) => (x >= size - seaColumns ? 0 : 1)),
+    );
+    const wet = rows.map((row) => row.map((_, x) => (x >= size - seaColumns ? 1 : 0)));
+    return heightmapWithWater(rows, 8, wet);
+  }
+
+  it('draws a strand of sand along the sea', () => {
+    const map = seaMap(14);
+    const ground = createGroundField(map, 5, map.levels);
+    // Every dry tile on the waterline, and the one behind it, is sand.
+    for (let y = 0; y < map.height; y++) {
+      expect(ground[y * map.width + (map.width - 15)]).toBe(6);
+      expect(ground[y * map.width + (map.width - 16)]).toBe(6);
+    }
+  });
+
+  it('leaves a riverbank alone — a small water body is not the sea', () => {
+    const map = seaMap(2);
+    const plain = createGroundField(heightmapFrom(Array.from({ length: 24 }, () => Array(24).fill(1)), 8), 5, 8);
+    const ground = createGroundField(map, 5, map.levels);
+    for (let y = 0; y < map.height; y++) {
+      const at = y * map.width + (map.width - 3);
+      expect(ground[at]).toBe(plain[at]);
+    }
+  });
+
+  it('does not run sand up a sea cliff', () => {
+    const size = 24;
+    const rows = Array.from({ length: size }, () => Array.from({ length: size }, (_, x) => (x >= 10 ? 0 : 5)));
+    const wet = rows.map((row) => row.map((level) => (level === 0 ? 1 : 0)));
+    const map = heightmapWithWater(rows, 8, wet);
+    const ground = createGroundField(map, 5, map.levels);
+    for (let y = 0; y < size; y++) expect(ground[y * size + 9]).not.toBe(6);
   });
 });

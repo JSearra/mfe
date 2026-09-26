@@ -49,6 +49,7 @@ const MAP_LABELS: Readonly<Record<string, MessageKey>> = {
   karoo: 'setup.mapKaroo',
   magaliesberg: 'setup.mapMagaliesberg',
   coast: 'setup.mapCoast',
+  ukhahlamba: 'setup.mapUkhahlamba',
 };
 
 const FACTION_LABELS: Readonly<Record<FactionId, MessageKey>> = {
@@ -99,6 +100,7 @@ export function showSetup(
       resume.textContent = t('setup.continue', {
         when: new Date(continueFrom.savedAt).toLocaleString(),
       });
+      resume.dataset.tip = t('tip.continue');
       resume.addEventListener('click', () => {
         screen.remove();
         resolve('continue');
@@ -119,6 +121,7 @@ export function showSetup(
       if (script === initial.mapScript) option.selected = true;
       mapSelect.appendChild(option);
     }
+    mapSelect.dataset.tip = t('tip.map');
     field(panel, 'setup.map').appendChild(mapSelect);
 
     const factionSelect = document.createElement('select');
@@ -150,6 +153,7 @@ export function showSetup(
     const start = document.createElement('button');
     start.className = 'setup-start';
     start.textContent = t('setup.start');
+    start.dataset.tip = t('tip.start');
     panel.appendChild(start);
 
     function begin(): void {

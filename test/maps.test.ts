@@ -191,3 +191,103 @@ describe('The Magaliesberg', () => {
     expect(southReached).toBeGreaterThan(0);
   });
 });
+
+describe('Coast', () => {
+  const map = generateMap(MapScript.Coast, SIZE, SIZE, 777);
+  const wet = (x: number, y: number): boolean => map.water[y * SIZE + x] === 1;
+
+  it('lies along the east edge, where its cliffs face the camera', () => {
+    let east = 0;
+    let west = 0;
+    for (let y = 0; y < SIZE; y++) {
+      if (wet(SIZE - 1, y)) east++;
+      if (wet(0, y)) west++;
+    }
+    expect(east / SIZE).toBeGreaterThan(0.8);
+    // The river rises at the inland edge, so the west has a channel's width of water
+    // and no more.
+    expect(west).toBeLessThan(SIZE * 0.1);
+  });
+
+  it('has a coastline of bays and headlands rather than a ruled edge', () => {
+    // Where the land ends, row by row. A wall of water down one side varies by a tile
+    // or two; a coast varies by a good fraction of the map.
+    const shore: number[] = [];
+    for (let y = 0; y < SIZE; y++) {
+      let x = SIZE - 1;
+      while (x > 0 && wet(x, y)) x--;
+      shore.push(x);
+    }
+    expect(Math.max(...shore) - Math.min(...shore)).toBeGreaterThan(SIZE * 0.12);
+  });
+
+  it('brings a river down to the sea', () => {
+    // Water in nearly every column from the inland edge to the shore. Not every one:
+    // drifts are dry columns, left so the two banks stay joined.
+    let shoreline = SIZE;
+    for (let y = 0; y < SIZE; y++) {
+      let x = SIZE - 1;
+      while (x > 0 && wet(x, y)) x--;
+      shoreline = Math.min(shoreline, x);
+    }
+    let columns = 0;
+    for (let x = 0; x < shoreline; x++) {
+      for (let y = 0; y < SIZE; y++) {
+        if (wet(x, y)) {
+          columns++;
+          break;
+        }
+      }
+    }
+    expect(columns / shoreline).toBeGreaterThan(0.7);
+  });
+});
+
+describe('uKhahlamba', () => {
+  const map = generateMap(MapScript.UKhahlamba, SIZE, SIZE, 21);
+
+  it('stands the High Berg along the western edge, at the back of the view', () => {
+    // Most of the western tenth is the wall — not all, because the rivers cut valleys
+    // down through it — and none of the eastern tenth is.
+    const band = Math.ceil(SIZE * 0.1);
+    let west = 0;
+    let east = 0;
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < band; x++) {
+        if (heightAt(map, x, y) === 7) west++;
+        if (heightAt(map, SIZE - 1 - x, y) === 7) east++;
+      }
+    }
+    expect(west / (SIZE * band)).toBeGreaterThan(0.6);
+    expect(east).toBe(0);
+  });
+
+  it('keeps the start in foothills a field will take', () => {
+    // The village always starts at the centre; farmland takes levels 0 to 4.
+    let arable = 0;
+    let tiles = 0;
+    const c = SIZE >> 1;
+    for (let y = c - 5; y <= c + 5; y++) {
+      for (let x = c - 5; x <= c + 5; x++) {
+        tiles++;
+        if (heightAt(map, x, y) <= 4 && map.water[y * SIZE + x] !== 1) arable++;
+      }
+    }
+    expect(arable / tiles).toBeGreaterThan(0.8);
+  });
+
+  it('rises in faces a tile tall, not a staircase of small steps', () => {
+    let tall = 0;
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE - 1; x++) if (Math.abs(heightAt(map, x, y) - heightAt(map, x + 1, y)) >= 3) tall++;
+    }
+    expect(tall).toBeGreaterThan(SIZE * 0.5);
+  });
+
+  it('can be climbed by the valleys its rivers cut', () => {
+    const seen = reachableFrom(map, SIZE >> 1, SIZE >> 1);
+    let summit = 0;
+    for (let i = 0; i < map.data.length; i++) if (map.data[i] === 7 && seen[i] === 1) summit++;
+    expect(summit).toBeGreaterThan(20);
+  });
+});
