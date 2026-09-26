@@ -11,3 +11,5 @@ tools/art/raw/
 # Art pipeline: generated review artifacts and bytecode
 tools/art/out/
 __pycache__/
+tools/art/triposr/
+tools/art/.venv-3d/

@@ -1,0 +1,7 @@
+{
+  "_note": "Where each mesh-built sprite came from: the prompt and seed the reference image was generated with (mflux, flux-1-schnell-mflux-q4, 4 steps, 768x768), for tools/art/mesh_pipeline.py. The chosen reference is kept in tools/art/reference/.",
+  "zebra": {
+    "prompt": "wildlife photograph of a single plains zebra standing, whole animal in frame from nose to tail and hooves, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic",
+    "seed": 47
+  }
+}
