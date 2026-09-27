@@ -30,6 +30,12 @@ export interface PathingStats {
   discardedResults: number;
 }
 
+/** Saved as plain numbers: [handle, start tile, goal tile, movement class] per request. */
+export interface PathRequestState {
+  readonly next: number;
+  readonly queue: readonly (readonly [number, number, number, number])[];
+}
+
 interface Request {
   readonly handle: number;
   readonly startIndex: number;
@@ -53,6 +59,13 @@ export interface PathingService {
   ensureFlowField(goalIndex: number, movementClass: MovementClass): FlowField | null;
   requestPath(startIndex: number, goalIndex: number, movementClass: MovementClass): number;
   consumePath(handle: number): PathResult | null;
+  /**
+   * The requests still waiting to be served, and the next ticket number: state, for a
+   * save. Served under a per-tick budget, so a backlog can outlive a tick, and the units
+   * holding its tickets are waiting on exactly these.
+   */
+  exportRequests(): PathRequestState;
+  importRequests(state: PathRequestState): void;
   /** Serve queued requests within this tick's budget. */
   process(): void;
   invalidate(): void;
@@ -173,6 +186,22 @@ export function createPathingService(map: Heightmap): PathingService {
       queue.push({ handle, startIndex, goalIndex, movementClass });
       stats.pending = queue.length;
       return handle;
+    },
+
+    exportRequests(): PathRequestState {
+      return {
+        next: nextHandle,
+        queue: queue.map((r) => [r.handle, r.startIndex, r.goalIndex, r.movementClass] as const),
+      };
+    },
+
+    importRequests(state): void {
+      nextHandle = state.next;
+      queue.length = 0;
+      for (const [handle, startIndex, goalIndex, movementClass] of state.queue) {
+        queue.push({ handle, startIndex, goalIndex, movementClass: movementClass as MovementClass });
+      }
+      stats.pending = queue.length;
     },
 
     consumePath(handle: number): PathResult | null {

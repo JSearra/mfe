@@ -1,3 +1,4 @@
+import type { PathRequestState } from '../pathing/service.js';
 import type { Command } from '../commands.js';
 import type { SimLoop } from '../loop.js';
 import { worldStateField, worldStateFields } from '../world.js';
@@ -55,7 +56,14 @@ import { worldStateField, worldStateFields } from '../world.js';
  * 9 adds where each village's meat came from (fish, game, cattle), kept beside the
  * store so a source can be split out later.
  */
-export const SAVE_VERSION = 9;
+/*
+ * 10 adds the path service's queue and ticket counter. Requests are served under a
+ * per-tick budget, so a backlog outlives the tick, and a load used to drop it: the units
+ * holding its tickets idled until their stuck timer, and every new ticket restarted at
+ * 1, so a restored game ran differently from the one it was saved from. A village founded
+ * whole in the opening sends enough people walking to show it inside the save test.
+ */
+export const SAVE_VERSION = 10;
 
 export interface SaveGame {
   readonly version: number;
@@ -111,6 +119,8 @@ export interface SaveGame {
   readonly economyFeeds: string;
   /** Per-unit routes, keyed by packed handle. */
   readonly paths: readonly (readonly [number, readonly number[]])[];
+  /** Path requests queued but not yet served, and the next ticket (version 10). */
+  readonly pathRequests: PathRequestState;
   readonly commands: readonly Command[];
   readonly commandCursor: number;
 }
@@ -221,6 +231,7 @@ export function captureState(loop: SimLoop): SaveGame {
     economyUpkeep: toBase64(economy.upkeep),
     economyFeeds: toBase64(economy.feeds),
     paths: movement.exportPaths(),
+    pathRequests: movement.exportRequests(),
     commands: loop.pending.slice(loop.cursor),
     commandCursor: 0,
   };
@@ -295,6 +306,7 @@ export function restoreState(loop: SimLoop, save: SaveGame): void {
   loop.construction.restoreFootprints(world);
 
   movement.importPaths(save.paths);
+  movement.importRequests(save.pathRequests);
 
   loop.pending.length = 0;
   for (const command of save.commands) loop.pending.push(command);

@@ -2,7 +2,7 @@ import type { Heightmap } from '../shared/heightmap.js';
 import { DIR8_DX, DIR8_DY, NO_DIRECTION } from './pathing/directions.js';
 import { IMPASSABLE, MovementClass, type CostLayer } from './pathing/costs.js';
 import { flowAt, isReachable } from './pathing/flowField.js';
-import { PathStatus, createPathingService, type PathingService } from './pathing/service.js';
+import { PathStatus, createPathingService, type PathingService, type PathRequestState } from './pathing/service.js';
 import { createSpatialGrid, type SpatialGrid } from './spatial/grid.js';
 import { angleDelta, atan2 } from './math/trig.js';
 import { Modifier } from '../shared/tech/index.js';
@@ -134,6 +134,9 @@ export interface MovementSystem {
   /** Per-unit routes for saving, keyed by packed handle. */
   exportPaths(): [number, number[]][];
   importPaths(entries: readonly (readonly [number, readonly number[]])[]): void;
+  /** The path service's queue and ticket counter, for saving (see PathRequestState). */
+  exportRequests(): PathRequestState;
+  importRequests(state: PathRequestState): void;
 }
 
 interface PendingOrder {
@@ -377,10 +380,19 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
     importPaths(entries): void {
       paths.clear();
       for (const [handle, tiles] of entries) paths.set(handle, Int32Array.from(tiles));
-      // Outstanding path requests do not survive a save: their tickets referenced a
-      // queue that no longer exists. Units holding one re-request on their next order
-      // or stuck timer rather than waiting forever for a reply that cannot come.
+      // Orders not yet resolved belong to the tick they were given in; a save is taken
+      // between ticks. Requests already queued with the path service are saved with it
+      // (exportRequests), so a unit holding a ticket gets its answer after a load exactly
+      // when it would have without one.
       pending = [];
+    },
+
+    exportRequests(): PathRequestState {
+      return pathing.exportRequests();
+    },
+
+    importRequests(state): void {
+      pathing.importRequests(state);
     },
 
     displace(world: World, index: number, toX: number, toY: number): void {
