@@ -50,6 +50,12 @@ SUBJECTS = {
     "wildebeest": "a single blue wildebeest standing, dark grey with a black mane, beard and curved horns",
     "warthog": "a single common warthog standing on all four legs, with curved tusks and a mane",
     "buffalo": "a single African Cape buffalo bull standing, black, with heavy curved horns meeting in a boss",
+    # The village's own herd. Nguni cattle: lean and fine-boned, a short glossy coat, a
+    # small hump over the shoulders, long lyre-shaped horns dark at the tips, and a hide
+    # patterned like no other beast's. Two coats, so a herd is not a row of one cow
+    # (entities.ts picks by handle).
+    "nguni": "a single Nguni cow standing, a lean fine-boned African cattle breed with a short glossy coat patched irregularly in rich red-brown and white with small speckles, a small hump over the shoulders, long upswept lyre-shaped horns dark at the tips",
+    "nguni-dark": "a single Nguni cow standing, a lean fine-boned African cattle breed with a short glossy coat of black with irregular white patches and fine white speckling on the flanks, a small hump over the shoulders, long upswept lyre-shaped horns dark at the tips",
     "hippo": "a single hippopotamus standing on dry land, on all four legs",
     "lion": "a single adult male African lion standing, with a dark mane",
     "leopard": "a single African leopard standing on all four legs, golden with black rosettes",
@@ -66,42 +72,56 @@ STYLE = (
     "isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph"
 )
 
-# People, after the dress notes in make_unit.py (and docs/CONTENT.md): men in the umutsha
-# of hide and tails, the married man's headring; women in the pleated leather isidwaba
-# with a hide cape; cultivation with the short-handled hoe; loads on the head on a grass
-# ring; herding boys' work, with a switch rather than a weapon. Every reference is looked
-# at before it becomes a sprite — for accuracy and for dignity (CONTENT.md section 5).
+# People in full ceremonial dress, after the owner's references (ADR-0024): beadwork in
+# every colour, leopard and cow hide, the wide isicholo hat. It is later than the period
+# the game is set in, and chosen over it on purpose.
+#
+# The garment the player's outfit colour replaces is asked for in one solid KEY colour,
+# vivid magenta, which is in none of the beadwork: make_wild_mesh.py finds it in the baked
+# texture and renders it as a separate pale pass the game tints (see OUTFIT_KEY there).
+# Every reference is looked at before it becomes a sprite, for dignity as much as for
+# the key (CONTENT.md section 5).
+KEY = "solid plain vivid magenta"
+BEADS = "bright glass beadwork in red, yellow, blue, green, white and black geometric triangles and diamonds"
 PEOPLE = {
-    "villager": "a Zulu man of the early nineteenth century standing relaxed, wearing a traditional umutsha loin covering of hide and animal tails and a fur headband, barefoot, hands empty at his sides",
-    "herd-boy": "a Zulu herd boy of about twelve standing, wearing a small hide loin covering, barefoot, holding a long thin herding stick upright beside him",
-    # Rewritten after the first three: "iron hoe" drew a garden fork, and "work the soil"
-    # drew a heap of it, which would have become part of the mesh.
-    "field-hand": "a Zulu woman of the early nineteenth century bending forward holding a short wooden-handled hoe with one broad flat iron blade, wearing a pleated leather isidwaba skirt and a hide cape over her shoulders, barefoot, standing on nothing, no soil",
-    # "On a coiled grass ring" drew the ring on the ground round her feet.
-    "carrier": "a Zulu woman of the early nineteenth century standing upright, balancing a large round clay pot on top of her head, one hand steadying it, wearing a pleated leather isidwaba skirt and a hide cape over her shoulders, barefoot, nothing on the ground",
-    "elder": "an elderly Zulu man of the early nineteenth century standing, wearing a hide cloak over his shoulders and a black headring, barefoot, leaning on a long wooden staff",
-    "hunter": "a Zulu hunter of the early nineteenth century standing, wearing a hide loin covering, barefoot, carrying two long throwing spears slanting forward",
+    "villager": f"a Zulu man in full traditional ceremonial dress, a {KEY} cloth draped over one shoulder and a {KEY} knee-length skirt, a leopard-skin collar, {BEADS} across his chest and on his arms and ankles, white cow-tail bands on his upper arms and calves, a beaded headband, barefoot, hands empty at his sides",
+    "herd-boy": f"a Zulu boy of about twelve in traditional ceremonial dress, a {KEY} short skirt and a {KEY} sash across his chest, {BEADS} necklaces and armbands, barefoot, holding a long thin herding stick upright beside him",
+    # Standing, not bent to the soil: bent double in a full skirt and hat, she came back
+    # from image-to-3D as a mound of cloth with the figure lost inside it.
+    "field-hand": f"a Zulu woman in full traditional ceremonial dress standing upright, carrying a short wooden-handled hoe with one broad flat iron blade resting on her shoulder, a wide flat-topped {KEY} isicholo hat, a {KEY} pleated knee-length skirt, a beaded apron and collar of {BEADS}, barefoot, standing on nothing, no soil",
+    "carrier": f"a Zulu woman in full traditional ceremonial dress standing upright, balancing a large round clay pot on top of her head, one hand steadying it, a {KEY} shawl over her shoulders and a {KEY} pleated knee-length skirt, a beaded apron and collar of {BEADS}, barefoot, nothing on the ground",
+    "elder": f"an elderly Zulu man in full traditional ceremonial dress, a {KEY} cloak over his shoulders, a leopard-skin headband, {BEADS} necklaces, white cow-tail bands on his arms, barefoot, leaning on a long wooden staff",
+    "hunter": f"a Zulu hunter in traditional ceremonial dress, a {KEY} knee-length skirt and a {KEY} band across his chest, a leopard-skin collar, {BEADS} armbands, barefoot, carrying two long throwing spears slanting forward",
 }
 PEOPLE_STYLE = (
     "whole figure in frame from head to feet, three-quarter view from the front left, "
     "isolated on a plain pure white background, even soft studio lighting, sharp focus, "
-    "realistic, historically accurate, dignified"
+    "realistic, dignified"
 )
 
+# The owner's references (ADR-0024): walls of whitewashed clay painted in the Ndebele
+# manner, bold flat shapes outlined in black. Asked for on every building that has a
+# wall to carry it; the weir and the hunters' drying rack have none and keep their form.
+PAINT = "whitewashed clay painted all over in bold Ndebele geometric patterns, large flat triangles, diamonds, chevrons and stepped shapes in bright red, yellow, blue and green, each outlined in thick black lines"
 BUILDINGS = {
-    # Said precisely after the first three came back as rondavels — conical roofs on mud
-    # walls, a Sotho and Xhosa form. The iQhugwane has no walls: the thatch dome comes
-    # down to the ground (docs/CONTENT.md).
-    "umuzi": "a small group of three traditional Zulu iQhugwane beehive huts, each one a rounded dome made entirely of thatched grass that reaches all the way down to the ground like an upturned basket, with no walls and no conical roof, a small low arched doorway, on bare earth",
-    "isibaya": "a large empty circular cattle enclosure, a ring fence of stacked thorn branches between wooden posts, standing on bare earth",
-    "grain-store": "a small traditional African granary, a woven grass storage basket with a conical thatched roof raised on short wooden stilts",
-    "ikhanda": "a large traditional Zulu homestead, many beehive grass huts arranged in a wide ring around an open central cattle enclosure",
-    "indlunkulu": "a single large traditional Zulu great hut, a big beehive dome of woven grass thatch with an arched doorway, standing on bare earth",
-    "umgodi": "a sealed traditional grain storage pit, a small low round mound of packed earth with a flat stone lid on top",
+    # Composed from three of the indlunkulu (make_building_mesh.py COMPOSED); the prompt is
+    # what a single reference would be asked for.
+    "umuzi": f"a small group of three traditional round huts with low round walls of {PAINT}, under conical thatched grass roofs, arched doorways",
+    # Asked for a painted wall, not a fence: rails and wattle do not survive
+    # image-to-3D (the first goat fold came back as floating sticks); a solid wall does.
+    "isibaya": f"a large empty circular cattle enclosure with a low solid round wall of {PAINT}, open to the sky, one wide gap for a gateway, standing on bare earth",
+    "grain-store": f"a small traditional African granary, a round storage bin of {PAINT}, with a conical thatched roof, raised on short wooden stilts",
+    "ikhanda": f"a large traditional homestead, many round huts with walls of {PAINT} under conical thatched roofs, in a wide ring around an open central cattle enclosure",
+    "indlunkulu": f"a single large traditional round great hut, a round wall of {PAINT}, under a tall conical thatched grass roof, an arched doorway, the wall meeting the white background directly with no ground, sand or shadow beneath it",
+    "umgodi": f"a sealed traditional grain storage pit, a small low round raised rim of {PAINT}, with a flat stone lid on top",
     "isiziba": "a small weir of stacked grey stones and wooden stakes, built across the end of a narrow stream",
-    "goat-fold": "a small square livestock pen fenced with woven branches, with a small thatched lean-to shelter in one corner, standing on bare earth",
+    # Not used: the fold is the isibaya's mesh, smaller (make_building_mesh.py COMPOSED).
+    # Asked for itself it came back as a hood or a tunnel, in every wording tried.
+    "goat-fold": f"a small empty circular goat enclosure with a low solid round wall of {PAINT}, open to the sky, standing on bare earth",
     "hunters-camp": "a small hunters' camp: a wooden A-frame drying rack with two animal hides hanging on it, beside a small low dome shelter of grass",
-    "well": "a traditional water well, a low ring of stacked stones around a dark shaft, with a wooden frame over it holding a clay pot on a rope",
+    # Seen from the side: from above, the model painted the inside of the shaft and never
+    # saw the outside wall, which came back as ochre wicker from every angle.
+    "well": f"a traditional water well seen from the side at eye level, a low round drum-shaped outer wall of {PAINT} facing the camera, with a simple wooden frame above it holding a clay pot on a rope",
 }
 BUILDING_STYLE = (
     "whole structure in frame, three-quarter view from slightly above, isolated on a plain pure white background, "
@@ -114,6 +134,12 @@ BUILDING_STYLE = (
 # front is mostly ears and trunk: the first came back lumpy and short-bodied. From the
 # side the model sees the length of the body it has to build.
 VIEWS = {
+    # The cattle too: from three-quarters front the first cow came back foreshortened,
+    # its legs splayed as if bucking and its back tilted at rest.
+    "nguni": "whole animal in frame from nose to tail and feet, side view in profile facing left, slightly from the front, "
+    "isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic photograph",
+    "nguni-dark": "whole animal in frame from nose to tail and feet, side view in profile facing left, slightly from the front, "
+    "isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic photograph",
     "elephant": "whole animal in frame from trunk to tail and feet, side view in profile facing left, slightly from the front, "
     "isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph",
 }
@@ -196,13 +222,20 @@ def render(kind: str, turn: float = 0.0) -> None:
     )
     # Into the sprite set the atlas is packed from: frames, manifest entries, origin.
     new = json.loads((trimmed / "manifest.json").read_text())["sprites"]
-    names = {entry["file"] for entry in new}
+    # Everything this kind had before goes first, body and overlay. A rebuild can have
+    # fewer frames than the art it replaces (the primitive cattle walked in twelve, a mesh
+    # animal in eight), and frames it did not overwrite would play inside the new cycle.
+    # The trailing underscore keeps "nguni" from taking "nguni-dark" with it.
+    stale = (f"{kind}_", f"{kind}-team_", f"{kind}-shield_")
+    for path in SPRITES.iterdir():
+        if path.name.startswith(stale):
+            path.unlink()
     for entry in new:
         shutil.copy(trimmed / entry["file"], SPRITES / entry["file"])
     manifest_path = SPRITES / "manifest.json"
     manifest = json.loads(manifest_path.read_text())
     manifest["sprites"] = sorted(
-        [e for e in manifest["sprites"] if e["file"] not in names] + new, key=lambda e: e["file"]
+        [e for e in manifest["sprites"] if not e["file"].startswith(stale)] + new, key=lambda e: e["file"]
     )
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
     origin = json.loads((frames / "origins.json").read_text())

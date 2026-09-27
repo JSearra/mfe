@@ -22,6 +22,14 @@ export interface SetupChoice {
   readonly shieldColour: string;
   /** The marking on it, and the player's colour elsewhere. */
   readonly markingColour: string;
+  /** What the player's people wear, and the blankets on their cattle, as #rrggbb. */
+  readonly outfitColour: string;
+}
+
+/** Continuing the kept village still takes the outfit colour, the one choice it can change. */
+export interface ContinueChoice {
+  readonly continue: true;
+  readonly outfitColour: string;
 }
 
 /**
@@ -38,6 +46,39 @@ const LIVERIES: readonly { readonly key: MessageKey; readonly shield: string; re
   { key: 'setup.liveryRed', shield: '#96372a', marking: '#e8e2d4' },
   { key: 'setup.liveryDun', shield: '#9c7c4e', marking: '#3a3026' },
 ]
+
+/**
+ * Outfit colours: bright primaries, because the point is to find your own people on a
+ * busy map at a glance, and the earth, thatch and hide colours they stand among are all
+ * muted. Each tints the garment the art renders pale (tools/art/make_wild_mesh.py, the
+ * team pass), so any colour works without new art.
+ */
+export const OUTFITS: readonly { readonly key: MessageKey; readonly colour: string }[] = [
+  { key: 'setup.outfitColours.red', colour: '#ff2a1f' },
+  { key: 'setup.outfitColours.blue', colour: '#1f5bff' },
+  { key: 'setup.outfitColours.yellow', colour: '#ffd21f' },
+  { key: 'setup.outfitColours.green', colour: '#1fbf3a' },
+];
+
+/** The last outfit colour chosen, remembered in this browser only. */
+const OUTFIT_STORAGE = 'mfe-outfit';
+
+function rememberedOutfit(fallback: string): string {
+  try {
+    const stored = localStorage.getItem(OUTFIT_STORAGE);
+    return OUTFITS.some((outfit) => outfit.colour === stored) ? stored! : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function rememberOutfit(colour: string): void {
+  try {
+    localStorage.setItem(OUTFIT_STORAGE, colour);
+  } catch {
+    // A private window or blocked storage: the choice holds for this match only.
+  }
+}
 
 /** Map keys, in the order they are offered. Null is the generated heightmap. */
 const MAPS: readonly (MapScript | null)[] = [null, ...MAP_SCRIPTS];
@@ -80,7 +121,7 @@ export function showSetup(
   parent: HTMLElement,
   initial: SetupChoice,
   continueFrom: { readonly savedAt: number } | null = null,
-): Promise<SetupChoice | 'continue'> {
+): Promise<SetupChoice | ContinueChoice> {
   return new Promise((resolve) => {
     const screen = document.createElement('div');
     screen.className = 'setup';
@@ -93,6 +134,19 @@ export function showSetup(
     heading.textContent = t('app.title');
     panel.appendChild(heading);
 
+    // First, above Continue, because it is the one choice that applies to both.
+    const outfitSelect = document.createElement('select');
+    const outfit = rememberedOutfit(initial.outfitColour);
+    for (const option of OUTFITS) {
+      const element = document.createElement('option');
+      element.value = option.colour;
+      element.textContent = t(option.key);
+      if (option.colour === outfit) element.selected = true;
+      outfitSelect.appendChild(element);
+    }
+    outfitSelect.dataset.tip = t('tip.outfit');
+    field(panel, 'setup.outfit').appendChild(outfitSelect);
+
     let resume: HTMLButtonElement | null = null;
     if (continueFrom !== null) {
       resume = document.createElement('button');
@@ -103,7 +157,8 @@ export function showSetup(
       resume.dataset.tip = t('tip.continue');
       resume.addEventListener('click', () => {
         screen.remove();
-        resolve('continue');
+        rememberOutfit(outfitSelect.value);
+        resolve({ continue: true, outfitColour: outfitSelect.value });
       });
       panel.appendChild(resume);
       // One slot, kept automatically: a new village takes its place within a minute.
@@ -173,9 +228,11 @@ export function showSetup(
       const seed = Number(seedInput.value);
       screen.remove();
       const livery = LIVERIES[Number(liverySelect.value)] ?? LIVERIES[0]!;
+      rememberOutfit(outfitSelect.value);
       resolve({
         shieldColour: livery.shield,
         markingColour: livery.marking,
+        outfitColour: outfitSelect.value,
         mapScript: chosen,
         // A seed of zero or a blank box falls back rather than generating the same flat
         // nothing every time, which is what Number('') gives.

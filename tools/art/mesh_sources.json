@@ -57,11 +57,59 @@
     "seed": 47
   },
   "villager": {
-    "prompt": "photograph of a Zulu man of the early nineteenth century standing relaxed, wearing a traditional umutsha loin covering of hide and animal tails and a fur headband, barefoot, hands empty at his sides, whole figure in frame from head to feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic, historically accurate, dignified",
-    "seed": 23
+    "prompt": "photograph of a Zulu man in full traditional ceremonial dress, a solid plain vivid magenta cloth draped over one shoulder and a solid plain vivid magenta knee-length skirt, a leopard-skin collar, bright glass beadwork in red, yellow, blue, green, white and black geometric triangles and diamonds across his chest and on his arms and ankles, white cow-tail bands on his upper arms and calves, a beaded headband, barefoot, hands empty at his sides, whole figure in frame from head to feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic, dignified",
+    "seed": 47
   },
   "indlunkulu": {
-    "prompt": "photograph of a single large traditional Zulu great hut, a big beehive dome of woven grass thatch with an arched doorway, standing on bare earth, whole structure in frame, three-quarter view from slightly above, isolated on a plain pure white background, even soft lighting, sharp focus, realistic photograph",
+    "prompt": "photograph of a single large traditional round great hut, a round wall of whitewashed clay painted all over in bold Ndebele geometric patterns, large flat triangles, diamonds, chevrons and stepped shapes in bright red, yellow, blue and green, each outlined in thick black lines, under a tall conical thatched grass roof, an arched doorway, the wall meeting the white background directly with no ground, sand or shadow beneath it, whole structure in frame, three-quarter view from slightly above, isolated on a plain pure white background, even soft lighting, sharp focus, realistic photograph",
+    "seed": 11
+  },
+  "isibaya": {
+    "prompt": "photograph of a large empty circular cattle enclosure with a low solid round wall of whitewashed clay painted all over in bold Ndebele geometric patterns, large flat triangles, diamonds, chevrons and stepped shapes in bright red, yellow, blue and green, each outlined in thick black lines, open to the sky, one wide gap for a gateway, standing on bare earth, whole structure in frame, three-quarter view from slightly above, isolated on a plain pure white background, even soft lighting, sharp focus, realistic photograph",
+    "seed": 11
+  },
+  "grain-store": {
+    "prompt": "photograph of a small traditional African granary, a round storage bin of whitewashed clay painted all over in bold Ndebele geometric patterns, large flat triangles, diamonds, chevrons and stepped shapes in bright red, yellow, blue and green, each outlined in thick black lines, with a conical thatched roof, raised on short wooden stilts, whole structure in frame, three-quarter view from slightly above, isolated on a plain pure white background, even soft lighting, sharp focus, realistic photograph",
+    "seed": 23
+  },
+  "umgodi": {
+    "prompt": "photograph of a sealed traditional grain storage pit, a small low round raised rim of whitewashed clay painted all over in bold Ndebele geometric patterns, large flat triangles, diamonds, chevrons and stepped shapes in bright red, yellow, blue and green, each outlined in thick black lines, with a flat stone lid on top, whole structure in frame, three-quarter view from slightly above, isolated on a plain pure white background, even soft lighting, sharp focus, realistic photograph",
+    "seed": 23
+  },
+  "isiziba": {
+    "prompt": "photograph of a small weir of stacked grey stones and wooden stakes, built across the end of a narrow stream, whole structure in frame, three-quarter view from slightly above, isolated on a plain pure white background, even soft lighting, sharp focus, realistic photograph",
+    "seed": 23
+  },
+  "herd-boy": {
+    "prompt": "photograph of a Zulu boy of about twelve in traditional ceremonial dress, a solid plain vivid magenta short skirt and a solid plain vivid magenta sash across his chest, bright glass beadwork in red, yellow, blue, green, white and black geometric triangles and diamonds necklaces and armbands, barefoot, holding a long thin herding stick upright beside him, whole figure in frame from head to feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic, dignified",
+    "seed": 23
+  },
+  "field-hand": {
+    "prompt": "photograph of a Zulu woman in full traditional ceremonial dress standing upright, carrying a short wooden-handled hoe with one broad flat iron blade resting on her shoulder, a wide flat-topped solid plain vivid magenta isicholo hat, a solid plain vivid magenta pleated knee-length skirt, a beaded apron and collar of bright glass beadwork in red, yellow, blue, green, white and black geometric triangles and diamonds, barefoot, standing on nothing, no soil, whole figure in frame from head to feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic, dignified",
+    "seed": 23
+  },
+  "carrier": {
+    "prompt": "photograph of a Zulu woman in full traditional ceremonial dress standing upright, balancing a large round clay pot on top of her head, one hand steadying it, a solid plain vivid magenta shawl over her shoulders and a solid plain vivid magenta pleated knee-length skirt, a beaded apron and collar of bright glass beadwork in red, yellow, blue, green, white and black geometric triangles and diamonds, barefoot, nothing on the ground, whole figure in frame from head to feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic, dignified",
+    "seed": 23
+  },
+  "elder": {
+    "prompt": "photograph of an elderly Zulu man in full traditional ceremonial dress, a solid plain vivid magenta cloak over his shoulders, a leopard-skin headband, bright glass beadwork in red, yellow, blue, green, white and black geometric triangles and diamonds necklaces, white cow-tail bands on his arms, barefoot, leaning on a long wooden staff, whole figure in frame from head to feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic, dignified",
+    "seed": 11
+  },
+  "hunter": {
+    "prompt": "photograph of a Zulu hunter in traditional ceremonial dress, a solid plain vivid magenta knee-length skirt and a solid plain vivid magenta band across his chest, a leopard-skin collar, bright glass beadwork in red, yellow, blue, green, white and black geometric triangles and diamonds armbands, barefoot, carrying two long throwing spears slanting forward, whole figure in frame from head to feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic, dignified",
+    "seed": 47
+  },
+  "nguni": {
+    "prompt": "wildlife photograph of a single Nguni cow standing, a lean fine-boned African cattle breed with a short glossy coat patched irregularly in rich red-brown and white with small speckles, a small hump over the shoulders, long upswept lyre-shaped horns dark at the tips, whole animal in frame from nose to tail and feet, side view in profile facing left, slightly from the front, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic photograph",
+    "seed": 11
+  },
+  "nguni-dark": {
+    "prompt": "wildlife photograph of a single Nguni cow standing, a lean fine-boned African cattle breed with a short glossy coat of black with irregular white patches and fine white speckling on the flanks, a small hump over the shoulders, long upswept lyre-shaped horns dark at the tips, whole animal in frame from nose to tail and feet, side view in profile facing left, slightly from the front, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic photograph",
+    "seed": 47
+  },
+  "well": {
+    "prompt": "photograph of a traditional water well seen from the side at eye level, a low round drum-shaped outer wall of whitewashed clay painted all over in bold Ndebele geometric patterns, large flat triangles, diamonds, chevrons and stepped shapes in bright red, yellow, blue and green, each outlined in thick black lines facing the camera, with a simple wooden frame above it holding a clay pot on a rope, whole structure in frame, three-quarter view from slightly above, isolated on a plain pure white background, even soft lighting, sharp focus, realistic photograph",
     "seed": 11
   }
 }

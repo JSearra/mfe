@@ -501,6 +501,11 @@ export interface Livery {
   readonly shield: number;
   /** The marking on it, and the faction colour elsewhere. */
   readonly marking: number;
+  /**
+   * What the player's people wear and the blankets on their cattle: the `-team` overlay
+   * of every figure that has one. Chosen in the setup menu.
+   */
+  readonly outfit: number;
   /** Whose troops wear it. Everyone else keeps their faction colour. */
   readonly faction: number;
 }
@@ -1060,11 +1065,14 @@ export function createEntityLayer(
         // asks for a shader swap. A tinted sprite IS one: the tint is applied in the
         // renderer's own batch shader, so one set of art serves every faction and the
         // overlay batches with the body it sits on.
-        // The player's own troops wear the chosen livery; everyone else keeps their
-        // faction colour, or an enemy army would be indistinguishable from yours.
-        const own = livery !== null && faction === livery.faction;
+        // The player's own people wear the chosen outfit colour; everyone else keeps
+        // their faction colour, or a neighbour's would be indistinguishable from yours.
+        // Cattle are spawned neutral and belong to whoever pens or drives them, but
+        // neighbours keep no herds on the map (ADR-0021), so every blanket is the
+        // player's.
+        const own = livery !== null && (faction === livery.faction || isCattle);
         const markingTint = own
-          ? livery.marking
+          ? livery.outfit
           : (FACTION[faction % FACTION.length] ?? FACTION[0]!);
 
         overlay(marker.shield, `${name}-shield`, own ? livery.shield : 0xffffff);

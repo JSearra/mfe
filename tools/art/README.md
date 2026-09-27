@@ -199,6 +199,21 @@ downloads the TripoSR weights (1.7 GB) and a background-removal model (1 GB).
   zebra's raised head ran out of a hand-set frame in 54 of 160 frames.
 - The far side of an animal was never in the reference and is guessed: markings there are
   softer. At forty to eighty pixels the silhouette carries it.
+- The bake **greys out paint**: the painted hut's saturated share fell from 27% to 7.5%.
+  `SATURATION` in `make_building_mesh.py` gives it back, per building.
+- A reference **seen from above** paints what the camera saw: the first well had a
+  painted shaft and an ochre wicker outside. Ask for the side the sprite will show.
+- **Small subjects and groups fail**: a goat fold came back as a hood four prompts
+  running, a homestead as a dish. `COMPOSED` builds them from meshes that worked.
+- Stray islands from marching cubes are dropped under 1% of the vertices (`FRAGMENT`).
+
+**Outfit colour (ADR-0024).** A person's main garment is generated in one key colour,
+vivid magenta, which is in none of the beadwork. `make_wild_mesh.py` masks it out of the
+bake (`OUTFIT_KEY`), renders it neutral in the body, and renders it alone in a pale
+`<kind>-team` pass with everything else held out, so the body still hides it. The game
+tints that pass. Check the key on every reference: a garment that is not solid magenta
+gives a patchy overlay. Cattle carry the same pass on a blanket built in Blender
+(`add_blanket`), not asked of the image model.
 
 ## Things that cost a pass each, so they are written down
 

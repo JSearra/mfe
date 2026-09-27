@@ -20,7 +20,7 @@ import { chromium } from 'playwright';
 
 const out = process.argv[2] ?? 'game.png';
 const settleMs = Number(process.argv[3] ?? 9000);
-const url = process.env.GAME_URL ?? 'http://localhost:5173/';
+const url = process.env.GAME_URL ?? 'http://localhost:5199/';
 
 /*
  * An optional region, as --clip x,y,w,h.

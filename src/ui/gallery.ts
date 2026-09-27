@@ -1,5 +1,6 @@
 import { t, type MessageKey } from '../core/i18n/index.js';
 import { SPECIES } from '../shared/wildlife.js';
+import { OUTFITS } from './setup.js';
 
 /**
  * Every visual asset the game ships, laid out by category. Dev builds only.
@@ -147,6 +148,8 @@ export async function showGallery(parent: HTMLElement): Promise<void> {
   let atGameScale = false;
   let playing = true;
   let season = 'wet';
+  /** The outfit colour laid over every figure that has a team overlay, or null for none. */
+  let outfit: string | null = OUTFITS[0]!.colour;
   const setBackground = (value: string): void => {
     page.dataset.background = value;
   };
@@ -173,6 +176,13 @@ export async function showGallery(parent: HTMLElement): Promise<void> {
   ], 'wet', (value) => {
     season = value;
     drawTerrain();
+  });
+  toggle(controls, 'gallery.outfit', [
+    { key: 'gallery.outfitNone', value: '' },
+    ...OUTFITS.map((option) => ({ key: option.key, value: option.colour })),
+  ], outfit, (value) => {
+    outfit = value === '' ? null : value;
+    redrawAll();
   });
   const play = element('button', 'gallery__chip is-on', controls);
   play.textContent = t('gallery.pause');
@@ -229,6 +239,28 @@ export async function showGallery(parent: HTMLElement): Promise<void> {
     return { w: right - left, h: bottom - top, left, top };
   }
 
+  /**
+   * The team overlay of a frame, tinted the way the game tints it: Pixi multiplies the
+   * texture by the tint, so the pale garment takes the colour and keeps its shading.
+   */
+  const tintCanvas = document.createElement('canvas');
+  function tinted(frame: AtlasFrame, colour: string): HTMLCanvasElement | null {
+    const source = pages[frame.page];
+    if (source === undefined) return null;
+    tintCanvas.width = frame.w;
+    tintCanvas.height = frame.h;
+    const context = tintCanvas.getContext('2d')!;
+    context.globalCompositeOperation = 'source-over';
+    context.drawImage(source, frame.x, frame.y, frame.w, frame.h, 0, 0, frame.w, frame.h);
+    context.globalCompositeOperation = 'multiply';
+    context.fillStyle = colour;
+    context.fillRect(0, 0, frame.w, frame.h);
+    // Multiply fills the transparent margin too; keep only where the overlay was.
+    context.globalCompositeOperation = 'destination-in';
+    context.drawImage(source, frame.x, frame.y, frame.w, frame.h, 0, 0, frame.w, frame.h);
+    return tintCanvas;
+  }
+
   function drawStrip(strip: Strip, tick: number): void {
     const { canvas, kind, anim, frames, still } = strip;
     const directions = still ? 1 : atlas.directions;
@@ -263,6 +295,18 @@ export async function showGallery(parent: HTMLElement): Promise<void> {
         frame.w * scale,
         frame.h * scale,
       );
+      // The same frame of the team overlay, over the body, as the game draws it.
+      const team = outfit === null ? undefined : frameOf(`${kind}-team`, anim, direction, index);
+      const overlay = team === undefined ? null : tinted(team, outfit!);
+      if (team !== undefined && overlay !== null) {
+        context.drawImage(
+          overlay,
+          column * cellW + 4 + (team.offsetX - cell.left) * scale,
+          4 + (team.offsetY - cell.top) * scale,
+          team.w * scale,
+          team.h * scale,
+        );
+      }
     }
   }
 

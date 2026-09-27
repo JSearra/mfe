@@ -65,7 +65,7 @@ import { createDebugOverlay } from './ui/debugOverlay.js';
 import { createCommandPanel, type FieldReading } from './ui/commandPanel.js';
 import { createMinimap } from './ui/minimap.js';
 import { createAlerts } from './ui/alerts.js';
-import { showSetup } from './ui/setup.js';
+import { OUTFITS, showSetup } from './ui/setup.js';
 import { loadStoredGame, storeGame } from './ui/savedGame.js';
 import { SAVE_VERSION, type SaveGame } from './sim/persistence/save.js';
 import { createEmptiedBanner } from './ui/emptiedBanner.js';
@@ -234,6 +234,8 @@ export interface GameOptions {
   /** How the player's own troops are turned out. Purely presentational. */
   readonly shieldColour: string;
   readonly markingColour: string;
+  /** What the player's people wear and their cattle's blankets. */
+  readonly outfitColour: string;
 }
 
 /**
@@ -262,6 +264,7 @@ function defaultOptions(): GameOptions {
     enemyFaction: FactionId.Sotho,
     shieldColour: '#e8e2d4',
     markingColour: '#2b2723',
+    outfitColour: OUTFITS[0]!.colour,
   };
 }
 
@@ -399,6 +402,7 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
     {
       shield: Number.parseInt(options.shieldColour.slice(1), 16),
       marking: Number.parseInt(options.markingColour.slice(1), 16),
+      outfit: Number.parseInt(options.outfitColour.slice(1), 16),
       faction: PLAYER,
     },
     map,
@@ -1383,11 +1387,14 @@ async function boot(): Promise<void> {
   const stored = loadStoredGame();
   const readable = stored !== null && stored.save.version === SAVE_VERSION ? stored : null;
   const chosen = await showSetup(root, defaults, readable);
-  if (chosen === 'continue' && readable !== null) {
-    await main({ ...defaults, ...readable.options }, readable.save);
+  if ('continue' in chosen) {
+    // A village kept before outfits existed has no colour saved; the one chosen wins
+    // either way.
+    const kept = readable === null ? {} : readable.options;
+    await main({ ...defaults, ...kept, outfitColour: chosen.outfitColour }, readable?.save);
     return;
   }
-  await main({ ...defaults, ...(chosen === 'continue' ? {} : chosen) });
+  await main({ ...defaults, ...chosen });
 }
 
 void boot();

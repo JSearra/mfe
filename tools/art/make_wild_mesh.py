@@ -66,13 +66,18 @@ SPECIES = {
     "ostrich": {"length": 1.5, "stand": 2.5, "ortho": 3.4, "target": 1.2, "size": 128, "legs": 2, "belly": 0.4},
     # People (the villagers of make_unit.py), scaled by HEIGHT rather than length, rendered
     # sharper — the primitive figures were drawn at 58 px/m and a person is small — with
-    # a two-legged rig whose idle is a breath rather than grazing.
-    "villager": {"height": 1.72, "person": True, "ppm": 56},
-    "herd-boy": {"height": 1.25, "person": True, "ppm": 56},
-    "field-hand": {"height": 1.2, "person": True, "ppm": 56},
-    "carrier": {"height": 1.95, "person": True, "ppm": 56},
-    "elder": {"height": 1.68, "person": True, "ppm": 56},
-    "hunter": {"height": 1.72, "person": True, "ppm": 56},
+    # a two-legged rig whose idle is a breath rather than grazing. `outfit`: the garment
+    # was generated in the key colour and becomes the tinted team pass (OUTFIT_KEY).
+    "villager": {"outfit": True, "height": 1.72, "person": True, "ppm": 56},
+    "herd-boy": {"outfit": True, "height": 1.25, "person": True, "ppm": 56},
+    "field-hand": {"outfit": True, "height": 1.7, "person": True, "ppm": 56},
+    "carrier": {"outfit": True, "height": 1.95, "person": True, "ppm": 56},
+    "elder": {"outfit": True, "height": 1.68, "person": True, "ppm": 56},
+    "hunter": {"outfit": True, "height": 1.72, "person": True, "ppm": 56},
+    # The village's cattle, with a blanket over the back in the player's outfit colour
+    # (add_blanket; ADR-0024). Nguni cows run 300-400 kg, about 1.2 m at the shoulder.
+    "nguni": {"length": 2.1, "stand": 1.25, "size": 128, "blanket": True},
+    "nguni-dark": {"length": 2.1, "stand": 1.25, "size": 128, "blanket": True},
     "guineafowl": {"length": 0.55, "stand": 0.55, "ortho": 1.3, "target": 0.28, "size": 64, "legs": 2, "belly": 0.28},
 }
 
@@ -167,12 +172,49 @@ def clean(obj: bpy.types.Object) -> None:
     bpy.ops.mesh.remove_doubles(threshold=0.0005)
     bpy.ops.mesh.normals_make_consistent(inside=False)
     bpy.ops.object.mode_set(mode="OBJECT")
+    drop_fragments(obj)
     bpy.ops.object.shade_smooth()
 
 
+# Share of a mesh's vertices under which a disconnected island is reconstruction debris.
+# The elephant's floating sliver was 0.4%; the lion's tail tuft, a separate island that
+# belongs to the lion, is 1.7%.
+FRAGMENT = 0.01
+
+
+def drop_fragments(obj: bpy.types.Object) -> None:
+    """Delete small islands floating clear of the body: marching cubes leaves a few, and
+    the elephant walked with a sliver of tusk hanging in the air beside it."""
+    import bmesh
+
+    mesh = bmesh.new()
+    mesh.from_mesh(obj.data)
+    seen: set = set()
+    debris = []
+    for start in mesh.verts:
+        if start in seen:
+            continue
+        island = [start]
+        seen.add(start)
+        for vert in island:
+            for edge in vert.link_edges:
+                other = edge.other_vert(vert)
+                if other not in seen:
+                    seen.add(other)
+                    island.append(other)
+        if len(island) < FRAGMENT * len(mesh.verts):
+            debris.extend(island)
+    bmesh.ops.delete(mesh, geom=debris, context="VERTS")
+    mesh.to_mesh(obj.data)
+    mesh.free()
+
+
 def import_mesh(path: str, texture: str, up: str, saturation: float = 1.0, value: float = 1.0) -> bpy.types.Object:
+    before = set(bpy.context.scene.objects)
     bpy.ops.wm.obj_import(filepath=path, up_axis=up, forward_axis="Y" if up == "Z" else "NEGATIVE_Z")
-    meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
+    # Only what this import brought in: a building composed of several meshes imports
+    # into a scene that already holds the others.
+    meshes = [o for o in bpy.context.scene.objects if o.type == "MESH" and o not in before]
     bpy.ops.object.select_all(action="DESELECT")
     for obj in meshes:
         obj.select_set(True)
@@ -202,6 +244,186 @@ def import_mesh(path: str, texture: str, up: str, saturation: float = 1.0, value
         obj.data.materials.clear()
         obj.data.materials.append(mat)
     return obj
+
+
+# The key colour a person's outfit was generated in (mesh_pipeline.py KEY, vivid magenta),
+# as a hue band in 0..1 and the least saturation and brightness that count. Measured on the
+# villager's bake: magenta sat at 0.875-0.96 and skin at 0-0.1, with nothing between.
+# The first band stopped at 0.955 and left 3% of the body frames magenta, at the cloth's
+# shadowed edges, where it darkens toward red; the band is wide, and the mask grown a
+# texel, for those.
+OUTFIT_KEY = {"hue": (0.78, 0.975), "saturation": 0.25, "value": 0.08, "grow": 1}
+
+
+def outfit_mask(image: bpy.types.Image) -> bpy.types.Image:
+    """
+    Where the baked texture is the key colour, as a black-and-white image the same size.
+
+    The garment the player's colour replaces. Found in the texture rather than asked of the
+    mesh because image-to-3D returns one surface: skin, beads and cloth are all one object.
+    """
+    import numpy as np
+
+    width, height = image.size
+    rgba = np.array(image.pixels[:], dtype=np.float32).reshape(height, width, 4)
+    r, g, b = rgba[..., 0], rgba[..., 1], rgba[..., 2]
+    top = rgba[..., :3].max(axis=2)
+    spread = top - rgba[..., :3].min(axis=2) + 1e-6
+    hue = np.where(top == r, ((g - b) / spread) % 6, np.where(top == g, (b - r) / spread + 2, (r - g) / spread + 4)) / 6
+    # Blender holds image pixels linear, where magenta's saturation reads higher still.
+    key = (
+        (hue > OUTFIT_KEY["hue"][0]) & (hue < OUTFIT_KEY["hue"][1])
+        & (spread / (top + 1e-6) > OUTFIT_KEY["saturation"]) & (top > OUTFIT_KEY["value"])
+    )
+    for _ in range(OUTFIT_KEY["grow"]):
+        key = key | np.roll(key, 1, 0) | np.roll(key, -1, 0) | np.roll(key, 1, 1) | np.roll(key, -1, 1)
+    key = key.astype(np.float32)
+    mask = bpy.data.images.new("outfit_mask", width, height, alpha=False, float_buffer=True)
+    mask.colorspace_settings.name = "Non-Color"
+    out = np.stack([key, key, key, np.ones_like(key)], axis=-1)
+    mask.pixels[:] = out.ravel()
+    return mask
+
+
+def dress(obj: bpy.types.Object) -> bpy.types.Material:
+    """
+    Take the key colour out of the body and return the material for the team pass.
+
+    In the body the garment becomes a pale grey carrying the cloth's own light and shade,
+    so a figure drawn without its overlay is undyed rather than magenta. The team pass is
+    that same garment and nothing else: every other surface is a holdout, which draws
+    nothing but still hides what is behind it, so an arm across the cloth cuts it.
+    """
+    body = obj.data.materials[0]
+    tree = body.node_tree
+    image_node = next(n for n in tree.nodes if n.type == "TEX_IMAGE")
+    adjust = next(n for n in tree.nodes if n.type == "HUE_SAT")
+    bsdf = tree.nodes["Principled BSDF"]
+    mask = outfit_mask(image_node.image)
+
+    def garment(nodes, links):
+        """The cloth's brightness, as a pale grey, and the mask sampled at the same UV."""
+        texture = nodes.new("ShaderNodeTexImage")
+        texture.image = image_node.image
+        key = nodes.new("ShaderNodeTexImage")
+        key.image = mask
+        split = nodes.new("ShaderNodeSeparateColor")
+        split.mode = "HSV"
+        links.new(texture.outputs["Color"], split.inputs["Color"])
+        pale = nodes.new("ShaderNodeMath")
+        pale.operation = "MULTIPLY_ADD"
+        # Magenta's brightest channel runs 0.5-0.9 linear across its folds; lifted to
+        # 0.55-0.95 so a tint lands bright, and the folds survive.
+        pale.inputs[1].default_value = 1.0
+        pale.inputs[2].default_value = 0.1
+        links.new(split.outputs[2], pale.inputs[0])
+        return pale, key
+
+    pale, key = garment(tree.nodes, tree.links)
+    mix = tree.nodes.new("ShaderNodeMix")
+    mix.data_type = "RGBA"
+    tree.links.new(key.outputs["Color"], mix.inputs["Factor"])
+    tree.links.new(adjust.outputs["Color"], mix.inputs[6])
+    tree.links.new(pale.outputs[0], mix.inputs[7])
+    tree.links.new(mix.outputs[2], bsdf.inputs["Base Color"])
+
+    team = bpy.data.materials.new("outfit_team")
+    team.use_nodes = True
+    nodes, links = team.node_tree.nodes, team.node_tree.links
+    shaded = nodes["Principled BSDF"]
+    shaded.inputs["Roughness"].default_value = 0.9
+    shaded.inputs["Specular IOR Level"].default_value = 0.1
+    pale, key = garment(nodes, links)
+    links.new(pale.outputs[0], shaded.inputs["Base Color"])
+    holdout = nodes.new("ShaderNodeHoldout")
+    both = nodes.new("ShaderNodeMixShader")
+    links.new(key.outputs["Color"], both.inputs["Fac"])
+    links.new(holdout.outputs[0], both.inputs[1])
+    links.new(shaded.outputs[0], both.inputs[2])
+    links.new(both.outputs[0], nodes["Material Output"].inputs["Surface"])
+    return team
+
+
+def add_blanket(obj: bpy.types.Object) -> None:
+    """
+    A cloth over the cow's back, joined into its mesh so the rig carries it.
+
+    Built here rather than asked of the image model: a blanket in the reference would come
+    back fused into the hide, in whatever colour it was drawn. A sheet shrinkwrapped to the
+    nearest surface drapes over the spine and down both flanks, and its own material is
+    what the team pass keeps (see dress_blanket).
+    """
+    points = world_vertices(obj)
+    min_x, max_x = min(p.x for p in points), max(p.x for p in points)
+    length = max_x - min_x
+    # The barrel: behind the shoulders and ahead of the hips, where the head and neck
+    # (toward +X) do not reach.
+    # Behind the hump: centred at 0.45 the front edge reached 65% of the way along the
+    # dark cow, up over its hump, and the blanket stood on it like a tent.
+    centre = min_x + length * 0.40
+    barrel = [p for p in points if abs(p.x - centre) < length * 0.12]
+    top = max(p.z for p in barrel)
+    width = max(p.y for p in barrel) - min(p.y for p in barrel)
+    bpy.ops.mesh.primitive_grid_add(x_subdivisions=16, y_subdivisions=14, size=1.0, location=(centre, 0.0, top + 0.05))
+    sheet = bpy.context.active_object
+    # An oval, not a square: a square sheet's corners do not drape and stood up in
+    # points above the flanks.
+    import bmesh
+
+    cut = bmesh.new()
+    cut.from_mesh(sheet.data)
+    corners = [v for v in cut.verts if (2 * v.co.x) ** 2 + (2 * v.co.y) ** 2 > 1.02]
+    bmesh.ops.delete(cut, geom=corners, context="VERTS")
+    cut.to_mesh(sheet.data)
+    cut.free()
+    # No wider than the barrel, so nearest-surface wrapping lays the edges on the flanks.
+    sheet.scale = (length * 0.26, width * 1.0, 1.0)
+    apply_transform(sheet)
+    # Dropped straight down onto the back first, then pulled to the nearest surface so
+    # the edges that missed the back hug the flanks.
+    bpy.context.view_layer.objects.active = sheet
+    drop = sheet.modifiers.new("drop", "SHRINKWRAP")
+    drop.target = obj
+    drop.wrap_method = "PROJECT"
+    drop.use_project_z = True
+    drop.use_negative_direction = True
+    drop.use_positive_direction = False
+    drop.offset = 0.025
+    bpy.ops.object.modifier_apply(modifier=drop.name)
+    wrap = sheet.modifiers.new("drape", "SHRINKWRAP")
+    wrap.target = obj
+    wrap.wrap_method = "NEAREST_SURFACEPOINT"
+    wrap.offset = 0.025
+    bpy.ops.object.modifier_apply(modifier=wrap.name)
+    thick = sheet.modifiers.new("thickness", "SOLIDIFY")
+    thick.thickness = 0.015
+    bpy.ops.object.modifier_apply(modifier=thick.name)
+
+    cloth = bpy.data.materials.new("blanket")
+    cloth.use_nodes = True
+    bsdf = cloth.node_tree.nodes["Principled BSDF"]
+    # Undyed pale in the body pass; the game's tint lands on the team pass over it.
+    bsdf.inputs["Base Color"].default_value = (0.8, 0.8, 0.8, 1.0)
+    bsdf.inputs["Roughness"].default_value = 0.95
+    sheet.data.materials.append(cloth)
+
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    sheet.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    obj.data.materials.append(cloth)
+    bpy.ops.object.join()
+    obj.name = "animal"
+
+
+def dress_blanket(obj: bpy.types.Object) -> list:
+    """The team pass for a cow: the blanket pale, the hide a holdout that still hides it."""
+    hidden = bpy.data.materials.new("hide_holdout")
+    hidden.use_nodes = True
+    nodes = hidden.node_tree.nodes
+    holdout = nodes.new("ShaderNodeHoldout")
+    hidden.node_tree.links.new(holdout.outputs[0], nodes["Material Output"].inputs["Surface"])
+    return [hidden, obj.data.materials[1]]
 
 
 def world_vertices(obj: bpy.types.Object) -> list:
@@ -427,6 +649,15 @@ def rig(obj: bpy.types.Object, spec: dict) -> bpy.types.Object:
                 groups[first].add([vertex.index], 1 - blend, "REPLACE")
                 groups[name2].add([vertex.index], blend, "REPLACE")
 
+    # A blanket rides the back and nothing else: by proximity its edges could fall to a
+    # leg or the neck and fold with them.
+    blanket = obj.data.materials.find("blanket")
+    if blanket != -1:
+        cloth = sorted({i for face in obj.data.polygons if face.material_index == blanket for i in face.vertices})
+        for group in groups.values():
+            group.remove(cloth)
+        groups["body"].add(cloth, 1.0, "REPLACE")
+
     modifier = obj.modifiers.new("rig", "ARMATURE")
     modifier.object = armature
     obj.parent = armature
@@ -592,6 +823,8 @@ def build(args):
     # line of it survived 2.5%.
     drop_ground(obj, 0.05 if spec.get("person") else 0.025)
     decimate(obj)
+    if spec.get("blanket"):
+        add_blanket(obj)
     frame = framing(obj, spec.get("ppm", PIXELS_PER_METRE))
     armature = rig_person(obj) if spec.get("person") else rig(obj, spec)
     root = bpy.data.objects.new("root", None)
@@ -629,13 +862,23 @@ def main() -> None:
         at = world_to_camera_view(scene, scene.camera, mathutils.Vector((0.0, 0.0, 0.0)))
         origin = {"x": at.x * spec["size"], "y": (1.0 - at.y) * spec["size"], "pixelsPerUnit": spec["size"] / spec["ortho"]}
         os.makedirs(args.render, exist_ok=True)
-        for direction in range(8):
-            root.rotation_euler.z = direction * math.tau / 8
-            for frame in range(frames):
-                scene.frame_set(frame + 1)
-                scene.render.filepath = os.path.join(args.render, f"{args.kind}_{anim}_{direction}_{frame:02d}.png")
-                bpy.ops.render.render(write_still=True)
-                written += 1
+        body = bpy.data.objects["animal"]
+        passes = [(args.kind, None)]
+        if spec.get("outfit"):
+            # dress() takes the key out of the body first, so it comes before either pass.
+            passes.append((f"{args.kind}-team", [dress(body)]))
+        if spec.get("blanket"):
+            passes.append((f"{args.kind}-team", dress_blanket(body)))
+        for name, materials in passes:
+            for slot, material in enumerate(materials or []):
+                body.data.materials[slot] = material
+            for direction in range(8):
+                root.rotation_euler.z = direction * math.tau / 8
+                for frame in range(frames):
+                    scene.frame_set(frame + 1)
+                    scene.render.filepath = os.path.join(args.render, f"{name}_{anim}_{direction}_{frame:02d}.png")
+                    bpy.ops.render.render(write_still=True)
+                    written += 1
 
     if args.render and origin is not None:
         path = os.path.join(args.render, "origins.json")

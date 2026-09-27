@@ -30,9 +30,7 @@ interface AtlasFrame {
 interface AtlasFile {
   readonly pages: readonly string[];
   readonly directions: number;
-  readonly origins: Readonly<
-    Record<string, { x: number; y: number; pixelsPerUnit?: number }>
-  >;
+  readonly origins: Readonly<Record<string, Origin>>;
   readonly kinds: Readonly<Record<string, Readonly<Record<string, number>>>>;
   readonly frames: Readonly<Record<string, AtlasFrame>>;
 }
@@ -74,6 +72,22 @@ const CENTRE = 64;
 /** Assumed when a render predates pixelsPerUnit being recorded. */
 const FALLBACK_PIXELS_PER_UNIT = 128 / 2.2;
 
+type Origin = { x: number; y: number; pixelsPerUnit?: number };
+
+/**
+ * Where a kind's world origin lies in its frames, and how many pixels a metre is.
+ *
+ * An overlay ("villager-team", "impi-shield") is rendered by its body's camera and is
+ * written without an origin of its own. Without the body's it was anchored at the frame
+ * centre and scaled by the fallback, and was drawn off the figure it belongs to: every
+ * outfit colour was invisible in play while the asset gallery, which aligns frames by
+ * their offsets alone, showed it perfectly.
+ */
+export function originOf(origins: Readonly<Record<string, Origin>>, kind: string): Origin {
+  const body = kind.replace(/-(team|shield)$/, '');
+  return origins[kind] ?? origins[body] ?? { x: CENTRE, y: CENTRE };
+}
+
 function buildAtlas(
   file: AtlasFile,
   pages: readonly Texture[],
@@ -84,7 +98,7 @@ function buildAtlas(
   const table = new Map<string, (SpriteFrame | null)[][]>();
 
   for (const [kind, animations] of Object.entries(file.kinds)) {
-    const origin = file.origins[kind] ?? { x: CENTRE, y: CENTRE };
+    const origin = originOf(file.origins, kind);
     const scale = pixelsPerWorldUnit / (origin.pixelsPerUnit ?? FALLBACK_PIXELS_PER_UNIT);
     for (const [anim, frameCount] of Object.entries(animations)) {
       const directions: (SpriteFrame | null)[][] = [];

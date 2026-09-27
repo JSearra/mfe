@@ -193,6 +193,13 @@
     "liveryBlack": "Black, white marking",
     "liveryRed": "Red, white marking",
     "liveryDun": "Dun, dark marking",
+    "outfit": "Outfit colour",
+    "outfitColours": {
+      "red": "Red",
+      "blue": "Blue",
+      "yellow": "Yellow",
+      "green": "Green"
+    },
     "mapCoast": "Coast",
     "mapUkhahlamba": "uKhahlamba (Drakensberg)"
   },
@@ -307,6 +314,7 @@
     "mountedCommando": "Ranging parties. Everyone moves 20% faster and sees further. Needs amabutho first."
   },
   "tip": {
+    "outfit": "What your people wear, and the blankets on your cattle, so you can find your own on a busy map. Changes a kept village too.",
     "costs": "Costs {costs}",
     "totals": "What the village holds. People eat meat first, then grain; meat goes off within a season, grain keeps. Timber builds. Water is drunk every season and does not keep. Cattle are wealth, and can be slaughtered for meat and skins. Skins and ivory feed nobody but trade well.",
     "season": "The year and its season. Drought cuts what fields and grazing yield. \"Drier\" means it is still getting worse; \"easing\" means the worst has passed.",
@@ -346,6 +354,8 @@
     "drought": "Drought",
     "pause": "Pause",
     "play": "Play",
+    "outfit": "Outfit",
+    "outfitNone": "Undyed",
     "frames": "{anim} · {frames} frames",
     "ground": "Ground",
     "water": "Water",
