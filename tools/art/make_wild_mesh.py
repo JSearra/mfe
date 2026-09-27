@@ -73,6 +73,10 @@ SPECIES = {
     "field-hand": {"outfit": True, "height": 1.7, "person": True, "ppm": 56},
     "carrier": {"outfit": True, "height": 1.95, "person": True, "ppm": 56},
     "elder": {"outfit": True, "height": 1.68, "person": True, "ppm": 56},
+    "impi": {"outfit": True, "height": 1.8, "person": True, "ppm": 56},
+    # Horse and rider rigged as one quadruped: the rider rides the body bone. 2.4 m nose
+    # to tail, about 2.4 m to the top of the hat.
+    "commando": {"outfit": True, "length": 2.4, "stand": 2.4, "size": 128},
     "hunter": {"outfit": True, "height": 1.72, "person": True, "ppm": 56},
     # The village's cattle, with a blanket over the back in the player's outfit colour
     # (add_blanket; ADR-0024). Nguni cows run 300-400 kg, about 1.2 m at the shoulder.

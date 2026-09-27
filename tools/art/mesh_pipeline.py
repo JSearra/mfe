@@ -72,6 +72,25 @@ STYLE = (
     "isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph"
 )
 
+# Props: things that stand still, drawn as three variants of one mesh (make_prop_mesh.py).
+# Trees are what the village fells and what it lives among; the goats and chickens are
+# kept at every finished dwelling (entities.ts setLivestock), and had no art at all.
+PROPS = {
+    "acacia": "a single umbrella thorn acacia tree of the African savanna, a wide flat-topped spreading crown of fine green foliage on a short forked dark trunk",
+    "marula": "a single marula tree of the African savanna, a dense rounded crown of green leaves on a stout grey trunk with a few spreading limbs",
+    "yellowwood": "a single tall African yellowwood tree, a tall narrow dark green crown of fine needle-like leaves on a straight trunk with flaking brown bark",
+    "baobab": "a single African baobab tree, a massive swollen smooth grey barrel trunk with short stubby spreading branches at the top carrying a few green leaves",
+    # Green, not grey-green: the silvery first bush baked to grey and read as a boulder.
+    "scrub": "a single low dense African thornveld bush, an irregular rounded clump of small bright olive-green leaves on thin brown woody stems",
+    "aloe": "a single tall aloe plant of the South African veld, a rosette of thick spiky blue-green leaves on a short stem with a tall orange-red flower spike",
+    "goat": "a single small African Nguni goat standing, a short glossy coat patched in brown, black and white, small upswept horns",
+    "chicken": "a single African village chicken standing, a small hen with speckled red-brown, black and golden feathers and a red comb",
+}
+PROP_STYLE = (
+    "whole subject in frame from the ground to the top, side view, isolated on a plain pure white background, "
+    "even soft studio lighting, sharp focus, realistic photograph"
+)
+
 # People in full ceremonial dress, after the owner's references (ADR-0024): beadwork in
 # every colour, leopard and cow hide, the wide isicholo hat. It is later than the period
 # the game is set in, and chosen over it on purpose.
@@ -91,6 +110,11 @@ PEOPLE = {
     "field-hand": f"a Zulu woman in full traditional ceremonial dress standing upright, carrying a short wooden-handled hoe with one broad flat iron blade resting on her shoulder, a wide flat-topped {KEY} isicholo hat, a {KEY} pleated knee-length skirt, a beaded apron and collar of {BEADS}, barefoot, standing on nothing, no soil",
     "carrier": f"a Zulu woman in full traditional ceremonial dress standing upright, balancing a large round clay pot on top of her head, one hand steadying it, a {KEY} shawl over her shoulders and a {KEY} pleated knee-length skirt, a beaded apron and collar of {BEADS}, barefoot, nothing on the ground",
     "elder": f"an elderly Zulu man in full traditional ceremonial dress, a {KEY} cloak over his shoulders, a leopard-skin headband, {BEADS} necklaces, white cow-tail bands on his arms, barefoot, leaning on a long wooden staff",
+    # The soldiers of the combat era. Nothing spawns them now (ADR-0019), but they keep
+    # their art, redone like everyone else's at the owner's request.
+    "impi": f"a Zulu warrior in full traditional ceremonial regalia, a {KEY} knee-length kilt and a {KEY} cape over one shoulder, a leopard-skin headband, white cow-tail bands on his arms and legs, {BEADS} across his chest, holding a tall oval black and white cowhide shield at his side and a short spear, barefoot, standing",
+    # A Griqua rider, in the European-style riding dress the Griqua wore, not regalia.
+    "commando": f"a Griqua horseman of southern Africa sitting on a brown horse, wearing a wide-brimmed leather hat and a {KEY} riding coat, a long musket slung across his back, seen from a distance so the entire horse is in frame with all four legs and hooves standing on the ground and space around it",
     "hunter": f"a Zulu hunter in traditional ceremonial dress, a {KEY} knee-length skirt and a {KEY} band across his chest, a leopard-skin collar, {BEADS} armbands, barefoot, carrying two long throwing spears slanting forward",
 }
 PEOPLE_STYLE = (
@@ -134,6 +158,10 @@ BUILDING_STYLE = (
 # front is mostly ears and trunk: the first came back lumpy and short-bodied. From the
 # side the model sees the length of the body it has to build.
 VIEWS = {
+    # A horse and rider from the side, as the cattle: the length of the horse is what the
+    # model has to build, and a three-quarter front foreshortened the cows.
+    "commando": "side view in profile facing left, slightly from the front, isolated on a plain pure white background, "
+    "even soft studio lighting, sharp focus, realistic, dignified",
     # The cattle too: from three-quarters front the first cow came back foreshortened,
     # its legs splayed as if bucking and its back tilted at rest.
     "nguni": "whole animal in frame from nose to tail and feet, side view in profile facing left, slightly from the front, "
@@ -151,7 +179,9 @@ def sources() -> dict:
 
 def prompt_for(kind: str) -> str:
     if kind in PEOPLE:
-        return f"photograph of {PEOPLE[kind]}, {PEOPLE_STYLE}"
+        return f"photograph of {PEOPLE[kind]}, {VIEWS.get(kind, PEOPLE_STYLE)}"
+    if kind in PROPS:
+        return f"photograph of {PROPS[kind]}, {PROP_STYLE}"
     if kind in BUILDINGS:
         return f"photograph of {BUILDINGS[kind]}, {BUILDING_STYLE}"
     return f"wildlife photograph of {SUBJECTS[kind]}, {VIEWS.get(kind, STYLE)}"
@@ -173,6 +203,12 @@ def refs(kind: str, seeds: list[int]) -> None:
         print(f"  {out.relative_to(ROOT)}")
 
 
+# Marching-cubes resolution, where the default is wrong for a subject. A dense bush of
+# small leaves at 256 made a surface whose texture bake ran for over 100 CPU minutes
+# without finishing; at the size a bush is drawn, one fused clump is what it should be.
+MC_RESOLUTION = {"scrub": 160}
+
+
 def mesh(kind: str, seed: int) -> None:
     folder = RAW / kind
     ref = folder / f"ref_{seed}.png"
@@ -180,7 +216,7 @@ def mesh(kind: str, seed: int) -> None:
         raise SystemExit(f"no reference {ref}; run `refs {kind}` first")
     subprocess.run(
         [str(TRIPO_PYTHON), str(TRIPO), str(ref), "--output-dir", str(folder / "tripo"),
-         "--mc-resolution", "256", "--bake-texture", "--texture-resolution", "1024"],
+         "--mc-resolution", str(MC_RESOLUTION.get(kind, 256)), "--bake-texture", "--texture-resolution", "1024"],
         check=True, cwd=str(TRIPO.parent), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
     # TripoSR's texture-baking path writes OBJ whatever the requested format.
@@ -203,7 +239,7 @@ def mesh(kind: str, seed: int) -> None:
 
 
 def render(kind: str, turn: float = 0.0) -> None:
-    builder = "make_building_mesh.py" if kind in BUILDINGS else "make_wild_mesh.py"
+    builder = "make_building_mesh.py" if kind in BUILDINGS else "make_prop_mesh.py" if kind in PROPS else "make_wild_mesh.py"
     folder = RAW / kind
     frames = folder / "frames"
     trimmed = folder / "trimmed"
@@ -249,7 +285,7 @@ def render(kind: str, turn: float = 0.0) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[1])
     parser.add_argument("step", choices=("refs", "mesh", "render"))
-    parser.add_argument("kind", choices=sorted({**SUBJECTS, **PEOPLE, **BUILDINGS}))
+    parser.add_argument("kind", choices=sorted({**SUBJECTS, **PEOPLE, **BUILDINGS, **PROPS}))
     parser.add_argument("--turn", type=float, default=0.0, help="Buildings: extra turn in degrees")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--seeds", type=int, nargs="*", default=[11, 23, 47])

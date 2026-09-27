@@ -111,5 +111,49 @@
   "well": {
     "prompt": "photograph of a traditional water well seen from the side at eye level, a low round drum-shaped outer wall of whitewashed clay painted all over in bold Ndebele geometric patterns, large flat triangles, diamonds, chevrons and stepped shapes in bright red, yellow, blue and green, each outlined in thick black lines facing the camera, with a simple wooden frame above it holding a clay pot on a rope, whole structure in frame, three-quarter view from slightly above, isolated on a plain pure white background, even soft lighting, sharp focus, realistic photograph",
     "seed": 11
+  },
+  "acacia": {
+    "prompt": "photograph of a single umbrella thorn acacia tree of the African savanna, a wide flat-topped spreading crown of fine green foliage on a short forked dark trunk, whole subject in frame from the ground to the top, side view, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic photograph",
+    "seed": 47
+  },
+  "marula": {
+    "prompt": "photograph of a single marula tree of the African savanna, a dense rounded crown of green leaves on a stout grey trunk with a few spreading limbs, whole subject in frame from the ground to the top, side view, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic photograph",
+    "seed": 23
+  },
+  "yellowwood": {
+    "prompt": "photograph of a single tall African yellowwood tree, a tall narrow dark green crown of fine needle-like leaves on a straight trunk with flaking brown bark, whole subject in frame from the ground to the top, side view, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic photograph",
+    "seed": 47
+  },
+  "baobab": {
+    "prompt": "photograph of a single African baobab tree, a massive swollen smooth grey barrel trunk with short stubby spreading branches at the top carrying a few green leaves, whole subject in frame from the ground to the top, side view, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic photograph",
+    "seed": 11
+  },
+  "aloe": {
+    "prompt": "photograph of a single tall aloe plant of the South African veld, a rosette of thick spiky blue-green leaves on a short stem with a tall orange-red flower spike, whole subject in frame from the ground to the top, side view, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic photograph",
+    "seed": 47
+  },
+  "goat": {
+    "prompt": "photograph of a single small African Nguni goat standing, a short glossy coat patched in brown, black and white, small upswept horns, whole subject in frame from the ground to the top, side view, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic photograph",
+    "seed": 11
+  },
+  "chicken": {
+    "prompt": "photograph of a single African village chicken standing, a small hen with speckled red-brown, black and golden feathers and a red comb, whole subject in frame from the ground to the top, side view, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic photograph",
+    "seed": 47
+  },
+  "scrub": {
+    "prompt": "photograph of a single low dense African thornveld bush, an irregular rounded clump of small bright olive-green leaves on thin brown woody stems, whole subject in frame from the ground to the top, side view, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic photograph",
+    "seed": 23
+  },
+  "impi": {
+    "prompt": "photograph of a Zulu warrior in full traditional ceremonial regalia, a solid plain vivid magenta knee-length kilt and a solid plain vivid magenta cape over one shoulder, a leopard-skin headband, white cow-tail bands on his arms and legs, bright glass beadwork in red, yellow, blue, green, white and black geometric triangles and diamonds across his chest, holding a tall oval black and white cowhide shield at his side and a short spear, barefoot, standing, whole figure in frame from head to feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic, dignified",
+    "seed": 23
+  },
+  "commando": {
+    "prompt": "photograph of a Griqua horseman of southern Africa sitting on a brown horse, wearing a wide-brimmed leather hat and a solid plain vivid magenta riding coat, a long musket slung across his back, seen from a distance so the entire horse is in frame with all four legs and hooves standing on the ground and space around it, side view in profile facing left, slightly from the front, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic, dignified",
+    "seed": 11
+  },
+  "guineafowl": {
+    "prompt": "wildlife photograph of a single helmeted guineafowl, a plump round-bodied short-legged ground bird shaped like a chicken, slate-grey feathers covered all over in small white dots, a small bare blue and red head with a short bony casque on top, whole animal in frame from nose to tail and feet, three-quarter view from the front left, isolated on a plain pure white background, even soft studio lighting, sharp focus, realistic wildlife photograph",
+    "seed": 47
   }
 }
