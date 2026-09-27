@@ -97,5 +97,43 @@ export function buildScenario(seed: number, ticks: number): Command[] {
     );
   }
 
+  /*
+   * And the herds, the defining mechanic, which the gate did not cover at all until
+   * cattle movement changed and the hash did not notice (see the commit that added
+   * this). Two herds of twelve, grazing with people wandering past them: separation,
+   * cohesion, stress, panic spreading, stampedes and the crushes they cause. Tethers
+   * are offered to slots guessed from the stream, as the hunts are: some take and a herd
+   * is driven, the rest name nobody and are refused, and both are paths worth covering.
+   *
+   * After tick 2,050, the last hunt, so the slots those orders name are the ones they
+   * always named; and from a stream of its own, so nothing above is drawn differently.
+   */
+  const herds = createRng(seed ^ 0xca771e);
+  const grazing: [number, number][] = [];
+  for (let herd = 0; herd < 2; herd++) {
+    const x = 20 + nextInt(herds, 24);
+    const y = 20 + nextInt(herds, 24);
+    grazing.push([x, y]);
+    for (let n = 0; n < 12; n++) {
+      commands.push(
+        makeCommand(2100, 0, seq++, CommandKind.SpawnCattle, x + nextSigned(herds) * 2, y + nextSigned(herds) * 2),
+      );
+    }
+  }
+  for (let n = 0; n < 16; n++) {
+    commands.push(
+      makeCommand(2200 + n * 400, 0, seq++, CommandKind.Leash, packHandle(nextInt(herds, 160), 1), packHandle(nextInt(herds, 160), 1)),
+    );
+  }
+  // People sent into the middle of a herd, as a clumsy drover would walk: crowding is
+  // what frightens cattle, so this is what makes them bolt and run people down. Without
+  // it they only ever grazed and grew alarmed, and the stampede went uncovered.
+  for (let n = 0; n < 40; n++) {
+    const [x, y] = grazing[n % 2]!;
+    commands.push(
+      makeCommand(2300 + n * 150, nextInt(herds, 2), seq++, CommandKind.MoveTo, packHandle(nextInt(herds, 160), 1), x, y),
+    );
+  }
+
   return commands;
 }
