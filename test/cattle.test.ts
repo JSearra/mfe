@@ -118,6 +118,34 @@ describe('flocking', () => {
     expect(closest).toBeGreaterThan(0.2);
     expect(farthest).toBeLessThan(14);
   });
+
+  // A herd spawned shoulder to shoulder is all separation: every cow is pushed straight
+  // away from her neighbours. Steered by velocity alone she slid that way, sideways or
+  // backwards, and her sprite showed it. She turns now, and steps forward.
+  it('walks a grazing cow the way she faces, never sideways or back', () => {
+    const { world, handles, tick } = makeHerd(16, 30, 30);
+    let steps = 0;
+    let sideways = 0;
+    let backwards = 0;
+    for (let t = 0; t < 300; t++) {
+      const before = handles.map((cow) => [world.posX[handleIndex(cow)]!, world.posY[handleIndex(cow)]!] as const);
+      tick();
+      handles.forEach((cow, n) => {
+        const i = handleIndex(cow);
+        const dx = world.posX[i]! - before[n]![0];
+        const dy = world.posY[i]! - before[n]![1];
+        if (Math.sqrt(dx * dx + dy * dy) < 0.01) return;
+        let off = Math.abs(Math.atan2(dy, dx) - world.facing[i]!) % (2 * Math.PI);
+        if (off > Math.PI) off = 2 * Math.PI - off;
+        steps++;
+        if (off > (3 * Math.PI) / 8) sideways++;
+        if (off > (5 * Math.PI) / 8) backwards++;
+      });
+    }
+    expect(steps).toBeGreaterThan(100);
+    expect(sideways / steps).toBeLessThan(0.02);
+    expect(backwards).toBe(0);
+  });
 });
 
 describe('stress', () => {

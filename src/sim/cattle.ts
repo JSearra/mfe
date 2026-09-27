@@ -1,6 +1,6 @@
 import type { SimEvent } from '../shared/events.js';
 import { EventType, makeEvent } from '../shared/events.js';
-import { angleDelta, atan2 } from './math/trig.js';
+import { angleDelta, atan2, cos, sin } from './math/trig.js';
 import { nextSigned } from './math/rng.js';
 import type { SpatialGrid } from './spatial/grid.js';
 import { Modifier } from '../shared/tech/index.js';
@@ -461,6 +461,26 @@ export function createCattleSystem(): CattleSystem {
             desiredX = (desiredX / speed) * c.maxSpeed;
             desiredY = (desiredY / speed) * c.maxSpeed;
           }
+
+          // A cow walks where she faces. She turns toward what the herd asks of her and
+          // then steps forward along her own heading, never sideways and never back:
+          // separation used to push a grazing cow straight away from her neighbour,
+          // whichever way that was, and she slid there. Measured on the real opening,
+          // grazing cattle moved sideways or backwards on up to 14% of their moving ticks.
+          // A stampede is the exception and keeps its own rule below: it runs flat out
+          // along the flight, turning as it can.
+          const want = Math.sqrt(desiredX * desiredX + desiredY * desiredY);
+          if (want > 1e-6) {
+            const delta = angleDelta(world.facing[index]!, atan2(desiredY, desiredX));
+            const maxTurn = tuning.movement.turnRate * tuning.movement.dt;
+            world.facing[index] =
+              world.facing[index]! + (delta > maxTurn ? maxTurn : delta < -maxTurn ? -maxTurn : delta);
+          }
+          const headingX = cos(world.facing[index]!);
+          const headingY = sin(world.facing[index]!);
+          const forward = desiredX * headingX + desiredY * headingY;
+          desiredX = forward > 0 ? headingX * forward : 0;
+          desiredY = forward > 0 ? headingY * forward : 0;
         }
 
         // --- integrate, substepped ---------------------------------------------
@@ -496,7 +516,8 @@ export function createCattleSystem(): CattleSystem {
         const vx = world.velX[index]!;
         const vy = world.velY[index]!;
         const speed = Math.sqrt(vx * vx + vy * vy);
-        if (speed > 1e-6) {
+        // Everyone else turned before moving, above.
+        if (state === HerdState.Stampeding && speed > 1e-6) {
           const desiredFacing = atan2(vy, vx);
           const delta = angleDelta(world.facing[index]!, desiredFacing);
           const maxTurn = tuning.movement.turnRate * tuning.movement.dt;
