@@ -1,5 +1,5 @@
-import { BuildingType } from '../shared/buildings/index.js';
-import type { Heightmap } from '../shared/heightmap.js';
+import { BuildingType, buildingSpec } from '../shared/buildings/index.js';
+import { heightAt, type Heightmap } from '../shared/heightmap.js';
 import { CommandKind } from '../sim/commands.js';
 import { mixSeed } from '../sim/math/rng.js';
 import { largestRegion, snapToRegion } from '../sim/terrain/placement.js';
@@ -89,43 +89,89 @@ export function seedOpening(send: Send, map: Heightmap, centre: number, seed = 0
    * cost nothing and stand from tick one. Same reasoning as the starting fields coming
    * back established and the starting wood not being all saplings.
    */
+  /*
+   * Where a founded building can actually stand: the nearest footprint to the wanted
+   * tile that the simulation will accept — on the map, on the walkable ground, level to
+   * the building's tolerance — and clear of the village's other buildings by a tile, so
+   * there is a way between them.
+   *
+   * The layout was arithmetic and never asked. On uneven ground the simulation refused
+   * the sites it did not like, silently from here: on one map the isibaya itself was
+   * never founded, its twelve cattle stood loose in the middle of the homestead, where
+   * the village's exemption from frightening its own penned herd could not apply, and
+   * the herd bolted through the people four seconds into the match. Others lost half
+   * their dwellings the same way.
+   */
+  const claimed = new Uint8Array(map.width * map.height);
+  function site(type: BuildingType, wantX: number, wantY: number): { x: number; y: number } {
+    const spec = buildingSpec(type);
+    const size = spec.footprint;
+    const fits = (tileX: number, tileY: number): boolean => {
+      if (tileX < 0 || tileY < 0 || tileX + size > map.width || tileY + size > map.height) return false;
+      let low = Infinity;
+      let high = -Infinity;
+      for (let dy = 0; dy < size; dy++) {
+        for (let dx = 0; dx < size; dx++) {
+          const index = (tileY + dy) * map.width + tileX + dx;
+          if (walkable[index] !== 1 || claimed[index] === 1) return false;
+          const h = heightAt(map, tileX + dx, tileY + dy);
+          if (h < 0) return false;
+          low = Math.min(low, h);
+          high = Math.max(high, h);
+        }
+      }
+      return high - low <= spec.maxHeightVariation;
+    };
+    const startX = Math.floor(wantX);
+    const startY = Math.floor(wantY);
+    let found: { x: number; y: number } | null = null;
+    // Rings outward, each scanned in a fixed order, so every machine founds the same village.
+    for (let ring = 0; ring <= 8 && found === null; ring++) {
+      for (let dy = -ring; dy <= ring && found === null; dy++) {
+        for (let dx = -ring; dx <= ring && found === null; dx++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== ring) continue;
+          if (fits(startX + dx, startY + dy)) found = { x: startX + dx, y: startY + dy };
+        }
+      }
+    }
+    // Nowhere near will do: send the wanted tile and let the refusal be reported.
+    const at = found ?? { x: startX, y: startY };
+    for (let dy = -1; dy <= size; dy++) {
+      for (let dx = -1; dx <= size; dx++) {
+        const x = at.x + dx;
+        const y = at.y + dy;
+        if (x >= 0 && y >= 0 && x < map.width && y < map.height) claimed[y * map.width + x] = 1;
+      }
+    }
+    return at;
+  }
+
   const home = place(centre - 2, centre);
 
-  function foundVillage(at: { x: number; y: number }, owner: number): void {
+  /** Founds the village and says where its isibaya ended up, footprint centre. */
+  function foundVillage(wanted: { x: number; y: number }, owner: number): { x: number; y: number } {
     // The isibaya at the centre, which is where the cattle live and where the eye goes.
-    send(
-      CommandKind.Build,
-      Math.floor(at.x),
-      Math.floor(at.y),
-      BuildingType.Isibaya,
-      owner + 1,
-    );
+    // Sited first; the ring of dwellings is laid round wherever it stands.
+    const kraal = site(BuildingType.Isibaya, wanted.x, wanted.y);
+    send(CommandKind.Build, kraal.x, kraal.y, BuildingType.Isibaya, owner + 1);
+    const half = buildingSpec(BuildingType.Isibaya).footprint / 2;
+    const at = { x: kraal.x + half, y: kraal.y + half };
     // The indlunkulu stands at the head of the homestead, opposite the entrance.
-    const head = place(at.x, at.y - VILLAGE_RADIUS);
-    send(
-      CommandKind.Build,
-      Math.floor(head.x),
-      Math.floor(head.y),
-      BuildingType.Indlunkulu,
-      owner + 1,
-    );
+    const wantHead = place(at.x, at.y - VILLAGE_RADIUS);
+    const head = site(BuildingType.Indlunkulu, wantHead.x, wantHead.y);
+    send(CommandKind.Build, head.x, head.y, BuildingType.Indlunkulu, owner + 1);
     // Dwellings around the ring, with a gap left at the foot for the way in and out.
     for (let i = 0; i < VILLAGE_HUTS; i++) {
       // Skipping the southern arc leaves the entrance clear rather than walling the
       // village in — a ring with no gate is a pen.
       const angle = (i / VILLAGE_HUTS) * Math.PI * 2 + Math.PI * 0.18;
       if (Math.sin(angle) > 0.78) continue;
-      const hutAt = place(
+      const wantHut = place(
         at.x + Math.cos(angle) * VILLAGE_RADIUS,
         at.y + Math.sin(angle) * VILLAGE_RADIUS,
       );
-      send(
-        CommandKind.Build,
-        Math.floor(hutAt.x),
-        Math.floor(hutAt.y),
-        BuildingType.Umuzi,
-        owner + 1,
-      );
+      const hutAt = site(BuildingType.Umuzi, wantHut.x, wantHut.y);
+      send(CommandKind.Build, hutAt.x, hutAt.y, BuildingType.Umuzi, owner + 1);
     }
     /*
      * No grain store. The village a match begins in is SHELTER, not production.
@@ -143,16 +189,18 @@ export function seedOpening(send: Send, map: Heightmap, centre: number, seed = 0
      * `owner + 1` in the last slot founds each building for that village — see Build in
      * src/sim/commands.ts. It was a bare 1, which founded both villages for player 0.
      */
+    return at;
   }
 
-  foundVillage(home, PLAYER);
+  const kraal = foundVillage(home, PLAYER);
 
   // A village begins with a well (ADR-0023). On rain alone it would open some two
   // fifths short of water and working slower before the player had learned that water
   // was a thing to find. One well keeps the first wet season whole; the dry season, a
   // growing village and the river are the player's to answer.
-  const well = place(home.x + VILLAGE_RADIUS * 0.55, home.y + VILLAGE_RADIUS * 0.75);
-  send(CommandKind.Build, Math.floor(well.x), Math.floor(well.y), BuildingType.Well, PLAYER + 1);
+  const wantWell = place(kraal.x + VILLAGE_RADIUS * 0.55, kraal.y + VILLAGE_RADIUS * 0.75);
+  const well = site(BuildingType.Well, wantWell.x, wantWell.y);
+  send(CommandKind.Build, well.x, well.y, BuildingType.Well, PLAYER + 1);
 
   // The people stand out by their own dwellings, NOT in among the cattle.
   //
@@ -168,7 +216,7 @@ export function seedOpening(send: Send, map: Heightmap, centre: number, seed = 0
   for (let i = 0; i < STARTING_UNITS; i++) {
     const angle = (i / STARTING_UNITS) * Math.PI * 2;
     const ring = VILLAGE_RADIUS * (1.35 + ((i % 3) * 0.12));
-    const at = place(home.x + Math.cos(angle) * ring, home.y + Math.sin(angle) * ring);
+    const at = place(kraal.x + Math.cos(angle) * ring, kraal.y + Math.sin(angle) * ring);
     send(CommandKind.Spawn, at.x, at.y, PLAYER, KIND_UNIT);
   }
 
@@ -198,7 +246,9 @@ export function seedOpening(send: Send, map: Heightmap, centre: number, seed = 0
   ];
 
   for (const [rawX, rawY] of HERD_SITES) {
-    const anchor = place(centre + rawX, centre + rawY);
+    // The home herd stands in the isibaya where it was actually founded. It was spawned
+    // round the map centre, two tiles off the kraal, and some of it outside the pen.
+    const anchor = rawX === 0 && rawY === 0 ? kraal : place(centre + rawX, centre + rawY);
     // A cluster, not a ring: cattle graze together, and a hollow ring has no centre to
     // click on or drive into. The radius follows the separation distance — at 1.5 units
     // apart a dozen beasts need about three units of room, and spawning them tighter
