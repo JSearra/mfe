@@ -51,7 +51,7 @@ SPECIES = {
     "zebra": {"length": 2.3, "stand": 2.1, "ortho": 4.2, "target": 1.2, "size": 168, "saturation": 0.35},
     # `value` scales brightness the same way: the elephant's bake came back pale
     # grey-beige, like stone, and an elephant is dark slate.
-    "elephant": {"length": 4.2, "stand": 3.4, "ortho": 6.4, "target": 1.5, "size": 192, "belly": 0.36, "saturation": 0.45, "value": 0.55},
+    "elephant": {"length": 4.2, "stand": 3.4, "ortho": 6.4, "target": 1.5, "size": 192, "belly": 0.36, "saturation": 0.45, "value": 0.55, "neck": 0.2, "hang": True},
     "kudu": {"length": 2.3, "stand": 2.5, "ortho": 3.4, "target": 0.9, "size": 128},
     "impala": {"length": 1.5, "stand": 1.3, "ortho": 2.4, "target": 0.6, "size": 96},
     "eland": {"length": 2.8, "stand": 2.2, "ortho": 3.8, "target": 1.0, "size": 128, "saturation": 0.75, "value": 0.9},
@@ -441,6 +441,13 @@ def apply_transform(obj: bpy.types.Object) -> None:
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
 
+# The left of the reference picture, as an angle in the mesh's ground plane once imported
+# Z-up. Measured on the side-profile references (cattle, commando: -92 to -104 degrees);
+# the three-quarter-front ones lie 45 degrees round from it, the hyena's rear
+# three-quarter view 45 degrees the other way.
+PICTURE_LEFT = math.radians(-100.0)
+
+
 def normalise(obj: bpy.types.Object, length: float, height: float = 0.0, stand: float = 0.0) -> None:
     """
     Feet on the ground at the origin, head toward +X, nose to rump `length` metres — or,
@@ -483,13 +490,13 @@ def normalise(obj: bpy.types.Object, length: float, height: float = 0.0, stand: 
         apply_transform(obj)
         return
 
-    # The head end stands higher than the rump: compare the tallest point at each end.
-    min_x = min(p.x for p in points)
-    max_x = max(p.x for p in points)
-    reach = (max_x - min_x) * 0.25
-    front = max((p.z for p in points if p.x > max_x - reach), default=0)
-    back = max((p.z for p in points if p.x < min_x + reach), default=0)
-    if back > front:
+    # Which end is the head: the one toward the left of the picture. Every reference is
+    # drawn with the head on the left, whatever the pose, and image-to-3D keeps the
+    # camera's frame, so that is one fixed direction in the mesh as imported. The rule
+    # it replaces, "the head end stands higher", put the warthog's low head at its rump,
+    # and it walked backwards in every direction.
+    left = (math.cos(PICTURE_LEFT), math.sin(PICTURE_LEFT))
+    if math.cos(heading) * left[0] + math.sin(heading) * left[1] < 0:
         obj.rotation_euler.z += math.pi
         apply_transform(obj)
         points = world_vertices(obj)
@@ -610,6 +617,17 @@ def rig(obj: bpy.types.Object, spec: dict) -> bpy.types.Object:
     neck.tail = (max_x - (max_x - fore_x) * 0.25, 0, height * 0.9)
     neck.parent = body
 
+    # The face, down the front of the head to the lowest part of it: the trunk and tusks
+    # hang there, a metre and more below the neck bone, and without a bone of their own
+    # the forelegs were nearer and carried them — the elephant's tusk dragged along the
+    # ground beside its foot like a ski.
+    if "fore_l" in legs:
+        muzzle = [p for p in points if p.x > fore_x + (max_x - fore_x) * 0.55]
+        face = edit.new("face")
+        face.head = neck.tail.copy()
+        face.tail = (max_x, 0, min(p.z for p in muzzle) if muzzle else height * 0.5)
+        face.parent = neck
+
     tail = edit.new("tail")
     tail.head = (hind_x - (hind_x - min_x) * 0.3, 0, back_z)
     tail.tail = (min_x, 0, back_z * 0.7)
@@ -633,12 +651,33 @@ def rig(obj: bpy.types.Object, spec: dict) -> bpy.types.Object:
     # what is below the belly on their own side, so a leg never drags the flank.
     bones = [(b.name, b.head_local.copy(), b.tail_local.copy()) for b in armature_data.bones]
     groups = {name: obj.vertex_groups.new(name=name) for name, _, _ in bones}
+    # A leg claims only what is within its own reach: below the belly line, not ahead of
+    # the front feet, and near its foot seen from above. By height alone the elephant's
+    # trunk and the roots of its tusks, which hang below its high belly line in front of
+    # the forelegs, went to the forelegs: the trunk was torn into a fold at the foot and a
+    # tusk dragged along the ground beside it like a ski.
+    # The reach is measured, not set: a fixed one fitted the impala and cut the edges off
+    # the elephant's broad feet, which were left behind as slabs when the legs moved.
+    length = max_x - min_x
+    front = max(foot.x for foot in legs.values()) + length * 0.06
+    near: dict = {leg: [] for leg in legs}
+    for p in points:
+        if p.z < belly * 0.6 and p.x <= front:
+            leg = min(legs, key=lambda name: (p.x - legs[name].x) ** 2 + (p.y - legs[name].y) ** 2)
+            near[leg].append(math.sqrt((p.x - legs[leg].x) ** 2 + (p.y - legs[leg].y) ** 2))
+    reaches = {}
+    for leg, spread in near.items():
+        spread.sort()
+        reaches[leg] = (spread[int(len(spread) * 0.9)] if spread else length * 0.1) * 1.4
+    feet = {name: name.rsplit("_", 1)[0] for name, _, _ in bones if name.endswith(("_upper", "_lower"))}
     for vertex in obj.data.vertices:
         p = vertex.co
         distances = []
         for name, head, tail in bones:
             if "_upper" in name or "_lower" in name:
-                if p.z > belly * 1.5:
+                leg = feet[name]
+                foot, reach = legs[leg], reaches[leg]
+                if p.z > belly * 1.5 or p.x > front or (p.x - foot.x) ** 2 + (p.y - foot.y) ** 2 > reach * reach:
                     continue
             segment = tail - head
             t = max(0.0, min(1.0, (p - head).dot(segment) / max(segment.length_squared, 1e-9)))
@@ -769,11 +808,23 @@ def pose(armature: bpy.types.Object, name: str, pitch: float) -> None:
     bone.rotation_quaternion = local.to_quaternion()
 
 
-def animate(armature: bpy.types.Object, anim: str, frames: int) -> None:
+def animate(armature: bpy.types.Object, anim: str, frames: int, spec: dict | None = None) -> None:
     scene = bpy.context.scene
     scene.frame_start = 1
     scene.frame_end = frames
     names = {bone.name for bone in armature.pose.bones}
+    spec = spec or {}
+    # `neck` scales how far the head dips; `hang` keeps the face level against it, so a
+    # trunk hangs plumb. An elephant grazes with its trunk, not by dropping its head: at
+    # the antelope's 38 degrees the trunk, two metres below the neck, swept back through
+    # the ground and was drawn as a flat pale stick beside the feet.
+    nod = spec.get("neck", 1.0)
+
+    def neck(pitch: float) -> None:
+        pose(armature, "neck", pitch * nod)
+        if spec.get("hang") and "face" in names:
+            pose(armature, "face", -pitch * nod)
+
     # Diagonal pairs for four legs; two legs simply alternate.
     gait = (
         (("leg_l", 0), ("leg_r", math.pi))
@@ -784,7 +835,7 @@ def animate(armature: bpy.types.Object, anim: str, frames: int) -> None:
         phase = (frame - 1) / frames * math.tau
         if anim == "idle":
             # Head down to graze and a little up again; legs still.
-            pose(armature, "neck", math.radians(38 + 10 * math.sin(phase)))
+            neck(math.radians(38 + 10 * math.sin(phase)))
             for leg, _ in gait:
                 pose(armature, f"{leg}_upper", 0)
                 pose(armature, f"{leg}_lower", 0)
@@ -799,7 +850,7 @@ def animate(armature: bpy.types.Object, anim: str, frames: int) -> None:
                 fold = max(0.0, math.sin(phase + offset + math.pi / 2)) * math.radians(35 if fast else 22)
                 # Knees bend back on the forelegs, hocks forward on the hind and on a bird.
                 pose(armature, f"{leg}_lower", -fold if leg.startswith("fore") else fold)
-            pose(armature, "neck", math.radians((-8 if fast else 2) + 4 * math.sin(phase * 2)))
+            neck(math.radians((-8 if fast else 2) + 4 * math.sin(phase * 2)))
             pose(armature, "tail", math.radians(-25 if fast else -4))
         for bone in armature.pose.bones:
             bone.keyframe_insert("rotation_quaternion", frame=frame)
@@ -851,7 +902,7 @@ def main() -> None:
         if spec.get("person"):
             animate_person(armature, anim, frames)
         else:
-            animate(armature, anim, frames)
+            animate(armature, anim, frames, spec)
         if args.save and anim == "walk":
             bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(args.save))
         if renderer is None:
