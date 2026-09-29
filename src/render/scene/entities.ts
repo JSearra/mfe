@@ -40,6 +40,7 @@ const CALM = hex(cattleStyle.calmColour);
 const ALARM = hex(cattleStyle.alarmColour);
 const PANIC = hex(cattleStyle.panicColour);
 
+const KIND_UNIT = 0;
 const KIND_CATTLE = 1;
 const KIND_BUILDING = 2;
 /** An animal nobody owns. Its subtype is its species: see src/shared/wildlife.ts. */
@@ -481,6 +482,28 @@ function drawCondition(
   // Green through amber to red, so the colour says how bad it is without reading a
   // length — the same reason the cattle stress ring is coloured rather than sized.
   graphics.fill({ color: fraction > 0.5 ? CALM : fraction > 0.25 ? ALARM : PANIC });
+}
+
+/**
+ * A pip over a selected person's head, drawn above every body.
+ *
+ * The ring under their feet is a ground decal, and decals draw beneath every body — so
+ * a herder in the kraal among the cattle, or a carrier behind the grain store, was
+ * selected with nothing on screen to say so. Picking people from the command bar made
+ * that the common case rather than the odd one: the bar selects everyone doing a thing,
+ * and the things people do happen inside buildings. The pip sits above the condition
+ * bar's line so a hungry, selected villager shows both.
+ */
+function drawSelectedPip(graphics: Graphics, screenX: number, screenY: number): void {
+  // Clear of the head: the villager art stands about fifty pixels tall, and a pip at
+  // fifty sat on the crown and read as a feather rather than as a mark.
+  const top = screenY - 66;
+  graphics.moveTo(screenX - 6, top);
+  graphics.lineTo(screenX + 6, top);
+  graphics.lineTo(screenX, top + 8);
+  graphics.closePath();
+  graphics.fill({ color: SELECTED, alpha: 0.95 });
+  graphics.stroke({ width: 1, color: 0x1a1610, alpha: 0.8 });
 }
 
 function groundHeight(map: Heightmap, worldX: number, worldY: number): number {
@@ -954,6 +977,7 @@ export function createEntityLayer(
         // textured path meant the bars vanished entirely whenever the atlas failed to
         // load — which is exactly when a player would most need to know what is going on.
         drawCondition(health, view.hpPct[index]!, kind, position.x, position.y);
+        if (isSelected && kind === KIND_UNIT) drawSelectedPip(health, position.x, position.y);
 
         const textured = atlas !== null;
 

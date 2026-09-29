@@ -121,6 +121,7 @@ function speciesOfHandle(view: InterpolatedView, handle: number): number {
   for (let i = 0; i < view.count; i++) if (view.handle[i] === handle) return view.subtype[i]!;
   return -1;
 }
+const KIND_UNIT = 0;
 const KIND_BUILDING = 2;
 const MOVEMENT_INFANTRY = 0;
 const HERD_LEASHED = 1;
@@ -529,6 +530,79 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
     '3': BuildingType.GrainStore,
   };
 
+  /**
+   * Bring the selection into view: what picking people from the bar does.
+   *
+   * A click on "4 idle" that selects four people somewhere off-screen has told the
+   * player nothing they can act on. So the camera goes to them — the whole group framed
+   * when it fits, and otherwise the one nearest the group's middle, because the middle
+   * of three herds a map apart is empty veld. Framed in the ground ABOVE the bar, not
+   * the middle of the window, which the bar would cover.
+   */
+  function lookAtSelection(from: InterpolatedView): void {
+    let count = 0;
+    let sumX = 0;
+    let sumY = 0;
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (let i = 0; i < from.count; i++) {
+      if (!selection.handles.has(from.handle[i]!) || from.kind[i] !== KIND_UNIT) continue;
+      const x = from.x[i]!;
+      const y = from.y[i]!;
+      const screenX = worldToScreenX(x, y);
+      const screenY = worldToScreenY(x, y, heightAt(map, Math.floor(x), Math.floor(y)));
+      count++;
+      sumX += x;
+      sumY += y;
+      if (screenX < minX) minX = screenX;
+      if (screenX > maxX) maxX = screenX;
+      if (screenY < minY) minY = screenY;
+      if (screenY > maxY) maxY = screenY;
+    }
+    if (count === 0) return;
+
+    // The map the player can actually see: the window less the bar along its foot.
+    const covered = Math.max(0, camera.viewportHeight - panel.element.getBoundingClientRect().top);
+    const openHeight = camera.viewportHeight - covered;
+    const fits =
+      (maxX - minX) * camera.zoom <= camera.viewportWidth * 0.8 &&
+      (maxY - minY) * camera.zoom <= openHeight * 0.75;
+
+    let targetX = (minX + maxX) / 2;
+    let targetY = (minY + maxY) / 2;
+    if (!fits) {
+      // Nearest the middle, with the handle breaking a tie so the same group always
+      // lands the camera on the same person.
+      const midX = sumX / count;
+      const midY = sumY / count;
+      let best = -1;
+      let bestDistance = Infinity;
+      for (let i = 0; i < from.count; i++) {
+        if (!selection.handles.has(from.handle[i]!) || from.kind[i] !== KIND_UNIT) continue;
+        const dx = from.x[i]! - midX;
+        const dy = from.y[i]! - midY;
+        const distance = dx * dx + dy * dy;
+        if (
+          distance < bestDistance ||
+          (distance === bestDistance && from.handle[i]! < from.handle[best]!)
+        ) {
+          bestDistance = distance;
+          best = i;
+        }
+      }
+      const x = from.x[best]!;
+      const y = from.y[best]!;
+      targetX = worldToScreenX(x, y);
+      targetY = worldToScreenY(x, y, heightAt(map, Math.floor(x), Math.floor(y)));
+    }
+
+    camera.x = targetX;
+    // The centre of the open ground sits covered/2 pixels above the window's centre.
+    camera.y = targetY + covered / 2 / camera.zoom;
+  }
+
   const panel = createCommandPanel(root, {
     onTrain(buildingHandle, movementClass) {
       sim.sendCommand(CommandKind.Train, buildingHandle, movementClass);
@@ -558,7 +632,9 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
       sim.sendCommand(CommandKind.Demolish, buildingHandle);
     },
     onSelectRole(role, additive) {
-      if (view !== null) selection.selectRole(view, PLAYER, role, additive);
+      if (view === null) return;
+      selection.selectRole(view, PLAYER, role, additive);
+      lookAtSelection(view);
     },
     onPlant() {
       planting = true;
