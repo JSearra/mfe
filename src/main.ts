@@ -468,13 +468,16 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
   const stats = createRenderStats();
   const overlay = createDebugOverlay(root);
   /**
-   * The stats are off until asked for, and the controls are open until read.
+   * The stats are off until asked for, and the list of keys is folded until asked for.
    *
    * A frame counter welded to the corner of a shipped game is a choice nobody made on
-   * purpose; a player who cannot find out what the keys do has been given a worse one.
+   * purpose. The keys were open by default because they were the only place the
+   * controls were written down; the command bar now prints each key on the button it
+   * stands for, so the list is a reference and not the way in.
    */
   let statsVisible = false;
-  let controlsOpen = true;
+  let controlsOpen = false;
+  overlay.setControlsOpen(controlsOpen);
   const resourceBar = createResourceBar(root);
   /**
    * How to play. The game stands still while it is read: a village that starved behind
@@ -516,6 +519,16 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
   /** Planting mode: the next left-click breaks ground rather than selecting. */
   let planting = false;
 
+  // Only the first three have a digit. Control groups own 4-9, and making the most-used
+  // keys in the game ambiguous is a worse trade than reaching for the panel to place a
+  // structure you build once a match. The command panel lists every building type
+  // automatically, so the new ones are not hidden — just not on a digit.
+  const buildKeys: Readonly<Record<string, BuildingType>> = {
+    '1': BuildingType.Isibaya,
+    '2': BuildingType.Umuzi,
+    '3': BuildingType.GrainStore,
+  };
+
   const panel = createCommandPanel(root, {
     onTrain(buildingHandle, movementClass) {
       sim.sendCommand(CommandKind.Train, buildingHandle, movementClass);
@@ -544,6 +557,19 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
     onDemolish(buildingHandle) {
       sim.sendCommand(CommandKind.Demolish, buildingHandle);
     },
+    onSelectRole(role, additive) {
+      if (view !== null) selection.selectRole(view, PLAYER, role, additive);
+    },
+    onPlant() {
+      planting = true;
+      armed = null;
+    },
+    onPatrol() {
+      patrolArmed = true;
+    },
+  }, {
+    player: PLAYER,
+    buildKeys: Object.fromEntries(Object.entries(buildKeys).map(([key, type]) => [type, key])),
   });
   // The neighbour by the people it is, not "Village 2" (ADR-0021).
   panel.setVillageNames(
@@ -615,16 +641,6 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
   // Armed by A, spent on the next order click. Client state: which ORDER a click will
   // issue is not something the simulation has any business knowing.
   let patrolArmed = false;
-
-  // Only the first three have a digit. Control groups own 4-9, and making the most-used
-  // keys in the game ambiguous is a worse trade than reaching for the panel to place a
-  // structure you build once a match. The command panel lists every building type
-  // automatically, so the new ones are not hidden — just not on a digit.
-  const buildKeys: Readonly<Record<string, BuildingType>> = {
-    '1': BuildingType.Isibaya,
-    '2': BuildingType.Umuzi,
-    '3': BuildingType.GrainStore,
-  };
 
   window.addEventListener('keydown', (event) => {
     if (event.key === '?') {
@@ -1307,6 +1323,7 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
     }
 
     minimap.update(view, latestFog, camera);
+    panel.setTool(armed, planting, patrolArmed);
     panel.update(view, selection.handles, fieldReading());
 
     overlay.update({

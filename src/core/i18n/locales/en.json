@@ -16,7 +16,7 @@
     "entities": "{count} units ({selected} selected)",
     "tickLag": "tick {sim} / render {render}",
     "herd": "{cattle} cattle, {leashed} leashed, {stampeding} stampeding",
-    "controlsHeading": "Controls — H to fold, ? for how to play"
+    "controlsHeading": "Keys — H to show or fold, ? for how to play"
   },
   "glossary": {
     "isibaya": "cattle enclosure",
@@ -157,7 +157,37 @@
     "costsFull": "{grain} grain · {wood} timber · {cattle} cattle",
     "trainHouseholdHint": "A new household: more hands for the work, and more mouths to feed every season.",
     "buildHint": "Click to pick this up, then click the ground to place it. Esc puts it down.",
-    "researchHint": "Learned by the whole village. The cost is paid when it starts, and it takes a while to finish."
+    "researchHint": "Learned by the whole village. The cost is paid when it starts, and it takes a while to finish.",
+    "nothingHint": "Click a villager or a building to take hold of it, or pick a group from the people on the left.",
+    "free": "Costs nothing",
+    "byWater": "On a riverbank",
+    "people": {
+      "heading": "People · {count}",
+      "selectHint": "Select everyone doing this, wherever they are. Shift adds them to what you hold."
+    },
+    "orders": {
+      "hint": "Right-click to send them: ground to walk to, a herd to drive, a tree to fell, game to hunt, a site to build. Shift queues.",
+      "plant": "Plant a field",
+      "plantHint": "Pick up the hoe, then click open ground near a homestead. Shift-click to break more than one. Esc puts it down.",
+      "patrol": "Walk a beat",
+      "patrolHint": "The next right-click sends them walking between here and there until told otherwise — a herder covering ground."
+    },
+    "tabs": {
+      "build": "Build",
+      "buildHint": "What the village can put up, and what it costs. Place a site and work near a homestead finds its own people.",
+      "village": "Village",
+      "villageHint": "What the village eats, what it slaughters, and what it learns.",
+      "neighbours": "Neighbours",
+      "neighboursHint": "Trade with the neighbours, and the standing ties between you."
+    },
+    "neighbours": {
+      "none": "No neighbour has come to trade yet."
+    },
+    "tool": {
+      "placing": "Placing {name} — click the ground · Shift-click for more · Esc puts it down",
+      "planting": "Planting a field — click open ground · Shift-click for more · Esc puts it down",
+      "patrolling": "Walking a beat — right-click where they should walk to · Esc cancels"
+    }
   },
   "alert": {
     "stampede": "The herd has broken",
@@ -254,7 +284,7 @@
     },
     "people": {
       "heading": "Your people",
-      "body": "Most work finds its own people. Fields, kraals and grain stores near a homestead call people from it without being told. Your job is to decide what to build and where.\nYou can still take people directly when something is urgent. Drag a box around them, then right-click the ground to send them there, or right-click a building site to put them to work on it. More people on a site build it faster.\nThe panel at the bottom left says who is selected, what they are doing, and what they can build. Hover over any button for a couple of seconds to see what it does."
+      "body": "Most work finds its own people. Fields, kraals and grain stores near a homestead call people from it without being told. Your job is to decide what to build and where.\nYou can still take people directly when something is urgent. Drag a box around them, then right-click the ground to send them there, or right-click a building site to put them to work on it. More people on a site build it faster.\nThe bar along the bottom counts your people by what they are doing (click a line to take them all), says what is selected, and lists everything the village can build, decide and trade. Hover over any button for a couple of seconds to see what it does."
     },
     "food": {
       "heading": "Grain and fields",

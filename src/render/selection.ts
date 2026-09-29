@@ -103,6 +103,15 @@ export interface SelectionModel {
    */
   assignGroup(digit: number): void;
   recallGroup(digit: number, view: InterpolatedView): boolean;
+  /**
+   * Select every one of this faction's villagers doing one thing — the idle, the
+   * herders, the people in the fields — wherever they are.
+   *
+   * What the people counts in the command bar reach. A role is read from the high
+   * nibble of the flags byte (src/sim/roles.ts), the same one the sprites and the
+   * selection summary read, so the count on the button and the group it picks up agree.
+   */
+  selectRole(view: InterpolatedView, faction: number, role: number, additive: boolean): void;
 }
 
 /** Digits 1..9. Zero is not a group; it is the digit people press by accident. */
@@ -157,6 +166,15 @@ export function createSelection(): SelectionModel {
       handles.clear();
       for (const handle of survivors) handles.add(handle);
       return true;
+    },
+
+    selectRole(view, faction, role, additive): void {
+      if (!additive) handles.clear();
+      for (let i = 0; i < view.count; i++) {
+        if (view.faction[i] !== faction || view.kind[i] !== KIND_UNIT) continue;
+        if (view.flags[i]! >> 4 !== role) continue;
+        handles.add(view.handle[i]!);
+      }
     },
 
     selectInRect(view, map, camera, layer, rect, faction, additive): void {

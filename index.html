@@ -199,28 +199,187 @@
         display: none;
       }
 
-      .panel {
+      /*
+       * The command bar: people, the selection, and what the village can do, along the
+       * bottom edge and stopping short of the minimap.
+       *
+       * It replaced a card in the bottom-left corner that grew upward with everything
+       * the village could do until it ran off the screen and under the controls card.
+       * A fixed height, and each part scrolls within itself, so nothing the village
+       * gains can push the bar into the map again. The three columns hold at 1024px:
+       * 180 + 230 + 380 is about what is left beside the minimap. The tab column is the
+       * widest because ten buildings, each with its price, have to be seen at once.
+       */
+      .bar {
+        --bar-height: 184px;
         position: absolute;
         left: var(--gutter);
+        right: calc(var(--gutter) + 176px + 10px);
         bottom: var(--gutter);
-        min-width: 280px;
-        max-width: 360px;
-        /*
-         * Never tall enough to reach the controls card in the opposite corner.
-         *
-         * The panel grows upward and the village has a lot to offer it — eight
-         * buildings, five techs, six trades, the ration, the cull and an alliance — so
-         * with troops selected it ran the full height of the screen and overlapped the
-         * controls. The reserve is the controls card's own height plus both gutters.
-         */
-        max-height: calc(100vh - 296px);
-        overflow-y: auto;
-        overscroll-behavior: contain;
-        padding: 11px 14px 12px;
+        height: var(--bar-height);
+        display: grid;
+        grid-template-columns: 180px minmax(230px, 1fr) minmax(380px, 2.6fr);
         border: 1px solid var(--edge);
         border-radius: var(--radius);
         background: var(--card);
         user-select: none;
+      }
+
+      .bar__section {
+        min-width: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 10px 12px;
+      }
+
+      /*
+       * More below. A section that scrolls fades out at its foot, so the buildings under
+       * the fold at 1280px read as "there is more" rather than as "that is all".
+       */
+      .bar__section.is-more {
+        -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
+        mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
+      }
+
+      .bar__section + .bar__section {
+        border-left: 1px solid var(--edge);
+      }
+
+      .bar__roles {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 3px;
+      }
+
+      /* Compound, so it outranks .panel__button's own font and padding further down. */
+      .panel__button.bar__role {
+        padding: 1px 8px;
+        font-size: 12px;
+        color: #cfc6b4;
+        background: transparent;
+        border-color: transparent;
+      }
+
+      .panel__button.bar__role--idle:not(:disabled) {
+        color: var(--gold);
+        border-color: var(--edge-strong);
+      }
+
+      .bar__role[hidden] {
+        display: none;
+      }
+
+      .panel__button.bar__role:disabled {
+        color: #6d6557;
+        cursor: default;
+        background: transparent;
+        border-color: transparent;
+      }
+
+      .bar__tabs {
+        display: flex;
+        flex-direction: column;
+        padding-top: 0;
+      }
+
+      .bar__tablist {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        display: flex;
+        gap: 2px;
+        margin: 0 -12px 10px;
+        padding: 0 8px;
+        border-bottom: 1px solid var(--edge);
+        background: var(--card-solid);
+      }
+
+      .bar__tab {
+        position: relative;
+        font: inherit;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        background: transparent;
+        border: 0;
+        border-bottom: 2px solid transparent;
+        padding: 8px 10px 6px;
+        cursor: pointer;
+      }
+
+      .bar__tab:hover {
+        color: var(--text);
+      }
+
+      .bar__tab.is-active {
+        color: var(--gold);
+        border-bottom-color: var(--gold);
+      }
+
+      .bar__tab:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: -2px;
+      }
+
+      /* Something on this tab wants an answer — a neighbour asking, a hungry village. */
+      .bar__tab.has-news::after {
+        content: '';
+        position: absolute;
+        top: 6px;
+        right: 2px;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--amber);
+      }
+
+      .bar__tabbody[hidden] {
+        display: none;
+      }
+
+      .bar__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(146px, 1fr));
+        gap: 6px;
+      }
+
+      .bar__row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      .bar__row:empty {
+        display: none;
+      }
+
+      .bar__tabbody > .bar__row {
+        margin-bottom: 10px;
+      }
+
+      .panel__heading--sub {
+        margin-top: 2px;
+      }
+
+      /* What a click on the ground will do, floating just above the bar. */
+      .bar__tool {
+        position: absolute;
+        left: 50%;
+        bottom: calc(100% + 8px);
+        transform: translateX(-50%);
+        padding: 6px 14px;
+        border: 1px solid var(--gold-dim);
+        border-radius: var(--radius);
+        background: var(--card-solid);
+        color: var(--gold);
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      .bar__tool[hidden] {
+        display: none;
       }
 
       .panel__heading {
@@ -248,19 +407,10 @@
         gap: 6px;
       }
 
-      /* Trade sits apart from the selection's actions, because it belongs to the
-         village rather than to whatever happens to be selected. */
       .panel__trade {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-        margin-top: 9px;
-        padding-top: 9px;
-        border-top: 1px solid var(--edge);
-      }
-
-      .panel__trade:empty {
-        display: none;
       }
 
       .panel__trade .panel__button {
@@ -293,39 +443,13 @@
         margin-top: 2px;
         color: #c08a52;
       }
-      .panel__ration {
-        border-top: 1px solid var(--edge);
-        padding-top: 9px;
-        margin-top: 9px;
-      }
-      .panel__ration .panel__button.is-urgent {
+      .bar__row .panel__button.is-urgent {
         border-color: rgba(214, 138, 58, 0.75);
         color: #e8b06a;
       }
-      .panel__ration .panel__button.is-active {
+      .bar__row .panel__button.is-active {
         border-color: rgba(214, 178, 106, 0.55);
         background: rgba(214, 178, 106, 0.14);
-      }
-      .panel__herd {
-        display: flex;
-        gap: 6px;
-        margin-top: 9px;
-        padding-top: 9px;
-        border-top: 1px solid var(--edge);
-      }
-
-      .panel__herd:empty {
-        display: none;
-      }
-
-      .panel__herd .panel__button {
-        background: rgba(72, 42, 34, 0.8);
-        border-color: #6a3f2c;
-      }
-
-      .panel__herd .panel__button:hover {
-        background: #6a3f2c;
-        border-color: #d88a5e;
       }
 
       /* Taking a building down: the same warning red as the slaughter, for the same
@@ -348,9 +472,7 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 6px;
-        margin-top: 9px;
-        padding-top: 9px;
-        border-top: 1px solid var(--edge);
+        margin-bottom: 10px;
       }
 
       .panel__alliance:empty {
@@ -404,6 +526,77 @@
         background: #5a4f33;
       }
 
+      /* An action with its price on its face: name, then cost, then why not. */
+      .panel__button--action {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        padding: 4px 8px;
+        line-height: 1.3;
+      }
+
+      .panel__name {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .panel__cost {
+        display: flex;
+        flex-wrap: wrap;
+        column-gap: 9px;
+        font-size: 11px;
+        color: var(--text-dim);
+      }
+
+      .panel__cost > span {
+        white-space: nowrap;
+      }
+
+      /* The part of the price the village is short of. */
+      .panel__cost > .is-short {
+        color: #d9973a;
+      }
+
+      .panel__why:empty {
+        display: none;
+      }
+
+      /* The key that does the same thing. Quiet: it is for the second time, not the first. */
+      .panel__key {
+        margin-left: 8px;
+        padding: 0 5px;
+        font: inherit;
+        font-size: 10px;
+        line-height: 16px;
+        color: var(--gold-dim);
+        border: 1px solid var(--edge-strong);
+        border-radius: 3px;
+      }
+
+      .panel__name .panel__key {
+        margin-left: 0;
+      }
+
+      /* The tool in hand: the button that armed it stays lit until it is put down. */
+      .panel__button.is-armed {
+        background: rgba(214, 178, 106, 0.2);
+        border-color: var(--gold);
+        opacity: 1;
+      }
+
+      .panel__how:empty {
+        display: none;
+      }
+
+      .panel__how {
+        margin-top: 8px;
+        font-size: 11px;
+        line-height: 1.45;
+        color: #8a8272;
+      }
+
       .minimap {
         position: absolute;
         right: var(--gutter);
@@ -415,6 +608,24 @@
         background: #0b0906;
         cursor: crosshair;
         image-rendering: pixelated;
+      }
+
+      /*
+       * Narrow windows. At 1024px the build tab had room for two buttons a row and
+       * showed four buildings of ten; a smaller minimap and tighter people and selection
+       * columns buy a third. The minimap maps clicks from its on-screen box, so shrinking
+       * it here moves nothing it points at.
+       */
+      @media (max-width: 1200px) {
+        .minimap {
+          width: 140px;
+          height: 140px;
+        }
+
+        .bar {
+          right: calc(var(--gutter) + 140px + 10px);
+          grid-template-columns: 160px minmax(200px, 1fr) minmax(340px, 2.6fr);
+        }
       }
 
       /* Sits above the resource bar, out of the way of the command panel and the
@@ -470,7 +681,7 @@
       .notice {
         position: fixed;
         left: 50%;
-        bottom: 96px;
+        bottom: calc(var(--gutter) + 184px + 48px);
         transform: translateX(-50%);
         padding: 8px 16px;
         background: rgba(20, 17, 13, 0.92);
@@ -505,17 +716,17 @@
       }
 
       /*
-       * Centred in the map, not in the window.
+       * Centred in the window, below the resource bar.
        *
-       * Centred on the window it slid under the controls card the moment the window
-       * narrowed — at 1100px the two overlapped by fifty pixels and a line of the
-       * reference card read through a translucent banner. The left offset is the
-       * controls' own width, so the alert centres in what is actually left.
+       * It was centred in what was left beside the controls card, because the card
+       * stood open down the left edge and the banner slid under it at 1100px. The card
+       * is folded to one line now and the controls live in the command bar, so the
+       * middle of the map is the middle of the window again.
        */
       .alerts {
         position: absolute;
         top: 74px;
-        left: calc(406px + (100% - 406px) / 2);
+        left: 50%;
         transform: translateX(-50%);
         padding: 7px 16px;
         border: 1px solid var(--edge-strong);
