@@ -92,9 +92,18 @@ describe('the neighbour and its timber', () => {
   it('stops cutting once it has enough, and leaves the wood standing', () => {
     // A village that fells everything within reach has taken the one renewable thing on
     // the map and made it not renewable — a standing wood is what seeds the next one.
+    //
+    // 0.8 until a crowd sent to one point could arrive. Before that, two-thirds of this
+    // AI's people were walking at a point they could never reach, for ever: measured at
+    // 24,000 ticks, 102 villagers, 68 of them held on a dead order, 15 buildings, 99% of
+    // the wood standing. With them back at work it is 151 villagers and 55 buildings,
+    // and the wood it spent on them leaves 78-79% standing — level from 18,000 to 24,000
+    // (127, then 129) with the timber held at its ceiling throughout, which is the
+    // behaviour this pins. 0.75 keeps "does not clear the wood" and drops "because it
+    // could not build".
     const start = match(0x0a1, 200);
     const end = match(0x0a1, 24_000);
-    expect(end.standing).toBeGreaterThan(start.standing * 0.8);
+    expect(end.standing).toBeGreaterThan(start.standing * 0.75);
   });
 
   it('costs the village nothing it was not already losing', () => {

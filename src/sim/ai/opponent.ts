@@ -11,7 +11,7 @@ import { MovementClass } from '../pathing/costs.js';
 import { trainingCost } from '../production.js';
 import { Stage, stageOf, type Woodland } from '../woodland.js';
 import { EntityKind, HerdState, packHandle, type World } from '../world.js';
-import { Work } from '../labour.js';
+import { isFree } from '../labour.js';
 
 /**
  * A computer neighbour.
@@ -235,7 +235,7 @@ export function createAi(player: number): AiController {
        * human, so what the neighbour decides is what exists and where. It orders only
        * the people nobody has put to work, which is what a player does too.
        */
-      const free = own.filter((hand) => world.workKind[hand.index] === Work.None);
+      const free = own.filter((hand) => isFree(world, hand.index));
 
       /*
        * --- timber ----------------------------------------------------------

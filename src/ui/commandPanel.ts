@@ -58,6 +58,8 @@ const ROLE_KEYS: Readonly<Record<SummaryRole, MessageKey>> = {
   [SummaryRole.Hunter]: 'role.hunter',
   [SummaryRole.Injured]: 'role.injured',
   [SummaryRole.WaterCarrier]: 'role.water',
+  [SummaryRole.Builder]: 'role.builder',
+  [SummaryRole.Busy]: 'role.busy',
 };
 
 /**
@@ -69,11 +71,13 @@ const ROLE_KEYS: Readonly<Record<SummaryRole, MessageKey>> = {
 const PEOPLE_ORDER: readonly SummaryRole[] = [
   SummaryRole.None,
   SummaryRole.FieldHand,
+  SummaryRole.Builder,
   SummaryRole.Herder,
   SummaryRole.WaterCarrier,
   SummaryRole.Hunter,
   SummaryRole.Carrier,
   SummaryRole.Elder,
+  SummaryRole.Busy,
   SummaryRole.Injured,
 ];
 

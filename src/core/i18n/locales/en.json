@@ -104,6 +104,7 @@
   },
   "labour": {
     "idle": "{count} idle",
+    "idleHint": "Click to select them and go to them.",
     "short": "{count} hands short"
   },
   "village": {
@@ -261,7 +262,9 @@
     "none": "{count} idle",
     "hunter": "{count} hunting",
     "injured": "{count} laid up, mending",
-    "water": "{count} carrying water"
+    "water": "{count} carrying water",
+    "builder": "{count} building",
+    "busy": "{count} at other work"
   },
   "controls": {
     "select": "Left-drag selects · right-click orders: a cow herds it, a tree fells it, game hunts it · shift queues",

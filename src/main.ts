@@ -122,6 +122,8 @@ function speciesOfHandle(view: InterpolatedView, handle: number): number {
   return -1;
 }
 const KIND_UNIT = 0;
+/** The role nibble's "idle" (src/sim/roles.ts `Role.None`). */
+const ROLE_IDLE = 0;
 const KIND_BUILDING = 2;
 const MOVEMENT_INFANTRY = 0;
 const HERD_LEASHED = 1;
@@ -479,7 +481,13 @@ async function main(options: GameOptions, restoreFrom: SaveGame | null = null): 
   let statsVisible = false;
   let controlsOpen = false;
   overlay.setControlsOpen(controlsOpen);
-  const resourceBar = createResourceBar(root);
+  const resourceBar = createResourceBar(root, {
+    onSelectIdle() {
+      if (view === null) return;
+      selection.selectRole(view, PLAYER, ROLE_IDLE, false);
+      lookAtSelection(view);
+    },
+  });
   /**
    * How to play. The game stands still while it is read: a village that starved behind
    * the rules explaining how not to starve would be a poor first lesson.

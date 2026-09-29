@@ -181,6 +181,23 @@
         color: #9a9382;
       }
 
+      /* The idle count doubles as the way to them. */
+      .resource-bar__work.is-action {
+        color: var(--gold);
+        cursor: pointer;
+        text-decoration: underline dotted rgba(214, 178, 106, 0.5);
+        text-underline-offset: 3px;
+      }
+
+      .resource-bar__work.is-action:hover {
+        color: #f0d48e;
+      }
+
+      .resource-bar__work.is-action:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 2px;
+      }
+
       .resource-bar__work.is-negative {
         color: #d9973a;
       }

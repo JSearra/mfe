@@ -8,6 +8,7 @@ import { angleDelta, atan2 } from './math/trig.js';
 import { Modifier } from '../shared/tech/index.js';
 import type { TechState } from './tech.js';
 import { tuning } from './tuning.js';
+import { Work } from './labour.js';
 import {
   ANIM_IDLE,
   ANIM_WALK,
@@ -433,6 +434,7 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
         pushApart,
         stuckTicks,
         stuckDistance,
+        crowdRadius,
       } = tuning.movement;
 
       // Everything goes in the grid — cattle need to see units and vice versa — but
@@ -450,6 +452,45 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
         pathing.layer(MovementClass.Cattle),
         pathing.layer(MovementClass.Mounted),
       ];
+
+      /** Stop here, and start whatever is next: the patrol's way back, or the queue. */
+      function arrive(index: number): void {
+        world.velX[index] = 0;
+        world.velY[index] = 0;
+        world.hasTarget[index] = 0;
+        world.stuckTicks[index] = 0;
+        clearRoute(world, index);
+
+        // A patrol never actually arrives: it swaps the two ends and sets off back.
+        if (world.orderMode[index] === OrderMode.Patrol) {
+          const backX = world.patrolX[index]!;
+          const backY = world.patrolY[index]!;
+          world.patrolX[index] = world.targetX[index]!;
+          world.patrolY[index] = world.targetY[index]!;
+          if (system.order(world, packHandle(index, world.generation[index]!), backX, backY)) {
+            world.orderMode[index] = OrderMode.Patrol;
+            return;
+          }
+        }
+
+        // Arrived. If anything is queued behind this, start it now rather than going
+        // idle for a tick first — a visible stutter at every waypoint is what makes a
+        // queued route look like a series of separate orders instead of one path.
+        //
+        // Keep taking waypoints until one is accepted. Stopping at the first refusal
+        // strands everything behind it: the unit goes idle, and nothing ever runs the
+        // arrival code again to drain the rest — so a single unreachable waypoint in
+        // the middle of a route silently cancels the remainder of it.
+        const handle = packHandle(index, world.generation[index]!);
+        for (let next = dequeueOrder(world, index); next !== null; next = dequeueOrder(world, index)) {
+          if (system.order(world, handle, next.x, next.y)) {
+            world.orderMode[index] = next.mode;
+            return;
+          }
+        }
+
+        setAnim(world, index, ANIM_IDLE);
+      }
 
       for (let index = 0; index < world.capacity; index++) {
         if (world.alive[index] !== 1 || world.kind[index] !== EntityKind.Unit) continue;
@@ -485,44 +526,7 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
           );
           world.posX[index] = step[0];
           world.posY[index] = step[1];
-          world.velX[index] = 0;
-          world.velY[index] = 0;
-          world.hasTarget[index] = 0;
-          world.stuckTicks[index] = 0;
-          clearRoute(world, index);
-
-          // A patrol never actually arrives: it swaps the two ends and sets off back.
-          if (world.orderMode[index] === OrderMode.Patrol) {
-            const backX = world.patrolX[index]!;
-            const backY = world.patrolY[index]!;
-            world.patrolX[index] = world.targetX[index]!;
-            world.patrolY[index] = world.targetY[index]!;
-            if (system.order(world, packHandle(index, world.generation[index]!), backX, backY)) {
-              world.orderMode[index] = OrderMode.Patrol;
-              continue;
-            }
-          }
-
-          // Arrived. If anything is queued behind this, start it now rather than going
-          // idle for a tick first — a visible stutter at every waypoint is what makes a
-          // queued route look like a series of separate orders instead of one path.
-          //
-          // Keep taking waypoints until one is accepted. Stopping at the first refusal
-          // strands everything behind it: the unit goes idle, and nothing ever runs the
-          // arrival code again to drain the rest — so a single unreachable waypoint in
-          // the middle of a route silently cancels the remainder of it.
-          const handle = packHandle(index, world.generation[index]!);
-          let started = false;
-          for (let next = dequeueOrder(world, index); next !== null; next = dequeueOrder(world, index)) {
-            if (system.order(world, handle, next.x, next.y)) {
-              world.orderMode[index] = next.mode;
-              started = true;
-              break;
-            }
-          }
-          if (started) continue;
-
-          setAnim(world, index, ANIM_IDLE);
+          arrive(index);
           continue;
         }
 
@@ -543,6 +547,26 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
         const count = grid.query(posX, posY, separationRadius, neighbours);
         let pushX = 0;
         let pushY = 0;
+        // Arrived at the crowd, if not at the point. Everyone given one destination
+        // cannot stand on it: the first to get there does, and separation holds the rest
+        // off at arm's length, far outside `arriveRadius`, walking at it for ever. A unit
+        // that never arrives is never idle and never released from a direct order, so
+        // a group moved anywhere was lost to the village's work for good — measured, two
+        // people sent to one point were both still walking at tick 3000. So a unit near
+        // its goal that touches someone nearer the goal than it is — someone already
+        // stopped, or someone bound for the same point — stops, and a crowd settles
+        // outward from the point it was sent to. Bound-for-the-same-point matters as much
+        // as stopped: two people arriving together hold each other off the point, so
+        // without it neither ever stops and there is nobody to settle against.
+        //
+        // Direct orders only — someone held by one, or nobody's. A hand the labour pool
+        // sent has a place with its own reach, and labour re-sends anyone who stops
+        // outside it: settling them short of a water bank three carriers share made the
+        // two rules argue every pass, and a match ran eleven times slower on the path
+        // searches (15,621 against 420, measured).
+        const kind = world.workKind[index];
+        const settling = goalDistance <= crowdRadius && (kind === Work.Held || kind === Work.None);
+        let settled = false;
         for (let n = 0; n < count; n++) {
           const other = neighbours[n]!;
           if (other === index) continue;
@@ -550,10 +574,27 @@ export function createMovementSystem(map: Heightmap): MovementSystem {
           const dy = posY - world.posY[other]!;
           const distanceSq = dx * dx + dy * dy;
           if (distanceSq >= separationRadius * separationRadius || distanceSq < 1e-12) continue;
+          if (
+            settling &&
+            !settled &&
+            world.kind[other] === EntityKind.Unit &&
+            (world.hasTarget[other] === 0 ||
+              (world.targetX[other] === world.targetX[index] &&
+                world.targetY[other] === world.targetY[index]))
+          ) {
+            const ox = world.targetX[index]! - world.posX[other]!;
+            const oy = world.targetY[index]! - world.posY[other]!;
+            if (ox * ox + oy * oy < goalDistance * goalDistance) settled = true;
+          }
           const distance = Math.sqrt(distanceSq);
           const strength = (separationRadius - distance) / separationRadius;
           pushX += (dx / distance) * strength;
           pushY += (dy / distance) * strength;
+        }
+
+        if (settled) {
+          arrive(index);
+          continue;
         }
 
         let steerX = dirX + pushX * separationStrength;

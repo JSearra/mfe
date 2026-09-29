@@ -24,6 +24,8 @@ export const SummaryRole = {
   Hunter: 5,
   Injured: 6,
   WaterCarrier: 7,
+  Builder: 8,
+  Busy: 9,
 } as const;
 
 export type SummaryRole = (typeof SummaryRole)[keyof typeof SummaryRole];
@@ -37,6 +39,8 @@ const KNOWN: readonly SummaryRole[] = [
   SummaryRole.Hunter,
   SummaryRole.Injured,
   SummaryRole.WaterCarrier,
+  SummaryRole.Builder,
+  SummaryRole.Busy,
 ];
 
 export interface RoleTally {
@@ -65,7 +69,7 @@ export interface SelectionSummary {
  *    "Nothing in particular" is the least informative thing that can be said about a
  *    selection and it must not take the line the player actually reads.
  *
- * An unknown role is dropped rather than shown. The nibble holds sixteen and five are
+ * An unknown role is dropped rather than shown. The nibble holds sixteen and ten are
  * used; a snapshot from a newer build should make this panel say less, not break it.
  */
 export function summariseSelection(roles: readonly number[]): SelectionSummary {

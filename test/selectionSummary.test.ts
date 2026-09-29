@@ -61,9 +61,9 @@ describe('summariseSelection', () => {
   });
 
   it('ignores a role it does not know', () => {
-    // The nibble has room for sixteen and five are used. A snapshot from a newer build
+    // The nibble has room for sixteen and ten are used. A snapshot from a newer build
     // should leave the panel saying less, not crash it.
-    const summary = summariseSelection([HERDER, 9, 15]);
+    const summary = summariseSelection([HERDER, 12, 15]);
     expect(summary.total).toBe(3);
     expect(summary.tallies).toEqual([{ role: HERDER, count: 1 }]);
   });

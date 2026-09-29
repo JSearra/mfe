@@ -6,6 +6,7 @@ import { tuning } from '../src/sim/tuning.js';
 import { EntityKind, handleIndex, spawn } from '../src/sim/world.js';
 import { flatMap, makeSim } from './simHarness.js';
 import { NEUTRAL_FACTION } from '../src/sim/commands.js';
+import { Work } from '../src/sim/labour.js';
 
 /**
  * Roles describe what somebody is doing so the renderer can draw them doing it. They
@@ -50,6 +51,24 @@ describe('what a villager is doing', () => {
     expect(roleOf(sim.world, handleIndex(hand))).toBe(Role.FieldHand);
     // Somebody else's field is not your work.
     expect(roleOf(sim.world, handleIndex(stranger))).toBe(Role.None);
+  });
+
+  it('is a field hand while breaking ground it was sent to, even beside the great house', () => {
+    const sim = makeSim(128, 3, flatMap(48));
+    sim.economy.add(0, 1 as never, 4000);
+    sim.construction.place(sim.world, sim.economy, 0, BuildingType.Indlunkulu, 30, 30, [], true);
+    expect(plant(sim.farmland, sim.economy, flatMap(48), 0, 33, 31)).toBe(PlantResult.Planted);
+    const field = sim.farmland.count - 1;
+
+    const breaker = spawn(sim.world, 33.5, 31.5, 0);
+    sim.world.workKind[handleIndex(breaker)] = Work.Field;
+    sim.world.workAt[handleIndex(breaker)] = field;
+    // Standing in the same unbroken field without being sent to it is not the work.
+    const passer = spawn(sim.world, 33.5, 31.5, 0);
+    updateRoles(sim.world, sim.farmland, AT);
+
+    expect(roleOf(sim.world, handleIndex(breaker))).toBe(Role.FieldHand);
+    expect(roleOf(sim.world, handleIndex(passer))).not.toBe(Role.FieldHand);
   });
 
   it('tells the grain store from the great house', () => {

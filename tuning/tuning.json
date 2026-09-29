@@ -10,7 +10,8 @@
     "separationStrength": 2.2,
     "pushApart": 0.5,
     "stuckTicks": 30,
-    "stuckDistance": 0.12
+    "stuckDistance": 0.12,
+    "crowdRadius": 3.0
   },
   "world": {
     "defaultCapacity": 512
@@ -505,6 +506,7 @@
     "fieldHands": 1,
     "fieldRecoverBelow": 0.8,
     "siteHands": 4,
+    "spareSiteHands": 6,
     "buildingReach": 2.6,
     "standOff": 0.8,
     "fishingRadius": 10.0,

@@ -48,7 +48,12 @@ const SEASON_KEYS: Readonly<Record<Season, MessageKey>> = {
 /** Trend -1, 0, 1 offset by one, so the array index is the trend plus one. */
 const TREND_KEYS: readonly MessageKey[] = ['season.easing', 'season.steady', 'season.drier'];
 
-export function createResourceBar(parent: HTMLElement): ResourceBar {
+export interface ResourceBarHandlers {
+  /** Select the village's idle people and bring them into view. */
+  onSelectIdle(): void;
+}
+
+export function createResourceBar(parent: HTMLElement, handlers: ResourceBarHandlers): ResourceBar {
   const element = document.createElement('div');
   element.className = 'resource-bar';
 
@@ -74,6 +79,18 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
   // which is what decides between breaking another field and raising another household.
   const work = document.createElement('span');
   work.className = 'resource-bar__work';
+  // The idle count is also the way to them, the same as the idle line in the command
+  // bar: a number of people standing about is a number a player wants to act on. Only
+  // while it says idle — "hands short" has nobody behind it to select.
+  let idleClickable = false;
+  work.addEventListener('click', () => {
+    if (idleClickable) handlers.onSelectIdle();
+  });
+  work.addEventListener('keydown', (event) => {
+    if (!idleClickable || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    handlers.onSelectIdle();
+  });
 
   const warning = document.createElement('span');
   warning.className = 'resource-bar__warning';
@@ -157,6 +174,19 @@ export function createResourceBar(parent: HTMLElement): ResourceBar {
           ? t('labour.short', { count: Math.round(player.handsShort) })
           : t('labour.idle', { count: player.idle });
       work.classList.toggle('is-negative', player.handsShort > 0);
+      const clickable = player.handsShort <= 0 && player.idle > 0;
+      if (clickable !== idleClickable) {
+        idleClickable = clickable;
+        work.classList.toggle('is-action', clickable);
+        if (clickable) {
+          work.setAttribute('role', 'button');
+          work.tabIndex = 0;
+        } else {
+          work.removeAttribute('role');
+          work.removeAttribute('tabindex');
+        }
+        work.dataset.tip = clickable ? `${t('tip.work')}\n${t('labour.idleHint')}` : t('tip.work');
+      }
 
       driving.textContent =
         player.driving > 0 ? t('resource.driving', { head: player.driving }) : '';

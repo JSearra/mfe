@@ -43,6 +43,18 @@ export const Role = {
   Injured: 6,
   /** Carrying water from the river (ADR-0023). Drawn with the head-load figure. */
   WaterCarrier: 7,
+  /** Sent to raise a building site. Drawn as the default figure until there is art. */
+  Builder: 8,
+  /**
+   * Has work, or an errand, that none of the roles above describes: staffing a pit or a
+   * well, walking to a field not yet reached, carrying out a direct order.
+   *
+   * Exists so that `None` means idle and nothing else. The command bar lists `None` as
+   * "idle" and the top bar counts idle from the labour pool, and the two disagreed by
+   * everyone who had work but no picture for it — "11 idle" in one place and "3 idle"
+   * in the other, on the same screen.
+   */
+  Busy: 9,
 } as const;
 
 export type Role = (typeof Role)[keyof typeof Role];
@@ -92,6 +104,8 @@ export function updateRoles(world: World, land: Farmland, tick: number): void {
     } else if (herding.has(index) || world.workKind[index] === Work.Kraal) {
       // Keeping a kraal is herding too, and it should look like it (Phase B2).
       role = Role.Herder;
+    } else if (world.workKind[index] === Work.Site || world.workKind[index] === Work.SpareSite) {
+      role = Role.Builder;
     } else {
       const posX = world.posX[index]!;
       const posY = world.posY[index]!;
@@ -99,7 +113,12 @@ export function updateRoles(world: World, land: Farmland, tick: number): void {
 
       for (let f = 0; f < land.count && role === Role.None; f++) {
         if (land.alive[f] === 0 || land.owner[f] !== owner) continue;
-        if (!isEstablished(land, f)) continue;
+        // Breaking ground is field work too, for whoever was sent to break it. Without
+        // this the people opening a new field beside the great house were drawn and
+        // counted as its elders — "9 at the great house", in play, for nine people
+        // doing the one thing the village most needed done.
+        const breaking = world.workKind[index] === Work.Field && world.workAt[index] === f;
+        if (!isEstablished(land, f) && !breaking) continue;
         const dx = land.tileX[f]! + 0.5 - posX;
         const dy = land.tileY[f]! + 0.5 - posY;
         if (dx * dx + dy * dy <= tendSq) role = Role.FieldHand;
@@ -117,6 +136,12 @@ export function updateRoles(world: World, land: Farmland, tick: number): void {
 
         if (world.buildingType[other] === BuildingType.GrainStore) role = Role.Carrier;
         else if (world.buildingType[other] === BuildingType.Indlunkulu) role = Role.Elder;
+      }
+
+      // Idle means what the labour pool means by it (see `idleOf` in labour.ts): no
+      // work, not walking anywhere. Anyone else is busy, whatever they look like.
+      if (role === Role.None && (world.workKind[index] !== Work.None || world.hasTarget[index] === 1)) {
+        role = Role.Busy;
       }
     }
 

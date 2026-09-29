@@ -3,6 +3,7 @@ import { EventType, makeEvent, type SimEvent } from '../shared/events.js';
 import { isFreshShore, isShore, type Heightmap } from '../shared/heightmap.js';
 import { isEstablished, type Farmland } from './economy/farmland.js';
 import type { MovementSystem } from './movement.js';
+import { IMPASSABLE, MovementClass, type CostLayer } from './pathing/costs.js';
 import { tuning } from './tuning.js';
 import {
   EntityKind,
@@ -88,7 +89,24 @@ export const Work = {
    * Paid in src/sim/water.ts by how far the bank is from home.
    */
   Water: 8,
+  /**
+   * Raising a site as a spare hand: someone nothing else wanted, sent to a site beyond
+   * the hands it asked for. `workAt` is its entity index.
+   *
+   * Its own kind so that anyone deciding who is FREE can still count them. A spare hand
+   * is released back to the pool every pass (see `Place.spare`), and the neighbour's
+   * AI takes its axes from the people nobody has put to work — with this folded into
+   * `Site`, a village with a site under way had nobody free to cut timber, and never
+   * had timber again.
+   */
+  SpareSite: 9,
 } as const;
+
+/** Nobody has put them to work, or only as a spare hand on a site: free to be taken. */
+export function isFree(world: World, index: number): boolean {
+  const kind = world.workKind[index];
+  return kind === Work.None || kind === Work.SpareSite;
+}
 
 export type Work = (typeof Work)[keyof typeof Work];
 
@@ -119,12 +137,31 @@ export function idleOf(world: World, player: number): number {
 interface Place {
   kind: Work;
   at: number;
-  /** Where the hands are sent to stand. */
+  /** Where the place is: what "close enough" and "nearest" are measured from. */
   x: number;
   y: number;
+  /**
+   * Where the hands are sent, when that is not (x, y) itself.
+   *
+   * A field's own tile can be impassable — built over, or cut off since it was broken
+   * — and it is still tended from the tile beside it. Sending hands to the field's own
+   * tile then failed its path search, they stopped, and the next pass sent them again:
+   * measured, 6,861 failed searches in one AI match, which ran eleven times slower.
+   */
+  standX?: number;
+  standY?: number;
   /** How far from (x, y) a person may be and still count as there. */
   reach: number;
   wanted: number;
+  /**
+   * Hands it will take beyond `wanted`, from people nothing else wants.
+   *
+   * Only building sites have any. They are filled last, after every place has had what
+   * it asked for, and never keep anybody from a place that wants them: the pass that
+   * decides who stays holds a person to `wanted` only, so a spare hand goes back into
+   * the pool each pass and a field that starts failing takes them first.
+   */
+  spare: number;
   assigned: number;
 }
 
@@ -171,7 +208,41 @@ export function createLabour(players: number): Labour {
     return false;
   }
 
-  function collectPlaces(world: World, land: Farmland, map: Heightmap, player: number): void {
+  /**
+   * The walkable tile nearest a field's centre that still tends it, or -1 for none.
+   * Its own tile first, then the eight around it — the tend radius reaches the
+   * diagonals — in a fixed order, so the choice is the same on every machine.
+   */
+  function fieldStand(map: Heightmap, layer: CostLayer, tileX: number, tileY: number): number {
+    const reachSq = tuning.farmland.tendRadius * tuning.farmland.tendRadius;
+    let best = -1;
+    let bestDistance = Infinity;
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const tx = tileX + dx;
+        const ty = tileY + dy;
+        if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height) continue;
+        const distance = dx * dx + dy * dy;
+        if (distance > reachSq) continue;
+        const tile = ty * map.width + tx;
+        if (layer.tileCost[tile] === IMPASSABLE) continue;
+        // Strictly nearer, and the loop runs in a fixed order, so a tie keeps the first.
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          best = tile;
+        }
+      }
+    }
+    return best;
+  }
+
+  function collectPlaces(
+    world: World,
+    land: Farmland,
+    map: Heightmap,
+    layer: CostLayer,
+    player: number,
+  ): void {
     const l = tuning.labour;
     places.length = 0;
 
@@ -196,6 +267,10 @@ export function createLabour(players: number): Labour {
       const x = land.tileX[f]! + 0.5;
       const y = land.tileY[f]! + 0.5;
       if (!withinHome(world, x, y)) continue;
+      // Nowhere to stand that tends it: it asks for nobody, rather than for people who
+      // will walk at it for ever.
+      const stand = fieldStand(map, layer, land.tileX[f]!, land.tileY[f]!);
+      if (stand === -1) continue;
       // One pair of hands holds an established field against neglect; breaking ground or
       // bringing a failing field back takes the full complement.
       const recovering = !isEstablished(land, f) || land.condition[f]! < l.fieldRecoverBelow;
@@ -204,8 +279,11 @@ export function createLabour(players: number): Labour {
         at: f,
         x,
         y,
+        standX: (stand % map.width) + 0.5,
+        standY: Math.floor(stand / map.width) + 0.5,
         reach: tuning.farmland.tendRadius,
         wanted: recovering ? tuning.farmland.maxHands : l.fieldHands,
+        spare: 0,
         assigned: 0,
       });
     }
@@ -224,9 +302,13 @@ export function createLabour(players: number): Labour {
       if (world.faction[i] !== player) continue;
       const x = world.posX[i]!;
       const y = world.posY[i]!;
-      if (!withinHome(world, x, y)) continue;
+      const near = withinHome(world, x, y);
       const spec = buildingSpec(world.buildingType[i]!);
       const finished = world.buildProgress[i]! >= spec.work;
+      // A site away from the homesteads asks for nobody, but it will still take the
+      // idle: a village with people standing about and a site standing unbuilt is
+      // leaving the one thing it chose to do undone. Anything finished stays home-bound.
+      if (!near && (finished || l.spareSiteHands === 0)) continue;
       // Stand just outside the footprint, on the side facing away from nothing in
       // particular: the footprint blocks people, and a goal inside it is unreachable.
       const standOff = spec.footprint / 2 + l.standOff;
@@ -239,7 +321,8 @@ export function createLabour(players: number): Labour {
           y,
           reach: l.buildingReach,
           wanted: spec.hands,
-          assigned: 0,
+          spare: 0,
+        assigned: 0,
         });
       } else {
         sites.push({
@@ -248,8 +331,9 @@ export function createLabour(players: number): Labour {
           x: x + standOff,
           y,
           reach: tuning.buildings.buildRadius,
-          wanted: l.siteHands,
-          assigned: 0,
+          wanted: near ? l.siteHands : 0,
+          spare: l.spareSiteHands,
+        assigned: 0,
         });
       }
     }
@@ -299,7 +383,7 @@ export function createLabour(players: number): Labour {
         }
         if (crowded) continue;
         taken.push(bank.tile);
-        places.push({ kind: Work.Water, at: bank.tile, x: bx + 0.5, y: by + 0.5, reach: 0.75, wanted: w.maxCarriers, assigned: 0 });
+        places.push({ kind: Work.Water, at: bank.tile, x: bx + 0.5, y: by + 0.5, reach: 0.75, wanted: w.maxCarriers, spare: 0, assigned: 0 });
       }
     }
 
@@ -356,6 +440,7 @@ export function createLabour(players: number): Labour {
         y: fy + 0.5,
         reach: 0.75,
         wanted: tuning.fishing.maxAnglers,
+        spare: 0,
         assigned: 0,
       });
     }
@@ -407,8 +492,8 @@ export function createLabour(players: number): Labour {
 
   function send(world: World, movement: MovementSystem, index: number, place: Place): void {
     // Spread a building's hands round its sides rather than stacking them on one point.
-    let x = place.x;
-    let y = place.y;
+    let x = place.standX ?? place.x;
+    let y = place.standY ?? place.y;
     if (place.kind === Work.Building || place.kind === Work.Kraal || place.kind === Work.Site) {
       const side = SIDES[place.assigned % SIDES.length]!;
       const cx = world.posX[place.at]!;
@@ -426,6 +511,7 @@ export function createLabour(players: number): Labour {
     update(world, land, map, movement, players, events): void {
       const l = tuning.labour;
       if (world.tick % l.intervalTicks !== 0) return;
+      const infantry = movement.pathing.layer(MovementClass.Infantry);
 
       // --- release holds --------------------------------------------------------
       // Anyone holding a tether, gathered once from the cattle side.
@@ -453,7 +539,7 @@ export function createLabour(players: number): Labour {
       }
 
       for (let player = 0; player < players; player++) {
-        collectPlaces(world, land, map, player);
+        collectPlaces(world, land, map, infantry, player);
         readFields(world, land, player);
 
         // --- who stays --------------------------------------------------------
@@ -464,6 +550,13 @@ export function createLabour(players: number): Labour {
           if (world.faction[i] !== player) continue;
           const kind = world.workKind[i]!;
           if (kind === Work.None || kind === Work.Held) continue;
+          // Back into the pool: the rounds below take them first if anything wants
+          // them, and the spare round puts them back on the site if nothing does.
+          if (kind === Work.SpareSite) {
+            world.workKind[i] = Work.None;
+            world.workAt[i] = -1;
+            continue;
+          }
           // A mauled hand leaves their work until they mend (ADR-0022).
           if (world.injured[i]! > 0) {
             world.workKind[i] = Work.None;
@@ -503,17 +596,23 @@ export function createLabour(players: number): Labour {
         }
 
         // --- who goes -----------------------------------------------------------
-        // Two rounds: first every place gets one pair of hands, then any place gets
-        // more. Without the first round the fields, which come first, would take the
-        // whole village before a site had anybody.
+        // Three rounds: first every place gets one pair of hands, then any place gets
+        // more, both from people within `reach`. Without the first round the fields,
+        // which come first, would take the whole village before a site had anybody.
+        //
+        // The third fills what is still short from anyone still free, however far. The
+        // reach is a preference, not a wall: a water bank thirty-two tiles from the three
+        // people standing idle at the other end of the village went short for the whole
+        // of a new game, with the top bar saying "2 hands short" over three idle hands.
+        // Idle is always worse than a long walk.
         let wanting = 0;
-        for (let round = 0; round < 2; round++) {
+        for (let round = 0; round < 3; round++) {
           for (let p = 0; p < places.length; p++) {
             const place = places[p]!;
             const target = round === 0 ? Math.min(1, place.wanted) : place.wanted;
             while (place.assigned < target) {
               let best = -1;
-              let bestDistance = l.reach * l.reach;
+              let bestDistance = round === 2 ? Infinity : l.reach * l.reach;
               for (let i = 0; i < world.capacity; i++) {
                 if (world.alive[i] !== 1 || world.kind[i] !== EntityKind.Unit) continue;
                 if (world.faction[i] !== player) continue;
@@ -536,7 +635,49 @@ export function createLabour(players: number): Labour {
             }
           }
         }
-        for (const place of places) wanting += place.wanted - place.assigned;
+        // --- the idle -----------------------------------------------------------
+        // Whoever is still free goes to a site, one site at a time in turn so that two
+        // sites share the spare hands rather than the first taking them all. No reach:
+        // a site is where the village chose to put its work, and an idle villager a
+        // long walk from it is still better there than standing about.
+        let placed = true;
+        while (placed) {
+          placed = false;
+          for (let p = 0; p < places.length; p++) {
+            const place = places[p]!;
+            if (place.spare === 0 || place.assigned >= place.wanted + place.spare) continue;
+            let best = -1;
+            let bestDistance = Infinity;
+            for (let i = 0; i < world.capacity; i++) {
+              if (world.alive[i] !== 1 || world.kind[i] !== EntityKind.Unit) continue;
+              if (world.faction[i] !== player) continue;
+              if (world.workKind[i] !== Work.None || herding.has(i)) continue;
+              if (world.injured[i]! > 0) continue;
+              const dx = world.posX[i]! - place.x;
+              const dy = world.posY[i]! - place.y;
+              const distance = dx * dx + dy * dy;
+              // Strictly nearer, so a tie keeps the lower index.
+              if (distance < bestDistance) {
+                bestDistance = distance;
+                best = i;
+              }
+            }
+            if (best === -1) break;
+            // A spare hand is released and taken back every pass (see `Place.spare`);
+            // one already on the site is not sent again, or it would repath every pass.
+            if (world.hasTarget[best] === 0 && !within(world, best, place)) {
+              send(world, movement, best, place);
+            }
+            world.workKind[best] = Work.SpareSite;
+            world.workAt[best] = place.at;
+            place.assigned++;
+            placed = true;
+          }
+        }
+
+        // Spare hands are not owed, so a site holding more than it asked for does not
+        // pay down another place's shortfall.
+        for (const place of places) wanting += Math.max(0, place.wanted - place.assigned);
         short[player] = wanting;
 
         // The warning is about work that pays, not about the water: a village with no
@@ -544,7 +685,7 @@ export function createLabour(players: number): Labour {
         if (events === undefined) continue;
         if (world.tick % (tuning.economy.upkeepIntervalTicks * l.warnEverySeasons) !== 0) continue;
         for (const place of places) {
-          if (place.kind === Work.Shore || place.assigned > 0) continue;
+          if (place.kind === Work.Shore || place.wanted === 0 || place.assigned > 0) continue;
           events.push(makeEvent(world.tick, EventType.HandsShort, 0, place.x, place.y, player));
           break;
         }
